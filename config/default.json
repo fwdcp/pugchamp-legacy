@@ -1,5 +1,6 @@
 {
     "server": {
-        "listen": 16217
+        "listen": 16217,
+        "sessionSecret": "pickup winner"
     }
 }
