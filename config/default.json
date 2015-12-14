@@ -1,6 +1,7 @@
 {
     "server": {
         "listen": 16217,
-        "sessionSecret": "pickup winner"
+        "sessionSecret": "pickup winner",
+        "tokenSecret": "public dominator"
     }
 }

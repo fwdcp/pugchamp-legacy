@@ -1,12 +1,14 @@
 var config = require('config');
 var express = require('express');
 var http = require('http');
+var jwt = require('jsonwebtoken');
 var OpenIDStrategy = require('passport-openid').Strategy;
 var passport = require('passport');
 var path = require('path');
 var serveStatic = require('serve-static');
 var session = require('express-session');
 var socketIO = require('socket.io');
+var socketioJwt = require('socketio-jwt');
 var url = require('url');
 
 var app = express();
@@ -19,7 +21,7 @@ passport.use(new OpenIDStrategy({
         return url.format({
             protocol: req.protocol,
             host: req.get('host'),
-            pathname: '/login/return'
+            pathname: '/auth/login/return'
         });
     },
     realm: function(req) {
@@ -52,15 +54,22 @@ app.use(passport.session());
 app.use('/', serveStatic(path.resolve(__dirname, 'public')));
 app.use('/components', serveStatic(path.resolve(__dirname, 'bower_components')));
 
-app.get('/', function(req, res) {
-    if (req.user) {
-        res.status(200).send(req.user);
-    }
-    else {
+app.get('/auth/login', passport.authenticate('openid'));
+app.get('/auth/login/return', passport.authenticate('openid', {successRedirect: '/', failureRedirect: '/'}));
+app.get('/auth/token', function(req, res) {
+    if (!req.user) {
         res.sendStatus(401);
+        return;
     }
+
+    var token = jwt.sign(req.user, config.get('server.tokenSecret'));
+
+    res.status(200).send(token);
 });
-app.get('/login', passport.authenticate('openid'));
-app.get('/login/return', passport.authenticate('openid', {successRedirect: '/', failureRedirect: '/'}));
+
+io.sockets.on('connection', socketioJwt.authorize({
+    required: false,
+    secret: config.get('server.tokenSecret')
+}));
 
 server.listen(config.get('server.listen'));
