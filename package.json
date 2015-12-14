@@ -1,0 +1,14 @@
+{
+  "name": "pugchamp",
+  "version": "0.0.0",
+  "description": "PUG service",
+  "private": true,
+  "repository": "fwdcp/pugchamp",
+  "dependencies": {
+    "config": "^1.17.1",
+    "express": "^4.13.3",
+    "passport": "^0.3.2",
+    "passport-openid": "fwdcp/passport-openid",
+    "socket.io": "^1.3.7"
+  }
+}
