@@ -1,0 +1,17 @@
+<!doctype html>
+
+<html>
+    <head>
+
+    </head>
+    <body>
+        {{#if user}}
+            Logged in as {{user}}. <a href="/auth/logout">Log out</a>.
+        {{else}}
+            <a href="/auth/login"><img src="https://steamcommunity-a.akamaihd.net/public/images/signinthroughsteam/sits_small.png"></a>
+        {{/if}}
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="/js/pugchamp.js"></script>
+    </body>
+</html>

@@ -71,6 +71,10 @@ app.get('/auth/token', function(req, res) {
     res.status(200).send(token);
 });
 
+app.get('/', function(req, res) {
+    res.render('index', { user: req.user });
+});
+
 io.sockets.on('connection', socketioJwt.authorize({
     required: false,
     secret: config.get('server.tokenSecret')
