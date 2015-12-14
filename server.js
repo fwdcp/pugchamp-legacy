@@ -4,6 +4,8 @@ var http = require('http');
 var io = require('socket.io');
 var OpenIDStrategy = require('passport-openid').Strategy;
 var passport = require('passport');
+var path = require('path');
+var serveStatic = require('serve-static');
 var session = require('express-session');
 var url = require('url');
 
@@ -46,6 +48,9 @@ app.use(session({
 }));
 app.use(passport.initialize());
 app.use(passport.session());
+
+app.use('/', serveStatic(path.resolve(__dirname, 'public')));
+app.use('/components', serveStatic(path.resolve(__dirname, 'bower_components')));
 
 app.get('/', function(req, res) {
     if (req.user) {
