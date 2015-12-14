@@ -1,0 +1,12 @@
+{
+  "name": "pugchamp",
+  "description": "PUG service",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

@@ -1,6 +1,5 @@
 {
   "name": "pugchamp",
-  "version": "0.0.0",
   "description": "PUG service",
   "private": true,
   "repository": "fwdcp/pugchamp",
