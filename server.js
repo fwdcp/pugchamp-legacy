@@ -56,6 +56,10 @@ app.use('/components', serveStatic(path.resolve(__dirname, 'bower_components')))
 
 app.get('/auth/login', passport.authenticate('openid'));
 app.get('/auth/login/return', passport.authenticate('openid', {successRedirect: '/', failureRedirect: '/'}));
+app.get('/auth/logout', function(req, res) {
+    req.logout();
+    res.redirect('/');
+});
 app.get('/auth/token', function(req, res) {
     if (!req.user) {
         res.sendStatus(401);
