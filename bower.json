@@ -8,5 +8,8 @@
     "bower_components",
     "test",
     "tests"
-  ]
+  ],
+  "resolutions": {
+    "webcomponentsjs": "^0.6.0"
+  }
 }

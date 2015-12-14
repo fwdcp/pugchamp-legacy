@@ -15,6 +15,12 @@ var app = express();
 var server = http.Server(app);
 var io = socketIO(server);
 
+var hbs = require('hbs');
+
+hbs.registerPartials(__dirname + '/views/partials');
+
+
+
 passport.use(new OpenIDStrategy({
     providerURL: 'http://steamcommunity.com/openid',
     returnURL: function(req) {
