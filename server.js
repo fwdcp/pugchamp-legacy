@@ -1,17 +1,17 @@
 var config = require('config');
 var express = require('express');
 var http = require('http');
-var io = require('socket.io');
 var OpenIDStrategy = require('passport-openid').Strategy;
 var passport = require('passport');
 var path = require('path');
 var serveStatic = require('serve-static');
 var session = require('express-session');
+var socketIO = require('socket.io');
 var url = require('url');
 
 var app = express();
 var server = http.Server(app);
-var sockets = io(server);
+var io = socketIO(server);
 
 passport.use(new OpenIDStrategy({
     providerURL: 'http://steamcommunity.com/openid',
