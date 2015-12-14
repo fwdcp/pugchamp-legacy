@@ -32,14 +32,14 @@ passport.use(new OpenIDStrategy({
 }, function(identifier, done) {
     done(null, identifier.replace('http://steamcommunity.com/openid/id/', ''));
 }));
-
 passport.serializeUser(function(id, done) {
     done(null, id);
 });
-
 passport.deserializeUser(function(id, done) {
     done(null, id);
 });
+
+app.set('view engine', 'hbs');
 
 app.use(session({
     resave: false,

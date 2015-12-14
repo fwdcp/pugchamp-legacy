@@ -7,6 +7,7 @@
     "config": "^1.17.1",
     "express": "^4.13.3",
     "express-session": "^1.12.1",
+    "hbs": "^4.0.0",
     "passport": "^0.3.2",
     "passport-openid": "fwdcp/passport-openid",
     "serve-static": "^1.10.0",
