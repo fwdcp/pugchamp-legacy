@@ -9,11 +9,8 @@
     "test",
     "tests"
   ],
-  "resolutions": {
-    "webcomponentsjs": "^0.6.0"
-  },
   "dependencies": {
-    "polymer": "0.5.6",
-    "webcomponentsjs": "0.6.3"
+    "polymer": "Polymer/polymer#~1.2.3",
+    "bootstrap": "~3.3.6"
   }
 }

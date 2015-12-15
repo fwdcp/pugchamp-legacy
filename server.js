@@ -1,5 +1,6 @@
 var config = require('config');
 var express = require('express');
+var hbs = require('hbs');
 var http = require('http');
 var jwt = require('jsonwebtoken');
 var OpenIDStrategy = require('passport-openid').Strategy;
@@ -14,12 +15,6 @@ var url = require('url');
 var app = express();
 var server = http.Server(app);
 var io = socketIO(server);
-
-var hbs = require('hbs');
-
-hbs.registerPartials(__dirname + '/views/partials');
-
-
 
 passport.use(new OpenIDStrategy({
     providerURL: 'http://steamcommunity.com/openid',
@@ -48,6 +43,8 @@ passport.deserializeUser(function(id, done) {
 });
 
 app.set('view engine', 'hbs');
+
+hbs.registerPartials(__dirname + '/views/partials');
 
 app.use(session({
     resave: false,
