@@ -11,5 +11,9 @@
   ],
   "resolutions": {
     "webcomponentsjs": "^0.6.0"
+  },
+  "dependencies": {
+    "polymer": "0.5.6",
+    "webcomponentsjs": "0.6.3"
   }
 }
