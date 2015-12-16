@@ -86,3 +86,16 @@ color:black;
 
 
 }
+
+#player {
+text-align:center;
+margin-top: 50px;
+}
+.class-header {
+	background-color: #436073;
+	color:white;
+}
+.class-list {
+	display:inline-block;
+	width: 150px;
+}
