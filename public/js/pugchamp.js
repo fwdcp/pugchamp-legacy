@@ -19,7 +19,7 @@ socket.on('connect', function() {
         }
     };
 
-    tokenRequest.open('GET', '/auth/token', true);
+    tokenRequest.open('GET', '/user/token', true);
     tokenRequest.send(null);
 });
 
