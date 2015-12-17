@@ -1,6 +1,7 @@
 {
     "server": {
         "listen": 16217,
+        "mongodb": "mongodb://localhost/pugchamp",
         "sessionSecret": "pickup winner",
         "tokenSecret": "public dominator"
     }
