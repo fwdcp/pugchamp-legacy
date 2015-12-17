@@ -1,4 +1,34 @@
 {
+    "app": {
+        "games": {
+            "roles": {
+                "scout": {
+                    "name": "Scout",
+                    "class": "scout",
+                    "min": 4,
+                    "max": 4
+                },
+                "soldier": {
+                    "name": "Soldier",
+                    "class": "soldier",
+                    "min": 4,
+                    "max": 4
+                },
+                "demoman": {
+                    "name": "Demoman",
+                    "class": "demoman",
+                    "min": 2,
+                    "max": 2
+                },
+                "medic": {
+                    "name": "Medic",
+                    "class": "medic",
+                    "min": 2,
+                    "max": 2
+                }
+            }
+        }
+    },
     "server": {
         "listen": 16217,
         "mongodb": "mongodb://localhost/pugchamp",
