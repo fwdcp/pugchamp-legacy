@@ -3,33 +3,37 @@ var mongoose = require('mongoose');
 
 mongoose.connect(config.get('server.mongodb'));
 
-var playerSchema = {
+var userSchema = {
     alias: String,
     steamID: String,
+    setUp: {
+        type: Boolean,
+        default: false
+    },
     stats: {
         overall: {
             games: {
-                played: Number,
-                wins: Number,
-                losses: Number,
-                ties: Number
+                played: {type: Number, default: 0},
+                wins: {type: Number, default: 0},
+                losses: {type: Number, default: 0},
+                ties: {type: Number, default: 0}
             },
             skill: {
-                rating: Number
-                deviation: Number
+                rating: {type: Number, default: 1500},
+                deviation: {type: Number, default: 500}
             }
         },
         captain: {
             games: {
-                played: Number,
-                wins: Number,
-                losses: Number,
-                ties: Number
+                played: {type: Number, default: 0},
+                wins: {type: Number, default: 0},
+                losses: {type: Number, default: 0},
+                ties: {type: Number, default: 0}
             }
         }
     }
 }
 
 module.exports = {
-    Player: mongoose.model('Player', playerSchema)
+    User: mongoose.model('User', userSchema)
 };

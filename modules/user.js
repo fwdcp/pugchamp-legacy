@@ -5,6 +5,8 @@ var passport = require('passport');
 var socketioJwt = require('socketio-jwt');
 var url = require('url');
 
+var database = require('../database');
+
 module.exports = function(app, io, server) {
     passport.use(new OpenIDStrategy({
         providerURL: 'http://steamcommunity.com/openid',
@@ -23,17 +25,40 @@ module.exports = function(app, io, server) {
         },
         stateless: true
     }, function(identifier, done) {
-        done(null, identifier.replace('http://steamcommunity.com/openid/id/', ''));
+        var id = identifier.replace('http://steamcommunity.com/openid/id/', '');
+
+        database.User.findOne({steamID: id}, function(err, user) {
+            if (err) {
+                done(err);
+            }
+            else if (!user) {
+                user = new database.User({steamID: id});
+                user.save(function(err) {
+                    done(err, user);
+                });
+            }
+            else {
+                done(null, user);
+            }
+        });
     }));
-    passport.serializeUser(function(id, done) {
-        done(null, id);
+    passport.serializeUser(function(user, done) {
+        done(null, user._id);
     });
     passport.deserializeUser(function(id, done) {
-        done(null, id);
+        database.User.findById(id, done);
+    });
+
+    app.use(function(req, res, next) {
+        res.locals.user = req.user;
+        next();
     });
 
     app.get('/user/login', passport.authenticate('openid'));
-    app.get('/user/login/return', passport.authenticate('openid', {successRedirect: '/', failureRedirect: '/'}));
+    app.get('/user/login/return', passport.authenticate('openid', {
+        successRedirect: '/',
+        failureRedirect: '/'
+    }));
     app.get('/user/logout', function(req, res) {
         req.logout();
         res.redirect('/');
@@ -53,4 +78,20 @@ module.exports = function(app, io, server) {
         required: false,
         secret: config.get('server.tokenSecret')
     }));
+
+    app.get('/user/settings', function(req, res) {
+        if (req.user) {
+            res.render('userSettings');
+        }
+        else {
+            res.redirect('/user/login');
+        }
+    });
+    app.get('/', function(req, res, next) {
+        if (req.user && !req.user.setUp) {
+            res.redirect('/user/settings');
+        } else {
+            next();
+        }
+    });
 };
