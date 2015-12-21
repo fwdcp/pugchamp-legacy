@@ -1,5 +1,6 @@
 var config = require('config');
 var jwt = require('jsonwebtoken');
+var mongoose = require('mongoose');
 var OpenIDStrategy = require('passport-openid').Strategy;
 var passport = require('passport');
 var socketioJwt = require('socketio-jwt');
@@ -69,14 +70,27 @@ module.exports = function(app, io, server) {
             return;
         }
 
-        var token = jwt.sign(req.user, config.get('server.tokenSecret'));
+        var token = jwt.sign(req.user.id, config.get('server.tokenSecret'));
 
         res.status(200).send(token);
     });
 
     io.sockets.on('connection', socketioJwt.authorize({
         required: false,
-        secret: config.get('server.tokenSecret')
+        secret: config.get('server.tokenSecret'),
+        additionalAuth: function(token, successCallback, errorCallback) {
+            database.User.findOne(new mongoose.Types.ObjectId(token), function(err, user) {
+                if (err) {
+                    errorCallback(err);
+                }
+                else if (!user) {
+                    errorCallback('user was not found');
+                }
+                else {
+                    successCallback();
+                }
+            });
+        }
     }));
 
     app.get('/user/settings', function(req, res) {
