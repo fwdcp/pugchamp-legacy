@@ -1,3 +1,4 @@
+var bodyParser = require('body-parser');
 var config = require('config');
 var jwt = require('jsonwebtoken');
 var mongoose = require('mongoose');
@@ -104,5 +105,18 @@ module.exports = function(app, io, server) {
         else {
             res.redirect('/user/login');
         }
+    });
+    app.post('/user/settings', bodyParser.urlencoded({extended: false}), function(req, res) {
+        if (req.body.alias && !req.user.alias) {
+            req.user.alias = req.body.alias;
+        }
+
+        if (req.user.alias) {
+            req.user.setUp = true;
+        }
+
+        req.user.save();
+        res.locals.user = req.user.toObject();
+        res.redirect('/user/settings');
     });
 };
