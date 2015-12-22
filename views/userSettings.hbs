@@ -12,12 +12,33 @@
 <body>
     {{> header }}
 
-	Hey, you need to properly register before moving on!
+	<div class="container">
+		<h2>User Settings</h2>
+
+		{{#unless user.setUp}}
+			<div class="alert alert-warning" role="alert"><strong>Warning</strong>: you need to set up your account before you can use this site.</div>
+		{{/unless}}
+
+		<form class="form-horizontal" method="POST">
+			<div class="form-group">
+				<label for="alias" class="col-sm-2 control-label">Alias</label>
+				<div class="col-sm-10">
+					{{#unless user.alias}}
+						<input type="text" class="form-control" id="alias" placeholder="thesupremecommander">
+					{{else}}
+						{{user.alias}}
+					{{/unless}}
+				</div>
+			</div>
+			<div class="form-group">
+		    	<div class="col-sm-offset-2 col-sm-10">
+		      		<button type="submit" class="btn btn-primary">Save</button>
+		    	</div>
+		  	</div>
+		</form>
+	</div>
 
     {{> footer }}
-
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/pugchamp.js"></script>
 </body>
 
 </html>
