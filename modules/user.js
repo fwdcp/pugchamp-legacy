@@ -108,7 +108,9 @@ module.exports = function(app, io, server) {
     });
     app.post('/user/settings', bodyParser.urlencoded({extended: false}), function(req, res) {
         if (req.body.alias && !req.user.alias) {
-            req.user.alias = req.body.alias;
+            if (/\w+/.test(req.body.alias)) {
+                req.user.alias = req.body.alias;
+            }
         }
 
         if (req.user.alias) {
