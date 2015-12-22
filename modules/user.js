@@ -56,10 +56,14 @@ module.exports = function(app, io, server) {
     });
 
     app.get('/user/login', passport.authenticate('openid'));
-    app.get('/user/login/return', passport.authenticate('openid', {
-        successRedirect: '/',
-        failureRedirect: '/'
-    }));
+    app.get('/user/login/return', passport.authenticate('openid'), function(req, res) {
+        if (req.user && !req.user.setUp) {
+            res.redirect('/user/settings');
+        }
+        else {
+            res.redirect('/');
+        }
+    });
     app.get('/user/logout', function(req, res) {
         req.logout();
         res.redirect('/');
@@ -99,13 +103,6 @@ module.exports = function(app, io, server) {
         }
         else {
             res.redirect('/user/login');
-        }
-    });
-    app.get('/', function(req, res, next) {
-        if (req.user && !req.user.setUp) {
-            res.redirect('/user/settings');
-        } else {
-            next();
         }
     });
 };
