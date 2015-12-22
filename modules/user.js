@@ -51,7 +51,7 @@ module.exports = function(app, io, server) {
     });
 
     app.use(function(req, res, next) {
-        res.locals.user = req.user.toObject();
+        res.locals.user = req.user ? req.user.toObject() : null;
         next();
     });
 
