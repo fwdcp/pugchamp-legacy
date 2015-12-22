@@ -24,9 +24,9 @@
 				<label for="alias" class="col-sm-2 control-label">Alias</label>
 				<div class="col-sm-10">
 					{{#unless user.alias}}
-						<input type="text" class="form-control" id="alias" placeholder="thesupremecommander">
+						<input type="text" class="form-control" id="alias" name="alias" placeholder="thesupremecommander">
 					{{else}}
-						{{user.alias}}
+						<input type="text" class="form-control" id="alias" name="alias" value="{{user.alias}}" disabled>
 					{{/unless}}
 				</div>
 			</div>
