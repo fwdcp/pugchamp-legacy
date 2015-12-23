@@ -12,6 +12,22 @@
 <body>
     {{> header }}
 
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12">
+				<div class="roles">
+					{{#each roles}}
+						<div class="role">
+							<div class="role-select" id="{{@key}}-select">
+								<label><input type="checkbox"> {{this.name}}</label>
+							</div>
+						</div>
+					{{/each}}
+				</div>
+			</div>
+		</div>
+	</div>
+
     {{> footer }}
 
     <script src="/socket.io/socket.io.js"></script>
