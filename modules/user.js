@@ -140,8 +140,8 @@ module.exports = function(app, io, server) {
             req.user.setUp = true;
         }
 
-        req.user.save();
-        res.locals.user = req.user.toObject();
-        res.redirect('/user/settings');
+        req.user.save(function() {
+            res.redirect('/user/settings');
+        });
     });
 };
