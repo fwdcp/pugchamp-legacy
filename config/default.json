@@ -1,30 +1,31 @@
 {
     "app": {
         "games": {
+            "playersPerTeam": 6,
             "roles": {
                 "scout": {
                     "name": "Scout",
                     "class": "scout",
-                    "min": 4,
-                    "max": 4
+                    "min": 2,
+                    "max": 2
                 },
                 "soldier": {
                     "name": "Soldier",
                     "class": "soldier",
-                    "min": 4,
-                    "max": 4
+                    "min": 2,
+                    "max": 2
                 },
                 "demoman": {
                     "name": "Demoman",
                     "class": "demoman",
-                    "min": 2,
-                    "max": 2
+                    "min": 1,
+                    "max": 1
                 },
                 "medic": {
                     "name": "Medic",
                     "class": "medic",
-                    "min": 2,
-                    "max": 2
+                    "min": 1,
+                    "max": 1
                 }
             }
         }
