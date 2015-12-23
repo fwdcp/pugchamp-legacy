@@ -3,9 +3,8 @@
 <html>
 
 <head>
-	<script src="/components/jquery/dist/jquery.min.js"></script>
+    <link rel="import" href="/components/polymer/polymer.html">
     <link rel="stylesheet" href="/components/bootstrap/dist/css/bootstrap.min.css">
-    <script src="/components/bootstrap/dist/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 
@@ -15,11 +14,16 @@
 	<div class="container">
 		<div class="row">
 			<div class="col-md-12">
+				<div id="restriction-alerts"></div>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-12">
 				<div class="roles">
 					{{#each roles}}
 						<div class="role">
-							<div class="role-select" id="{{@key}}-select">
-								<label><input type="checkbox"> {{this.name}}</label>
+							<div class="role-select">
+								<label><input type="checkbox" data-role="{{@key}}"> {{this.name}}</label>
 							</div>
 						</div>
 					{{/each}}
@@ -30,6 +34,8 @@
 
     {{> footer }}
 
+	<script src="/components/jquery/dist/jquery.min.js"></script>
+	<script src="/components/bootstrap/dist/js/bootstrap.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/pugchamp.js"></script>
 </body>

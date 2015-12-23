@@ -1,19 +1,16 @@
 var socket = io();
 
 socket.on('connect', function() {
+    socket.emit('requestRestrictions');
+
     var tokenRequest = new XMLHttpRequest();
 
     tokenRequest.onreadystatechange = function() {
         if (tokenRequest.readyState === XMLHttpRequest.DONE) {
             if (tokenRequest.status === 200) {
-                console.log('Received token.');
-
                 socket.emit('authenticate', {token: tokenRequest.responseText});
             }
-            else if (tokenRequest.status === 401) {
-                console.log('Not logged in.');
-            }
-            else {
+            else if (tokenRequest.status !== 401) {
                 throw new Error('Invalid HTTP code received.');
             }
         }
@@ -24,5 +21,35 @@ socket.on('connect', function() {
 });
 
 socket.on('authenticated', function() {
-    console.log('Authenticated with the server.');
+    socket.emit('requestRestrictions');
+});
+
+socket.on('restrictionsAvailable', function(restrictions, reasons) {
+    $('#restriction-alerts').empty();
+    reasons.forEach(function(reason) {
+        $('<div class="alert alert-danger" role="alert"><i class="glyphicon glyphicon-alert"></i> ' + reason + '</div>').appendTo('#restriction-alerts');
+    });
+
+    if (restrictions.includes('play')) {
+        $('.role-select input[type=checkbox]').prop('disabled', true);
+        $('.role-select input[type=checkbox]').prop('hidden', true);
+    }
+    else {
+        $('.role-select input[type=checkbox]').prop('disabled', false);
+        $('.role-select input[type=checkbox]').prop('hidden', false);
+    }
+
+    if (restrictions.includes('play') || restrictions.includes('captain')) {
+        // disable captain button
+    }
+    else {
+        // enable captain button
+    }
+
+    if (restrictions.includes('chat')) {
+        // disable chat box
+    }
+    else {
+        // enable chat box
+    }
 });
