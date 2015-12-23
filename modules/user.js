@@ -92,7 +92,9 @@ module.exports = function(app, io, server) {
             return;
         }
 
-        var token = jwt.sign(req.user.id, config.get('server.tokenSecret'));
+        var token = jwt.sign(req.user.id, config.get('server.tokenSecret'), {
+            expiresIn: config.get('server.tokenExpiration')
+        });
 
         res.status(200).send(token);
     });

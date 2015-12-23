@@ -11,13 +11,33 @@ socket.on('connect', function() {
                 socket.emit('authenticate', {token: tokenRequest.responseText});
             }
             else if (tokenRequest.status !== 401) {
-                throw new Error('Invalid HTTP code received.');
+                throw new Error('Token request failed.');
             }
         }
     };
 
     tokenRequest.open('GET', '/user/token', true);
     tokenRequest.send(null);
+});
+
+socket.on('error', function(err) {
+    if (error.type === 'UnauthorizedError' || error.code === 'invalid_token') {
+        var tokenRequest = new XMLHttpRequest();
+
+        tokenRequest.onreadystatechange = function() {
+            if (tokenRequest.readyState === XMLHttpRequest.DONE) {
+                if (tokenRequest.status === 200) {
+                    socket.emit('authenticate', {token: tokenRequest.responseText});
+                }
+                else if (tokenRequest.status !== 401) {
+                    throw new Error('Token request failed.');
+                }
+            }
+        };
+
+        tokenRequest.open('GET', '/user/token', true);
+        tokenRequest.send(null);
+    }
 });
 
 socket.on('authenticated', function() {
