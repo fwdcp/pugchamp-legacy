@@ -29,8 +29,4 @@ app.use('/components', serveStatic(path.resolve(__dirname, 'bower_components')))
 
 require('./modules')(app, io, server);
 
-app.get('/', function(req, res) {
-    res.render('index', { user: req.user });
-});
-
 server.listen(config.get('server.listen'));
