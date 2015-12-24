@@ -1,5 +1,20 @@
 var socket = io();
 
+function changeAvailability() {
+    var roles = [];
+
+    $('.role-select input[type=checkbox]:checked').each(function() {
+        roles.push($(this).val());
+    });
+
+    var captain = $('#captain-select input[type=checkbox]').is(':checked');
+
+    socket.emit('changeAvailability', {roles: roles, captain: captain});
+}
+
+$('.role-select input[type=checkbox]').on('change', changeAvailability);
+$('#captain-select input[type=checkbox]').on('change', changeAvailability);
+
 socket.on('connect', function() {
     var tokenRequest = new XMLHttpRequest();
 

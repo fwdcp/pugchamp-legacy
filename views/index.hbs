@@ -18,12 +18,17 @@
 			</div>
 		</div>
 		<div class="row">
+			<div class="col-md-6" id="captain-select" hidden>
+				<label><input type="checkbox" disabled> Captain</label>
+			</div>
+		</div>
+		<div class="row">
 			<div class="col-md-12">
 				<div class="roles">
 					{{#each roles}}
 						<div class="role">
 							<div class="role-select">
-								<label><input type="checkbox" data-role="{{@key}}" disabled hidden> {{this.name}}</label>
+								<label><input type="checkbox" value="{{@key}}" disabled hidden> {{this.name}}</label>
 							</div>
 						</div>
 					{{/each}}
