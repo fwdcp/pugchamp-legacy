@@ -9,7 +9,7 @@ var url = require('url');
 
 var database = require('../database');
 
-module.exports = function(app, io, server) {
+module.exports = function(app, io, self, server) {
     passport.use(new OpenIDStrategy({
         providerURL: 'http://steamcommunity.com/openid',
         returnURL: function(req) {

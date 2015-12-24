@@ -1,4 +1,5 @@
 var config = require('config');
+var EventEmitter = require('events');
 var express = require('express');
 var hbs = require('hbs');
 var http = require('http');
@@ -11,6 +12,7 @@ var socketIO = require('socket.io');
 var app = express();
 var server = http.Server(app);
 var io = socketIO(server);
+var self = new EventEmitter();
 
 app.set('view engine', 'hbs');
 
@@ -27,6 +29,6 @@ app.use(passport.session());
 app.use('/', serveStatic(path.resolve(__dirname, 'public')));
 app.use('/components', serveStatic(path.resolve(__dirname, 'bower_components')));
 
-require('./modules')(app, io, server);
+require('./modules')(app, io, self, server);
 
 server.listen(config.get('server.listen'));

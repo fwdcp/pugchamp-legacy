@@ -4,9 +4,9 @@ var mongoose = require('mongoose');
 
 var database = require('../database');
 
-module.exports = function(app, io, server) {
     var playersAvailable = lodash.mapValues(config.get('app.games.roles'), function() { return []; });
     var captainsAvailable = [];
+module.exports = function(app, io, self, server) {
 
     io.sockets.on('authenticated', function(socket) {
         socket.on('changeAvailability', function(availability, callback) {
