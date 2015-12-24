@@ -1,8 +1,6 @@
 var socket = io();
 
 socket.on('connect', function() {
-    socket.emit('requestRestrictions');
-
     var tokenRequest = new XMLHttpRequest();
 
     tokenRequest.onreadystatechange = function() {
@@ -40,17 +38,13 @@ socket.on('error', function(err) {
     }
 });
 
-socket.on('authenticated', function() {
-    socket.emit('requestRestrictions');
-});
-
-socket.on('restrictionsAvailable', function(restrictions, reasons) {
+socket.on('restrictionsUpdated', function(restrictions) {
     $('#restriction-alerts').empty();
-    reasons.forEach(function(reason) {
+    restrictions.reasons.forEach(function(reason) {
         $('<div class="alert alert-danger" role="alert"><i class="glyphicon glyphicon-alert"></i> ' + reason + '</div>').appendTo('#restriction-alerts');
     });
 
-    if (restrictions.includes('play')) {
+    if (restrictions.aspects.includes('play')) {
         $('.role-select input[type=checkbox]').prop('disabled', true);
         $('.role-select input[type=checkbox]').prop('hidden', true);
     }
@@ -59,14 +53,16 @@ socket.on('restrictionsAvailable', function(restrictions, reasons) {
         $('.role-select input[type=checkbox]').prop('hidden', false);
     }
 
-    if (restrictions.includes('play') || restrictions.includes('captain')) {
-        // disable captain button
+    if (restrictions.aspects.includes('play') || restrictions.aspects.includes('captain')) {
+        $('#captain-select').prop('hidden', true);
+        $('#captain-select input[type=checkbox]').prop('disabled', true);
     }
     else {
-        // enable captain button
+        $('#captain-select').prop('hidden', false);
+        $('#captain-select input[type=checkbox]').prop('disabled', false);
     }
 
-    if (restrictions.includes('chat')) {
+    if (restrictions.aspects.includes('chat')) {
         // disable chat box
     }
     else {

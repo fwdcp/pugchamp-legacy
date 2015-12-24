@@ -9,23 +9,6 @@ var url = require('url');
 
 var database = require('../database');
 
-function sendRestrictions(socket) {
-    var restrictions = [];
-    var reasons = [];
-
-    if (socket.decoded_token) {
-        // check for applied restrictions
-    }
-    else {
-        restrictions.push('play');
-        restrictions.push('chat');
-
-        reasons.push('You cannot play or chat because you are not logged in.');
-    }
-
-    socket.emit('restrictionsAvailable', restrictions, reasons);
-}
-
 module.exports = function(app, io, server) {
     passport.use(new OpenIDStrategy({
         providerURL: 'http://steamcommunity.com/openid',
@@ -118,9 +101,29 @@ module.exports = function(app, io, server) {
     }));
 
     io.sockets.on('connection', function(socket) {
-        socket.on('requestRestrictions', function() {
-            sendRestrictions(socket);
-        });
+        socket.updateRestrictions = function() {
+            var aspects = [];
+            var reasons = [];
+
+            if (socket.decoded_token) {
+                // check for applied restrictions
+            }
+            else {
+                aspects.push('play');
+                aspects.push('chat');
+
+                reasons.push('You cannot play or chat because you are not logged in.');
+            }
+
+            this.restrictions = {aspects: aspects, reasons: reasons};
+
+            socket.emit('restrictionsUpdated', socket.restrictions);
+        };
+
+        socket.updateRestrictions();
+    });
+    io.sockets.on('authenticated', function(socket) {
+        socket.updateRestrictions();
     });
 
     app.get('/user/settings', function(req, res) {
