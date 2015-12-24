@@ -105,25 +105,41 @@ module.exports = function(app, io, self, server) {
             var aspects = [];
             var reasons = [];
 
-            if (socket.decoded_token) {
+            if (this.user) {
                 // check for applied restrictions
+
+                this.restrictions = {aspects: aspects, reasons: reasons};
+
+                this.emit('restrictionsUpdated', this.restrictions);
             }
             else {
                 aspects.push('play');
                 aspects.push('chat');
 
                 reasons.push('You cannot play or chat because you are not logged in.');
+
+                this.restrictions = {aspects: aspects, reasons: reasons};
+
+                this.emit('restrictionsUpdated', this.restrictions);
             }
-
-            this.restrictions = {aspects: aspects, reasons: reasons};
-
-            socket.emit('restrictionsUpdated', socket.restrictions);
         };
 
         socket.updateRestrictions();
     });
     io.sockets.on('authenticated', function(socket) {
-        socket.updateRestrictions();
+        socket.updateUser = function() {
+            database.User.findOne(new mongoose.Types.ObjectId(this.decoded_token), function(err, user) {
+                if (err) {
+                    throw err;
+                }
+
+                this.user = user;
+
+                this.updateRestrictions();
+            }.bind(this));
+        }
+
+        socket.updateUser();
     });
 
     app.get('/user/settings', function(req, res) {
