@@ -1,3 +1,4 @@
+var Combinatorics = require('js-combinatorics');
 var config = require('config');
 var lodash = require('lodash');
 var mongoose = require('mongoose');
@@ -7,54 +8,48 @@ var database = require('../database');
 function calculateNeededRoles(playersAvailable) {
     var roles = config.get('app.games.roles');
     var roleNames = lodash.keys(roles);
-    var missingCombinations = [];
-    var filledRoles = [];
 
-    lodash.forEach(roleNames, function(roleName) {
-        var available = playersAvailable[roleName];
-        var min = roles[roleName].min * 2;
+    var neededCombinations = [];
 
-        if (available.size < min) {
-            missingCombinations.push({roles: [roleName], needed: min - available.size});
-        }
-        else {
-            filledRoles.push(roleName);
-        }
-    });
+    var n = lodash.size(roles);
 
-    var previousFilledCombinations = lodash.map(filledRoles, function(roleName) {
-        return [roleName];
-    });
+    for (var k = 1; k <= n; k++) {
+        var combinations = Combinatorics.combination(roleNames, k).toArray();
 
-    while (lodash.size(previousFilledCombinations) > 0) {
-        var newFilledCombinations = [];
-
-        lodash.forEach(previousFilledCombinations, function(previousFilledCombination) {
-            var candidateRoles = lodash.drop(filledRoles, lodash.lastIndexOf(filledRoles, lodash.last(previousFilledCombination)) + 1);
-            var previousMin = lodash.reduce(previousFilledCombination, function(min, roleName) {
-                return min + (roles[roleName].min * 2);
-            }, 0);
-            var previousAvailable = lodash.reduce(previousFilledCombination, function(available, roleName) {
-                return new Set([...available, ...playersAvailable[roleName]]);
-            }, new Set());
-
-            lodash.forEach(candidateRoles, function(candidateRole) {
-                var available = new Set([...previousAvailable, ...playersAvailable[candidateRole]]);
-                var min = previousMin + (roles[candidateRole].min * 2);
-
-                if (available.size < min) {
-                    missingCombinations.push({roles: [...previousFilledCombination, candidateRole], needed: min - available.size});
-                }
-                else {
-                    newFilledCombinations.push([...previousFilledCombination, candidateRole]);
-                }
+        lodash.each(combinations, function(combination) {
+            var combinationInfo = lodash.reduce(combination, function(current, roleName) {
+                return {
+                    available: new Set([...current.available, ...playersAvailable[roleName]]),
+                    required: current.required + (roles[roleName].min * 2)
+                };
+            }, {
+                available: new Set(),
+                required: 0
             });
-        });
 
-        previousFilledCombinations = newFilledCombinations;
+            var missing = combinationInfo.required - combinationInfo.available.size;
+
+            if (missing > 0) {
+                var accounted = lodash.reduce(neededCombinations, function(current, neededCombination) {
+                    if (lodash.size(lodash.intersection(combination, neededCombination.roles)) === lodash.size(neededCombination.roles)) {
+                        return current + neededCombination.needed;
+                    }
+                    else {
+                        return current;
+                    }
+                }, 0);
+
+                if (missing > accounted) {
+                    neededCombinations.push({
+                        roles: combination,
+                        needed: missing - accounted
+                    });
+                }
+            }
+        });
     }
 
-    return missingCombinations;
+    return neededCombinations;
 }
 
 module.exports = function(app, io, self, server) {
