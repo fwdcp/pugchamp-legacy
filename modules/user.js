@@ -10,6 +10,8 @@ var url = require('url');
 var database = require('../database');
 
 module.exports = function(app, io, self, server) {
+    self.userSockets = {};
+
     passport.use(new OpenIDStrategy({
         providerURL: 'http://steamcommunity.com/openid',
         returnURL: function(req) {
@@ -127,6 +129,15 @@ module.exports = function(app, io, self, server) {
         socket.updateRestrictions();
     });
     io.sockets.on('authenticated', function(socket) {
+        if (!self.userSockets[socket.decoded_token]) {
+            self.userSockets[socket.decoded_token] = new Set();
+        }
+        self.userSockets[socket.decoded_token].add(socket.id);
+
+        socket.on('disconnect', function() {
+            self.userSockets[socket.decoded_token].delete(socket.id);
+        });
+
         socket.updateUser = function() {
             database.User.findOne(new mongoose.Types.ObjectId(this.decoded_token), function(err, user) {
                 if (err) {
