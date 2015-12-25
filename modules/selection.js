@@ -47,27 +47,22 @@ module.exports = function(app, io, self, server) {
     var neededRoles = calculateNeededRoles(playersAvailable);
 
     var prepareStatusMessage = function() {
-        var playersAvailableArray = lodash.mapValues(playersAvailable, function(available) {
-            return [...available];
-        });
-        var captainsAvailableArray = [...captainsAvailable];
-
-        var playersInfo = lodash.mapValues(playersAvailableArray, function(availableArray, roleName) {
-            return lodash.map(availableArray, function(userID) {
+        var currentPlayersAvailable = lodash.mapValues(playersAvailable, function(available, roleName) {
+            return lodash.map([...available], function(userID) {
                 return lodash.omit(io.sockets.connected[self.userSockets[userID].values().next().value].user.toObject(), ['_id', 'id', '__v']);
             });
         });
-        var captainsInfo = lodash.map(captainsAvailableArray, function(userID) {
+        var currentCaptainsAvailable = lodash.map([...captainsAvailable], function(userID) {
             return lodash.omit(io.sockets.connected[self.userSockets[userID].values().next().value].user.toObject(), ['_id', 'id', '__v']);
         });
-        var neededRolesInfo = lodash.map(neededRoles, function(neededRole) {
+        var currentNeededRoles = lodash.map(neededRoles, function(neededRole) {
             return neededRole;
         });
 
         return {
-            playersAvailable: playersInfo,
-            captainsAvailable: captainsInfo,
-            neededRoles: neededRolesInfo
+            playersAvailable: currentPlayersAvailable,
+            captainsAvailable: currentCaptainsAvailable,
+            neededRoles: currentNeededRoles
         };
     };
 
