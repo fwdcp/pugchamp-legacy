@@ -30,21 +30,10 @@ function calculateNeededRoles(playersAvailable) {
             var missing = combinationInfo.required - combinationInfo.available.size;
 
             if (missing > 0) {
-                var accounted = lodash.reduce(neededCombinations, function(current, neededCombination) {
-                    if (lodash.size(lodash.intersection(combination, neededCombination.roles)) === lodash.size(neededCombination.roles)) {
-                        return current + neededCombination.needed;
-                    }
-                    else {
-                        return current;
-                    }
-                }, 0);
-
-                if (missing > accounted) {
-                    neededCombinations.push({
-                        roles: combination,
-                        needed: missing - accounted
-                    });
-                }
+                neededCombinations.push({
+                    roles: combination,
+                    needed: missing
+                });
             }
         });
     }
