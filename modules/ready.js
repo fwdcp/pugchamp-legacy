@@ -46,8 +46,8 @@ module.exports = function(app, io, self, server) {
         return new Set();
     });
     var captainsAvailable = new Set();
-    var readiesReceived = [];
     var neededRoles = calculateNeededRoles(playersAvailable);
+    var readiesReceived = new Set();
 
     var prepareStatusMessage = function() {
         var currentPlayersAvailable = lodash.mapValues(playersAvailable, function(available, roleName) {
