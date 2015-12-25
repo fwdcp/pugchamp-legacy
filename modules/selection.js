@@ -44,6 +44,7 @@ function calculateNeededRoles(playersAvailable) {
 module.exports = function(app, io, self, server) {
     var playersAvailable = lodash.mapValues(config.get('app.games.roles'), function() { return new Set(); });
     var captainsAvailable = new Set();
+    var readiesReceived = [];
     var neededRoles = calculateNeededRoles(playersAvailable);
 
     var prepareStatusMessage = function() {
@@ -98,7 +99,44 @@ module.exports = function(app, io, self, server) {
             currentStatusMessage = prepareStatusMessage();
             io.sockets.emit('statusUpdated', currentStatusMessage);
 
-            // perform checks for PUG ready
+            if (lodash.size(neededRoles) === 0 && captainsAvailable.size >= 2) {
+                readiesReceived.clear();
+                io.sockets.emit('readiesRequested');
+
+                setTimeout(function() {
+                    var finalReadiesReceived = [...readiesReceived];
+                    readiesReceived.clear();
+
+                    var finalPlayersAvailable = lodash.mapValues(playersAvailable, function(available, roleName) {
+                        return new Set(lodash.intersection([...available], finalReadiesReceived));
+                    });
+                    var finalCaptainsAvailable = new Set(lodash.intersection([...captainsAvailable], finalReadiesReceived));
+                    var finalNeededRoles = calculateNeededRoles(finalPlayersAvailable);
+
+                    playersAvailable = finalPlayersAvailable;
+                    captainsAvailable = finalCaptainsAvailable;
+                    neededRoles = finalNeededRoles;
+                    currentStatusMessage = prepareStatusMessage();
+                    io.sockets.emit('statusUpdated', currentStatusMessage);
+
+                    if (lodash.size(finalNeededRoles) === 0 && finalCaptainsAvailable.size >= 2) {
+                        self.emit('launchPicking', {
+                            players: finalPlayersAvailable,
+                            captains: finalCaptainsAvailable
+                        });
+                    }
+                    else {
+                        io.sockets.emit('launchAborted');
+                    }
+                }, 60000);
+            }
+        });
+
+        socket.on('ready', function() {
+            readiesReceived.add(socket.user.id);
+        });
+        socket.on('unready', function() {
+            readiesReceived.delete(socket.user.id);
         });
 
         socket.on('disconnect', function() {
