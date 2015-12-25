@@ -54,7 +54,6 @@ socket.on('error', function(err) {
 });
 
 socket.on('statusUpdated', function(currentStatus) {
-    console.log('status received');
     $('.role-players template[is=dom-repeat]').each(function() {
         this.items = currentStatus.playersAvailable[this.dataset.type];
     });

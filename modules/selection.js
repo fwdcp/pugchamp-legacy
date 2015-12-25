@@ -141,8 +141,6 @@ module.exports = function(app, io, self, server) {
 
         socket.on('disconnect', function() {
             if (self.userSockets[socket.user.id].size === 0) {
-                console.log('delete delete delte');
-
                 lodash.forEach(playersAvailable, function(players, role) {
                     players.delete(socket.user.id);
                 });
