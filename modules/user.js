@@ -31,17 +31,19 @@ module.exports = function(app, io, self, server) {
     }, function(identifier, done) {
         var id = identifier.replace('http://steamcommunity.com/openid/id/', '');
 
-        database.User.findOne({steamID: id}, function(err, user) {
+        database.User.findOne({
+            steamID: id
+        }, function(err, user) {
             if (err) {
                 done(err);
-            }
-            else if (!user) {
-                user = new database.User({steamID: id});
+            } else if (!user) {
+                user = new database.User({
+                    steamID: id
+                });
                 user.save(function(err) {
                     done(err, user);
                 });
-            }
-            else {
+            } else {
                 done(null, user);
             }
         });
@@ -62,8 +64,7 @@ module.exports = function(app, io, self, server) {
     app.get('/user/login/return', passport.authenticate('openid'), function(req, res) {
         if (req.user && !req.user.setUp) {
             res.redirect('/user/settings');
-        }
-        else {
+        } else {
             res.redirect('/');
         }
     });
@@ -91,11 +92,9 @@ module.exports = function(app, io, self, server) {
             database.User.findOne(new mongoose.Types.ObjectId(token), function(err, user) {
                 if (err) {
                     errorCallback(err);
-                }
-                else if (!user) {
+                } else if (!user) {
                     errorCallback('user was not found');
-                }
-                else {
+                } else {
                     successCallback();
                 }
             });
@@ -110,17 +109,22 @@ module.exports = function(app, io, self, server) {
             if (this.user) {
                 // check for applied restrictions
 
-                this.restrictions = {aspects: aspects, reasons: reasons};
+                this.restrictions = {
+                    aspects: aspects,
+                    reasons: reasons
+                };
 
                 this.emit('restrictionsUpdated', this.restrictions);
-            }
-            else {
+            } else {
                 aspects.push('play');
                 aspects.push('chat');
 
                 reasons.push('You cannot play or chat because you are not logged in.');
 
-                this.restrictions = {aspects: aspects, reasons: reasons};
+                this.restrictions = {
+                    aspects: aspects,
+                    reasons: reasons
+                };
 
                 this.emit('restrictionsUpdated', this.restrictions);
             }
@@ -156,12 +160,13 @@ module.exports = function(app, io, self, server) {
     app.get('/user/settings', function(req, res) {
         if (req.user) {
             res.render('userSettings');
-        }
-        else {
+        } else {
             res.redirect('/user/login');
         }
     });
-    app.post('/user/settings', bodyParser.urlencoded({extended: false}), function(req, res) {
+    app.post('/user/settings', bodyParser.urlencoded({
+        extended: false
+    }), function(req, res) {
         if (req.body.alias && !req.user.alias) {
             if (/\w+/.test(req.body.alias)) {
                 req.user.alias = req.body.alias;

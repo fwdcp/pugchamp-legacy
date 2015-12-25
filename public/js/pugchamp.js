@@ -9,7 +9,10 @@ function changeAvailability() {
 
     var captain = $('#captain-select input[type=checkbox]').is(':checked');
 
-    socket.emit('changeAvailability', {roles: roles, captain: captain});
+    socket.emit('changeAvailability', {
+        roles: roles,
+        captain: captain
+    });
 }
 
 $('.role-select input[type=checkbox]').on('change', changeAvailability);
@@ -21,9 +24,10 @@ socket.on('connect', function() {
     tokenRequest.onreadystatechange = function() {
         if (tokenRequest.readyState === XMLHttpRequest.DONE) {
             if (tokenRequest.status === 200) {
-                socket.emit('authenticate', {token: tokenRequest.responseText});
-            }
-            else if (tokenRequest.status !== 401) {
+                socket.emit('authenticate', {
+                    token: tokenRequest.responseText
+                });
+            } else if (tokenRequest.status !== 401) {
                 throw new Error('Token request failed.');
             }
         }
@@ -40,9 +44,10 @@ socket.on('error', function(err) {
         tokenRequest.onreadystatechange = function() {
             if (tokenRequest.readyState === XMLHttpRequest.DONE) {
                 if (tokenRequest.status === 200) {
-                    socket.emit('authenticate', {token: tokenRequest.responseText});
-                }
-                else if (tokenRequest.status !== 401) {
+                    socket.emit('authenticate', {
+                        token: tokenRequest.responseText
+                    });
+                } else if (tokenRequest.status !== 401) {
                     throw new Error('Token request failed.');
                 }
             }
@@ -68,8 +73,7 @@ socket.on('restrictionsUpdated', function(restrictions) {
     if (restrictions.aspects.includes('play')) {
         $('.role-select input[type=checkbox]').prop('disabled', true);
         $('.role-select input[type=checkbox]').prop('hidden', true);
-    }
-    else {
+    } else {
         $('.role-select input[type=checkbox]').prop('disabled', false);
         $('.role-select input[type=checkbox]').prop('hidden', false);
     }
@@ -77,16 +81,14 @@ socket.on('restrictionsUpdated', function(restrictions) {
     if (restrictions.aspects.includes('play') || restrictions.aspects.includes('captain')) {
         $('#captain-select').prop('hidden', true);
         $('#captain-select input[type=checkbox]').prop('disabled', true);
-    }
-    else {
+    } else {
         $('#captain-select').prop('hidden', false);
         $('#captain-select input[type=checkbox]').prop('disabled', false);
     }
 
     if (restrictions.aspects.includes('chat')) {
         // disable chat box
-    }
-    else {
+    } else {
         // enable chat box
     }
 });

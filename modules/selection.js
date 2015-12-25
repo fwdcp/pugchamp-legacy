@@ -42,7 +42,9 @@ function calculateNeededRoles(playersAvailable) {
 }
 
 module.exports = function(app, io, self, server) {
-    var playersAvailable = lodash.mapValues(config.get('app.games.roles'), function() { return new Set(); });
+    var playersAvailable = lodash.mapValues(config.get('app.games.roles'), function() {
+        return new Set();
+    });
     var captainsAvailable = new Set();
     var readiesReceived = [];
     var neededRoles = calculateNeededRoles(playersAvailable);
@@ -79,8 +81,7 @@ module.exports = function(app, io, self, server) {
                 lodash.forEach(playersAvailable, function(players, role) {
                     if (lodash.includes(availability.roles, role)) {
                         players.add(socket.user.id);
-                    }
-                    else {
+                    } else {
                         players.delete(socket.user.id);
                     }
                 });
@@ -88,8 +89,7 @@ module.exports = function(app, io, self, server) {
                 if (!lodash.includes(socket.restrictions.aspects, 'captain')) {
                     if (availability.captain) {
                         captainsAvailable.add(socket.user.id);
-                    }
-                    else {
+                    } else {
                         captainsAvailable.delete(socket.user.id);
                     }
                 }
@@ -124,8 +124,7 @@ module.exports = function(app, io, self, server) {
                             players: finalPlayersAvailable,
                             captains: finalCaptainsAvailable
                         });
-                    }
-                    else {
+                    } else {
                         io.sockets.emit('launchAborted');
                     }
                 }, 60000);
@@ -155,6 +154,9 @@ module.exports = function(app, io, self, server) {
     });
 
     app.get('/', function(req, res) {
-        res.render('index', { user: req.user, roles: config.get('app.games.roles') });
+        res.render('index', {
+            user: req.user,
+            roles: config.get('app.games.roles')
+        });
     });
 };

@@ -13,22 +13,52 @@ var userSchema = {
     stats: {
         overall: {
             games: {
-                played: {type: Number, default: 0},
-                wins: {type: Number, default: 0},
-                losses: {type: Number, default: 0},
-                ties: {type: Number, default: 0}
+                played: {
+                    type: Number,
+                    default: 0
+                },
+                wins: {
+                    type: Number,
+                    default: 0
+                },
+                losses: {
+                    type: Number,
+                    default: 0
+                },
+                ties: {
+                    type: Number,
+                    default: 0
+                }
             },
             skill: {
-                rating: {type: Number, default: 1500},
-                deviation: {type: Number, default: 500}
+                rating: {
+                    type: Number,
+                    default: 1500
+                },
+                deviation: {
+                    type: Number,
+                    default: 500
+                }
             }
         },
         captain: {
             games: {
-                played: {type: Number, default: 0},
-                wins: {type: Number, default: 0},
-                losses: {type: Number, default: 0},
-                ties: {type: Number, default: 0}
+                played: {
+                    type: Number,
+                    default: 0
+                },
+                wins: {
+                    type: Number,
+                    default: 0
+                },
+                losses: {
+                    type: Number,
+                    default: 0
+                },
+                ties: {
+                    type: Number,
+                    default: 0
+                }
             }
         }
     }
