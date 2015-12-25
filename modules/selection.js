@@ -46,8 +46,35 @@ module.exports = function(app, io, self, server) {
     var captainsAvailable = new Set();
     var neededRoles = calculateNeededRoles(playersAvailable);
 
-    io.sockets.on('connected', function(socket) {
-        // send current status of picking
+    var prepareStatusMessage = function() {
+        var playersAvailableArray = lodash.mapValues(playersAvailable, function(available) {
+            return [...available];
+        });
+        var captainsAvailableArray = [...captainsAvailable];
+
+        var playersInfo = lodash.mapValues(playersAvailableArray, function(availableArray, roleName) {
+            return lodash.map(availableArray, function(userID) {
+                return lodash.omit(io.sockets.connected[self.userSockets[userID].values().next().value].user.toObject(), ['_id', 'id', '__v']);
+            });
+        });
+        var captainsInfo = lodash.map(captainsAvailableArray, function(userID) {
+            return lodash.omit(io.sockets.connected[self.userSockets[userID].values().next().value].user.toObject(), ['_id', 'id', '__v']);
+        });
+        var neededRolesInfo = lodash.map(neededRoles, function(neededRole) {
+            return neededRole;
+        });
+
+        return {
+            playersAvailable: playersInfo,
+            captainsAvailable: captainsInfo,
+            neededRoles: neededRolesInfo
+        };
+    };
+
+    var currentStatusMessage = prepareStatusMessage();
+
+    io.sockets.on('connection', function(socket) {
+        socket.emit('statusUpdated', currentStatusMessage);
     });
 
     io.sockets.on('authenticated', function(socket) {
@@ -55,26 +82,44 @@ module.exports = function(app, io, self, server) {
             if (!lodash.includes(socket.restrictions.aspects, 'play')) {
                 lodash.forEach(playersAvailable, function(players, role) {
                     if (lodash.includes(availability.roles, role)) {
-                        players.add(socket.id);
+                        players.add(socket.user.id);
                     }
                     else {
-                        players.delete(socket.id);
+                        players.delete(socket.user.id);
                     }
                 });
 
                 if (!lodash.includes(socket.restrictions.aspects, 'captain')) {
                     if (availability.captain) {
-                        captainsAvailable.add(socket.id);
+                        captainsAvailable.add(socket.user.id);
                     }
                     else {
-                        captainsAvailable.delete(socket.id);
+                        captainsAvailable.delete(socket.user.id);
                     }
                 }
             }
 
             neededRoles = calculateNeededRoles(playersAvailable);
+            currentStatusMessage = prepareStatusMessage();
+            io.sockets.emit('statusUpdated', currentStatusMessage);
 
-            // perform checks for PUG ready and send current status to clients
+            // perform checks for PUG ready
+        });
+
+        socket.on('disconnect', function() {
+            if (self.userSockets[socket.user.id].size === 0) {
+                console.log('delete delete delte');
+
+                lodash.forEach(playersAvailable, function(players, role) {
+                    players.delete(socket.user.id);
+                });
+
+                captainsAvailable.delete(socket.user.id);
+
+                neededRoles = calculateNeededRoles(playersAvailable);
+                currentStatusMessage = prepareStatusMessage();
+                io.sockets.emit('statusUpdated', currentStatusMessage);
+            }
         });
     });
 

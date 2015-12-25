@@ -30,6 +30,14 @@
 							<div class="role-select">
 								<label><input type="checkbox" value="{{@key}}" disabled hidden> {{this.name}}</label>
 							</div>
+
+                            <div class="role-players">
+    							<template data-type="{{@key}}" is="dom-repeat">
+                                    <div class="role-player">
+                                        \{{item.alias}}
+                                    </div>
+                                </template>
+                            </div>
 						</div>
 					{{/each}}
 				</div>
