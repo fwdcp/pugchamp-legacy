@@ -73,11 +73,13 @@ socket.on('launchStatusUpdated', function(currentStatus) {
     $('#captains-list').text(_.map(currentStatus.captainsAvailable, function(player) {
         return player.alias;
     }).join(', '));
+});
 
+socket.on('userAvailabilityUpdated', function(availability) {
     internalAvailabilityChange = true;
 
-    _.each(currentStatus.playersAvailable, function(rolePlayersAvailable, roleName) {
-        if (_.find(rolePlayersAvailable, 'steamID', window.steamID)) {
+    _.each(availability.roles, function(available, roleName) {
+        if (available) {
             $('.role-select input[type=checkbox][value=' + roleName + ']').prop('checked', true);
         }
         else {
@@ -85,7 +87,7 @@ socket.on('launchStatusUpdated', function(currentStatus) {
         }
     });
 
-    if (_.find(currentStatus.captainsAvailable, 'steamID', window.steamID)) {
+    if (availability.captain) {
         $('#captain-select input[type=checkbox]').prop('checked', true);
     }
     else {

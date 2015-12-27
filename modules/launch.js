@@ -194,6 +194,17 @@ module.exports = function(app, io, self, server) {
             captainsAvailable.delete(newAvailability.userID);
         }
 
+        self.emit('sendMessageToUser', {
+            userID: newAvailability.userID,
+            name: 'userAvailabilityUpdated',
+            arguments: [{
+                roles: lodash.mapValues(playersAvailable, function(players) {
+                    return players.has(newAvailability.userID)
+                }),
+                captain: captainsAvailable.has(newAvailability.userID)
+            }]
+        });
+
         attemptLaunch();
     });
     self.on('updateUserReadyStatus', function(readyInfo) {
@@ -224,6 +235,17 @@ module.exports = function(app, io, self, server) {
                 userID: socket.decoded_token,
                 ready: ready
             });
+        });
+
+        self.emit('sendMessageToUser', {
+            userID: socket.decoded_token,
+            name: 'userAvailabilityUpdated',
+            arguments: [{
+                roles: lodash.mapValues(playersAvailable, function(players) {
+                    return players.has(socket.decoded_token)
+                }),
+                captain: captainsAvailable.has(socket.decoded_token)
+            }]
         });
     });
 
