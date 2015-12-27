@@ -64,6 +64,10 @@ socket.on('launchStatusUpdated', function(currentStatus) {
     $('.role-players template[is=dom-repeat]').each(function() {
         this.items = currentStatus.playersAvailable[this.dataset.type];
     });
+
+    $('#captains-list').text(_.map(currentStatus.captainsAvailable, function(player) {
+        return player.alias;
+    }).join(', '));
 });
 
 socket.on('restrictionsUpdated', function(restrictions) {

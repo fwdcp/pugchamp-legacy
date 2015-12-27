@@ -20,11 +20,6 @@
 			</div>
 		</div>
 		<div class="row">
-			<div class="col-md-6" id="captain-select" hidden>
-				<label><input type="checkbox" disabled> Captain</label>
-			</div>
-		</div>
-		<div class="row">
 			<div class="col-md-12">
 				<div class="roles">
 					{{#each roles}}
@@ -45,12 +40,19 @@
 				</div>
 			</div>
 		</div>
+		<div class="row">
+			<div class="col-md-2" id="captain-select" hidden>
+				<label><input type="checkbox" disabled> Captain</label>
+			</div>
+            <div class="col-md-10" id="captains-list"></div>
+		</div>
 	</div>
 
     {{> footer }}
 
 	<script src="/components/jquery/dist/jquery.min.js"></script>
 	<script src="/components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="/components/lodash/lodash.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/pugchamp.js"></script>
 </body>
