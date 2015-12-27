@@ -1,6 +1,11 @@
 var socket = io();
 
+var internalAvailabilityChange = false;
 function changeAvailability() {
+    if (internalAvailabilityChange) {
+        return;
+    }
+
     var roles = [];
 
     $('.role-select input[type=checkbox]:checked').each(function() {
@@ -68,6 +73,26 @@ socket.on('launchStatusUpdated', function(currentStatus) {
     $('#captains-list').text(_.map(currentStatus.captainsAvailable, function(player) {
         return player.alias;
     }).join(', '));
+
+    internalAvailabilityChange = true;
+
+    _.each(currentStatus.playersAvailable, function(rolePlayersAvailable, roleName) {
+        if (_.find(rolePlayersAvailable, 'steamID', window.steamID)) {
+            $('.role-select input[type=checkbox][value=' + roleName + ']').prop('checked', true);
+        }
+        else {
+            $('.role-select input[type=checkbox][value=' + roleName + ']').prop('checked', false);
+        }
+    });
+
+    if (_.find(currentStatus.captainsAvailable, 'steamID', window.steamID)) {
+        $('#captain-select input[type=checkbox]').prop('checked', true);
+    }
+    else {
+        $('#captain-select input[type=checkbox]').prop('checked', false);
+    }
+
+    internalAvailabilityChange = false;
 });
 
 socket.on('restrictionsUpdated', function(restrictions) {
