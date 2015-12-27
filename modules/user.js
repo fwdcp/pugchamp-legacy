@@ -187,6 +187,8 @@ module.exports = function(app, io, self, server) {
             self.once('usersRetrieved', userRetrieved);
         } else {
             self.userSockets[userID].add(socket.id);
+
+            socket.emit('restrictionsUpdated', self.userRestrictions[socket.decoded_token]);
         }
 
         socket.on('disconnect', function() {
