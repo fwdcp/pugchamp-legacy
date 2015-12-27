@@ -52,6 +52,14 @@ module.exports = function(app, io, self, server) {
         });
     });
 
+    self.on('sendMessageToUser', function(message) {
+        if (self.userSockets[userID]) {
+            for (let socketID of self.userSockets[userID]) {
+                io.sockets.connected[socketID].emit(message.name, ...message.arguments);
+            }
+        }
+    });
+
     self.on('usersRetrieved', function(userIDs) {
         lodash.each(userIDs, function(userID) {
             Promise.all([
@@ -66,11 +74,11 @@ module.exports = function(app, io, self, server) {
                     reasons: []
                 });
 
-                if (self.userSockets[userID]) {
-                    for (let socketID of self.userSockets[userID]) {
-                        io.sockets.connected[socketID].emit('restrictionsUpdated', self.userRestrictions[userID]);
-                    }
-                }
+                self.emit('sendMessageToUser', {
+                    userID: userID,
+                    name: 'restrictionsUpdated',
+                    arguments: [self.userRestrictions[userID]]
+                });
 
                 self.emit('userRestrictionsUpdated', userID);
             });
