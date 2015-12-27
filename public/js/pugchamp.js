@@ -58,7 +58,7 @@ socket.on('error', function(err) {
     }
 });
 
-socket.on('statusUpdated', function(currentStatus) {
+socket.on('launchStatusUpdated', function(currentStatus) {
     $('.role-players template[is=dom-repeat]').each(function() {
         this.items = currentStatus.playersAvailable[this.dataset.type];
     });
@@ -70,7 +70,7 @@ socket.on('restrictionsUpdated', function(restrictions) {
         $('<div class="alert alert-danger" role="alert"><i class="glyphicon glyphicon-alert"></i> ' + reason + '</div>').appendTo('#restriction-alerts');
     });
 
-    if (restrictions.aspects.includes('play')) {
+    if (restrictions.aspects.includes('start')) {
         $('.role-select input[type=checkbox]').prop('disabled', true);
         $('.role-select input[type=checkbox]').prop('hidden', true);
     } else {
@@ -78,7 +78,7 @@ socket.on('restrictionsUpdated', function(restrictions) {
         $('.role-select input[type=checkbox]').prop('hidden', false);
     }
 
-    if (restrictions.aspects.includes('play') || restrictions.aspects.includes('captain')) {
+    if (restrictions.aspects.includes('start') || restrictions.aspects.includes('captain')) {
         $('#captain-select').prop('hidden', true);
         $('#captain-select input[type=checkbox]').prop('disabled', true);
     } else {

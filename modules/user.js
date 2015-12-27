@@ -1,7 +1,10 @@
+/* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
+"use strict";
+
 var bodyParser = require('body-parser');
 var config = require('config');
 var jwt = require('jsonwebtoken');
-var mongoose = require('mongoose');
+var lodash = require('lodash');
 var OpenIDStrategy = require('passport-openid').Strategy;
 var passport = require('passport');
 var socketioJwt = require('socketio-jwt');
@@ -10,7 +13,69 @@ var url = require('url');
 var database = require('../database');
 
 module.exports = function(app, io, self, server) {
+    self.unauthenticatedRestrictions = {
+        aspects: ['start', 'chat'],
+        reasons: ['You are currently not logged on.']
+    };
+    self.userRestrictions = {};
     self.userSockets = {};
+    self.users = {};
+
+    self.getFilteredUser = function getFilteredUser(userID) {
+        return lodash.omit(self.users[userID].toObject(), ['_id', 'id', '__v']);
+    };
+
+    self.on('retrieveUsers', function(userIDs) {
+        if (!userIDs) {
+            userIDs = lodash(io.sockets.connected).map(function(socket) {
+                return socket.decoded_token;
+            }).compact().value();
+        }
+
+        database.User.find({
+            '_id': {
+                $in: userIDs
+            }
+        }, function(err, users) {
+            if (err) {
+                throw err;
+                return;
+            }
+
+            lodash.each(users, function(user) {
+                self.users[user.id] = user;
+            });
+
+            self.emit('usersRetrieved', lodash.map(users, function(user) {
+                return user.id;
+            }));
+        });
+    });
+
+    self.on('usersRetrieved', function(userIDs) {
+        lodash.each(userIDs, function(userID) {
+            Promise.all([
+                // check user bans
+                // check that user is currently not playing in a game
+            ]).then(function(restrictions) {
+                self.userRestrictions[userID] = lodash.reduce(restrictions, function(allRestrictions, restriction) {
+                    allRestrictions.aspects = lodash.union(allRestrictions.aspects, restriction.aspects);
+                    allRestrictions.reasons = [...allRestrictions.reasons, ...restriction.reasons];
+                }, {
+                    aspects: [],
+                    reasons: []
+                });
+
+                if (self.userSockets[userID]) {
+                    for (let socketID of self.userSockets[userID]) {
+                        io.sockets.connected[socketID].emit('restrictionsUpdated', self.userRestrictions[userID]);
+                    }
+                }
+
+                self.emit('userRestrictionsUpdated', userID);
+            });
+        });
+    });
 
     passport.use(new OpenIDStrategy({
         providerURL: 'http://steamcommunity.com/openid',
@@ -29,7 +94,7 @@ module.exports = function(app, io, self, server) {
         },
         stateless: true
     }, function(identifier, done) {
-        var id = identifier.replace('http://steamcommunity.com/openid/id/', '');
+        let id = identifier.replace('http://steamcommunity.com/openid/id/', '');
 
         database.User.findOne({
             steamID: id
@@ -78,7 +143,7 @@ module.exports = function(app, io, self, server) {
             return;
         }
 
-        var token = jwt.sign(req.user.id, config.get('server.tokenSecret'), {
+        let token = jwt.sign(req.user.id, config.get('server.tokenSecret'), {
             expiresIn: config.get('server.tokenExpiration')
         });
 
@@ -89,7 +154,7 @@ module.exports = function(app, io, self, server) {
         required: false,
         secret: config.get('server.tokenSecret'),
         additionalAuth: function(token, successCallback, errorCallback) {
-            database.User.findOne(new mongoose.Types.ObjectId(token), function(err, user) {
+            database.User.findById(token, function(err, user) {
                 if (err) {
                     errorCallback(err);
                 } else if (!user) {
@@ -102,59 +167,39 @@ module.exports = function(app, io, self, server) {
     }));
 
     io.sockets.on('connection', function(socket) {
-        socket.updateRestrictions = function() {
-            var aspects = [];
-            var reasons = [];
-
-            if (this.user) {
-                // check for applied restrictions
-
-                this.restrictions = {
-                    aspects: aspects,
-                    reasons: reasons
-                };
-
-                this.emit('restrictionsUpdated', this.restrictions);
-            } else {
-                aspects.push('play');
-                aspects.push('chat');
-
-                reasons.push('You cannot play or chat because you are not logged in.');
-
-                this.restrictions = {
-                    aspects: aspects,
-                    reasons: reasons
-                };
-
-                this.emit('restrictionsUpdated', this.restrictions);
-            }
-        };
-
-        socket.updateRestrictions();
+        socket.emit('restrictionsUpdated', self.unauthenticatedRestrictions);
     });
     io.sockets.on('authenticated', function(socket) {
-        if (!self.userSockets[socket.decoded_token]) {
-            self.userSockets[socket.decoded_token] = new Set();
+        let userID = socket.decoded_token;
+
+        if (!self.userSockets[userID]) {
+            self.emit('retrieveUsers', [userID]);
+
+            self.userSockets[userID] = new Set([socket.id]);
+
+            let userRetrieved = function(users) {
+                if (lodash.includes(users, userID)) {
+                    self.emit('userConnected', userID);
+                } else {
+                    self.once('usersRetrieved', userRetrieved);
+                }
+            };
+            self.once('usersRetrieved', userRetrieved);
+        } else {
+            self.userSockets[userID].add(socket.id);
         }
-        self.userSockets[socket.decoded_token].add(socket.id);
 
         socket.on('disconnect', function() {
-            self.userSockets[socket.decoded_token].delete(socket.id);
+            self.userSockets[userID].delete(socket.id);
+
+            if (self.userSockets[userID].size === 0) {
+                self.emit('userDisconnected', userID);
+
+                delete self.userRestrictions[userID];
+                delete self.users[userID];
+                delete self.userSockets[userID];
+            }
         });
-
-        socket.updateUser = function() {
-            database.User.findOne(new mongoose.Types.ObjectId(this.decoded_token), function(err, user) {
-                if (err) {
-                    throw err;
-                }
-
-                this.user = user;
-
-                this.updateRestrictions();
-            }.bind(this));
-        }
-
-        socket.updateUser();
     });
 
     app.get('/user/settings', function(req, res) {

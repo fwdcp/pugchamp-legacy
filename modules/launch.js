@@ -1,23 +1,22 @@
+/* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
+"use strict";
+
 var Combinatorics = require('js-combinatorics');
 var config = require('config');
 var lodash = require('lodash');
-var mongoose = require('mongoose');
+var ms = require('ms');
 
-var database = require('../database');
+module.exports = function(app, io, self, server) {
+    function calculateRolesNeeded(playersAvailable) {
+        let roles = config.get('app.games.roles');
+        let roleNames = lodash.keys(roles);
 
-function calculateNeededRoles(playersAvailable) {
-    var roles = config.get('app.games.roles');
-    var roleNames = lodash.keys(roles);
+        let neededCombinations = [];
 
-    var neededCombinations = [];
+        let n = lodash.size(roles);
 
-    var n = lodash.size(roles);
-
-    for (var k = 1; k <= n; k++) {
-        var combinations = Combinatorics.combination(roleNames, k).toArray();
-
-        lodash.each(combinations, function(combination) {
-            var combinationInfo = lodash.reduce(combination, function(current, roleName) {
+        function checkCombination(combination) {
+            let combinationInfo = lodash.reduce(combination, function(current, roleName) {
                 return {
                     available: new Set([...current.available, ...playersAvailable[roleName]]),
                     required: current.required + (roles[roleName].min * 2)
@@ -27,7 +26,7 @@ function calculateNeededRoles(playersAvailable) {
                 required: 0
             });
 
-            var missing = combinationInfo.required - combinationInfo.available.size;
+            let missing = combinationInfo.required - combinationInfo.available.size;
 
             if (missing > 0) {
                 neededCombinations.push({
@@ -35,121 +34,209 @@ function calculateNeededRoles(playersAvailable) {
                     needed: missing
                 });
             }
-        });
+        }
+
+        for (let k = 1; k <= n; k++) {
+            let combinations = Combinatorics.combination(roleNames, k).toArray();
+
+            lodash.each(combinations, checkCombination);
+        }
+
+        return neededCombinations;
     }
 
-    return neededCombinations;
-}
-
-module.exports = function(app, io, self, server) {
+    var captainsAvailable = new Set();
     var playersAvailable = lodash.mapValues(config.get('app.games.roles'), function() {
         return new Set();
     });
-    var captainsAvailable = new Set();
-    var neededRoles = calculateNeededRoles(playersAvailable);
+    var missingLaunchConditions;
+
+    var launchAttemptInProgress = false;
     var readiesReceived = new Set();
 
-    var prepareStatusMessage = function() {
-        var currentPlayersAvailable = lodash.mapValues(playersAvailable, function(available, roleName) {
-            return lodash.map([...available], function(userID) {
-                return lodash.omit(io.sockets.connected[self.userSockets[userID].values().next().value].user.toObject(), ['_id', 'id', '__v']);
-            });
-        });
-        var currentCaptainsAvailable = lodash.map([...captainsAvailable], function(userID) {
-            return lodash.omit(io.sockets.connected[self.userSockets[userID].values().next().value].user.toObject(), ['_id', 'id', '__v']);
-        });
-        var currentNeededRoles = lodash.map(neededRoles, function(neededRole) {
-            return neededRole;
-        });
+    var currentStatusMessage;
 
-        return {
-            playersAvailable: currentPlayersAvailable,
-            captainsAvailable: currentCaptainsAvailable,
-            neededRoles: currentNeededRoles
+    function checkLaunchConditions() {
+        return Promise.all([
+            new Promise(function(resolve, reject) {
+                if (captainsAvailable.size < 2) {
+                    resolve(['notAvailable']);
+                    return;
+                }
+
+                let rolesNeeded = calculateRolesNeeded(playersAvailable);
+
+                if (lodash.size(rolesNeeded) !== 0) {
+                    resolve(['notAvailable']);
+                    return;
+                }
+
+                if (!launchAttemptInProgress) {
+                    resolve(['readyNotChecked']);
+                    return;
+                }
+
+                let finalPlayersAvailable = lodash.mapValues(playersAvailable, function(available) {
+                    return new Set(lodash.intersection([...available], [...readiesReceived]));
+                });
+                let finalCaptainsAvailable = new Set(lodash.intersection([...captainsAvailable], [...readiesReceived]));
+
+                if (finalCaptainsAvailable.size < 2) {
+                    resolve(['notReady']);
+                    return;
+                }
+
+                let finalRolesNeeded = calculateRolesNeeded(finalPlayersAvailable);
+
+                if (lodash.size(finalRolesNeeded) !== 0) {
+                    resolve(['notReady']);
+                    return;
+                }
+
+                resolve([]);
+            })
+            // TODO: check that a server is free
+            // TODO: check that a game is not already being drafted
+        ]).then(function(launchConditions) {
+            missingLaunchConditions = lodash(launchConditions).flatten().compact().value();
+
+            return missingLaunchConditions;
+        });
+    }
+
+    function prepareStatusMessage() {
+        currentStatusMessage = {
+            playersAvailable: lodash.mapValues(playersAvailable, function(available) {
+                return lodash.map([...available], function(userID) {
+                    return self.getFilteredUser(userID);
+                });
+            }),
+            captainsAvailable: lodash.map([...captainsAvailable], function(userID) {
+                return self.getFilteredUser(userID);
+            }),
+            rolesNeeded: lodash.map(calculateRolesNeeded(playersAvailable), function(neededRole) {
+                return neededRole;
+            }),
+            missingLaunchConditions: missingLaunchConditions
         };
-    };
 
-    var currentStatusMessage = prepareStatusMessage();
+        return currentStatusMessage;
+    }
+
+    function attemptLaunch() {
+        if (launchAttemptInProgress) {
+            prepareStatusMessage();
+            io.sockets.emit('launchStatusUpdated', currentStatusMessage);
+
+            return;
+        }
+
+        checkLaunchConditions().then(function() {
+            prepareStatusMessage();
+            io.sockets.emit('launchStatusUpdated', currentStatusMessage);
+
+            if (lodash(missingLaunchConditions).without('readyNotChecked').size() === 0) {
+                launchAttemptInProgress = true;
+
+                readiesReceived = new Set();
+                io.sockets.emit('readiesRequested');
+
+                setTimeout(function() {
+                    checkLaunchConditions().then(function() {
+                        playersAvailable = lodash.mapValues(playersAvailable, function(available) {
+                            return new Set(lodash.intersection([...available], [...readiesReceived]));
+                        });
+                        captainsAvailable = new Set(lodash.intersection([...captainsAvailable], [...readiesReceived]));
+
+                        prepareStatusMessage();
+                        io.sockets.emit('launchStatusUpdated', currentStatusMessage);
+
+                        if (lodash.size(missingLaunchConditions) === 0) {
+                            self.emit('launchGameDraft', {
+                                players: [...playersAvailable],
+                                captains: [...captainsAvailable]
+                            });
+                        }
+                    });
+                }, ms(config.get('app.launch.readyPeriod')));
+            }
+        });
+    }
+
+    attemptLaunch();
+
+    self.on('updateUserAvailability', function(newAvailability) {
+        var userRestrictions = self.userRestrictions[newAvailability.userID];
+
+        if (!lodash.includes(userRestrictions.aspects, 'start')) {
+            lodash.forEach(playersAvailable, function(players, role) {
+                if (lodash.includes(newAvailability.roles, role)) {
+                    players.add(newAvailability.userID);
+                } else {
+                    players.delete(newAvailability.userID);
+                }
+            });
+
+            if (!lodash.includes(userRestrictions.aspects, 'captain')) {
+                if (newAvailability.captain) {
+                    captainsAvailable.add(newAvailability.userID);
+                } else {
+                    captainsAvailable.delete(newAvailability.userID);
+                }
+            } else {
+                captainsAvailable.delete(newAvailability.userID);
+            }
+        } else {
+            lodash.forEach(playersAvailable, function(players) {
+                players.delete(newAvailability.userID);
+            });
+
+            captainsAvailable.delete(newAvailability.userID);
+        }
+
+        attemptLaunch();
+    });
+    self.on('updateUserReadyStatus', function(readyInfo) {
+        if (launchAttemptInProgress) {
+            if (readyInfo.ready) {
+                readiesReceived.add(readyInfo.userID);
+            } else {
+                readiesReceived.delete(readyInfo.userID);
+            }
+        }
+    });
 
     io.sockets.on('connection', function(socket) {
-        socket.emit('statusUpdated', currentStatusMessage);
+        socket.emit('launchStatusUpdated', currentStatusMessage);
     });
 
     io.sockets.on('authenticated', function(socket) {
         socket.on('changeAvailability', function(availability) {
-            if (!lodash.includes(socket.restrictions.aspects, 'play')) {
-                lodash.forEach(playersAvailable, function(players, role) {
-                    if (lodash.includes(availability.roles, role)) {
-                        players.add(socket.user.id);
-                    } else {
-                        players.delete(socket.user.id);
-                    }
-                });
-
-                if (!lodash.includes(socket.restrictions.aspects, 'captain')) {
-                    if (availability.captain) {
-                        captainsAvailable.add(socket.user.id);
-                    } else {
-                        captainsAvailable.delete(socket.user.id);
-                    }
-                }
-            }
-
-            neededRoles = calculateNeededRoles(playersAvailable);
-            currentStatusMessage = prepareStatusMessage();
-            io.sockets.emit('statusUpdated', currentStatusMessage);
-
-            if (lodash.size(neededRoles) === 0 && captainsAvailable.size >= 2) {
-                readiesReceived.clear();
-                io.sockets.emit('readiesRequested');
-
-                setTimeout(function() {
-                    var finalReadiesReceived = [...readiesReceived];
-                    readiesReceived.clear();
-
-                    var finalPlayersAvailable = lodash.mapValues(playersAvailable, function(available, roleName) {
-                        return new Set(lodash.intersection([...available], finalReadiesReceived));
-                    });
-                    var finalCaptainsAvailable = new Set(lodash.intersection([...captainsAvailable], finalReadiesReceived));
-                    var finalNeededRoles = calculateNeededRoles(finalPlayersAvailable);
-
-                    playersAvailable = finalPlayersAvailable;
-                    captainsAvailable = finalCaptainsAvailable;
-                    neededRoles = finalNeededRoles;
-                    currentStatusMessage = prepareStatusMessage();
-                    io.sockets.emit('statusUpdated', currentStatusMessage);
-
-                    if (lodash.size(finalNeededRoles) === 0 && finalCaptainsAvailable.size >= 2) {
-                        self.emit('launchPicking', {
-                            players: finalPlayersAvailable,
-                            captains: finalCaptainsAvailable
-                        });
-                    } else {
-                        io.sockets.emit('launchAborted');
-                    }
-                }, 60000);
-            }
+            self.emit('updateUserAvailability', {
+                userID: socket.decoded_token,
+                roles: availability.roles,
+                captain: availability.captain
+            });
         });
 
-        socket.on('ready', function() {
-            readiesReceived.add(socket.user.id);
+        socket.on('updateReadyStatus', function(ready) {
+            self.emit('updateUserReadyStatus', {
+                userID: socket.decoded_token,
+                ready: ready
+            });
         });
-        socket.on('unready', function() {
-            readiesReceived.delete(socket.user.id);
+    });
+
+    self.on('userDisconnected', function(userID) {
+        self.emit('updateUserAvailability', {
+            userID: userID,
+            roles: [],
+            captain: false
         });
 
-        socket.on('disconnect', function() {
-            if (self.userSockets[socket.user.id].size === 0) {
-                lodash.forEach(playersAvailable, function(players, role) {
-                    players.delete(socket.user.id);
-                });
-
-                captainsAvailable.delete(socket.user.id);
-
-                neededRoles = calculateNeededRoles(playersAvailable);
-                currentStatusMessage = prepareStatusMessage();
-                io.sockets.emit('statusUpdated', currentStatusMessage);
-            }
+        self.emit('updateUserReadyStatus', {
+            userID: userID,
+            ready: false
         });
     });
 

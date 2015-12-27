@@ -1,5 +1,8 @@
 {
     "app": {
+        "launch": {
+            "readyPeriod": "60s"
+        },
         "games": {
             "playersPerTeam": 6,
             "roles": {
