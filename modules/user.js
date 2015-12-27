@@ -53,8 +53,8 @@ module.exports = function(app, io, self, server) {
     });
 
     self.on('sendMessageToUser', function(message) {
-        if (self.userSockets[userID]) {
-            for (let socketID of self.userSockets[userID]) {
+        if (self.userSockets[message.userID]) {
+            for (let socketID of self.userSockets[message.userID]) {
                 io.sockets.connected[socketID].emit(message.name, ...message.arguments);
             }
         }
