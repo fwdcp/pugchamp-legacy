@@ -212,17 +212,40 @@ module.exports = function(app, io, self, server) {
     app.post('/user/settings', bodyParser.urlencoded({
         extended: false
     }), function(req, res) {
-        if (req.body.alias && !req.user.alias) {
-            if (/\w+/.test(req.body.alias)) {
-                req.user.alias = req.body.alias;
+        Promise.all([
+            new Promise(function(resolve, reject) {
+                if (req.body.alias && !req.user.alias) {
+                    if (/\w+/.test(req.body.alias)) {
+                        database.User.findOne({alias: req.body.alias}, function(err, user) {
+                            if (err) {
+                                reject(err);
+                            }
+
+                            if (!user) {
+                                req.user.alias = req.body.alias;
+                                resolve();
+                            }
+                            else {
+                                reject('duplicate alias found');
+                            }
+                        });
+                    }
+                    else {
+                        reject('invalid alias format');
+                    }
+                }
+
+                resolve();
+            })
+        ]).then(function() {
+            if (req.user.alias) {
+                req.user.setUp = true;
             }
-        }
 
-        if (req.user.alias) {
-            req.user.setUp = true;
-        }
-
-        req.user.save(function() {
+            req.user.save(function() {
+                res.redirect('/user/settings');
+            });
+        }, function() {
             res.redirect('/user/settings');
         });
     });
