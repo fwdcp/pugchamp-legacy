@@ -19,6 +19,8 @@ $('.role-select input[type=checkbox]').on('change', changeAvailability);
 $('#captain-select input[type=checkbox]').on('change', changeAvailability);
 
 socket.on('connect', function() {
+    $('#disconnected-alert').prop('hidden', true);
+
     var tokenRequest = new XMLHttpRequest();
 
     tokenRequest.onreadystatechange = function() {
@@ -91,4 +93,8 @@ socket.on('restrictionsUpdated', function(restrictions) {
     } else {
         // enable chat box
     }
+});
+
+socket.on('disconnect', function() {
+    $('#disconnected-alert').prop('hidden', false);
 });
