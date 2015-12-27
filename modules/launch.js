@@ -237,15 +237,11 @@ module.exports = function(app, io, self, server) {
             });
         });
 
-        self.emit('sendMessageToUser', {
-            userID: socket.decoded_token,
-            name: 'userAvailabilityUpdated',
-            arguments: [{
-                roles: lodash.mapValues(playersAvailable, function(players) {
-                    return players.has(socket.decoded_token)
-                }),
-                captain: captainsAvailable.has(socket.decoded_token)
-            }]
+        socket.emit('userAvailabilityUpdated', {
+            roles: lodash.mapValues(playersAvailable, function(players) {
+                return players.has(socket.decoded_token)
+            }),
+            captain: captainsAvailable.has(socket.decoded_token)
         });
     });
 
