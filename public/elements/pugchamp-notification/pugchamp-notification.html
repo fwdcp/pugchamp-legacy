@@ -1,0 +1,81 @@
+<link rel="import" href="/components/polymer/polymer.html">
+
+<dom-module id="pugchamp-notification">
+    <script>
+        Polymer({
+            is: 'pugchamp-notification',
+            properties: {
+                title: {
+                    type: String,
+                    value: 'PugChamp'
+                },
+                dir: {
+                    type: String,
+                    value: 'auto'
+                },
+                lang: {
+                    type: String,
+                    value: 'en'
+                },
+                body: String,
+                icon: {
+                    type: String,
+                    value: '/img/pugchamp.png'
+                },
+                data: Object,
+                sound: {
+                    type: String,
+                    value: '/snd/beep.wav'
+                },
+                vibrate: Array,
+                renotify: {
+                    type: Boolean,
+                    value: false
+                },
+                silent: {
+                    type: Boolean,
+                    value: false
+                },
+                noscreen: {
+                    type: Boolean,
+                    value: false
+                },
+                sticky: {
+                    type: Boolean,
+                    value: false
+                }
+            },
+            ready: function() {
+                if (window.Notification && Notification.permission === 'default') {
+                    Notification.requestPermission();
+                }
+            },
+            notify: function() {
+                if (window.Notification && Notification.permission === 'granted') {
+                    var notification = new Notification(this.title, {
+                        dir: this.dir,
+                        lang: this.lang,
+                        body: this.body,
+                        tag: this.tag,
+                        icon: this.icon,
+                        data: this.data,
+                        sound: this.sound,
+                        vibrate: this.vibrate,
+                        renotify: this.renotify,
+                        silent: this.silent,
+                        noscreen: this.noscreen,
+                        sticky: this.sticky
+                    });
+
+                    notification.onclick(function(event) {
+                        this.fire('click', event);
+                    });
+
+                    notification.onerror(function() {
+                        this.fire('error');
+                    });
+                }
+            }
+        });
+    </script>
+</dom-module>
