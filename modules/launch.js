@@ -106,6 +106,7 @@ module.exports = function(app, io, self, server) {
 
     function prepareStatusMessage() {
         currentStatusMessage = {
+            roles: config.get('app.games.roles'),
             playersAvailable: lodash.mapValues(playersAvailable, function(available) {
                 return lodash.map([...available], function(userID) {
                     return self.getFilteredUser(userID);
@@ -275,8 +276,7 @@ module.exports = function(app, io, self, server) {
 
     app.get('/', function(req, res) {
         res.render('index', {
-            user: req.user,
-            roles: config.get('app.games.roles')
+            user: req.user
         });
     });
 };

@@ -1,0 +1,73 @@
+<link rel="import" href="/components/polymer/polymer.html">
+<link rel="import" href="/components/iron-flex-layout/classes/iron-flex-layout.html">
+<link rel="import" href="/components/paper-toggle-button/paper-toggle-button.html">
+
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
+<link rel="import" href="/elements/pugchamp-utilities/pugchamp-polymer-helpers.html">
+
+<dom-module id="pugchamp-launchpad">
+    <template>
+        <div class="horizontal layout" id="roles">
+            <template is="dom-repeat" items="{{roles}}">
+                <div class="flex">
+                    <paper-toggle-button class="role-select" value="{{item.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability">{{item.value.name}}</paper-toggle-button>
+                    <paper-listbox selectable=".selectable">
+                        <template is="dom-repeat" items="{{_getObjectKey(players, item.key)}}">
+                            <paper-item>{{item.alias}}</paper-item>
+                        </template>
+                    </paper-listbox>
+                </div>
+            </template>
+        </div>
+        <div id="captain">
+            <paper-toggle-button id="captainSelect" disabled="{{isRestricted(restrictions, ['start', 'captain'])}}" on-change="updateAvailability">Captain</paper-toggle-button>
+
+            {{playerAliasList(captains)}}
+        </div>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'pugchamp-launchpad',
+            behaviors: [PugChampPolymerHelperBehaviors, PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior],
+            ready: function() {
+                this._listenToEvent('launchStatusUpdated', 'onLaunchStatusUpdated');
+                this._listenToEvent('userAvailabilityUpdated', 'onUserAvailabilityUpdated');
+            },
+            onLaunchStatusUpdated: function(status) {
+                this.set('roles', this._convertObjectToRepeatable(status.roles));
+                this.set('players', status.playersAvailable);
+                this.set('captains', status.captainsAvailable);
+            },
+            updateAvailability: function() {
+                var roles = [];
+
+                Polymer.dom(this.$.roles).querySelectorAll('.role-select').forEach(function(button) {
+                    if (button.checked) {
+                        roles.push(button.value);
+                    }
+                });
+
+                var captain = this.$.captainSelect.checked;
+
+                socket.emit('changeAvailability', {
+                    roles: roles,
+                    captain: captain
+                });
+            },
+            onUserAvailabilityUpdated: function(availability) {
+                Polymer.dom(this.$.roles).querySelectorAll('.role-select').forEach(function(button) {
+                    button.checked = availability.roles[button.value];
+                });
+
+                this.$.captainSelect.checked = availability.captain;
+            },
+            playerAliasList: function(players) {
+                return players.map(function(player) {
+                    return player.alias;
+                }).join(', ');
+            }
+        });
+    </script>
+</dom-module>

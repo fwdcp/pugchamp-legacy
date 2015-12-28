@@ -1,0 +1,22 @@
+<script src="/components/lodash/lodash.min.js"></script>
+
+<script>
+    window.PugChampPolymerHelperBehaviors = window.PugChampPolymerHelperBehaviors || {
+        // Polymer doesn't support iterating over objects
+        // see: https://github.com/Polymer/polymer/issues/1385
+        // this allows us to use objects in dom-repeat until this is the case
+        _convertObjectToRepeatable(object) {
+            return _.map(object, function(value, key) {
+                return {
+                    key: key,
+                    value: value
+                };
+            })
+        },
+        // access a specific key in an object, for reasons related to above
+        _getObjectKey: function(object, key) {
+            return object[key];
+        }
+    };
+
+</script>

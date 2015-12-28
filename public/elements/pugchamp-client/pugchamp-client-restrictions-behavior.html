@@ -5,8 +5,14 @@
         created: function() {
             this._listenToEvent('restrictionsUpdated', '_onRestrictionsUpdated');
         },
-        isRestricted: function(restrictions, aspect) {
-            return restrictions.aspects.includes(aspect);
+        isRestricted: function(restrictions, aspects) {
+            if (!Array.isArray(aspects)) {
+                return restrictions.aspects.includes(aspects);
+            }
+
+            return aspects.some(function(aspect) {
+                return restrictions.aspects.includes(aspect);
+            });
         },
         _onRestrictionsUpdated: function(restrictions) {
             this.set('restrictions', restrictions);
