@@ -1,7 +1,7 @@
 <link rel="import" href="/components/polymer/polymer.html">
 <link rel="import" href="/components/iron-ajax/iron-ajax.html">
 
-<link rel="import" href="/elements/pugchamp-client/pugchamp-client-behavior.html">
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 
 <dom-module id="pugchamp-client">
     <template>
@@ -11,7 +11,7 @@
     <script>
         Polymer({
             is: 'pugchamp-client',
-            behaviors: [PugChampBehaviors.ClientBehavior],
+            behaviors: [PugChampClientBehaviors.BaseBehavior],
             ready: function() {
                 this._listenToEvent('connect', 'onConnect');
 
