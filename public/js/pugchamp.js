@@ -5,19 +5,16 @@ var notifications = false;
 if (window.Notification) {
     if (Notification.permission === 'granted') {
         notifications = true;
-    }
-    else {
+    } else {
         Notification.requestPermission(function(result) {
             if (result === 'granted') {
                 notifications = true;
-            }
-            else {
+            } else {
                 notifications = false;
             }
         });
     }
-}
-else {
+} else {
     notifications = false;
 }
 
@@ -32,6 +29,7 @@ function displayNotification(info) {
 var currentRestrictions;
 
 var internalAvailabilityChange = false;
+
 function changeAvailability() {
     if (internalAvailabilityChange) {
         return;
@@ -55,6 +53,7 @@ $('.role-select input[type=checkbox]').on('change', changeAvailability);
 $('#captain-select input[type=checkbox]').on('change', changeAvailability);
 
 var internalReadyStatusChange = false;
+
 function updateReadyStatus() {
     if (internalReadyStatusChange) {
         return;
@@ -123,16 +122,14 @@ socket.on('userAvailabilityUpdated', function(availability) {
     _.each(availability.roles, function(available, roleName) {
         if (available) {
             $('.role-select input[type=checkbox][value=' + roleName + ']').prop('checked', true);
-        }
-        else {
+        } else {
             $('.role-select input[type=checkbox][value=' + roleName + ']').prop('checked', false);
         }
     });
 
     if (availability.captain) {
         $('#captain-select input[type=checkbox]').prop('checked', true);
-    }
-    else {
+    } else {
         $('#captain-select input[type=checkbox]').prop('checked', false);
     }
 
@@ -140,7 +137,10 @@ socket.on('userAvailabilityUpdated', function(availability) {
 });
 
 socket.on('launchInProgress', function() {
-    displayNotification({body: 'A new game is being launched.', tag: 'launchAttempt'});
+    displayNotification({
+        body: 'A new game is being launched.',
+        tag: 'launchAttempt'
+    });
 
     $('#ready-dialog').prop('hidden', false);
 
@@ -161,8 +161,7 @@ socket.on('userReadyStatusUpdated', function(ready) {
 
     if (ready) {
         $('#ready-dialog input[type=checkbox]').prop('checked', true);
-    }
-    else {
+    } else {
         $('#ready-dialog input[type=checkbox]').prop('checked', false);
     }
 
