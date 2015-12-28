@@ -139,7 +139,7 @@ module.exports = function(app, io, self, server) {
                 launchAttemptInProgress = true;
 
                 readiesReceived = new Set();
-                io.sockets.emit('readiesRequested');
+                io.sockets.emit('launchInProgress');
 
                 setTimeout(function() {
                     checkLaunchConditions().then(function() {
@@ -156,6 +156,9 @@ module.exports = function(app, io, self, server) {
                                 players: [...playersAvailable],
                                 captains: [...captainsAvailable]
                             });
+                        }
+                        else {
+                            io.sockets.emit('launchAborted');
                         }
                     });
                 }, ms(config.get('app.launch.readyPeriod')));
@@ -215,6 +218,12 @@ module.exports = function(app, io, self, server) {
                 readiesReceived.delete(readyInfo.userID);
             }
         }
+
+        self.emit('sendMessageToUser', {
+            userID: readyInfo.userID,
+            name: 'userReadyStatusUpdated',
+            arguments: [readyInfo.ready]
+        });
     });
 
     io.sockets.on('connection', function(socket) {
@@ -243,6 +252,12 @@ module.exports = function(app, io, self, server) {
             }),
             captain: captainsAvailable.has(socket.decoded_token)
         });
+
+        if (launchAttemptInProgress) {
+            socket.emit('launchInProgress');
+
+            socket.emit('userReadyStatusUpdated', readiesReceived.has(socket.decoded_token));
+        }
     });
 
     self.on('userDisconnected', function(userID) {

@@ -1,5 +1,7 @@
 var socket = io();
 
+var currentRestrictions;
+
 var internalAvailabilityChange = false;
 function changeAvailability() {
     if (internalAvailabilityChange) {
@@ -22,6 +24,17 @@ function changeAvailability() {
 
 $('.role-select input[type=checkbox]').on('change', changeAvailability);
 $('#captain-select input[type=checkbox]').on('change', changeAvailability);
+
+var internalReadyStatusChange = false;
+function updateReadyStatus() {
+    if (internalReadyStatusChange) {
+        return;
+    }
+
+    socket.emit('updateReadyStatus', $('#ready-dialog input[type=checkbox]').is(':checked'));
+}
+
+$('#ready-dialog input[type=checkbox]').on('change', updateReadyStatus);
 
 socket.on('connect', function() {
     $('#disconnected-alert').prop('hidden', true);
@@ -97,7 +110,39 @@ socket.on('userAvailabilityUpdated', function(availability) {
     internalAvailabilityChange = false;
 });
 
+socket.on('launchInProgress', function() {
+    // display notification
+
+    $('#ready-dialog').prop('hidden', false);
+
+    if (!currentRestrictions.aspects.includes('start')) {
+        $('#ready-dialog label').prop('hidden', false);
+        $('#ready-dialog input[type=checkbox]').prop('disabled', false);
+    }
+});
+
+socket.on('launchAborted', function() {
+    $('#ready-dialog').prop('hidden', true);
+    $('#ready-dialog label').prop('hidden', true);
+    $('#ready-dialog input[type=checkbox]').prop('disabled', true);
+});
+
+socket.on('userReadyStatusUpdated', function(ready) {
+    internalReadyStatusChange = true;
+
+    if (ready) {
+        $('#ready-dialog input[type=checkbox]').prop('checked', true);
+    }
+    else {
+        $('#ready-dialog input[type=checkbox]').prop('checked', false);
+    }
+
+    internalReadyStatusChange = false;
+});
+
 socket.on('restrictionsUpdated', function(restrictions) {
+    currentRestrictions = restrictions;
+
     $('#restriction-alerts').empty();
     restrictions.reasons.forEach(function(reason) {
         $('<div class="alert alert-danger" role="alert"><i class="glyphicon glyphicon-alert"></i> ' + reason + '</div>').appendTo('#restriction-alerts');
