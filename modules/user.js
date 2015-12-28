@@ -63,25 +63,43 @@ module.exports = function(app, io, self, server) {
     self.on('usersRetrieved', function(userIDs) {
         lodash.each(userIDs, function(userID) {
             Promise.all([
+                new Promise(function(resolve, reject) {
+                    if (self.users[userID].setUp) {
+                        resolve({
+                            aspects: [],
+                            reasons: []
+                        });
+                    }
+                    else {
+                        resolve({
+                            aspects: ['start', 'chat'],
+                            reasons: ['Your account is not set up properly.']
+                        });
+                    }
+                })
                 // check user bans
                 // check that user is currently not playing in a game
             ]).then(function(restrictions) {
                 self.userRestrictions[userID] = lodash.reduce(restrictions, function(allRestrictions, restriction) {
-                    allRestrictions.aspects = lodash.union(allRestrictions.aspects, restriction.aspects);
-                    allRestrictions.reasons = [...allRestrictions.reasons, ...restriction.reasons];
+                    return {
+                        aspects: lodash.union(allRestrictions.aspects, restriction.aspects),
+                        reasons: [...allRestrictions.reasons, ...restriction.reasons]
+                    };
                 }, {
                     aspects: [],
                     reasons: []
                 });
 
-                self.emit('sendMessageToUser', {
-                    userID: userID,
-                    name: 'restrictionsUpdated',
-                    arguments: [self.userRestrictions[userID]]
-                });
-
                 self.emit('userRestrictionsUpdated', userID);
             });
+        });
+    });
+
+    self.on('userRestrictionsUpdated', function(userID) {
+        self.emit('sendMessageToUser', {
+            userID: userID,
+            name: 'restrictionsUpdated',
+            arguments: [self.userRestrictions[userID]]
         });
     });
 
