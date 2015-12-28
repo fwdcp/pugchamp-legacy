@@ -1,0 +1,32 @@
+<link rel="import" href="/components/polymer/polymer.html">
+<link rel="import" href="/components/iron-ajax/iron-ajax.html">
+
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-behavior.html">
+
+<dom-module id="pugchamp-client">
+    <template>
+        <iron-ajax id="token" url="/user/token" on-response="infoReceived"></iron-ajax>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'pugchamp-client',
+            behaviors: [PugChampBehaviors.ClientBehavior],
+            ready: function() {
+                this._listenToEvent('connect', 'onConnect');
+
+                if (this.socket.connected) {
+                    this.onConnect();
+                }
+            },
+            onConnect: function() {
+                this.$.token.generateRequest();
+            },
+            infoReceived: function(event) {
+                this.socket.emit('authenticate', {
+                    token: event.detail.response.token
+                });
+            }
+        });
+    </script>
+</dom-module>

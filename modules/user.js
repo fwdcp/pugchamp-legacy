@@ -173,7 +173,9 @@ module.exports = function(app, io, self, server) {
             expiresIn: config.get('server.tokenExpiration')
         });
 
-        res.status(200).send(token);
+        res.status(200).json({
+            token: token
+        });
     });
 
     io.sockets.on('connection', socketioJwt.authorize({

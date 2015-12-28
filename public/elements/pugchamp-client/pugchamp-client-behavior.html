@@ -10,6 +10,9 @@
             }
 
             this.socket = window.socket;
+        },
+        _listenToEvent: function(name, listener) {
+            this.socket.on(name, this[listener].bind(this));
         }
     };
 </script>
