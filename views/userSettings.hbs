@@ -3,42 +3,46 @@
 <html>
 
 <head>
-	<script src="/components/jquery/dist/jquery.min.js"></script>
-    <link rel="stylesheet" href="/components/bootstrap/dist/css/bootstrap.min.css">
-    <script src="/components/bootstrap/dist/js/bootstrap.min.js"></script>
-    <link rel="stylesheet" href="/css/styles.css">
+    {{> head}}
+
+	<link rel="import" href="/components/iron-form/iron-form.html">
+	<link rel="import" href="/components/paper-button/paper-button.html">
+	<link rel="import" href="/components/paper-input/paper-input.html">
+
+	<style is="custom-style">
+		#save {
+			background: var(--primary-color);
+			color: var(--dark-theme-text-color);
+		}
+	</style>
 </head>
 
-<body>
-    {{> header }}
+<body class="fullbleed" unresolved>
+	<paper-drawer-panel>
+  		{{> drawer}}
 
-	<div class="container">
-		<h2>User Settings</h2>
+  		<div main>
+			{{> toolbar}}
 
-		{{#unless user.setUp}}
-			<div class="alert alert-warning" role="alert"><strong>Warning</strong>: you need to set up your account before you can use this site.</div>
-		{{/unless}}
+			<div>
+				<h2>User Settings</h2>
 
-		<form class="form-horizontal" method="POST">
-			<div class="form-group">
-				<label for="alias" class="col-sm-2 control-label">Alias</label>
-				<div class="col-sm-10">
+				<form id="user-settings" method="post">
 					{{#unless user.alias}}
-						<input type="text" class="form-control" id="alias" name="alias" title="alphanumeric characters and underscores only" placeholder="thesupremecommander" pattern="\w+">
+						<p><paper-input type="text" label="Alias" name="alias" placeholder="thesupremecommander" auto-validate error-message="alphanumeric characters only" pattern="\w+" required></paper-input></p>
 					{{else}}
-						<input type="text" class="form-control" id="alias" value="{{user.alias}}" disabled>
+						<p><paper-input type="text" label="Alias" value="{{user.alias}}" readonly></paper-input></p>
 					{{/unless}}
-				</div>
+
+					<paper-button raised onclick="save()" id="save">Save</paper-button>
+				</form>
 			</div>
-			<div class="form-group">
-		    	<div class="col-sm-offset-2 col-sm-10">
-		      		<button type="submit" class="btn btn-primary">Save</button>
-		    	</div>
-		  	</div>
-		</form>
-	</div>
+		</div>
+	</paper-drawer-panel>
 
-    {{> footer }}
+	<script>
+		function save() {
+			document.getElementById('user-settings').submit();
+		}
+	</script>
 </body>
-
-</html>

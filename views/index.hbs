@@ -3,71 +3,21 @@
 <html>
 
 <head>
-	<link rel="import" href="/components/paper-header-panel/paper-header-panel.html">
-	<link rel="import" href="/components/paper-toolbar/paper-toolbar.html">
-	<link rel="import" href="/components/paper-dropdown-menu/paper-dropdown-menu.html">
-	<link rel="import" href="/components/paper-menu/paper-menu.html">
-	<link rel="import" href="/components/paper-item/paper-item.html">
-	<link rel="import" href="/components/paper-listbox/paper-listbox.html">	
-	<link rel="import" href="/components/iron-flex-layout/iron-flex-layout.html">
-    <script src="/components/webcomponentsjs/webcomponents.js"></script>
-    <link rel="import" href="/components/polymer/polymer.html">
-    <link rel="stylesheet" href="/components/bootstrap/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/css/styles.css">
+    {{> head}}
 </head>
 
-<body>
-    {{> header }}
+<body class="fullbleed" unresolved>
+	<paper-drawer-panel>
+  		{{> drawer}}
 
-	<div class="container">
-		<div class="row">
-			<div class="col-md-12">
-                <div class="alert alert-danger" role="alert" id="disconnected-alert"><i class="glyphicon glyphicon-alert"></i> You are not connected to the server.</div>
+  		<div main>
+			{{> toolbar}}
 
-				<div id="restriction-alerts"></div>
-
-                <div class="alert alert-info" role="alert" id="ready-dialog" hidden><i class="glyphicon glyphicon-plus"></i> A new game is being launched. <label><input type="checkbox" disabled> Ready</label></div>
+			<div>
+				<pugchamp-launchpad></pugchamp-launchpad>
 			</div>
 		</div>
-		<div class="row">
-			<div class="col-md-12">
-				<div class="roles">
-					{{#each roles}}
-						<div class="role">
-							<div class="role-select">
-								<label><input type="checkbox" value="{{@key}}" disabled hidden> {{this.name}}</label>
-							</div>
-
-                            <div class="role-players">
-    							<template data-type="{{@key}}" is="dom-repeat">
-                                    <div class="role-player">
-                                        \{{item.alias}}
-                                    </div>
-                                </template>
-                            </div>
-						</div>
-					{{/each}}
-				</div>
-			</div>
-		</div>
-		<div class="row">
-			<div class="col-md-2" id="captain-select" hidden>
-				<label><input type="checkbox" disabled> Captain</label>
-			</div>
-            <div class="col-md-10" id="captains-list"></div>
-		</div>
-	</div>
-
-    {{> footer }}
-
-	<script src="/components/jquery/dist/jquery.min.js"></script>
-	<script src="/components/bootstrap/dist/js/bootstrap.min.js"></script>
-    <script src="/components/lodash/lodash.min.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        window.steamID = '{{user.steamID}}';
-    </script>
-    <script src="/js/pugchamp.js"></script>
+	</paper-drawer-panel>
 </body>
 
 </html>

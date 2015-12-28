@@ -1,0 +1,32 @@
+<paper-header-panel drawer>
+    <paper-toolbar></paper-toolbar>
+
+    <paper-menu id="drawer-menu">
+        <a href="/">
+            <paper-icon-item>
+                <iron-icon icon="home" item-icon></iron-icon> Home
+            </paper-icon-item>
+        </a>
+
+        {{#if user}}
+            <a href="/user/settings">
+                <paper-icon-item>
+                    <iron-icon icon="settings" item-icon></iron-icon> Settings
+                </paper-icon-item>
+            </a>
+
+            <a href="/user/logout">
+                <paper-icon-item>
+                    <iron-icon icon="exit-to-app" item-icon></iron-icon> Sign Out
+                </paper-icon-item>
+            </a>
+        {{else}}
+            <a href="/user/login">
+                <paper-item>
+                    <img src="https://steamcommunity-a.akamaihd.net/public/images/signinthroughsteam/sits_small.png">
+                </paper-item>
+            </a>
+        {{/if}}
+
+    </paper-menu>
+</paper-header-panel>
