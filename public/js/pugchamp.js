@@ -1,5 +1,34 @@
 var socket = io();
 
+var notifications = false;
+
+if (window.Notification) {
+    if (Notification.permission === 'granted') {
+        notifications = true;
+    }
+    else {
+        Notification.requestPermission(function(result) {
+            if (result === 'granted') {
+                notifications = true;
+            }
+            else {
+                notifications = false;
+            }
+        });
+    }
+}
+else {
+    notifications = false;
+}
+
+function displayNotification(info) {
+    if (notifications) {
+        // TODO: update defaults
+
+        var notification = new Notification('PugChamp', _.merge({}, info));
+    }
+}
+
 var currentRestrictions;
 
 var internalAvailabilityChange = false;
@@ -111,7 +140,7 @@ socket.on('userAvailabilityUpdated', function(availability) {
 });
 
 socket.on('launchInProgress', function() {
-    // display notification
+    displayNotification({body: 'A new game is being launched.', tag: 'launchAttempt'});
 
     $('#ready-dialog').prop('hidden', false);
 
