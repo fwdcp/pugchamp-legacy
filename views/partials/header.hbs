@@ -1,32 +1,28 @@
-<div class="header">
-    <nav class="navbar navbar-default navbar-fixed-top">
-        <div class="container">
-            <div class="navbar-header">
-                <a class="navbar-brand" href="/">PugChamp</a>
-            </div>
+   
+	<paper-header-panel class="flex">
+        <paper-toolbar  class="horizontal layout">
+            <div id="branding" class="title">PugChamp</div>
+			
+		
+			{{#if user}}
+				<paper-dropdown-menu class="nounderline" vertical-align="bottom" label={{user.alias}}>
+					<paper-menu class="dropdown-content vertical layout">
+						<paper-listbox >
+							<paper-item><a href="/user/settings">Settings</a></paper-item>
+							<paper-item><a href="/user/logout">Logout</a></paper-item>
+						</paper-listbox>
+					</paper-menu>
+				</paper-dropdown-menu>
+			{{else}}
+			<div id = "login" class="horizontal layout" >
+				<a href="/user/login">
+						<img src="https://steamcommunity-a.akamaihd.net/public/images/signinthroughsteam/sits_small.png">
+				</a>
+			</div>
+			{{/if}}
+    </paper-toolbar>
 
-            <div class="collapse navbar-collapse" id="navbar1">
-                <ul class="nav navbar-nav">
+	</paper-header-panel>
+	
 
-                </ul>
-                <ul class="nav navbar-nav navbar-right">
-                    {{#if user}}
-                        <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{user.alias}} <span class="caret"></span></a>
-                            <ul class="dropdown-menu">
-                                <li><a href="/user/settings">Settings</a></li>
-                                <li><a href="/user/logout">Logout</a></li>
-                            </ul>
-                        </li>
-                    {{else}}
-                        <li>
-                            <a href="/user/login">
-                                <img src="https://steamcommunity-a.akamaihd.net/public/images/signinthroughsteam/sits_small.png">
-                            </a>
-                        </li>
-                    {{/if}}
-                </ul>
-            </div>
-        </div>
-    </nav>
-</div>
+
