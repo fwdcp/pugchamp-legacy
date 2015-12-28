@@ -1,0 +1,15 @@
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+    window.PugChampBehaviors = window.PugChampBehaviors || {};
+
+    PugChampBehaviors.ClientBehavior = {
+        created: function() {
+            if (!window.socket) {
+                window.socket = io();
+            }
+
+            this.socket = window.socket;
+        }
+    };
+</script>
