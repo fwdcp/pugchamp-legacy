@@ -244,8 +244,9 @@ module.exports = function(app, io, self, server) {
                         reject('invalid alias format');
                     }
                 }
-
-                resolve();
+                else {
+                    resolve();
+                }
             })
         ]).then(function() {
             if (req.user.alias) {
