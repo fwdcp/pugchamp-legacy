@@ -21,7 +21,7 @@
             </template>
         </div>
         <div id="captain">
-            <paper-toggle-button id="captainSelect" disabled="{{isRestricted(restrictions, ['start', 'captain'])}}" on-change="updateAvailability">Captain</paper-toggle-button>
+            <paper-toggle-button id="captainSelect" disabled="{{isRestricted(restrictions, 'start', 'captain')}}" on-change="updateAvailability">Captain</paper-toggle-button>
 
             {{playerAliasList(captains)}}
         </div>

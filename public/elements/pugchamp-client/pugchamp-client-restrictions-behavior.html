@@ -5,9 +5,11 @@
         created: function() {
             this._listenToEvent('restrictionsUpdated', '_onRestrictionsUpdated');
         },
-        isRestricted: function(restrictions, aspects) {
-            if (!Array.isArray(aspects)) {
-                return restrictions.aspects.includes(aspects);
+        isRestricted: function(restrictions) {
+            var aspects = [];
+
+            for (var i = 1; i < arguments.length; i++) {
+                aspects.push(arguments[i]);
             }
 
             return aspects.some(function(aspect) {
