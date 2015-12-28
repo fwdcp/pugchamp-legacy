@@ -1,0 +1,17 @@
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
+
+<script>
+    RestrictionsBehaviorImpl = {
+        created: function() {
+            this._listenToEvent('restrictionsUpdated', '_onRestrictionsUpdated');
+        },
+        isRestricted: function(restrictions, aspect) {
+            return restrictions.aspects.includes(aspect);
+        },
+        _onRestrictionsUpdated: function(restrictions) {
+            this.set('restrictions', restrictions);
+        }
+    };
+
+    PugChampClientBehaviors.RestrictionsBehavior = [PugChampClientBehaviors.BaseBehavior, RestrictionsBehaviorImpl];
+</script>

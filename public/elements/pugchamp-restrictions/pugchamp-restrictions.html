@@ -1,0 +1,18 @@
+<link rel="import" href="/components/polymer/polymer.html">
+
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
+
+<dom-module id="pugchamp-restrictions">
+    <template>
+        <template is="dom-repeat" items="{{restrictions.reasons}}">
+            <p>{{item}}</p>
+        </template>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'pugchamp-restrictions',
+            behaviors: [PugChampClientBehaviors.RestrictionsBehavior]
+        });
+    </script>
+</dom-module>
