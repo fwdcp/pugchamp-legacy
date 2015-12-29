@@ -1,0 +1,80 @@
+<link rel="import" href="/components/polymer/polymer.html">
+<link rel="import" href="/components/paper-input/paper-input.html">
+<link rel="import" href="/components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="/components/paper-material/paper-material.html">
+<link rel="import" href="/components/iron-icons/iron-icons.html">
+
+<dom-module id="pugchamp-chat">
+	<template>
+		<style>
+			:host {
+				height: 100%;
+			}
+			#container {
+			position:relative;
+			width: 500px;
+			height: 500px;
+			
+			}
+			paper-material {
+			margin:5px;
+			padding:10px;
+
+			}
+			#chat-box {
+			min-height: 100px;
+			}
+		</style>
+		<div id="container" layout vertical>
+			<div id="chat-box" vertical layout start>
+				<template is="dom-repeat" items="{{messages}}">
+					<paper-material> {{item.message}}</paper-material>
+				</template>
+			</div>
+			<div id="editor" horizontal layout center>
+				<paper-input id="input" label="chat" on-keypress="keyPressed" flex> </paper-input>
+				<paper-icon-button id="button" icon="send" on-tap="buttonPressed"> </paper-icon-button>
+			</div>
+		</div>
+	</template>
+	<script>
+    Polymer({
+		is: 'pugchamp-chat',
+        ready: function() {
+
+			//todo: figure out how to push messages on to the thing...
+			
+			//var messages = [];
+            //socket.on('chat message', function(msg) {
+            //   messages.push(msg);
+			//	 console.log( 'msg ' + msg); }
+            //});
+					
+        },
+        
+        sendMessage: function() {
+			var chatMessage =  this.$.input.value ;
+			console.log('chatMessage: ' + chatMessage );
+			//todo: clean input
+			console.log(this.$.input.value);
+			socket.emit('chat message', this.$.input.value);
+			this.$.input.value = "";
+        },
+        keyPressed: function(event) {
+            if (event.which == 13) {
+                this.sendMessage();
+                event.preventDefault();
+            }
+        },
+        buttonPressed: function(event) {
+            this.sendMessage();
+            event.preventDefault();
+        }
+    });	
+	
+	
+	
+	</script>
+
+
+</dom-module>
