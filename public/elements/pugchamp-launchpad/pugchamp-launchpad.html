@@ -1,30 +1,40 @@
 <link rel="import" href="/components/polymer/polymer.html">
 <link rel="import" href="/components/iron-flex-layout/classes/iron-flex-layout.html">
+<link rel="import" href="/components/paper-progress/paper-progress.html">
 <link rel="import" href="/components/paper-toggle-button/paper-toggle-button.html">
 
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
+<link rel="import" href="/elements/pugchamp-notification/pugchamp-notification.html">
 <link rel="import" href="/elements/pugchamp-utilities/pugchamp-polymer-helpers.html">
 
 <dom-module id="pugchamp-launchpad">
     <template>
+        <div id="ready" hidden$="{{launchInProgress}}">
+            <h3>Launch In Progress</h3>
+
+            <paper-progress id="readyTime" class="transiting" min="0"></paper-progress>
+            <paper-toggle-button id="readySelect" disabled="{{isRestricted(restrictions, 'start', 'captain')}}" on-change="updateReadyStatus">Ready</paper-toggle-button>
+        </div>
+        <div id="captain">
+            <p><paper-toggle-button id="captainSelect" disabled="{{isRestricted(restrictions, 'start', 'captain')}}" on-change="updateAvailability">Captain</paper-toggle-button> ({{playerAliasList(captains)}})</p>
+        </div>
         <div class="horizontal layout" id="roles">
             <template is="dom-repeat" items="{{roles}}">
                 <div class="flex">
-                    <paper-toggle-button class="role-select" value="{{item.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability">{{item.value.name}}</paper-toggle-button>
-                    <paper-listbox selectable=".selectable">
-                        <template is="dom-repeat" items="{{_getObjectKey(players, item.key)}}">
-                            <paper-item>{{item.alias}}</paper-item>
-                        </template>
-                    </paper-listbox>
+                    <div class="vertical layout">
+                        <p class="self-center"><paper-toggle-button class="role-select" value="{{item.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability">{{item.value.name}}</paper-toggle-button></p>
+                        <paper-listbox selectable=".selectable">
+                            <template is="dom-repeat" items="{{_getObjectKey(players, item.key)}}">
+                                <paper-item>{{item.alias}}</paper-item>
+                            </template>
+                        </paper-listbox>
+                    </div>
                 </div>
             </template>
         </div>
-        <div id="captain">
-            <paper-toggle-button id="captainSelect" disabled="{{isRestricted(restrictions, 'start', 'captain')}}" on-change="updateAvailability">Captain</paper-toggle-button>
 
-            {{playerAliasList(captains)}}
-        </div>
+        <pugchamp-notification id="launchNotification" body="A new game is launching!" tag="launchAttempt"></pugchamp-notification>
     </template>
 
     <script>
@@ -34,6 +44,7 @@
             ready: function() {
                 this._listenToEvent('launchStatusUpdated', 'onLaunchStatusUpdated');
                 this._listenToEvent('userAvailabilityUpdated', 'onUserAvailabilityUpdated');
+                this._listenToEvent('launchInProgress', 'onLaunchInProgress');
             },
             onLaunchStatusUpdated: function(status) {
                 this.set('roles', this._convertObjectToRepeatable(status.roles));
@@ -62,6 +73,27 @@
                 });
 
                 this.$.captainSelect.checked = availability.captain;
+            },
+            onLaunchInProgress: function(time) {
+                this.set('launchInProgress', true);
+
+                this.$.launchNotification.notify();
+                this.$.readyPeriod.max = time / 1000;
+
+                this.async(this.incrementReadyTimer, 1000);
+            },
+            incrementReadyTimer: function() {
+                this.$.readyPeriod.value++;
+
+                if (this.$.readyPeriod.ratio < 1) {
+                    this.async(this.incrementReadyTimer, 1000);
+                }
+            },
+            updateReadyStatus: function() {
+                socket.emit('updateReadyStatus', this.$.readySelect.checked);
+            },
+            onReadyStatusUpdated: function(ready) {
+                this.$.readySelect.checked = ready;
             },
             playerAliasList: function(players) {
                 return players.map(function(player) {

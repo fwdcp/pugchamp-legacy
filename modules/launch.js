@@ -155,7 +155,7 @@ module.exports = function(app, io, self, server) {
                 launchAttemptInProgress = true;
 
                 readiesReceived = new Set();
-                io.sockets.emit('launchInProgress');
+                io.sockets.emit('launchInProgress', ms(config.get('app.launch.readyPeriod')));
 
                 setTimeout(function() {
                     checkLaunchConditions().then(function() {
