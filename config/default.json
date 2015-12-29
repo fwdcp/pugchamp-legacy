@@ -35,51 +35,51 @@
         "draft": {
             "order": [{
                 "type": "playerPick",
-                "by": 1,
+                "by": "captain",
                 "for": 1
             }, {
                 "type": "playerPick",
-                "by": 2,
+                "by": "captain",
                 "for": 2
             }, {
                 "type": "playerPick",
-                "by": 2,
+                "by": "captain",
                 "for": 2
             }, {
                 "type": "playerPick",
-                "by": 1,
+                "by": "captain",
                 "for": 1
             }, {
                 "type": "playerPick",
-                "by": 1,
+                "by": "captain",
                 "for": 1
             }, {
                 "type": "playerPick",
-                "by": 2,
+                "by": "captain",
                 "for": 2
             }, {
                 "type": "playerPick",
-                "by": 2,
+                "by": "captain",
                 "for": 2
             }, {
                 "type": "playerPick",
-                "by": 1,
+                "by": "captain",
                 "for": 1
             }, {
                 "type": "playerPick",
-                "by": 1,
+                "by": "captain",
                 "for": 1
             }, {
                 "type": "playerPick",
-                "by": 2,
+                "by": "captain",
                 "for": 2
             }, {
                 "type": "captainRole",
-                "by": "system",
+                "by": "random",
                 "for": 2
             }, {
                 "type": "captainRole",
-                "by": "system",
+                "by": "random",
                 "for": 1
             }]
         }
