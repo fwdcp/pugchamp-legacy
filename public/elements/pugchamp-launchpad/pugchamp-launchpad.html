@@ -11,14 +11,25 @@
 
 <dom-module id="pugchamp-launchpad">
     <template>
+        <style is="custom-style">
+            #captains div {
+                padding: 5px;
+            }
+        </style>
+
         <paper-material id="ready" hidden$="{{!launchInProgress}}">
             <h3>Launch In Progress</h3>
 
             <p><paper-progress id="readyTime" class="transiting" min="0"></paper-progress></p>
             <p><paper-toggle-button id="readySelect" disabled="{{isRestricted(restrictions, 'start', 'captain')}}" on-change="updateReadyStatus">Ready</paper-toggle-button></p>
         </paper-material>
-        <div id="captain">
-            <p><paper-toggle-button id="captainSelect" disabled="{{isRestricted(restrictions, 'start', 'captain')}}" on-change="updateAvailability">Captain</paper-toggle-button> ({{playerAliasList(captains)}})</p>
+        <div class="horizontal layout" id="captains">
+            <div>
+                <paper-toggle-button id="captainSelect" disabled="{{isRestricted(restrictions, 'start', 'captain')}}" on-change="updateAvailability">Captain</paper-toggle-button>
+            </div>
+            <div class="flex" id="captains-list">
+                {{playerAliasList(captains)}}
+            </div>
         </div>
         <div class="horizontal layout" id="roles">
             <template is="dom-repeat" items="{{roles}}">
