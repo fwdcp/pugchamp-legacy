@@ -64,6 +64,14 @@ module.exports = function(app, io, self, server) {
                     return;
                 }
 
+                let allPlayersAvailable = lodash.reduce(playersAvailable, function(allPlayers, players) {
+                    return new Set(lodash.intersection([...allPlayers], [...players]));
+                }, new Set());
+
+                if (allPlayersAvailable.size < 2 * config.get('app.games.playersPerTeam')) {
+                    resolve(['notAvailable']);
+                }
+
                 let rolesNeeded = calculateRolesNeeded(playersAvailable);
 
                 if (lodash.size(rolesNeeded) !== 0) {
@@ -76,15 +84,22 @@ module.exports = function(app, io, self, server) {
                     return;
                 }
 
-                let finalPlayersAvailable = lodash.mapValues(playersAvailable, function(available) {
-                    return new Set(lodash.intersection([...available], [...readiesReceived]));
-                });
                 let finalCaptainsAvailable = new Set(lodash.intersection([...captainsAvailable], [...readiesReceived]));
 
                 if (finalCaptainsAvailable.size < 2) {
                     resolve(['notReady']);
                     return;
                 }
+
+                let finalAllPlayersAvailable = new Set(lodash.intersection([...allPlayersAvailable], [...readiesReceived]));
+
+                if (finalAllPlayersAvailable.size < 2 * config.get('app.games.playersPerTeam')) {
+                    resolve(['notReady']);
+                }
+
+                let finalPlayersAvailable = lodash.mapValues(playersAvailable, function(available) {
+                    return new Set(lodash.intersection([...available], [...readiesReceived]));
+                });
 
                 let finalRolesNeeded = calculateRolesNeeded(finalPlayersAvailable);
 
