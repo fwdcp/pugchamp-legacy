@@ -104,6 +104,15 @@
                 this.set('launchInProgress', false);
 
                 this.$.launchNotification.close();
+                if (!this.$.readySelect.checked) {
+                    Polymer.dom(this.$.roles).querySelectorAll('.role-select').forEach(function(button) {
+                        button.checked = false;
+                    });
+
+                    this.$.captainSelect.checked = false;
+                }
+
+                this.$.readySelect.checked = false;
             },
             playerAliasList: function(players) {
                 return players.map(function(player) {
