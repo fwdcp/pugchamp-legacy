@@ -42,7 +42,7 @@
             </div>
         </div>
         <div class="horizontal layout" id="roles">
-            <template is="dom-repeat" items="{{roles}}">
+            <template is="dom-repeat" items="{{_convertObjectToRepeatable(roles)}}">
                 <div class="flex">
                     <div class="vertical layout">
                         <p class="self-center"><paper-toggle-button class="role-select" value="{{item.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability">{{item.value.name}}</paper-toggle-button></p>
@@ -55,6 +55,7 @@
                 </div>
             </template>
         </div>
+        <div id="needed"><strong>Needed</strong>: {{displayRolesNeeded(rolesNeeded)}}</div>
 
         <pugchamp-notification id="launchNotification" body="A new game is launching!" tag="launchAttempt"></pugchamp-notification>
     </template>
@@ -72,9 +73,10 @@
                 this._listenToEvent('launchAborted', 'onLaunchAborted');
             },
             onLaunchStatusUpdated: function(status) {
-                this.set('roles', this._convertObjectToRepeatable(status.roles));
+                this.set('roles', status.roles);
                 this.set('players', status.playersAvailable);
                 this.set('captains', status.captainsAvailable);
+                this.set('rolesNeeded', status.rolesNeeded);
             },
             updateAvailability: function() {
                 var roles = [];
@@ -139,6 +141,15 @@
                 return players.map(function(player) {
                     return player.alias;
                 }).join(', ');
+            },
+            displayRolesNeeded: function(rolesNeeded) {
+                return rolesNeeded.map(function(needed) {
+                    var rolesString = needed.roles.map(function(role) {
+                        return this.roles[role].name;
+                    }, this).join('/');
+
+                    return rolesString + ' (' + needed.needed + ')';
+                }, this).join('; ');
             }
         });
     </script>

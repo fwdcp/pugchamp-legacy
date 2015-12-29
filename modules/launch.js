@@ -133,9 +133,7 @@ module.exports = function(app, io, self, server) {
             captainsAvailable: lodash.map([...captainsAvailable], function(userID) {
                 return self.getFilteredUser(userID);
             }),
-            rolesNeeded: lodash.map(calculateRolesNeeded(playersAvailable), function(neededRole) {
-                return neededRole;
-            }),
+            rolesNeeded: calculateRolesNeeded(playersAvailable),
             missingLaunchConditions: missingLaunchConditions
         };
 
