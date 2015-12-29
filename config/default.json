@@ -1,10 +1,6 @@
 {
     "app": {
-        "launch": {
-            "readyPeriod": "60s"
-        },
         "games": {
-            "playersPerTeam": 6,
             "roles": {
                 "scout": {
                     "name": "Scout",
@@ -30,7 +26,11 @@
                     "min": 1,
                     "max": 1
                 }
-            }
+            },
+            "teamSize": 6
+        },
+        "launch": {
+            "readyPeriod": "60s"
         }
     },
     "server": {

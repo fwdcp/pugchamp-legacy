@@ -69,7 +69,7 @@ module.exports = function(app, io, self, server) {
                     return new Set(lodash.union([...allPlayers], [...players]));
                 }, new Set());
 
-                if (allPlayersAvailable.size < 2 * config.get('app.games.playersPerTeam')) {
+                if (allPlayersAvailable.size < 2 * config.get('app.games.teamSize')) {
                     resolve(['notAvailable']);
                     return;
                 }
@@ -95,7 +95,7 @@ module.exports = function(app, io, self, server) {
 
                 let finalAllPlayersAvailable = new Set(lodash.intersection([...allPlayersAvailable], [...readiesReceived]));
 
-                if (finalAllPlayersAvailable.size < 2 * config.get('app.games.playersPerTeam')) {
+                if (finalAllPlayersAvailable.size < 2 * config.get('app.games.teamSize')) {
                     resolve(['notReady']);
                     return;
                 }
