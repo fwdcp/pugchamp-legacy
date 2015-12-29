@@ -1,5 +1,6 @@
 <link rel="import" href="/components/polymer/polymer.html">
 <link rel="import" href="/components/iron-flex-layout/classes/iron-flex-layout.html">
+<link rel="import" href="/components/paper-listbox/paper-listbox.html">
 <link rel="import" href="/components/paper-material/paper-material.html">
 <link rel="import" href="/components/paper-progress/paper-progress.html">
 <link rel="import" href="/components/paper-toggle-button/paper-toggle-button.html">
@@ -11,21 +12,41 @@
 
 <dom-module id="pugchamp-launchpad">
     <template>
+        <style is="custom-style">
+            #captains div {
+                padding: 5px;
+            }
+
+            #ready {
+                padding: 5px 25px;
+                margin: 20px;
+            }
+
+            #readyTime {
+                --paper-progress-height: 10px;
+            }
+        </style>
+
         <paper-material id="ready" hidden$="{{!launchInProgress}}">
             <h3>Launch In Progress</h3>
 
             <p><paper-progress id="readyTime" class="transiting" min="0"></paper-progress></p>
             <p><paper-toggle-button id="readySelect" disabled="{{isRestricted(restrictions, 'start', 'captain')}}" on-change="updateReadyStatus">Ready</paper-toggle-button></p>
         </paper-material>
-        <div id="captain">
-            <p><paper-toggle-button id="captainSelect" disabled="{{isRestricted(restrictions, 'start', 'captain')}}" on-change="updateAvailability">Captain</paper-toggle-button> ({{playerAliasList(captains)}})</p>
+        <div class="horizontal layout" id="captains">
+            <div>
+                <paper-toggle-button id="captainSelect" disabled="{{isRestricted(restrictions, 'start', 'captain')}}" on-change="updateAvailability">Captain</paper-toggle-button>
+            </div>
+            <div class="flex" id="captains-list">
+                {{playerAliasList(captains)}}
+            </div>
         </div>
         <div class="horizontal layout" id="roles">
-            <template is="dom-repeat" items="{{roles}}">
+            <template is="dom-repeat" items="{{_convertObjectToRepeatable(roles)}}">
                 <div class="flex">
                     <div class="vertical layout">
                         <p class="self-center"><paper-toggle-button class="role-select" value="{{item.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability">{{item.value.name}}</paper-toggle-button></p>
-                        <paper-listbox selectable=".selectable">
+                        <paper-listbox>
                             <template is="dom-repeat" items="{{_getObjectKey(players, item.key)}}">
                                 <paper-item>{{item.alias}}</paper-item>
                             </template>
@@ -34,6 +55,7 @@
                 </div>
             </template>
         </div>
+        <div id="needed"><strong>Needed</strong>: {{displayRolesNeeded(rolesNeeded)}}</div>
 
         <pugchamp-notification id="launchNotification" body="A new game is launching!" tag="launchAttempt"></pugchamp-notification>
     </template>
@@ -51,9 +73,10 @@
                 this._listenToEvent('launchAborted', 'onLaunchAborted');
             },
             onLaunchStatusUpdated: function(status) {
-                this.set('roles', this._convertObjectToRepeatable(status.roles));
+                this.set('roles', status.roles);
                 this.set('players', status.playersAvailable);
                 this.set('captains', status.captainsAvailable);
+                this.set('rolesNeeded', status.rolesNeeded);
             },
             updateAvailability: function() {
                 var roles = [];
@@ -104,11 +127,29 @@
                 this.set('launchInProgress', false);
 
                 this.$.launchNotification.close();
+                if (!this.$.readySelect.checked) {
+                    Polymer.dom(this.$.roles).querySelectorAll('.role-select').forEach(function(button) {
+                        button.checked = false;
+                    });
+
+                    this.$.captainSelect.checked = false;
+                }
+
+                this.$.readySelect.checked = false;
             },
             playerAliasList: function(players) {
                 return players.map(function(player) {
                     return player.alias;
                 }).join(', ');
+            },
+            displayRolesNeeded: function(rolesNeeded) {
+                return rolesNeeded.map(function(needed) {
+                    var rolesString = needed.roles.map(function(role) {
+                        return this.roles[role].name;
+                    }, this).join('/');
+
+                    return rolesString + ' (' + needed.needed + ')';
+                }, this).join('; ');
             }
         });
     </script>

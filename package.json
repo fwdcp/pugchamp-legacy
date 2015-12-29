@@ -5,6 +5,7 @@
   "repository": "fwdcp/pugchamp",
   "dependencies": {
     "body-parser": "^1.14.2",
+    "chance": "^0.8.0",
     "config": "^1.17.1",
     "express": "^4.13.3",
     "express-session": "^1.12.1",

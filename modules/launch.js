@@ -39,7 +39,7 @@ module.exports = function(app, io, self, server) {
         for (let k = 1; k <= n; k++) {
             let combinations = Combinatorics.combination(roleNames, k).toArray();
 
-            lodash.each(combinations, checkCombination);
+            lodash.forEach(combinations, checkCombination);
         }
 
         return neededCombinations;
@@ -69,7 +69,7 @@ module.exports = function(app, io, self, server) {
                     return new Set(lodash.union([...allPlayers], [...players]));
                 }, new Set());
 
-                if (allPlayersAvailable.size < 2 * config.get('app.games.playersPerTeam')) {
+                if (allPlayersAvailable.size < 2 * config.get('app.games.teamSize')) {
                     resolve(['notAvailable']);
                     return;
                 }
@@ -95,7 +95,7 @@ module.exports = function(app, io, self, server) {
 
                 let finalAllPlayersAvailable = new Set(lodash.intersection([...allPlayersAvailable], [...readiesReceived]));
 
-                if (finalAllPlayersAvailable.size < 2 * config.get('app.games.playersPerTeam')) {
+                if (finalAllPlayersAvailable.size < 2 * config.get('app.games.teamSize')) {
                     resolve(['notReady']);
                     return;
                 }
@@ -133,9 +133,7 @@ module.exports = function(app, io, self, server) {
             captainsAvailable: lodash.map([...captainsAvailable], function(userID) {
                 return self.getFilteredUser(userID);
             }),
-            rolesNeeded: lodash.map(calculateRolesNeeded(playersAvailable), function(neededRole) {
-                return neededRole;
-            }),
+            rolesNeeded: calculateRolesNeeded(playersAvailable),
             missingLaunchConditions: missingLaunchConditions
         };
 
@@ -179,7 +177,9 @@ module.exports = function(app, io, self, server) {
 
                         if (lodash.size(missingLaunchConditions) === 0) {
                             self.emit('launchGameDraft', {
-                                players: [...playersAvailable],
+                                players: lodash.mapValues(playersAvailable, function(available) {
+                                    return [...available];
+                                }),
                                 captains: [...captainsAvailable]
                             });
                         }
@@ -195,7 +195,7 @@ module.exports = function(app, io, self, server) {
     attemptLaunch();
 
     self.on('updateUserAvailability', function(newAvailability) {
-        var userRestrictions = self.userRestrictions[newAvailability.userID];
+        let userRestrictions = self.userRestrictions[newAvailability.userID];
 
         if (!lodash.includes(userRestrictions.aspects, 'start')) {
             lodash.forEach(playersAvailable, function(players, role) {
