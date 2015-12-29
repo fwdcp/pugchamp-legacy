@@ -9,11 +9,11 @@
                     type: String,
                     value: 'PugChamp'
                 },
-                dir: {
+                direction: {
                     type: String,
                     value: 'auto'
                 },
-                lang: {
+                language: {
                     type: String,
                     value: 'en'
                 },
@@ -52,9 +52,9 @@
             },
             notify: function() {
                 if (window.Notification && Notification.permission === 'granted') {
-                    var notification = new Notification(this.title, {
-                        dir: this.dir,
-                        lang: this.lang,
+                    var notification = new Notification(this.title || 'PugChamp', {
+                        dir: this.direction,
+                        lang: this.language,
                         body: this.body,
                         tag: this.tag,
                         icon: this.icon,
@@ -67,13 +67,13 @@
                         sticky: this.sticky
                     });
 
-                    notification.onclick(function(event) {
+                    notification.onclick = function(event) {
                         this.fire('click', event);
-                    });
+                    }.bind(this);
 
-                    notification.onerror(function() {
+                    notification.onerror = function() {
                         this.fire('error');
-                    });
+                    }.bind(this);
                 }
             }
         });
