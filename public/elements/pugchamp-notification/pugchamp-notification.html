@@ -52,7 +52,7 @@
             },
             notify: function() {
                 if (window.Notification && Notification.permission === 'granted') {
-                    var notification = new Notification(this.title || 'PugChamp', {
+                    this.notification = new Notification(this.title || 'PugChamp', {
                         dir: this.direction,
                         lang: this.language,
                         body: this.body,
@@ -67,13 +67,18 @@
                         sticky: this.sticky
                     });
 
-                    notification.onclick = function(event) {
+                    this.notification.onclick = function(event) {
                         this.fire('click', event);
                     }.bind(this);
 
-                    notification.onerror = function() {
+                    this.notification.onerror = function() {
                         this.fire('error');
                     }.bind(this);
+                }
+            },
+            close: function() {
+                if (this.notification) {
+                    this.notification.close();
                 }
             }
         });

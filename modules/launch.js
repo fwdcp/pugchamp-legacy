@@ -52,6 +52,7 @@ module.exports = function(app, io, self, server) {
     var missingLaunchConditions;
 
     var launchAttemptInProgress = false;
+    var launchTime = null;
     var readiesReceived = new Set();
 
     var currentStatusMessage;
@@ -65,11 +66,12 @@ module.exports = function(app, io, self, server) {
                 }
 
                 let allPlayersAvailable = lodash.reduce(playersAvailable, function(allPlayers, players) {
-                    return new Set(lodash.intersection([...allPlayers], [...players]));
+                    return new Set(lodash.union([...allPlayers], [...players]));
                 }, new Set());
 
                 if (allPlayersAvailable.size < 2 * config.get('app.games.playersPerTeam')) {
                     resolve(['notAvailable']);
+                    return;
                 }
 
                 let rolesNeeded = calculateRolesNeeded(playersAvailable);
@@ -95,6 +97,7 @@ module.exports = function(app, io, self, server) {
 
                 if (finalAllPlayersAvailable.size < 2 * config.get('app.games.playersPerTeam')) {
                     resolve(['notReady']);
+                    return;
                 }
 
                 let finalPlayersAvailable = lodash.mapValues(playersAvailable, function(available) {
@@ -153,9 +156,13 @@ module.exports = function(app, io, self, server) {
 
             if (lodash(missingLaunchConditions).without('readyNotChecked').size() === 0) {
                 launchAttemptInProgress = true;
+                launchTime = Date.now();
 
                 readiesReceived = new Set();
-                io.sockets.emit('launchInProgress', ms(config.get('app.launch.readyPeriod')));
+                io.sockets.emit('launchInProgress', {
+                    elapsed: Date.now() - launchTime,
+                    total: ms(config.get('app.launch.readyPeriod'))
+                });
 
                 setTimeout(function() {
                     checkLaunchConditions().then(function() {
@@ -166,6 +173,9 @@ module.exports = function(app, io, self, server) {
 
                         prepareStatusMessage();
                         io.sockets.emit('launchStatusUpdated', currentStatusMessage);
+
+                        launchAttemptInProgress = false;
+                        launchTime = null;
 
                         if (lodash.size(missingLaunchConditions) === 0) {
                             self.emit('launchGameDraft', {
@@ -270,7 +280,10 @@ module.exports = function(app, io, self, server) {
         });
 
         if (launchAttemptInProgress) {
-            socket.emit('launchInProgress');
+            socket.emit('launchInProgress', {
+                elapsed: Date.now() - launchTime,
+                total: ms(config.get('app.launch.readyPeriod'))
+            });
 
             socket.emit('userReadyStatusUpdated', readiesReceived.has(socket.decoded_token));
         }

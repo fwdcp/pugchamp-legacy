@@ -1,5 +1,6 @@
 <link rel="import" href="/components/polymer/polymer.html">
 <link rel="import" href="/components/iron-flex-layout/classes/iron-flex-layout.html">
+<link rel="import" href="/components/paper-material/paper-material.html">
 <link rel="import" href="/components/paper-progress/paper-progress.html">
 <link rel="import" href="/components/paper-toggle-button/paper-toggle-button.html">
 
@@ -10,12 +11,12 @@
 
 <dom-module id="pugchamp-launchpad">
     <template>
-        <div id="ready" hidden$="{{launchInProgress}}">
+        <paper-material id="ready" hidden$="{{!launchInProgress}}">
             <h3>Launch In Progress</h3>
 
-            <paper-progress id="readyTime" class="transiting" min="0"></paper-progress>
-            <paper-toggle-button id="readySelect" disabled="{{isRestricted(restrictions, 'start', 'captain')}}" on-change="updateReadyStatus">Ready</paper-toggle-button>
-        </div>
+            <p><paper-progress id="readyTime" class="transiting" min="0"></paper-progress></p>
+            <p><paper-toggle-button id="readySelect" disabled="{{isRestricted(restrictions, 'start', 'captain')}}" on-change="updateReadyStatus">Ready</paper-toggle-button></p>
+        </paper-material>
         <div id="captain">
             <p><paper-toggle-button id="captainSelect" disabled="{{isRestricted(restrictions, 'start', 'captain')}}" on-change="updateAvailability">Captain</paper-toggle-button> ({{playerAliasList(captains)}})</p>
         </div>
@@ -42,9 +43,12 @@
             is: 'pugchamp-launchpad',
             behaviors: [PugChampPolymerHelperBehaviors, PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior],
             ready: function() {
+                this.set('launchInProgress', false);
+
                 this._listenToEvent('launchStatusUpdated', 'onLaunchStatusUpdated');
                 this._listenToEvent('userAvailabilityUpdated', 'onUserAvailabilityUpdated');
                 this._listenToEvent('launchInProgress', 'onLaunchInProgress');
+                this._listenToEvent('launchAborted', 'onLaunchAborted');
             },
             onLaunchStatusUpdated: function(status) {
                 this.set('roles', this._convertObjectToRepeatable(status.roles));
@@ -74,18 +78,19 @@
 
                 this.$.captainSelect.checked = availability.captain;
             },
-            onLaunchInProgress: function(time) {
+            onLaunchInProgress: function(periodInfo) {
                 this.set('launchInProgress', true);
 
                 this.$.launchNotification.notify();
-                this.$.readyPeriod.max = time / 1000;
+                this.$.readyTime.value = periodInfo.elapsed / 1000;
+                this.$.readyTime.max = periodInfo.total / 1000;
 
                 this.async(this.incrementReadyTimer, 1000);
             },
             incrementReadyTimer: function() {
-                this.$.readyPeriod.value++;
+                this.$.readyTime.value++;
 
-                if (this.$.readyPeriod.ratio < 1) {
+                if (this.$.readyTime.ratio < 100) {
                     this.async(this.incrementReadyTimer, 1000);
                 }
             },
@@ -94,6 +99,11 @@
             },
             onReadyStatusUpdated: function(ready) {
                 this.$.readySelect.checked = ready;
+            },
+            onLaunchAborted: function() {
+                this.set('launchInProgress', false);
+
+                this.$.launchNotification.close();
             },
             playerAliasList: function(players) {
                 return players.map(function(player) {
