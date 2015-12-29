@@ -42,7 +42,7 @@ module.exports = function(app, io, self, server) {
                 return;
             }
 
-            lodash.each(users, function(user) {
+            lodash.forEach(users, function(user) {
                 self.users[user.id] = user;
             });
 
@@ -61,7 +61,7 @@ module.exports = function(app, io, self, server) {
     });
 
     self.on('usersRetrieved', function(userIDs) {
-        lodash.each(userIDs, function(userID) {
+        lodash.forEach(userIDs, function(userID) {
             Promise.all([
                 new Promise(function(resolve, reject) {
                     if (self.users[userID].setUp) {

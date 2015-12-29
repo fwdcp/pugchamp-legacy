@@ -39,7 +39,7 @@ module.exports = function(app, io, self, server) {
         for (let k = 1; k <= n; k++) {
             let combinations = Combinatorics.combination(roleNames, k).toArray();
 
-            lodash.each(combinations, checkCombination);
+            lodash.forEach(combinations, checkCombination);
         }
 
         return neededCombinations;
@@ -177,7 +177,9 @@ module.exports = function(app, io, self, server) {
 
                         if (lodash.size(missingLaunchConditions) === 0) {
                             self.emit('launchGameDraft', {
-                                players: [...playersAvailable],
+                                players: lodash.mapValues(playersAvailable, function(available) {
+                                    return [...available];
+                                }),
                                 captains: [...captainsAvailable]
                             });
                         }
@@ -193,7 +195,7 @@ module.exports = function(app, io, self, server) {
     attemptLaunch();
 
     self.on('updateUserAvailability', function(newAvailability) {
-        var userRestrictions = self.userRestrictions[newAvailability.userID];
+        let userRestrictions = self.userRestrictions[newAvailability.userID];
 
         if (!lodash.includes(userRestrictions.aspects, 'start')) {
             lodash.forEach(playersAvailable, function(players, role) {
