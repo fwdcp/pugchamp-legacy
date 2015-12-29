@@ -203,7 +203,7 @@ module.exports = function(app, io, self, server) {
             name: 'userAvailabilityUpdated',
             arguments: [{
                 roles: lodash.mapValues(playersAvailable, function(players) {
-                    return players.has(newAvailability.userID)
+                    return players.has(newAvailability.userID);
                 }),
                 captain: captainsAvailable.has(newAvailability.userID)
             }]
@@ -249,7 +249,7 @@ module.exports = function(app, io, self, server) {
 
         socket.emit('userAvailabilityUpdated', {
             roles: lodash.mapValues(playersAvailable, function(players) {
-                return players.has(socket.decoded_token)
+                return players.has(socket.decoded_token);
             }),
             captain: captainsAvailable.has(socket.decoded_token)
         });
