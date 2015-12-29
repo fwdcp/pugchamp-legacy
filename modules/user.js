@@ -14,7 +14,7 @@ var database = require('../database');
 
 module.exports = function(app, io, self, server) {
     self.unauthenticatedRestrictions = {
-        aspects: ['start', 'chat'],
+        aspects: ['start', 'comms'],
         reasons: ['You are currently not logged on.']
     };
     self.userRestrictions = {};
@@ -72,7 +72,7 @@ module.exports = function(app, io, self, server) {
                     }
                     else {
                         resolve({
-                            aspects: ['start', 'chat'],
+                            aspects: ['start', 'comms'],
                             reasons: ['Your account is not set up properly.']
                         });
                     }
