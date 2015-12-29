@@ -1,5 +1,6 @@
 <link rel="import" href="/components/polymer/polymer.html">
 <link rel="import" href="/components/iron-flex-layout/classes/iron-flex-layout.html">
+<link rel="import" href="/components/paper-listbox/paper-listbox.html">
 <link rel="import" href="/components/paper-material/paper-material.html">
 <link rel="import" href="/components/paper-progress/paper-progress.html">
 <link rel="import" href="/components/paper-toggle-button/paper-toggle-button.html">
@@ -36,7 +37,7 @@
                 <div class="flex">
                     <div class="vertical layout">
                         <p class="self-center"><paper-toggle-button class="role-select" value="{{item.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability">{{item.value.name}}</paper-toggle-button></p>
-                        <paper-listbox selectable=".selectable">
+                        <paper-listbox>
                             <template is="dom-repeat" items="{{_getObjectKey(players, item.key)}}">
                                 <paper-item>{{item.alias}}</paper-item>
                             </template>
