@@ -14,12 +14,15 @@
         pugchamp-chat {
             width: 300px;
         }
+		pugchamp-launchpad {
+		min-width: 800px;
+		}
     </style>
 </head>
 
 <body class="fullbleed" unresolved>
-	<paper-drawer-panel>
-  		{{> drawer}}
+	<paper-drawer-panel responsive-width="1200px">
+  		{{> drawer }}
 
   		<div main>
 			{{> toolbar}}
@@ -27,8 +30,8 @@
 			<div id="main">
                 <pugchamp-restrictions></pugchamp-restrictions>
 
-                <div class="horizontal layout">
-	                <pugchamp-launchpad class="flex"></pugchamp-launchpad>
+                <div class="horizontal layout wrap">
+	                <pugchamp-launchpad class="flex" ></pugchamp-launchpad>
                     <pugchamp-chat></pugchamp-chat>
                 </div>
 			</div>
