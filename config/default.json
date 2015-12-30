@@ -112,6 +112,29 @@
                 "type": "captainRole",
                 "by": "random",
                 "captain": 1
+            }, {
+                "type": "mapBan",
+                "by": "random"
+            }, {
+                "type": "mapBan",
+                "by": "random"
+            }, {
+                "type": "mapBan",
+                "by": "random"
+            }, {
+                "type": "mapBan",
+                "by": "random"
+            }, {
+                "type": "mapBan",
+                "by": "manual",
+                "captain": 1
+            }, {
+                "type": "mapBan",
+                "by": "manual",
+                "captain": 2
+            }, {
+                "type": "mapPick",
+                "by": "random"
             }]
         }
     },
