@@ -1,7 +1,7 @@
 <link rel="import" href="/components/polymer/polymer.html">
 
 <link rel="import" href="/components/iron-flex-layout/classes/iron-flex-layout.html">
-<link rel="import" href="/components/paper-listbox/paper-listbox.html">
+<link rel="import" href="/components/paper-item/paper-item.html">
 <link rel="import" href="/components/paper-material/paper-material.html">
 <link rel="import" href="/components/paper-progress/paper-progress.html">
 <link rel="import" href="/components/paper-toggle-button/paper-toggle-button.html">
@@ -29,7 +29,7 @@
         </style>
 
         <paper-material id="ready" hidden$="{{!launchInProgress}}">
-            <h3>Launch In Progress</h3>
+            <h2>Launch In Progress</h2>
 
             <p><paper-progress id="readyTime" class="transiting" min="0"></paper-progress></p>
             <p><paper-toggle-button id="readySelect" disabled="{{isRestricted(restrictions, 'start', 'captain')}}" on-change="updateReadyStatus">Ready</paper-toggle-button></p>
@@ -46,12 +46,15 @@
             <template is="dom-repeat" items="{{_convertObjectToRepeatable(roles)}}">
                 <div class="flex">
                     <div class="vertical layout">
-                        <p class="self-center"><paper-toggle-button class="role-select" value="{{item.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability">{{item.value.name}}</paper-toggle-button></p>
-                        <paper-listbox>
-                            <template is="dom-repeat" items="{{_getObjectKey(players, item.key)}}">
-                                <paper-item>{{item.alias}}</paper-item>
-                            </template>
-                        </paper-listbox>
+                        <paper-item>
+                            <div class="flex">
+                                <h3>{{item.value.name}}</h3>
+                            </div>
+                            <paper-toggle-button class="role-select" value="{{item.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability"></paper-toggle-button>
+                        </paper-item>
+                        <template is="dom-repeat" items="{{_getObjectKey(players, item.key)}}">
+                            <paper-item>{{item.alias}}</paper-item>
+                        </template>
                     </div>
                 </div>
             </template>
