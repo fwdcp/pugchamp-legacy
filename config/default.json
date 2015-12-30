@@ -1,6 +1,37 @@
 {
     "app": {
         "games": {
+            "maps": {
+                "badlands": {
+                    "name": "Badlands",
+                    "file": "cp_badlands.bsp"
+                },
+                "granary": {
+                    "name": "Granary",
+                    "file": "cp_granary_pro_b10.bsp"
+                },
+                "gullywash": {
+                    "name": "Gullywash",
+                    "file": "cp_gullywash_final1.bsp"
+                },
+                "metalworks": {
+                    "name": "Metalworks",
+                    "file": "cp_metalworks_rc7.bsp"
+                },
+                "process": {
+                    "name": "Process",
+                    "file": "cp_process_final.bsp"
+                },
+                "snakewater": {
+                    "name": "Snakewater",
+                    "file": "cp_snakewater_final1.bsp"
+                },
+                "sunshine": {
+                    "name": "Sunshine",
+                    "file": "cp_sunshine_rc9.bsp"
+                }
+            },
+            "mapsInSeries": 1,
             "roles": {
                 "scout": {
                     "name": "Scout",
