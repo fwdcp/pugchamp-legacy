@@ -17,7 +17,10 @@
 				padding: 5px;
 				overflow: auto;
 			}
-
+			#msg-body {
+			overflow-wrap:break-word;
+			word-wrap:break-word;
+			}
 			.chat-message {
 				width: 100%;
 				margin: 5px 0;
@@ -27,7 +30,7 @@
 		<div id="chatMessages">
 			<template is="dom-repeat" items="{{messages}}">
 				<paper-card class="chat-message">
-					<div class="card-content"><strong>{{item.user.alias}}</strong>: {{item.message}}</div>
+					<div class="card-content"><strong>{{item.user.alias}}</strong>:<div id="msg-body"> {{item.message}} </div></div>
 				</paper-card>
 			</template>
 		</div>
