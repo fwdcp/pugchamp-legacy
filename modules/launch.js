@@ -257,7 +257,7 @@ module.exports = function(app, io, self, server) {
     });
 
     io.sockets.on('authenticated', function(socket) {
-        socket.on('changeAvailability', function(availability) {
+        socket.on('updateAvailability', function(availability) {
             self.emit('updateUserAvailability', {
                 userID: socket.decoded_token,
                 roles: availability.roles,

@@ -1,4 +1,5 @@
 <link rel="import" href="/components/polymer/polymer.html">
+
 <link rel="import" href="/components/iron-flex-layout/classes/iron-flex-layout.html">
 <link rel="import" href="/components/paper-listbox/paper-listbox.html">
 <link rel="import" href="/components/paper-material/paper-material.html">
@@ -89,7 +90,7 @@
 
                 var captain = this.$.captainSelect.checked;
 
-                socket.emit('changeAvailability', {
+                socket.emit('updateAvailability', {
                     roles: roles,
                     captain: captain
                 });
