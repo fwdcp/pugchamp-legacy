@@ -68,7 +68,7 @@ module.exports = function(app, io, self, server) {
         return draftCaptains;
     }
 
-    function checkIfLegalState(teams, maps) {
+    function checkIfLegalState(teams, maps, final) {
         let teamsValid = lodash.every(teams, function(team) {
             let teamState = calculateCurrentTeamState(team);
 
@@ -82,6 +82,16 @@ module.exports = function(app, io, self, server) {
 
             if (teamState.overfilledTotal > 0) {
                 return false;
+            }
+
+            if (final) {
+                if (teamState.remaining > 0) {
+                    return false;
+                }
+
+                if (teamState.underfilledTotal > 0) {
+                    return false;
+                }
             }
 
             return true;
