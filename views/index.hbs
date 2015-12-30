@@ -8,8 +8,13 @@
 	<link rel="import" href="/elements/pugchamp-client/pugchamp-client.html">
 	<link rel="import" href="/elements/pugchamp-launchpad/pugchamp-launchpad.html">
 	<link rel="import" href="/elements/pugchamp-restrictions/pugchamp-restrictions.html">
-	<link rel="import" href="/elements/pugchamp-chat/pugchamp-chat.html">	
-	
+	<link rel="import" href="/elements/pugchamp-chat/pugchamp-chat.html">
+
+    <style is="custom-style">
+        pugchamp-chat {
+            width: 300px;
+        }
+    </style>
 </head>
 
 <body class="fullbleed" unresolved>
@@ -21,18 +26,16 @@
 
 			<div id="main">
                 <pugchamp-restrictions></pugchamp-restrictions>
-				<pugchamp-launchpad></pugchamp-launchpad>
-			</div>
-			<div>
-							<pugchamp-chat></pugchamp-chat>
 
+                <div class="horizontal layout">
+	                <pugchamp-launchpad class="flex"></pugchamp-launchpad>
+                    <pugchamp-chat></pugchamp-chat>
+                </div>
 			</div>
 		</div>
-
 	</paper-drawer-panel>
 
     <pugchamp-client></pugchamp-client>
-
 </body>
 
 </html>

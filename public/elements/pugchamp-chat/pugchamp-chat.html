@@ -1,80 +1,73 @@
 <link rel="import" href="/components/polymer/polymer.html">
-<link rel="import" href="/components/paper-input/paper-input.html">
-<link rel="import" href="/components/paper-icon-button/paper-icon-button.html">
-<link rel="import" href="/components/paper-material/paper-material.html">
+
+<link rel="import" href="/components/iron-a11y-keys/iron-a11y-keys.html">
 <link rel="import" href="/components/iron-icons/iron-icons.html">
+<link rel="import" href="/components/paper-card/paper-card.html">
+<link rel="import" href="/components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="/components/paper-input/paper-textarea.html">
+
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
 
 <dom-module id="pugchamp-chat">
 	<template>
-		<style>
-			:host {
-				height: 100%;
+		<style is="custom-style">
+			#chatMessages {
+				height: 500px;
+				padding: 5px;
+				overflow: auto;
 			}
-			#container {
-			position:relative;
-			width: 500px;
-			height: 500px;
-			
-			}
-			paper-material {
-			margin:5px;
-			padding:10px;
 
-			}
-			#chat-box {
-			min-height: 100px;
+			.chat-message {
+				width: 100%;
+				margin: 5px 0;
 			}
 		</style>
-		<div id="container" layout vertical>
-			<div id="chat-box" vertical layout start>
-				<template is="dom-repeat" items="{{messages}}">
-					<paper-material> {{item.message}}</paper-material>
-				</template>
-			</div>
-			<div id="editor" horizontal layout center>
-				<paper-input id="input" label="chat" on-keypress="keyPressed" flex> </paper-input>
-				<paper-icon-button id="button" icon="send" on-tap="buttonPressed"> </paper-icon-button>
-			</div>
+
+		<div id="chatMessages">
+			<template is="dom-repeat" items="{{messages}}">
+				<paper-card class="chat-message">
+					<div class="card-content"><strong>{{item.user.alias}}</strong>: {{item.message}}</div>
+				</paper-card>
+			</template>
+		</div>
+		<div class="horizontal layout end wrap">
+			<iron-a11y-keys id="submitWatcher" keys="enter" on-keys-pressed="onEnter"></iron-a11y-keys>
+			<paper-textarea id="messageText" class="flex" maxlength="140" max-rows="3" char-counter disabled="{{isRestricted(restrictions, 'comms')}}"></paper-textarea>
+			<paper-icon-button icon="send" on-tap="sendMessage" disabled="{{isRestricted(restrictions, 'comms')}}"></paper-icon-button>
 		</div>
 	</template>
 	<script>
-    Polymer({
-		is: 'pugchamp-chat',
-        ready: function() {
+	    Polymer({
+			is: 'pugchamp-chat',
+			behaviors: [PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior],
+	        ready: function() {
+				this.set('messages', []);
 
-			//todo: figure out how to push messages on to the thing...
-			
-			//var messages = [];
-            //socket.on('chat message', function(msg) {
-            //   messages.push(msg);
-			//	 console.log( 'msg ' + msg); }
-            //});
-					
-        },
-        
-        sendMessage: function() {
-			var chatMessage =  this.$.input.value ;
-			console.log('chatMessage: ' + chatMessage );
-			//todo: clean input
-			console.log(this.$.input.value);
-			socket.emit('chat message', this.$.input.value);
-			this.$.input.value = "";
-        },
-        keyPressed: function(event) {
-            if (event.which == 13) {
-                this.sendMessage();
-                event.preventDefault();
-            }
-        },
-        buttonPressed: function(event) {
-            this.sendMessage();
-            event.preventDefault();
-        }
-    });	
-	
-	
-	
+				this.$.submitWatcher.target = this.$.messageText;
+
+				this._listenToEvent('chatMessageReceived', 'onChatMessageReceived');
+	        },
+			onChatMessageReceived: function(chat) {
+				var atBottom = this.$.chatMessages.scrollHeight - this.$.chatMessages.scrollTop === this.$.chatMessages.clientHeight;
+
+				this.push('messages', chat);
+
+				if (atBottom) {
+					this.async(function() {
+						this.$.chatMessages.scrollTop = this.$.chatMessages.scrollHeight - this.$.chatMessages.clientHeight;
+					});
+				}
+			},
+			onEnter: function(event) {
+				event.detail.keyboardEvent.preventDefault();
+
+				this.sendMessage();
+			},
+			sendMessage: function() {
+				socket.emit('sendChatMessage', this.$.messageText.value);
+				this.$.messageText.value = '';
+			}
+	    });
 	</script>
-
-
 </dom-module>
