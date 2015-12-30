@@ -15,7 +15,7 @@ module.exports = function(app, io, self, server) {
     }
 
     function calculateCurrentTeamState(team) {
-        let currentRoleDistribution = calculateRoleDistribution(currentTeam);
+        let currentRoleDistribution = calculateRoleDistribution(team);
 
         let currentState = lodash.reduce(config.get('app.games.roles'), function(current, role, roleName) {
             current.players += currentRoleDistribution[roleName];
@@ -147,25 +147,25 @@ module.exports = function(app, io, self, server) {
         prepareStatusMessage();
         io.sockets.emit('draftStatusUpdated', currentStatusMessage);
 
-        let currentTurn = draftOrder[turn];
+        let turnDefinition = draftOrder[turn];
 
         let turnInfo = {};
 
-        if (turn.type === 'playerPick') {
+        if (turnDefinition.type === 'playerPick') {
             // TODO: compile all of the roles that can be picked
             // TODO: compile all of the players that can't be picked
         }
-        else if (turn.type === 'captainRole') {
+        else if (turnDefinition.type === 'captainRole') {
             // TODO: compile all of the roles that can be picked
         }
-        else if (turn.type === 'mapPick' || turn.type === 'mapBan') {
+        else if (turnDefinition.type === 'mapPick' || turnDefinition.type === 'mapBan') {
             // TODO: furnish
         }
 
-        if (turn.method === 'random') {
+        if (turnDefinition.method === 'random') {
             // TODO: hand off to method for random selection
         }
-        else if (turn.method === 'captain') {
+        else if (turnDefinition.method === 'captain') {
             // TODO: hand off to appropriate captain and set timer
         }
     }
@@ -175,14 +175,14 @@ module.exports = function(app, io, self, server) {
 
         selectCaptains(draftInfo.captains);
 
-        draftTeams = [
+        pickedTeams = [
             [],
             []
         ];
         pickedMaps = [];
         remainingMaps = lodash.keys(config.get('app.games.maps'));
 
-        let legalState = checkIfLegalState(draftTeams, {
+        let legalState = checkIfLegalState(pickedTeams, {
             picked: pickedMaps,
             remaining: remainingMaps
         }, false);
