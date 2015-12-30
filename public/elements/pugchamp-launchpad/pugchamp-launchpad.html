@@ -2,6 +2,7 @@
 
 <link rel="import" href="/components/iron-flex-layout/classes/iron-flex-layout.html">
 <link rel="import" href="/components/paper-item/paper-item.html">
+<link rel="import" href="/components/paper-item/paper-icon-item.html">
 <link rel="import" href="/components/paper-material/paper-material.html">
 <link rel="import" href="/components/paper-progress/paper-progress.html">
 <link rel="import" href="/components/paper-toggle-button/paper-toggle-button.html">
@@ -9,6 +10,7 @@
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
 <link rel="import" href="/elements/pugchamp-notification/pugchamp-notification.html">
+<link rel="import" href="/elements/pugchamp-icons/pugchamp-icons.html">
 <link rel="import" href="/elements/pugchamp-utilities/pugchamp-polymer-helpers.html">
 
 <dom-module id="pugchamp-launchpad">
@@ -43,17 +45,21 @@
             </div>
         </div>
         <div class="horizontal layout" id="roles">
-            <template is="dom-repeat" items="{{_convertObjectToRepeatable(roles)}}">
+            <template is="dom-repeat" items="{{_convertObjectToRepeatable(roles)}}" as="role">
                 <div class="flex">
                     <div class="vertical layout">
-                        <paper-item>
+                        <paper-icon-item>
+                            <iron-icon icon="{{iconFromIconset('tf2-classes-40px', role.value.class)}}" theme="black" item-icon></iron-icon>
                             <div class="flex">
-                                <h3>{{item.value.name}}</h3>
+                                <h3>{{role.value.name}}</h3>
                             </div>
-                            <paper-toggle-button class="role-select" value="{{item.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability"></paper-toggle-button>
-                        </paper-item>
-                        <template is="dom-repeat" items="{{_getObjectKey(players, item.key)}}">
-                            <paper-item>{{item.alias}}</paper-item>
+                            <paper-toggle-button class="role-select" value="{{role.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability"></paper-toggle-button>
+                        </paper-icon-item>
+                        <template is="dom-repeat" items="{{_getObjectKey(players, role.key)}}">
+                            <paper-icon-item>
+                                <iron-icon icon="{{iconFromIconset('tf2-classes-24px', role.value.class)}}" item-icon></iron-icon>
+                                <div class="flex">{{item.alias}}</div>
+                            </paper-icon-item>
                         </template>
                     </div>
                 </div>
@@ -154,6 +160,9 @@
 
                     return rolesString + ' (' + needed.needed + ')';
                 }, this).join('; ');
+            },
+            iconFromIconset: function(iconset, icon) {
+                return iconset + ":" + icon;
             }
         });
     </script>
