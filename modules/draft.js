@@ -44,7 +44,10 @@ module.exports = function(app, io, self, server) {
     var draftOrder = config.get('app.draft.order');
     var draftCaptains = [];
 
-    var pickedTeams = [[], []];
+    var pickedTeams = [
+        [],
+        []
+    ];
     var pickedMaps = [];
     var remainingMaps = [];
 
@@ -125,11 +128,19 @@ module.exports = function(app, io, self, server) {
 
         selectCaptains(draftInfo.captains);
 
-        draftTeams = [[], []];
+        draftTeams = [
+            [],
+            []
+        ];
         pickedMaps = [];
         remainingMaps = lodash.keys(config.get('app.games.maps'));
 
-        if (!checkIfLegalState(draftTeams, {picked: pickedMaps, remaining: remainingMaps}, false)) {
+        let legalState = checkIfLegalState(draftTeams, {
+            picked: pickedMaps,
+            remaining: remainingMaps
+        }, false);
+
+        if (!legalState) {
             throw new Error('Invalid state before draft start!');
         }
 
