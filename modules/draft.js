@@ -42,6 +42,7 @@ module.exports = function(app, io, self, server) {
 
     var draftInProgress = false;
     var draftOrder = config.get('app.draft.order');
+    var currentDraftTurn = 0;
     var draftCaptains = [];
 
     var pickedTeams = [
@@ -50,6 +51,8 @@ module.exports = function(app, io, self, server) {
     ];
     var pickedMaps = [];
     var remainingMaps = [];
+
+    var currentStatusMessage = null;
 
     // TODO: provide internal method for retrieving current draft status
 
@@ -123,6 +126,50 @@ module.exports = function(app, io, self, server) {
         return true;
     }
 
+    function prepareStatusMessage() {
+        if (!draftInProgress) {
+            currentStatusMessage = null;
+            return null;
+        }
+
+        // TODO: properly fill the status message
+
+        currentStatusMessage = {
+
+        };
+
+        return currentStatusMessage;
+    }
+
+    function beginDraftTurn(turn) {
+        currentDraftTurn = 0;
+
+        prepareStatusMessage();
+        io.sockets.emit('draftStatusUpdated', currentStatusMessage);
+
+        let currentTurn = draftOrder[turn];
+
+        let turnInfo = {};
+
+        if (turn.type === 'playerPick') {
+            // TODO: compile all of the roles that can be picked
+            // TODO: compile all of the players that can't be picked
+        }
+        else if (turn.type === 'captainRole') {
+            // TODO: compile all of the roles that can be picked
+        }
+        else if (turn.type === 'mapPick' || turn.type === 'mapBan') {
+            // TODO: furnish
+        }
+
+        if (turn.method === 'random') {
+            // TODO: hand off to method for random selection
+        }
+        else if (turn.method === 'captain') {
+            // TODO: hand off to appropriate captain and set timer
+        }
+    }
+
     self.emit('launchGameDraft', function(draftInfo) {
         draftInProgress = true;
 
@@ -144,6 +191,6 @@ module.exports = function(app, io, self, server) {
             throw new Error('Invalid state before draft start!');
         }
 
-        // TODO: properly begin the drafting process
+        beginDraftTurn(0);
     });
 };
