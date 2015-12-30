@@ -83,6 +83,8 @@ module.exports = function(app, io, self, server) {
             if (teamState.overfilledTotal > 0) {
                 return false;
             }
+
+            return true;
         });
 
         if (teamsValid) {
@@ -90,6 +92,8 @@ module.exports = function(app, io, self, server) {
         }
 
         // TODO: check maps
+
+        return true;
     }
 
     self.emit('launchGameDraft', function(draftInfo) {
