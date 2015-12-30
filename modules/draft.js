@@ -85,7 +85,7 @@ module.exports = function(app, io, self, server) {
             }
 
             if (final) {
-                if (teamState.remaining > 0) {
+                if (teamState.remaining !== 0) {
                     return false;
                 }
 
@@ -101,7 +101,17 @@ module.exports = function(app, io, self, server) {
             return false;
         }
 
-        // TODO: check maps
+        let mapsInSeries = config.get('app.games.mapsInSeries');
+
+        if (lodash.size(maps.picked) + lodash.size(maps.remaining) < mapsInSeries) {
+            return false;
+        }
+
+        if (final) {
+            if (lodash.size(maps.picked) !== mapsInSeries) {
+                return false;
+            }
+        }
 
         return true;
     }
