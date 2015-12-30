@@ -35,52 +35,52 @@
         "draft": {
             "order": [{
                 "type": "playerPick",
-                "by": "captain",
-                "for": 1
+                "method": "manual",
+                "captain": 1
             }, {
                 "type": "playerPick",
-                "by": "captain",
-                "for": 2
+                "method": "manual",
+                "captain": 2
             }, {
                 "type": "playerPick",
-                "by": "captain",
-                "for": 2
+                "method": "manual",
+                "captain": 2
             }, {
                 "type": "playerPick",
-                "by": "captain",
-                "for": 1
+                "method": "manual",
+                "captain": 1
             }, {
                 "type": "playerPick",
-                "by": "captain",
-                "for": 1
+                "method": "manual",
+                "captain": 1
             }, {
                 "type": "playerPick",
-                "by": "captain",
-                "for": 2
+                "method": "manual",
+                "captain": 2
             }, {
                 "type": "playerPick",
-                "by": "captain",
-                "for": 2
+                "method": "manual",
+                "captain": 2
             }, {
                 "type": "playerPick",
-                "by": "captain",
-                "for": 1
+                "method": "manual",
+                "captain": 1
             }, {
                 "type": "playerPick",
-                "by": "captain",
-                "for": 1
+                "method": "manual",
+                "captain": 1
             }, {
                 "type": "playerPick",
-                "by": "captain",
-                "for": 2
+                "method": "manual",
+                "captain": 2
             }, {
                 "type": "captainRole",
                 "by": "random",
-                "for": 2
+                "captain": 2
             }, {
                 "type": "captainRole",
                 "by": "random",
-                "for": 1
+                "captain": 1
             }]
         }
     },
