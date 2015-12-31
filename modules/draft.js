@@ -4,6 +4,7 @@
 var chance = require('chance');
 var config = require('config');
 var lodash = require('lodash');
+var ms = require('ms');
 
 module.exports = function(app, io, self, server) {
     function calculateRoleDistribution(currentTeam) {
@@ -42,15 +43,24 @@ module.exports = function(app, io, self, server) {
 
     var draftInProgress = false;
     var draftOrder = config.get('app.draft.order');
-    var currentDraftTurn = 0;
+    var turnTimeLimit = ms(config.get('app.launch.readyPeriod'));
+
+    var playerPool;
+    var mapPool = config.get('app.games.maps');
     var draftCaptains = [];
+    var currentDraftTurn = 0;
+    var currentDraftTurnStartTime;
+    var currentDraftTurnExpireTimeout = null;
+    var draftChoices = [];
 
     var pickedTeams = [
         [],
         []
     ];
+    var unavailablePlayers = [];
     var pickedMaps = [];
     var remainingMaps = [];
+    var allowedRoles = null;
 
     var currentStatusMessage = null;
 
@@ -141,32 +151,48 @@ module.exports = function(app, io, self, server) {
         return currentStatusMessage;
     }
 
+    function expireTime() {
+        // TODO: end the draft and clean everything up
+    }
+
+    function makeRandomChoice() {
+        // TODO: pick something randomly
+    }
+
     function beginDraftTurn(turn) {
-        currentDraftTurn = 0;
+        currentDraftTurn = turn;
+
+        let turnDefinition = draftOrder[turn];
+
+        if (turnDefinition.type === 'playerPick' || turnDefinition.type === 'captainRole') {
+            let team = pickedTeams[turnDefinition.captain - 1];
+            let teamState = calculateCurrentTeamState(team);
+
+            if (teamState.remaining > teamState.underfilledTotal) {
+                allowedRoles = lodash.difference(lodash.keys(), teamState.overfilledRoles);
+            }
+            else {
+                allowedRoles = teamState.underfilledRoles;
+            }
+
+            unavailablePlayers = lodash(pickedTeams).flatten().map(function(pick) {
+                return pick.userID;
+            }).union(draftCaptains).uniq();
+        }
+        else {
+            allowedRoles = null;
+        }
+
+        currentDraftTurnStartTime = Date.now();
 
         prepareStatusMessage();
         io.sockets.emit('draftStatusUpdated', currentStatusMessage);
 
-        let turnDefinition = draftOrder[turn];
-
-        let turnInfo = {};
-
-        if (turnDefinition.type === 'playerPick') {
-            // TODO: compile all of the roles that can be picked
-            // TODO: compile all of the players that can't be picked
-        }
-        else if (turnDefinition.type === 'captainRole') {
-            // TODO: compile all of the roles that can be picked
-        }
-        else if (turnDefinition.type === 'mapPick' || turnDefinition.type === 'mapBan') {
-            // TODO: furnish
-        }
-
         if (turnDefinition.method === 'random') {
-            // TODO: hand off to method for random selection
+            makeRandomChoice();
         }
         else if (turnDefinition.method === 'captain') {
-            // TODO: hand off to appropriate captain and set timer
+            setTimeout(expireTime, turnTimeLimit);
         }
     }
 
@@ -175,12 +201,15 @@ module.exports = function(app, io, self, server) {
 
         selectCaptains(draftInfo.captains);
 
+        playerPool = draftInfo.players;
+
+        remainingMaps = lodash.keys(mapPool);
+
         pickedTeams = [
             [],
             []
         ];
         pickedMaps = [];
-        remainingMaps = lodash.keys(config.get('app.games.maps'));
 
         let legalState = checkIfLegalState(pickedTeams, {
             picked: pickedMaps,

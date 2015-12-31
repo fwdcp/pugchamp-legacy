@@ -135,7 +135,8 @@
             }, {
                 "type": "mapPick",
                 "by": "random"
-            }]
+            }],
+            "turnTimeLimit": "60s"
         }
     },
     "server": {
