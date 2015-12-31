@@ -196,6 +196,101 @@ module.exports = function(app, io, self, server) {
         }
     }
 
+    function completeDraft() {
+        // TODO: complete draft
+    }
+
+    self.on('commitDraftChoice', function(choice) {
+        let turnDefinition = draftOrder[currentDraftTurn];
+
+        if (turnDefinition.method === 'captain' && choice.captain !== draftCaptains[turnDefinition.captain - 1]) {
+            return;
+        }
+        else if (turnDefinition.method !== 'captain' && choice.captain) {
+            return;
+        }
+
+        if (turnDefinition.type !== choice.type) {
+            return;
+        }
+
+        let newTeams = lodash.cloneDeep(pickedTeams);
+        let newPickedMaps = lodash.cloneDeep(pickedMaps);
+        let newRemainingMaps = lodash.cloneDeep(remainingMaps);
+
+        if (turnDefinition.type === 'playerPick') {
+            if (lodash.includes(unavailablePlayers, choice.player)) {
+                return;
+            }
+
+            if (!lodash.includes(allowedRoles, choice.role)) {
+                return;
+            }
+
+            if (!lodash.includes(playerPool[choice.role], choice.player)) {
+                return;
+            }
+
+            newTeams[turnDefinition.captain - 1].push({
+                player: choice.player,
+                role: choice.role
+            });
+        }
+        else if (turnDefinition.type === 'captainRole') {
+            if (!lodash.includes(allowedRoles, choice.role)) {
+                return;
+            }
+
+            newTeams[turnDefinition.captain - 1].push({
+                player: choice.captain,
+                role: choice.role
+            });
+        }
+        else if (turnDefinition.type === 'mapBan') {
+            if (!lodash.includes(remainingMaps, choice.map)) {
+                return;
+            }
+
+            newRemainingMaps = lodash.without(remainingMaps, choice.map);
+        }
+        else if (turnDefinition.type === 'mapPick') {
+            if (!lodash.includes(remainingMaps, choice.map)) {
+                return;
+            }
+
+            newPickedMaps.push(choice.map);
+            newRemainingMaps = lodash.without(remainingMaps, choice.map);
+        }
+
+        let isFinalTurn = currentDraftTurn + 1 === lodash.size(draftOrder);
+
+        let legalNewState = checkIfLegalState(newTeams, {
+            picked: newPickedMaps,
+            remaining: newRemainingMaps
+        }, isFinalTurn);
+
+        if (!legalNewState) {
+            throw new Error('Invalid state after valid choice!');
+        }
+
+        pickedTeams = newTeams;
+        pickedMaps = newPickedMaps;
+        remainingMaps = newRemainingMaps;
+
+        draftChoices.push(choice);
+
+        if (currentDraftTurnExpireTimeout) {
+            clearTimeout(currentDraftTurnExpireTimeout);
+        }
+
+        if (isFinalTurn) {
+            completeDraft();
+        }
+        else {
+            beginDraftTurn(currentDraftTurn++);
+        }
+    });
+
     self.emit('launchGameDraft', function(draftInfo) {
         draftInProgress = true;
 
