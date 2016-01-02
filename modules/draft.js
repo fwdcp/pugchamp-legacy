@@ -182,7 +182,7 @@ module.exports = function(app, io, self, server) {
 
             choice.role = chance.weighted(allowedRoles, weights);
 
-            choice.player = chance.pick(playerPool[choice.player]);
+            choice.player = chance.pick(playerPool[choice.role]);
         }
         else if (turnDefinition.type === 'captainRole') {
             let team = pickedTeams[turnDefinition.captain - 1];
