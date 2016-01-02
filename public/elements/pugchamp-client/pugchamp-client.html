@@ -1,12 +1,16 @@
 <link rel="import" href="/components/polymer/polymer.html">
 
 <link rel="import" href="/components/iron-ajax/iron-ajax.html">
+<link rel="import" href="/components/paper-toast/paper-toast.html">
 
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 
 <dom-module id="pugchamp-client">
     <template>
         <iron-ajax id="token" url="/user/token" on-response="infoReceived"></iron-ajax>
+        <paper-toast text="Connected to the server." id="connectAlert"></paper-toast>
+        <paper-toast text="Disconnected from the server." id="disconnectAlert"></paper-toast>
+        <paper-toast text="Failed to reconnect to the server." id="reconnectFailedAlert"></paper-toast>
     </template>
 
     <script>
@@ -15,6 +19,8 @@
             behaviors: [PugChampClientBehaviors.BaseBehavior],
             ready: function() {
                 this._listenToEvent('connect', 'onConnect');
+                this._listenToEvent('disconnect', 'onDisconnect');
+                this._listenToEvent('reconnect_failed', 'onReconnectFailed');
 
                 if (this.socket.connected) {
                     this.onConnect();
@@ -22,6 +28,13 @@
             },
             onConnect: function() {
                 this.$.token.generateRequest();
+                this.$.connectAlert.show();
+            },
+            onDisconnect: function() {
+                this.$.disconnectAlert.show();
+            },
+            onReconnectFailed: function() {
+                this.$.reconnectFailedAlert.show();
             },
             infoReceived: function(event) {
                 this.socket.emit('authenticate', {
