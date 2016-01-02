@@ -142,10 +142,39 @@ module.exports = function(app, io, self, server) {
             return null;
         }
 
-        // TODO: properly fill the status message
-
         currentStatusMessage = {
-
+            draftOrder: draftOrder,
+            playerPool: lodash.mapValues(playerPool, function(rolePool) {
+                return lodash.map(rolePool, function(userID) {
+                    return self.getFilteredUser(userID);
+                });
+            }),
+            mapPool: mapPool,
+            draftCaptains: lodash.map(draftCaptains, function(userID) {
+                return self.getFilteredUser(userID);
+            }),
+            currentDraftTurn: currentDraftTurn,
+            elapsedTurnTime: Date.now() - currentDraftTurnStartTime,
+            totalTurnTime: turnTimeLimit,
+            draftChoices: lodash.map(draftChoices, function(choice) {
+                if (choice.player) {
+                    return lodash.assign({}, choice, {player: self.getFilteredUser(choice.player)});
+                }
+                else {
+                    return choice;
+                }
+            }),
+            pickedTeams: lodash.map(pickedTeams, function(team) {
+                return lodash.map(team, function(userID) {
+                    return self.getFilteredUser(userID);
+                });
+            }),
+            unavailablePlayers: lodash.map(unavailablePlayers, function(userID) {
+                return self.users[userID].steamID;
+            }),
+            pickedMaps: pickedMaps,
+            remainingMaps: remainingMaps,
+            allowedRoles: allowedRoles
         };
 
         return currentStatusMessage;
