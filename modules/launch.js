@@ -114,7 +114,7 @@ module.exports = function(app, io, self, server) {
                 resolve([]);
             }),
             new Promise(function(resolve, reject) {
-                self.emit('checkIfDraftInProgress', function(inProgress) {
+                let received = self.emit('checkIfDraftInProgress', function(inProgress) {
                     if (inProgress) {
                         resolve(['draftCurrentlyRunning']);
                     }
@@ -122,6 +122,11 @@ module.exports = function(app, io, self, server) {
                         resolve([]);
                     }
                 });
+
+                // NOTE: this resolves a case during startup when the event isn't set up yet
+                if (!received) {
+                    resolve([]);
+                }
             })
             // TODO: check that a server is free
         ]).then(function(launchConditions) {
