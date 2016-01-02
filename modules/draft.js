@@ -159,10 +159,50 @@ module.exports = function(app, io, self, server) {
         let choice = {};
 
         if (turnDefinition.type === 'playerPick') {
-            // TODO: pick
+            let team = pickedTeams[turnDefinition.captain - 1];
+            let roleDistribution = calculateRoleDistribution(team);
+
+            let roles = config.get('app.games.roles');
+
+            let weights = [];
+
+            lodash.forEach(allowedRoles, function(role) {
+                let weight = 0.01;
+
+                if (roleDistribution[role] < roles[role].min) {
+                    weight += roles[role].min - roleDistribution[role];
+                }
+
+                weight /= lodash.size(playerPool[role]);
+
+                weights.push(weight);
+            });
+
+            choice.role = chance.weighted(allowedRoles, weights);
+
+            choice.player = chance.pick(playerPool[choice.player]);
         }
         else if (turnDefinition.type === 'captainRole') {
-            // TODO: pick
+            let team = pickedTeams[turnDefinition.captain - 1];
+            let roleDistribution = calculateRoleDistribution(team);
+
+            let roles = config.get('app.games.roles');
+
+            let weights = [];
+
+            lodash.forEach(allowedRoles, function(role) {
+                let weight = 0.01;
+
+                if (roleDistribution[role] < roles[role].min) {
+                    weight += roles[role].min - roleDistribution[role];
+                }
+
+                weight /= lodash.size(playerPool[role]);
+
+                weights.push(weight);
+            });
+
+            choice.role = chance.weighted(allowedRoles, weights);
         }
         else if (turnDefinition.type === 'mapBan' || turnDefinition.type === 'mapPick') {
             choice.type = turnDefinition.type;
