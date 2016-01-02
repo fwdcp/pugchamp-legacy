@@ -182,15 +182,13 @@ module.exports = function(app, io, self, server) {
         }
 
         currentDraftTurnStartTime = Date.now();
+        setTimeout(expireTime, turnTimeLimit);
 
         prepareStatusMessage();
         io.sockets.emit('draftStatusUpdated', currentStatusMessage);
 
         if (turnDefinition.method === 'random') {
             makeRandomChoice();
-        }
-        else if (turnDefinition.method === 'captain') {
-            setTimeout(expireTime, turnTimeLimit);
         }
     }
 
