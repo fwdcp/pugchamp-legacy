@@ -72,9 +72,7 @@ module.exports = function(app, io, self, server) {
         let weights = [];
 
         if (method === 'equal') {
-            lodash.forEach(captains, function() {
-                weights.push(1);
-            });
+            lodash.fill(weights, 1, 0, lodash.size(captains));
         }
 
         let chosenCaptains = new Set();
