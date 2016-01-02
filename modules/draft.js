@@ -400,4 +400,14 @@ module.exports = function(app, io, self, server) {
 
         beginDraftTurn(0);
     });
+
+    io.sockets.on('connection', function(socket) {
+        socket.emit('draftStatusUpdated', currentStatusMessage);
+    });
+
+    io.sockets.on('authenticated', function(socket) {
+        socket.on('makeDraftChoice', function(choice) {
+            // TODO: pass on draft choice
+        });
+    });
 };
