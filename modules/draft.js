@@ -167,10 +167,7 @@ module.exports = function(app, io, self, server) {
         else if (turnDefinition.type === 'mapBan' || turnDefinition.type === 'mapPick') {
             choice.type = turnDefinition.type;
 
-            let weights = [];
-            lodash.fill(weights, 1, 0, lodash.size(remainingMaps));
-
-            choice.map = chance.weighted(remainingMaps, weights);
+            choice.map = chance.pick(remainingMaps);
         }
 
         self.emit('commitDraftChoice', choice);
