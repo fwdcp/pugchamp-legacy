@@ -64,7 +64,9 @@ module.exports = function(app, io, self, server) {
 
     var currentStatusMessage = null;
 
-    // TODO: provide internal method for retrieving current draft status
+    self.on('checkIfDraftInProgress', function(callback) {
+        callback(draftInProgress);
+    });
 
     function selectCaptains(captains) {
         let method = config.get('app.draft.captainSelectionWeight');

@@ -112,9 +112,18 @@ module.exports = function(app, io, self, server) {
                 }
 
                 resolve([]);
+            }),
+            new Promise(function(resolve, reject) {
+                self.emit('checkIfDraftInProgress', function(inProgress) {
+                    if (inProgress) {
+                        resolve(['draftCurrentlyRunning']);
+                    }
+                    else {
+                        resolve([]);
+                    }
+                });
             })
             // TODO: check that a server is free
-            // TODO: check that a game is not already being drafted
         ]).then(function(launchConditions) {
             missingLaunchConditions = lodash(launchConditions).flatten().compact().value();
 
