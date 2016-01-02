@@ -173,7 +173,7 @@ module.exports = function(app, io, self, server) {
                     weight += roles[role].min - roleDistribution[role];
                 }
 
-                weight /= lodash.size(playerPool[role]);
+                weight /= lodash.size(playerPool[role]) + 0.01;
 
                 weights.push(weight);
             });
@@ -197,7 +197,7 @@ module.exports = function(app, io, self, server) {
                     weight += roles[role].min - roleDistribution[role];
                 }
 
-                weight /= lodash.size(playerPool[role]);
+                weight /= lodash.size(playerPool[role]) + 0.01;
 
                 weights.push(weight);
             });
