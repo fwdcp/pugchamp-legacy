@@ -1,7 +1,11 @@
 <link rel="import" href="/components/polymer/polymer.html">
 
+<link rel="import" href="/components/paper-material/paper-material.html">
+<link rel="import" href="/components/paper-radio-button/paper-radio-button.html">
+
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-user-behavior.html">
 <link rel="import" href="/elements/pugchamp-utilities/pugchamp-polymer-helpers.html">
 
 <dom-module id="pugchamp-draft">
@@ -24,13 +28,39 @@
                 background: var(--google-green-300);
             }
 
-            .draft-turn .description {
+            .map {
+                margin: 5px;
+                text-align: center;
+            }
+
+            .map .map-overlay {
+                bottom: 0;
+                height: 100%;
+                left: 0;
+                position: absolute;
+                right: 0;
+                top: 0;
+                width: 100%;
+            }
+
+            .map .map-overlay[data-status=banned] {
+                background: var(--google-red-300);
+                opacity: 0.5;
+            }
+
+            .map .map-overlay[data-status=picked] {
+                background: var(--google-green-300);
+                opacity: 0.5;
+            }
+
+            .map .map-background {
+                width: 100%;
             }
         </style>
 
         <div hidden$="{{!draftInProgress}}">
             <div id="draftTurns" class="horizontal layout">
-                <template is="dom-repeat" items="{{draftTurns}}">
+                <template is="dom-repeat" items="{{turns}}">
                     <paper-material data-status$="{{turnComparison(index, currentTurn)}}" class="draft-turn flex">
                         <strong>{{fullTurnTypeDescription(item.type)}}</strong>
                         <br>
@@ -42,13 +72,25 @@
                     </paper-material>
                 </template>
             </div>
+            <div id="maps" class="horizontal layout">
+                <template is="dom-repeat" items="{{_convertObjectToRepeatable(maps)}}">
+                    <paper-material class="map flex">
+                        <div data-status$="{{mapStatus(item.key, pickedMaps, remainingMaps)}}" class="map-overlay"></div>
+                        <img class="map-background" src$="{{mapImageBackground(item.value.image)}}">
+                        <div class="map-info">
+                            {{item.value.name}}
+                            <p hidden$="{{!mapChoiceAllowed(user, currentTurn, item.key, remainingMaps)}}"><paper-radio-button name="map" value="{{item.key}}" disabled="{{!mapChoiceAllowed(user, currentTurn, item.key, remainingMaps)}}"></paper-radio-button></p>
+                        </div>
+                    </paper-material>
+                </template>
+            </div>
         </div>
     </template>
 
     <script>
         Polymer({
             is: 'pugchamp-draft',
-            behaviors: [PugChampPolymerHelperBehaviors, PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior],
+            behaviors: [PugChampPolymerHelperBehaviors, PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior, PugChampClientBehaviors.UserBehavior],
             ready: function() {
                 this.set('draftInProgress', false);
 
@@ -64,9 +106,11 @@
 
                 this.set('roles', status.roles);
                 this.set('maps', status.mapPool);
-                this.set('draftTurns', status.draftTurns);
+                this.set('turns', status.draftTurns);
                 this.set('currentTurn', status.currentDraftTurn);
                 this.set('captains', status.draftCaptains);
+                this.set('pickedMaps', status.pickedMaps);
+                this.set('remainingMaps', status.remainingMaps);
             },
             turnComparison: function(turn, current) {
                 if (turn < current) {
@@ -95,7 +139,7 @@
             },
             fullTurnMethodDescription: function(method) {
                 if (method === 'manual') {
-                    return 'Captain\'s Choice';
+                    return 'Choice';
                 }
                 else if (method === 'random') {
                     return 'Random';
@@ -122,6 +166,41 @@
                         return this.maps[choice.map].name;
                     }
                 }
+            },
+            mapImageBackground: function(image) {
+                if (image) {
+                    return '/assets/maps/' + image;
+                }
+            },
+            mapStatus: function(map, picked, remaining) {
+                if (picked.includes(map)) {
+                    return 'picked';
+                }
+
+                if (!remaining.includes(map)) {
+                    return 'banned';
+                }
+
+                return 'undecided';
+            },
+            mapChoiceAllowed: function(user, turn, map, remainingMaps) {
+                if (this.turns[turn].type !== 'mapBan' && this.turns[turn].type !== 'mapPick') {
+                    return false;
+                }
+
+                if (this.turns[turn].method !== 'manual') {
+                    return false;
+                }
+
+                if (!this.user || this.user.steamID !== this.captains[this.turns[turn].captain - 1].steamID) {
+                    return false;
+                }
+
+                if (!remainingMaps.includes(map)) {
+                    return false;
+                }
+
+                return true;
             }
         });
     </script>
