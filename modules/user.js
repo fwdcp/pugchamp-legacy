@@ -62,6 +62,12 @@ module.exports = function(app, io, self, server) {
 
     self.on('usersRetrieved', function(userIDs) {
         lodash.forEach(userIDs, function(userID) {
+            self.emit('sendMessageToUser', {
+                userID: userID,
+                name: 'userInfoUpdated',
+                arguments: [self.getFilteredUser(userID)]
+            });
+
             Promise.all([
                 new Promise(function(resolve, reject) {
                     if (self.users[userID].setUp) {
@@ -216,6 +222,7 @@ module.exports = function(app, io, self, server) {
         } else {
             self.userSockets[userID].add(socket.id);
 
+            socket.emit('userInfoUpdated', self.getFilteredUser(userID));
             socket.emit('restrictionsUpdated', self.userRestrictions[userID]);
         }
 

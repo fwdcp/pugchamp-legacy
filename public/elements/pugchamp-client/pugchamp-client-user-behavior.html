@@ -1,0 +1,14 @@
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
+
+<script>
+    UserBehaviorImpl = {
+        created: function() {
+            this._listenToEvent('userInfoUpdated', '_onUserInfoUpdated');
+        },
+        _onUserInfoUpdated: function(userInfo) {
+            this.set('user', userInfo);
+        }
+    };
+
+    PugChampClientBehaviors.UserBehavior = [PugChampClientBehaviors.BaseBehavior, UserBehaviorImpl];
+</script>
