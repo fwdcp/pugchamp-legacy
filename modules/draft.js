@@ -266,7 +266,7 @@ module.exports = function(app, io, self, server) {
 
             unavailablePlayers = lodash(pickedTeams).flatten().map(function(pick) {
                 return pick.userID;
-            }).union(draftCaptains).uniq();
+            }).union(draftCaptains).uniq().value();
         }
         else {
             allowedRoles = null;
