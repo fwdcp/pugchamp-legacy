@@ -196,7 +196,7 @@ module.exports = function(app, io, self, server) {
     function makeRandomChoice() {
         let turnDefinition = draftOrder[currentDraftTurn];
 
-        let choice = {};
+        let choice = {type: turnDefinition.type};
 
         if (turnDefinition.type === 'playerPick') {
             let team = pickedTeams[turnDefinition.captain - 1];
