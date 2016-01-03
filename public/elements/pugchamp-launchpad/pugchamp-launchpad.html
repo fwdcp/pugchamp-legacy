@@ -81,6 +81,16 @@
                 this._listenToEvent('userAvailabilityUpdated', 'onUserAvailabilityUpdated');
                 this._listenToEvent('launchInProgress', 'onLaunchInProgress');
                 this._listenToEvent('launchAborted', 'onLaunchAborted');
+				ion.sound({
+					sounds: [
+						{
+							alias: "notify",
+							name: "pop",
+						}
+					],
+					path: "/assets/snd/",
+					preload: true
+				});
             },
             onLaunchStatusUpdated: function(status) {
                 this.set('roles', status.roles);
@@ -113,7 +123,7 @@
             },
             onLaunchInProgress: function(periodInfo) {
                 this.set('launchInProgress', true);
-
+				ion.sound.play("notify");
                 this.$.launchNotification.notify();
                 this.$.readyTime.value = periodInfo.elapsed / 1000;
                 this.$.readyTime.max = periodInfo.total / 1000;
