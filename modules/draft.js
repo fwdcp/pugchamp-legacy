@@ -151,7 +151,15 @@ module.exports = function(app, io, self, server) {
         }
 
         currentStatusMessage = {
-            draftOrder: draftOrder,
+            draftTurns: lodash.map(draftOrder, function(turn, index) {
+                let completeTurn = lodash.defaults({}, turn, draftChoices[index]);
+
+                if (completeTurn.player) {
+                    completeTurn.player = self.getFilteredUser(completeTurn.player);
+                }
+
+                return completeTurn;
+            }),
             playerPool: lodash.mapValues(playerPool, function(rolePool) {
                 return lodash.map(rolePool, function(userID) {
                     return self.getFilteredUser(userID);
@@ -164,14 +172,6 @@ module.exports = function(app, io, self, server) {
             currentDraftTurn: currentDraftTurn,
             elapsedTurnTime: Date.now() - currentDraftTurnStartTime,
             totalTurnTime: turnTimeLimit,
-            draftChoices: lodash.map(draftChoices, function(choice) {
-                if (choice.player) {
-                    return lodash.assign({}, choice, {player: self.getFilteredUser(choice.player)});
-                }
-                else {
-                    return choice;
-                }
-            }),
             pickedTeams: lodash.map(pickedTeams, function(team) {
                 return lodash.map(team, function(userID) {
                     return self.getFilteredUser(userID);
