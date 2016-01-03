@@ -1,10 +1,12 @@
 /* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
 "use strict";
 
-var chance = require('chance');
+var Chance = require('chance');
 var config = require('config');
 var lodash = require('lodash');
 var ms = require('ms');
+
+var chance = new Chance();
 
 module.exports = function(app, io, self, server) {
     function calculateRoleDistribution(currentTeam) {
