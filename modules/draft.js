@@ -203,9 +203,7 @@ module.exports = function(app, io, self, server) {
 
             let roles = config.get('app.games.roles');
 
-            let weights = [];
-
-            lodash.forEach(allowedRoles, function(role) {
+            let weights = lodash.map(allowedRoles, function(role) {
                 let weight = 0.01;
 
                 if (roleDistribution[role] < roles[role].min) {
@@ -214,7 +212,7 @@ module.exports = function(app, io, self, server) {
 
                 weight /= lodash.size(playerPool[role]) + 0.01;
 
-                weights.push(weight);
+                return weight;
             });
 
             choice.role = chance.weighted(allowedRoles, weights);
@@ -227,9 +225,7 @@ module.exports = function(app, io, self, server) {
 
             let roles = config.get('app.games.roles');
 
-            let weights = [];
-
-            lodash.forEach(allowedRoles, function(role) {
+            let weights = lodash.map(allowedRoles, function(role) {
                 let weight = 0.01;
 
                 if (roleDistribution[role] < roles[role].min) {
@@ -238,7 +234,7 @@ module.exports = function(app, io, self, server) {
 
                 weight /= lodash.size(playerPool[role]) + 0.01;
 
-                weights.push(weight);
+                return weight;
             });
 
             choice.role = chance.weighted(allowedRoles, weights);
