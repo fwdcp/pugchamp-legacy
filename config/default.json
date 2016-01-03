@@ -4,31 +4,38 @@
             "maps": {
                 "badlands": {
                     "name": "Badlands",
-                    "file": "cp_badlands.bsp"
+                    "file": "cp_badlands.bsp",
+                    "image": "badlands.png"
                 },
                 "granary": {
                     "name": "Granary",
-                    "file": "cp_granary_pro_b10.bsp"
+                    "file": "cp_granary_pro_b10.bsp",
+                    "image": "granary.png"
                 },
                 "gullywash": {
                     "name": "Gullywash",
-                    "file": "cp_gullywash_final1.bsp"
+                    "file": "cp_gullywash_final1.bsp",
+                    "image": "gullywash.png"
                 },
                 "metalworks": {
                     "name": "Metalworks",
-                    "file": "cp_metalworks_rc7.bsp"
+                    "file": "cp_metalworks_rc7.bsp",
+                    "image": "metalworks.png"
                 },
                 "process": {
                     "name": "Process",
-                    "file": "cp_process_final.bsp"
+                    "file": "cp_process_final.bsp",
+                    "image": "process.png"
                 },
                 "snakewater": {
                     "name": "Snakewater",
-                    "file": "cp_snakewater_final1.bsp"
+                    "file": "cp_snakewater_final1.bsp",
+                    "image": "snakewater.png"
                 },
                 "sunshine": {
                     "name": "Sunshine",
-                    "file": "cp_sunshine_rc9.bsp"
+                    "file": "cp_sunshine_rc9.bsp",
+                    "image": "sunshine.png"
                 }
             },
             "mapsInSeries": 1,
