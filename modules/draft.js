@@ -334,7 +334,7 @@ module.exports = function(app, io, self, server) {
             }
 
             newTeams[turnDefinition.captain - 1].push({
-                player: choice.captain,
+                player: draftCaptains[turnDefinition.captain - 1],
                 role: choice.role
             });
         }
