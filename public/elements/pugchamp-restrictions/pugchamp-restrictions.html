@@ -1,11 +1,22 @@
 <link rel="import" href="/components/polymer/polymer.html">
 
+<link rel="import" href="/components/paper-material/paper-material.html">
+<link rel="import" href="/components/paper-styles/color.html">
+
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
 
 <dom-module id="pugchamp-restrictions">
     <template>
+        <style is="custom-style">
+            .restriction {
+                background: var(--paper-amber-500);
+                margin: 10px 0;
+                padding: 10px;
+            }
+        </style>
+
         <template is="dom-repeat" items="{{restrictions.reasons}}">
-            <p>{{item}}</p>
+            <paper-material class="restriction">{{item}}</paper-material>
         </template>
     </template>
 
