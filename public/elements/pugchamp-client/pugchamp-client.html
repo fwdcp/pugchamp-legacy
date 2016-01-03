@@ -25,15 +25,27 @@
                 if (this.socket.connected) {
                     this.onConnect();
                 }
+			ion.sound({
+				sounds: [
+					{
+						alias: "disconnect",
+						name: "alert",
+					}
+				],
+				path: "/assets/snd/",
+				preload: true
+			});
             },
             onConnect: function() {
                 this.$.token.generateRequest();
                 this.$.connectAlert.show();
             },
             onDisconnect: function() {
+				ion.sound.play("disconnect");
                 this.$.disconnectAlert.show();
             },
             onReconnectFailed: function() {
+				ion.sound.play("disconnect");
                 this.$.reconnectFailedAlert.show();
             },
             infoReceived: function(event) {
