@@ -379,7 +379,7 @@ module.exports = function(app, io, self, server) {
         }
     });
 
-    self.emit('launchGameDraft', function(draftInfo) {
+    self.on('launchGameDraft', function(draftInfo) {
         draftInProgress = true;
 
         selectCaptains(draftInfo.captains);
