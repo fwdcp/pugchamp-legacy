@@ -125,7 +125,7 @@ module.exports = function(app, io, self, server) {
             return true;
         });
 
-        if (teamsValid) {
+        if (!teamsValid) {
             return false;
         }
 
