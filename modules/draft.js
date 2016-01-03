@@ -12,6 +12,8 @@ module.exports = function(app, io, self, server) {
     function calculateRoleDistribution(currentTeam) {
         return lodash.reduce(currentTeam, function(roles, player) {
             roles[player.role]++;
+
+            return roles;
         }, lodash.mapValues(config.get('app.games.roles'), function() {
             return 0;
         }));
@@ -32,6 +34,8 @@ module.exports = function(app, io, self, server) {
                 current.overfilledRoles.push(roleName);
                 current.overfilledTotal += currentRoleDistribution[roleName] - role.max;
             }
+
+            return current;
         }, {
             players: 0,
             underfilledRoles: [],
@@ -41,6 +45,8 @@ module.exports = function(app, io, self, server) {
         });
 
         currentState.remaining = config.get('app.games.teamSize') - currentState.players;
+
+        return currentState;
     }
 
     var draftInProgress = false;
