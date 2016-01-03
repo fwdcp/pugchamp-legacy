@@ -51,7 +51,7 @@ module.exports = function(app, io, self, server) {
 
     var draftInProgress = false;
     var draftOrder = config.get('app.draft.order');
-    var turnTimeLimit = ms(config.get('app.launch.readyPeriod'));
+    var turnTimeLimit = ms(config.get('app.draft.turnTimeLimit'));
 
     var playerPool;
     var mapPool = config.get('app.games.maps');
