@@ -274,7 +274,7 @@ module.exports = function(app, io, self, server) {
         }
 
         currentDraftTurnStartTime = Date.now();
-        setTimeout(expireTime, turnTimeLimit);
+        currentDraftTurnExpireTimeout = setTimeout(expireTime, turnTimeLimit);
 
         prepareStatusMessage();
         io.sockets.emit('draftStatusUpdated', currentStatusMessage);
