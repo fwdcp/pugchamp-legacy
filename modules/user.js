@@ -216,7 +216,7 @@ module.exports = function(app, io, self, server) {
         } else {
             self.userSockets[userID].add(socket.id);
 
-            socket.emit('restrictionsUpdated', self.userRestrictions[socket.decoded_token]);
+            socket.emit('restrictionsUpdated', self.userRestrictions[userID]);
         }
 
         socket.on('disconnect', function() {
