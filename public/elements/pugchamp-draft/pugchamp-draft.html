@@ -1,0 +1,128 @@
+<link rel="import" href="/components/polymer/polymer.html">
+
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
+<link rel="import" href="/elements/pugchamp-utilities/pugchamp-polymer-helpers.html">
+
+<dom-module id="pugchamp-draft">
+    <template>
+        <style is="custom-style">
+            .draft-turn {
+                @apply(--paper-font-caption);
+
+                margin: 5px;
+                padding: 5px;
+                text-align: center;
+            }
+
+            .draft-turn[data-status=completed] {
+                background: var(--google-grey-300);
+                opacity: 0.5;
+            }
+
+            .draft-turn[data-status=current] {
+                background: var(--google-green-300);
+            }
+
+            .draft-turn .description {
+            }
+        </style>
+
+        <div hidden$="{{!draftInProgress}}">
+            <div id="draftTurns" class="horizontal layout">
+                <template is="dom-repeat" items="{{draftTurns}}">
+                    <paper-material data-status$="{{turnComparison(index, currentTurn)}}" class="draft-turn flex">
+                        <strong>{{fullTurnTypeDescription(item.type)}}</strong>
+                        <br>
+                        {{fullTurnMethodDescription(item.method)}}
+                        <br>
+                        {{fullTurnCaptainName(item.captain)}}
+                        <br>
+                        {{fullTurnChoiceInfo(item)}}
+                    </paper-material>
+                </template>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'pugchamp-draft',
+            behaviors: [PugChampPolymerHelperBehaviors, PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior],
+            ready: function() {
+                this.set('draftInProgress', false);
+
+                this._listenToEvent('draftStatusUpdated', 'onDraftStatusUpdated');
+            },
+            onDraftStatusUpdated: function(status) {
+                if (!status) {
+                    this.set('draftInProgress', false);
+                    return;
+                }
+
+                this.set('draftInProgress', true);
+
+                this.set('roles', status.roles);
+                this.set('maps', status.mapPool);
+                this.set('draftTurns', status.draftTurns);
+                this.set('currentTurn', status.currentDraftTurn);
+                this.set('captains', status.draftCaptains);
+            },
+            turnComparison: function(turn, current) {
+                if (turn < current) {
+                    return 'completed';
+                }
+                else if (turn === current) {
+                    return 'current';
+                }
+                else if (turn > current) {
+                    return 'upcoming';
+                }
+            },
+            fullTurnTypeDescription: function(type) {
+                if (type === 'playerPick') {
+                    return 'Player Pick';
+                }
+                else if (type === 'captainRole') {
+                    return 'Captain Role';
+                }
+                else if (type === 'mapBan') {
+                    return 'Map Ban';
+                }
+                else if (type === 'mapPick') {
+                    return 'Map Pick';
+                }
+            },
+            fullTurnMethodDescription: function(method) {
+                if (method === 'manual') {
+                    return 'Captain\'s Choice';
+                }
+                else if (method === 'random') {
+                    return 'Random';
+                }
+            },
+            fullTurnCaptainName: function(captain) {
+                if (captain) {
+                    return this.captains[captain - 1].alias;
+                }
+            },
+            fullTurnChoiceInfo: function(choice) {
+                if (choice.type === 'playerPick') {
+                    if (choice.player) {
+                        return choice.player.alias + ' (' + this.roles[choice.role].name + ')';
+                    }
+                }
+                else if (choice.type === 'captainRole') {
+                    if (choice.role) {
+                        return this.roles[choice.role].name;
+                    }
+                }
+                else if (choice.type === 'mapBan' || choice.type === 'mapPick') {
+                    if (choice.map) {
+                        return this.maps[choice.map].name;
+                    }
+                }
+            }
+        });
+    </script>
+</dom-module>
