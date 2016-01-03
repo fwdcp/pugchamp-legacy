@@ -375,7 +375,7 @@ module.exports = function(app, io, self, server) {
             completeDraft();
         }
         else {
-            beginDraftTurn(currentDraftTurn++);
+            beginDraftTurn(++currentDraftTurn);
         }
     });
 
