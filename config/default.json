@@ -64,6 +64,7 @@
             "readyPeriod": "60s"
         },
         "draft": {
+            "captainSelectionWeight": "equal",
             "order": [{
                 "type": "playerPick",
                 "method": "manual",
