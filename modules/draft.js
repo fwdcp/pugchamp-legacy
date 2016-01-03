@@ -174,8 +174,12 @@ module.exports = function(app, io, self, server) {
             elapsedTurnTime: Date.now() - currentDraftTurnStartTime,
             totalTurnTime: turnTimeLimit,
             pickedTeams: lodash.map(pickedTeams, function(team) {
-                return lodash.map(team, function(userID) {
-                    return self.getFilteredUser(userID);
+                return lodash.map(team, function(player) {
+                    let filteredPlayer = lodash.clone(player);
+
+                    filteredPlayer.player = self.getFilteredUser(player.player);
+
+                    return filteredPlayer;
                 });
             }),
             unavailablePlayers: lodash.map(unavailablePlayers, function(userID) {
