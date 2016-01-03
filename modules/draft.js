@@ -268,14 +268,14 @@ module.exports = function(app, io, self, server) {
             else {
                 allowedRoles = teamState.underfilledRoles;
             }
-
-            unavailablePlayers = lodash(pickedTeams).flatten().map(function(pick) {
-                return pick.userID;
-            }).union(draftCaptains).uniq().value();
         }
         else {
             allowedRoles = null;
         }
+
+        unavailablePlayers = lodash(pickedTeams).flatten().map(function(pick) {
+            return pick.player;
+        }).union(draftCaptains).uniq().value();
 
         currentDraftTurnStartTime = Date.now();
         currentDraftTurnExpireTimeout = setTimeout(expireTime, turnTimeLimit);
