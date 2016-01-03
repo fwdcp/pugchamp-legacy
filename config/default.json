@@ -107,35 +107,35 @@
                 "captain": 2
             }, {
                 "type": "captainRole",
-                "by": "random",
+                "method": "random",
                 "captain": 2
             }, {
                 "type": "captainRole",
-                "by": "random",
+                "method": "random",
                 "captain": 1
             }, {
                 "type": "mapBan",
-                "by": "random"
+                "method": "random"
             }, {
                 "type": "mapBan",
-                "by": "random"
+                "method": "random"
             }, {
                 "type": "mapBan",
-                "by": "random"
+                "method": "random"
             }, {
                 "type": "mapBan",
-                "by": "random"
+                "method": "random"
             }, {
                 "type": "mapBan",
-                "by": "manual",
+                "method": "manual",
                 "captain": 1
             }, {
                 "type": "mapBan",
-                "by": "manual",
+                "method": "manual",
                 "captain": 2
             }, {
                 "type": "mapPick",
-                "by": "random"
+                "method": "random"
             }],
             "turnTimeLimit": "60s"
         }
