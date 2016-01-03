@@ -5,17 +5,18 @@
 <head>
     {{> head}}
 
+    <link rel="import" href="/elements/pugchamp-chat/pugchamp-chat.html">
 	<link rel="import" href="/elements/pugchamp-client/pugchamp-client.html">
+	<link rel="import" href="/elements/pugchamp-draft/pugchamp-draft.html">
 	<link rel="import" href="/elements/pugchamp-launchpad/pugchamp-launchpad.html">
 	<link rel="import" href="/elements/pugchamp-restrictions/pugchamp-restrictions.html">
-	<link rel="import" href="/elements/pugchamp-chat/pugchamp-chat.html">
 
     <style is="custom-style">
         pugchamp-chat {
             width: 300px;
         }
-		pugchamp-launchpad {
-		min-width: 800px;
+		#content {
+            min-width: 800px;
 		}
     </style>
 </head>
@@ -30,8 +31,16 @@
 			<div id="main">
                 <pugchamp-restrictions></pugchamp-restrictions>
 
+                <hr>
+
                 <div class="horizontal layout wrap">
-	                <pugchamp-launchpad class="flex" ></pugchamp-launchpad>
+                    <div id="content" class="flex">
+    	                <pugchamp-draft></pugchamp-draft>
+
+                        <hr>
+
+    	                <pugchamp-launchpad></pugchamp-launchpad>
+                    </div>
                     <pugchamp-chat></pugchamp-chat>
                 </div>
 			</div>
