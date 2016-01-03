@@ -73,7 +73,7 @@ module.exports = function(app, io, self, server) {
     function selectCaptains(captains) {
         let method = config.get('app.draft.captainSelectionWeight');
 
-        let weights = [];
+        let weights = new Array(lodash.size(captains));
 
         if (method === 'equal') {
             lodash.fill(weights, 1, 0, lodash.size(captains));
