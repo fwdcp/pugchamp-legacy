@@ -55,7 +55,7 @@
                             </div>
                             <paper-toggle-button class="role-select" value="{{role.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability"></paper-toggle-button>
                         </paper-icon-item>
-                        <template is="dom-repeat" items="{{_getObjectKey(players, role.key)}}">
+                        <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
                             <paper-icon-item>
                                 <iron-icon icon="{{iconFromIconset('tf2-classes-24px', role.value.class)}}" item-icon></iron-icon>
                                 <div class="flex">{{item.alias}}</div>

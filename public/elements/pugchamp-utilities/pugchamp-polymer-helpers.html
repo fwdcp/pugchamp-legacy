@@ -13,9 +13,15 @@
                 };
             })
         },
-        // access a specific key in an object, for reasons related to above
-        _getObjectKey: function(object, key) {
-            return object[key];
+        // access variable properties from an object, however nested they may be
+        _getProperty: function(object) {
+            var property = object;
+
+            for (var i = 1; i < arguments.length; i++) {
+                property = property[arguments[i]];
+            }
+
+            return property;
         }
     };
 
