@@ -73,6 +73,10 @@
         "draft": {
             "captainSelectionWeight": "equal",
             "order": [{
+                "type": "factionSelect",
+                "method": "random",
+                "captain": 2
+            }, {
                 "type": "playerPick",
                 "method": "captain",
                 "captain": 1
