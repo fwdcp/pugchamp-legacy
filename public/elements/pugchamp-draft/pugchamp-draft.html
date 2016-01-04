@@ -37,6 +37,19 @@
                 background: var(--google-green-300);
             }
 
+            .team .captain {
+                margin: 5px;
+                padding: 5px;
+                text-align: right;
+                width: 100px;
+            }
+
+            .team .player {
+                margin: 5px;
+                padding: 5px;
+                text-align: center;
+            }
+
             .map {
                 margin: 5px;
                 text-align: center;
@@ -82,6 +95,20 @@
                     </paper-material>
                 </template>
             </div>
+            <div id="teams">
+                <template is="dom-repeat" items="{{pickedTeams}}">
+                    <div class="team horizontal layout">
+                        <paper-material class="captain">
+                            {{_getProperty(captains, index, 'alias')}}
+                        </paper-material>
+                        <template is="dom-repeat" items="{{_padArray(item, teamSize)}}">
+                            <paper-material class="player flex">
+                                {{fullPlayerInfo(item)}}
+                            </paper-material>
+                        </template>
+                    </div>
+                </template>
+            </div>
             <div id="maps" class="horizontal layout">
                 <template is="dom-repeat" items="{{_convertObjectToRepeatable(maps)}}">
                     <paper-material class="map flex">
@@ -116,10 +143,12 @@
                 this.set('draftInProgress', true);
 
                 this.set('roles', status.roles);
+                this.set('teamSize', status.teamSize);
                 this.set('maps', status.mapPool);
                 this.set('turns', status.draftTurns);
                 this.set('currentTurn', status.currentDraftTurn);
                 this.set('captains', status.draftCaptains);
+                this.set('pickedTeams', status.pickedTeams);
                 this.set('pickedMaps', status.pickedMaps);
                 this.set('remainingMaps', status.remainingMaps);
             },
@@ -200,6 +229,11 @@
                     if (choice.map) {
                         return this.maps[choice.map].name;
                     }
+                }
+            },
+            fullPlayerInfo: function(player) {
+                if (player) {
+                    return player.player.alias + ' (' + this.roles[player.role].name + ')';
                 }
             },
             mapImageBackground: function(image) {

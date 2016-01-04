@@ -152,6 +152,7 @@ module.exports = function(app, io, self, server) {
 
         currentStatusMessage = {
             roles: config.get('app.games.roles'),
+            teamSize: config.get('app.games.teamSize'),
             draftTurns: lodash.map(draftOrder, function(turn, index) {
                 let completeTurn = lodash.defaults({}, turn, draftChoices[index]);
 
