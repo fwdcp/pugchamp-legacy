@@ -19,6 +19,7 @@
             .draft-turn {
                 @apply(--paper-font-caption);
 
+                min-width: 100px;
                 padding: 5px;
                 text-align: center;
             }
@@ -81,7 +82,7 @@
         </style>
 
         <div hidden$="{{!draftInProgress}}">
-            <div id="draftTurns" class="horizontal layout">
+            <div id="draftTurns" class="horizontal layout wrap">
                 <template is="dom-repeat" items="{{turns}}">
                     <paper-material data-status$="{{turnComparison(index, currentTurn)}}" class="draft-turn flex">
                         <strong>{{fullTurnTypeDescription(item.type)}}</strong>
