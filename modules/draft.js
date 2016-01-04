@@ -314,6 +314,10 @@ module.exports = function(app, io, self, server) {
     }
 
     self.on('commitDraftChoice', function(choice) {
+        if (!draftInProgress) {
+            return;
+        }
+
         let turnDefinition = draftOrder[currentDraftTurn];
 
         if (turnDefinition.method === 'captain' && choice.captain !== draftCaptains[turnDefinition.captain - 1]) {
@@ -454,7 +458,17 @@ module.exports = function(app, io, self, server) {
 
     io.sockets.on('authenticated', function(socket) {
         socket.on('makeDraftChoice', function(choice) {
-            // TODO: pass on draft choice
+            choice.captain = socket.decoded_token;
+
+            if (choice.player) {
+                let user = lodash.find(fullPlayerList, function(player) {
+                    return player.steamID === choice.player;
+                });
+
+                choice.player = user.id;
+            }
+
+            self.emit('commitDraftChoice', choice);
         });
     });
 };

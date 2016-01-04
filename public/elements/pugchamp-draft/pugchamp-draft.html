@@ -356,6 +356,33 @@
                 }
 
                 return true;
+            },
+            selectMap: function(event) {
+                this.socket.emit('makeDraftChoice', {
+                    type: this.turns[this.currentTurn].type,
+                    map: event.target.dataset.map
+                });
+            },
+            chooseRole: function(event) {
+                this.socket.emit('makeDraftChoice', {
+                    type: this.turns[this.currentTurn].type,
+                    role: event.target.dataset.role
+                });
+            },
+            pickPlayer: function(event) {
+                this.socket.emit('makeDraftChoice', {
+                    type: this.turns[this.currentTurn].type,
+                    role: event.target.dataset.role,
+                    player: event.target.dataset.player
+                });
+            },
+            pickPlayerOverride: function(event) {
+                this.socket.emit('makeDraftChoice', {
+                    type: this.turns[this.currentTurn].type,
+                    role: event.target.dataset.role,
+                    player: event.target.dataset.player,
+                    override: true
+                });
             }
         });
     </script>
