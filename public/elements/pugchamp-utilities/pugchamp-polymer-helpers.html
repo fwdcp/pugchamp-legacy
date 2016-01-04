@@ -23,6 +23,17 @@
 
             return property;
         },
+        // pad an array with empty values to a certain size
+        _padArray: function(array, min) {
+            var newArray = _.cloneDeep(array);
+
+            while (newArray.length < min) {
+                newArray.push(null);
+            }
+
+            return newArray;
+        },
+        // use a variable icon from a certain iconset
         _iconFromIconset: function(iconset, icon) {
             return iconset + ":" + icon;
         }
