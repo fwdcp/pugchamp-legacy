@@ -54,6 +54,7 @@ module.exports = function(app, io, self, server) {
     var turnTimeLimit = ms(config.get('app.draft.turnTimeLimit'));
 
     var playerPool;
+    var fullPlayerList = [];
     var mapPool = config.get('app.games.maps');
     var draftCaptains = [];
     var currentDraftTurn = 0;
@@ -69,6 +70,7 @@ module.exports = function(app, io, self, server) {
     var pickedMaps = [];
     var remainingMaps = [];
     var allowedRoles = null;
+    var overrideRoles = null;
 
     var currentStatusMessage = null;
 
@@ -167,6 +169,9 @@ module.exports = function(app, io, self, server) {
                     return self.getFilteredUser(userID);
                 });
             }),
+            fullPlayerList: lodash.map(fullPlayerList, function(userID) {
+                return self.getFilteredUser(userID);
+            }),
             mapPool: mapPool,
             draftCaptains: lodash.map(draftCaptains, function(userID) {
                 return self.getFilteredUser(userID);
@@ -186,7 +191,8 @@ module.exports = function(app, io, self, server) {
             }),
             pickedMaps: pickedMaps,
             remainingMaps: remainingMaps,
-            allowedRoles: allowedRoles
+            allowedRoles: allowedRoles,
+            overrideRoles: overrideRoles
         };
 
         return currentStatusMessage;
@@ -221,7 +227,13 @@ module.exports = function(app, io, self, server) {
 
             choice.role = chance.weighted(allowedRoles, weights);
 
-            choice.player = chance.pick(playerPool[choice.role]);
+            if (lodash.includes(overrideRoles, choice.role)) {
+                choice.player = chance.pick(lodash.difference(fullPlayerList, unavailablePlayers));
+            }
+            else {
+                choice.override = true;
+                choice.player = chance.pick(lodash.difference(playerPool[choice.role], unavailablePlayers));
+            }
         }
         else if (turnDefinition.type === 'captainRole') {
             let team = pickedTeams[turnDefinition.captain - 1];
@@ -267,9 +279,14 @@ module.exports = function(app, io, self, server) {
             else {
                 allowedRoles = teamState.underfilledRoles;
             }
+
+            overrideRoles = lodash.filter(teamState.underfilledRoles, function(role) {
+                return lodash.size(playerPool[role]) === 0;
+            });
         }
         else {
             allowedRoles = null;
+            overrideRoles = null;
         }
 
         unavailablePlayers = lodash(pickedTeams).flatten().map(function(pick) {
@@ -323,8 +340,15 @@ module.exports = function(app, io, self, server) {
                 return;
             }
 
-            if (!lodash.includes(playerPool[choice.role], choice.player)) {
-                return;
+            if (choice.override) {
+                if (!lodash.includes(overrideRoles, choice.role)) {
+                    return;
+                }
+            }
+            else {
+                if (!lodash.includes(playerPool[choice.role], choice.player)) {
+                    return;
+                }
             }
 
             newTeams[turnDefinition.captain - 1].push({
@@ -393,6 +417,9 @@ module.exports = function(app, io, self, server) {
         selectCaptains(draftInfo.captains);
 
         playerPool = draftInfo.players;
+        fullPlayerList = lodash.reduce(playerPool, function(allPlayers, players) {
+            return lodash.union(allPlayers, players);
+        }, []);
 
         remainingMaps = lodash.keys(mapPool);
 
