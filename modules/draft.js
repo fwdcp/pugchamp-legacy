@@ -53,12 +53,14 @@ module.exports = function(app, io, self, server) {
     var draftOrder = config.get('app.draft.order');
     var turnTimeLimit = ms(config.get('app.draft.turnTimeLimit'));
 
-    var playerPool;
+    var playerPool = lodash.mapValues(config.get('app.games.roles'), function() {
+        return [];
+    });
     var fullPlayerList = [];
     var mapPool = config.get('app.games.maps');
     var draftCaptains = [];
     var currentDraftTurn = 0;
-    var currentDraftTurnStartTime;
+    var currentDraftTurnStartTime = null;
     var currentDraftTurnExpireTimeout = null;
     var draftChoices = [];
 
@@ -196,6 +198,36 @@ module.exports = function(app, io, self, server) {
         };
 
         return currentStatusMessage;
+    }
+
+    function cleanUpDraft() {
+        draftInProgress = false;
+
+        playerPool = lodash.mapValues(config.get('app.games.roles'), function() {
+            return [];
+        });
+        fullPlayerList = [];
+        draftCaptains = [];
+        currentDraftTurn = 0;
+        currentDraftTurnStartTime = null;
+        if (currentDraftTurnExpireTimeout) {
+            clearTimeout(currentDraftTurnExpireTimeout);
+            currentDraftTurnExpireTimeout = null;
+        }
+        draftChoices = [];
+
+        pickedTeams = [
+            [],
+            []
+        ];
+        unavailablePlayers = [];
+        pickedMaps = [];
+        remainingMaps = [];
+        allowedRoles = null;
+        overrideRoles = null;
+
+        prepareStatusMessage();
+        io.sockets.emit('draftStatusUpdated', currentStatusMessage);
     }
 
     function expireTime() {
