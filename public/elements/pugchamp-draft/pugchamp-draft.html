@@ -83,6 +83,10 @@
             .draft-choice {
                 background: var(--primary-color);
             }
+
+            .draft-choice.override {
+                background: var(--accent-color);
+            }
         </style>
 
         <div hidden$="{{!draftInProgress}}">
@@ -137,12 +141,23 @@
                                     <h3>{{role.value.name}}</h3>
                                 </div>
                             </paper-icon-item>
-                            <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
-                                <paper-icon-item disabled="{{_includes(unavailablePlayers, item.steamID)}}">
-                                    <iron-icon icon="{{_iconFromIconset('tf2-classes-24px', role.value.class)}}" item-icon></iron-icon>
-                                    <div class="flex">{{item.alias}}</div>
-                                    <paper-button class="draft-choice" data-role$="{{role.key}}" data-player$="{{item.steamID}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}" raised>Select</paper-button>
-                                </paper-icon-item>
+                            <template is="dom-if" if="{{!_includes(overrideRoles, role.key)}}">
+                                <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
+                                    <paper-icon-item disabled="{{_includes(unavailablePlayers, item.steamID)}}">
+                                        <iron-icon icon="{{_iconFromIconset('tf2-classes-24px', role.value.class)}}" item-icon></iron-icon>
+                                        <div class="flex">{{item.alias}}</div>
+                                        <paper-button class="draft-choice" data-role$="{{role.key}}" data-player$="{{item.steamID}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}" on-tap="pickPlayer" raised>Select</paper-button>
+                                    </paper-icon-item>
+                                </template>
+                            </template>
+                            <template is="dom-if" if="{{_includes(overrideRoles, role.key)}}">
+                                <template is="dom-repeat" items="{{fullPlayerList}}">
+                                    <paper-icon-item disabled="{{_includes(unavailablePlayers, item.steamID)}}">
+                                        <iron-icon icon="{{_iconFromIconset('tf2-classes-24px', role.value.class)}}" item-icon></iron-icon>
+                                        <div class="flex">{{item.alias}}</div>
+                                        <paper-button class="draft-choice override" data-role$="{{role.key}}" data-player$="{{item.steamID}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}" on-tap="pickPlayerOverride" raised>Override</paper-button>
+                                    </paper-icon-item>
+                                </template>
                             </template>
                         </div>
                     </div>
