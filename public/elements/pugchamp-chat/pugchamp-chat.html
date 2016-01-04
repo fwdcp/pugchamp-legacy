@@ -30,11 +30,13 @@
 		<div id="chatMessages">
 			<template is="dom-repeat" items="{{messages}}">
 				<paper-card class="chat-message">
-					<div class="card-content"><strong>{{item.user.alias}}</strong>:<div id="msg-body"> {{item.message}} </div></div>
+					<div class="card-content"><div id="msg-body"> {{item}} </div></div>
+					
 				</paper-card>
 			</template>
 		</div>
 		<div class="horizontal layout end wrap">
+			<paper-icon-button icon="favorite" title="heart"></paper-icon-button>
 			<iron-a11y-keys id="submitWatcher" keys="enter" on-keys-pressed="onEnter"></iron-a11y-keys>
 			<paper-textarea id="messageText" class="flex" maxlength="140" max-rows="3" char-counter disabled="{{isRestricted(restrictions, 'comms')}}"></paper-textarea>
 			<paper-icon-button icon="send" on-tap="sendMessage" disabled="{{isRestricted(restrictions, 'comms')}}"></paper-icon-button>
@@ -48,19 +50,32 @@
 				this.set('messages', []);
 
 				this.$.submitWatcher.target = this.$.messageText;
-
+				this._listenToEvent('playerConnectReceived', 'onPlayerConnectReceived');
 				this._listenToEvent('chatMessageReceived', 'onChatMessageReceived');
+				this._listenToEvent('authenticated', 'onChatConnect');
+				this._listenToEvent('disconnect', 'onChatDisconnect');
+				
 	        },
 			onChatMessageReceived: function(chat) {
 				var atBottom = this.$.chatMessages.scrollHeight - this.$.chatMessages.scrollTop === this.$.chatMessages.clientHeight;
-
+				var chat = chat.user.alias + ": " + chat.message;
 				this.push('messages', chat);
-
 				if (atBottom) {
 					this.async(function() {
 						this.$.chatMessages.scrollTop = this.$.chatMessages.scrollHeight - this.$.chatMessages.clientHeight;
 					});
 				}
+			},
+			onPlayerConnectReceived: function(chat) {
+				var atBottom = this.$.chatMessages.scrollHeight - this.$.chatMessages.scrollTop === this.$.chatMessages.clientHeight;
+				var chat = chat.user.alias + " " + chat.message;
+				this.push('messages', chat);
+				if (atBottom) {
+					this.async(function() {
+						this.$.chatMessages.scrollTop = this.$.chatMessages.scrollHeight - this.$.chatMessages.clientHeight;
+					});
+				}			
+			
 			},
 			onEnter: function(event) {
 				event.detail.keyboardEvent.preventDefault();
@@ -70,6 +85,16 @@
 			sendMessage: function() {
 				socket.emit('sendChatMessage', this.$.messageText.value);
 				this.$.messageText.value = '';
+			},
+			onChatConnect: function() {
+				var message = "connected";
+				socket.emit('playerConnected', message);
+			},
+			//This does not work yet
+			onChatDisconnect: function() {
+				var message = "disconnected";
+				socket.emit('playerConnected', message);
+				console.log("here");				
 			}
 	    });
 	</script>
