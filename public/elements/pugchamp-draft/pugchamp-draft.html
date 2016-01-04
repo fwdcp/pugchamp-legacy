@@ -79,6 +79,10 @@
             .map .map-background {
                 width: 100%;
             }
+
+            .draft-choice {
+                background: var(--primary-color);
+            }
         </style>
 
         <div hidden$="{{!draftInProgress}}">
@@ -127,17 +131,17 @@
                 <template is="dom-repeat" items="{{_convertObjectToRepeatable(roles)}}" as="role">
                     <div class="flex role-column">
                         <div class="vertical layout">
-                            <paper-icon-item>
+                            <paper-icon-item disabled="{{!_includes(allowedRoles, role.key)}}">
                                 <iron-icon icon="{{_iconFromIconset('tf2-classes-40px', role.value.class)}}" theme="black" item-icon></iron-icon>
                                 <div class="role-name flex">
                                     <h3>{{role.value.name}}</h3>
                                 </div>
                             </paper-icon-item>
                             <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
-                                <paper-icon-item>
+                                <paper-icon-item disabled="{{_includes(unavailablePlayers, item.steamID)}}">
                                     <iron-icon icon="{{_iconFromIconset('tf2-classes-24px', role.value.class)}}" item-icon></iron-icon>
                                     <div class="flex">{{item.alias}}</div>
-                                    <paper-button data-role$="{{role.key}}" data-player$="{{item.steamID}}" raised>Select</paper-button>
+                                    <paper-button class="draft-choice" data-role$="{{role.key}}" data-player$="{{item.steamID}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}" raised>Select</paper-button>
                                 </paper-icon-item>
                             </template>
                         </div>
@@ -175,6 +179,8 @@
                 this.set('pickedTeams', status.pickedTeams);
                 this.set('pickedMaps', status.pickedMaps);
                 this.set('remainingMaps', status.remainingMaps);
+                this.set('allowedRoles', status.allowedRoles);
+                this.set('unavailablePlayers', status.unavailablePlayers);
             },
             onDraftTurnTime: function(status) {
                 if (this.currentTimer) {
@@ -290,6 +296,29 @@
                 }
 
                 if (!remainingMaps.includes(map)) {
+                    return false;
+                }
+
+                return true;
+            },
+            playerChoiceAllowed: function(user, turn, role, allowedRoles, player, unavailablePlayers) {
+                if (this.turns[turn].type !== 'playerPick') {
+                    return false;
+                }
+
+                if (this.turns[turn].method !== 'manual') {
+                    return false;
+                }
+
+                if (!this.user || this.user.steamID !== this.captains[this.turns[turn].captain - 1].steamID) {
+                    return false;
+                }
+
+                if (!allowedRoles.includes(role)) {
+                    return false;
+                }
+
+                if (unavailablePlayers.includes(player)) {
                     return false;
                 }
 
