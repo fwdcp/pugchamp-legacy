@@ -9,6 +9,7 @@
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-user-behavior.html">
+<link rel="import" href="/elements/pugchamp-notification/pugchamp-notification.html">
 <link rel="import" href="/elements/pugchamp-utilities/pugchamp-polymer-helpers.html">
 
 <dom-module id="pugchamp-draft">
@@ -187,6 +188,8 @@
                 </template>
             </div>
         </div>
+
+        <pugchamp-notification id="turnNotification" body="It is your turn to choose in the draft!" tag="draftTurn"></pugchamp-notification>
     </template>
 
     <script>
@@ -198,6 +201,7 @@
 
                 this._listenToEvent('draftStatusUpdated', 'onDraftStatusUpdated');
                 this._listenToEvent('draftTurnTime', 'onDraftTurnTime');
+                this._listenToEvent('draftTurnChoice', 'onDraftTurnChoice');
             },
             onDraftStatusUpdated: function(status) {
                 if (!status) {
@@ -233,6 +237,9 @@
 
                     this.currentTimer = this.async(this.incrementTurnTimer, 1000);
                 });
+            },
+            onDraftTurnChoice: function() {
+                this.$.turnNotification.notify();
             },
             incrementTurnTimer: function() {
                 var progress = Polymer.dom(this.$.draftTurns).querySelector('.draft-turn[data-status=current] .turn-time');

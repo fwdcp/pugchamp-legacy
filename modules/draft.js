@@ -352,7 +352,13 @@ module.exports = function(app, io, self, server) {
             total: turnTimeLimit,
         });
 
-        if (turnDefinition.method === 'random') {
+        if (turnDefinition.method === 'captain') {
+            self.emit('sendMessageToUser', {
+                userID: draftCaptains[turnDefinition.captain - 1],
+                name: 'draftTurnChoice',
+                arguments: []
+            });
+        } else if (turnDefinition.method === 'random') {
             makeRandomChoice();
         }
     }
@@ -542,6 +548,10 @@ module.exports = function(app, io, self, server) {
     });
 
     io.sockets.on('authenticated', function(socket) {
+        if (draftInProgress && draftOrder[currentDraftTurn].method === 'captain' && socket.decoded_token === draftCaptains[draftOrder[currentDraftTurn].captain - 1]) {
+            socket.emit('draftTurnChoice');
+        }
+
         socket.on('makeDraftChoice', function(choice) {
             choice.captain = socket.decoded_token;
 
