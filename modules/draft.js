@@ -231,7 +231,9 @@ module.exports = function(app, io, self, server) {
     }
 
     function expireTime() {
-        // TODO: end the draft and clean everything up
+        // TODO: end the draft
+
+        cleanUpDraft();
     }
 
     function makeRandomChoice() {
@@ -342,7 +344,21 @@ module.exports = function(app, io, self, server) {
     }
 
     function completeDraft() {
-        // TODO: complete draft
+        let legalNewState = checkIfLegalState(pickedTeams, {
+            picked: pickedMaps,
+            remaining: remainingMaps
+        }, true);
+
+        if (!legalNewState) {
+            throw new Error('Invalid state after draft completed!');
+        }
+
+        // TODO: wrap up the draft
+
+        // TODO: add the game to the database
+        // TODO: show game details to players
+
+        cleanUpDraft();
     }
 
     self.on('commitDraftChoice', function(choice) {
@@ -418,12 +434,10 @@ module.exports = function(app, io, self, server) {
             newRemainingMaps = lodash.without(remainingMaps, choice.map);
         }
 
-        let isFinalTurn = currentDraftTurn + 1 === lodash.size(draftOrder);
-
         let legalNewState = checkIfLegalState(newTeams, {
             picked: newPickedMaps,
             remaining: newRemainingMaps
-        }, isFinalTurn);
+        }, false);
 
         if (!legalNewState) {
             throw new Error('Invalid state after valid choice!');
@@ -439,7 +453,7 @@ module.exports = function(app, io, self, server) {
             clearTimeout(currentDraftTurnExpireTimeout);
         }
 
-        if (isFinalTurn) {
+        if (currentDraftTurn + 1 === lodash.size(draftOrder)) {
             completeDraft();
         }
         else {
