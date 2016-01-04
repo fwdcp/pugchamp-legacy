@@ -64,6 +64,7 @@ module.exports = function(app, io, self, server) {
     var currentDraftTurnExpireTimeout = null;
     var draftChoices = [];
 
+    var teamFactions = [];
     var pickedTeams = [
         [],
         []
@@ -100,7 +101,7 @@ module.exports = function(app, io, self, server) {
         return draftCaptains;
     }
 
-    function checkIfLegalState(teams, maps, final) {
+    function checkIfLegalState(teams, maps, factions, final) {
         let teamsValid = lodash.every(teams, function(team) {
             let teamState = calculateCurrentTeamState(team);
 
@@ -143,6 +144,14 @@ module.exports = function(app, io, self, server) {
             if (lodash.size(maps.picked) !== mapsInSeries) {
                 return false;
             }
+
+            if (lodash(factions).intersection(['RED', 'BLU']).size() !== 2) {
+                return false;
+            }
+
+            if (factions[0] === factions[1]) {
+                return false;
+            }
         }
 
         return true;
@@ -179,6 +188,7 @@ module.exports = function(app, io, self, server) {
                 return self.getFilteredUser(userID);
             }),
             currentDraftTurn: currentDraftTurn,
+            teamFactions: teamFactions,
             pickedTeams: lodash.map(pickedTeams, function(team) {
                 return lodash.map(team, function(player) {
                     let filteredPlayer = lodash.clone(player);
@@ -216,6 +226,7 @@ module.exports = function(app, io, self, server) {
         }
         draftChoices = [];
 
+        teamFactions = [];
         pickedTeams = [
             [],
             []
@@ -241,7 +252,10 @@ module.exports = function(app, io, self, server) {
 
         let choice = {type: turnDefinition.type};
 
-        if (turnDefinition.type === 'playerPick') {
+        if (turnDefinition.type === 'factionSelect') {
+            choice.faction = chance.pick(['BLU', 'RED']);
+        }
+        else if (turnDefinition.type === 'playerPick') {
             let team = pickedTeams[turnDefinition.captain - 1];
             let roleDistribution = calculateRoleDistribution(team);
 
@@ -347,7 +361,7 @@ module.exports = function(app, io, self, server) {
         let legalNewState = checkIfLegalState(pickedTeams, {
             picked: pickedMaps,
             remaining: remainingMaps
-        }, true);
+        }, teamFactions, true);
 
         if (!legalNewState) {
             throw new Error('Invalid state after draft completed!');
@@ -379,11 +393,34 @@ module.exports = function(app, io, self, server) {
             return;
         }
 
+        let newFactions = lodash.cloneDeep(teamFactions);
         let newTeams = lodash.cloneDeep(pickedTeams);
         let newPickedMaps = lodash.cloneDeep(pickedMaps);
         let newRemainingMaps = lodash.cloneDeep(remainingMaps);
 
-        if (turnDefinition.type === 'playerPick') {
+        if (turnDefinition.type === 'factionSelect') {
+            if (choice.faction !== 'RED' || choice.faction !== 'BLU') {
+                return;
+            }
+
+            if (turnDefinition.captain === 1) {
+                if (choice.faction === 'RED') {
+                    newFactions = ['RED', 'BLU'];
+                }
+                else if (choice.faction === 'BLU') {
+                    newFactions = ['BLU', 'RED'];
+                }
+            }
+            else if (turnDefinition.captain === 2) {
+                if (choice.faction === 'RED') {
+                    newFactions = ['BLU', 'RED'];
+                }
+                else if (choice.faction === 'BLU') {
+                    newFactions = ['RED', 'BLU'];
+                }
+            }
+        }
+        else if (turnDefinition.type === 'playerPick') {
             if (lodash.includes(unavailablePlayers, choice.player)) {
                 return;
             }
@@ -437,12 +474,13 @@ module.exports = function(app, io, self, server) {
         let legalNewState = checkIfLegalState(newTeams, {
             picked: newPickedMaps,
             remaining: newRemainingMaps
-        }, false);
+        }, newFactions, false);
 
         if (!legalNewState) {
             throw new Error('Invalid state after valid choice!');
         }
 
+        teamFactions = newFactions;
         pickedTeams = newTeams;
         pickedMaps = newPickedMaps;
         remainingMaps = newRemainingMaps;
@@ -473,6 +511,7 @@ module.exports = function(app, io, self, server) {
 
         remainingMaps = lodash.keys(mapPool);
 
+        teamFactions = [];
         pickedTeams = [
             [],
             []
@@ -482,7 +521,7 @@ module.exports = function(app, io, self, server) {
         let legalState = checkIfLegalState(pickedTeams, {
             picked: pickedMaps,
             remaining: remainingMaps
-        }, false);
+        }, teamFactions, false);
 
         if (!legalState) {
             throw new Error('Invalid state before draft start!');
