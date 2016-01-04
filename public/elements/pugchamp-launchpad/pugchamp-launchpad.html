@@ -49,7 +49,7 @@
                 <div class="flex role-column">
                     <div class="vertical layout">
                         <paper-icon-item>
-                            <iron-icon icon="{{iconFromIconset('tf2-classes-40px', role.value.class)}}" theme="black" item-icon></iron-icon>
+                            <iron-icon icon="{{_iconFromIconset('tf2-classes-40px', role.value.class)}}" theme="black" item-icon></iron-icon>
                             <div class="role-name flex">
                                 <h3>{{role.value.name}}</h3>
                             </div>
@@ -57,7 +57,7 @@
                         </paper-icon-item>
                         <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
                             <paper-icon-item>
-                                <iron-icon icon="{{iconFromIconset('tf2-classes-24px', role.value.class)}}" item-icon></iron-icon>
+                                <iron-icon icon="{{_iconFromIconset('tf2-classes-24px', role.value.class)}}" item-icon></iron-icon>
                                 <div class="flex">{{item.alias}}</div>
                             </paper-icon-item>
                         </template>
@@ -170,9 +170,6 @@
 
                     return rolesString + ' (' + needed.needed + ')';
                 }, this).join('; ');
-            },
-            iconFromIconset: function(iconset, icon) {
-                return iconset + ":" + icon;
             }
         });
     </script>
