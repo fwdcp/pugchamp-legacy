@@ -1,6 +1,7 @@
 <link rel="import" href="/components/polymer/polymer.html">
 
 <link rel="import" href="/components/paper-material/paper-material.html">
+<link rel="import" href="/components/paper-progress/paper-progress.html">
 <link rel="import" href="/components/paper-radio-button/paper-radio-button.html">
 
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
@@ -17,6 +18,11 @@
                 margin: 5px;
                 padding: 5px;
                 text-align: center;
+            }
+
+            .draft-turn .turn-time {
+                width: 100%;
+                --paper-progress-height: 12px;
             }
 
             .draft-turn[data-status=completed] {
@@ -68,6 +74,7 @@
                         <br>
                         {{fullTurnCaptainName(item.captain)}}
                         <br>
+                        <paper-progress hidden$="{{!isCurrentTurn(index, currentTurn)}}" class="turn-time" class="transiting" min="0"></paper-progress>
                         {{fullTurnChoiceInfo(item)}}
                     </paper-material>
                 </template>
@@ -95,6 +102,7 @@
                 this.set('draftInProgress', false);
 
                 this._listenToEvent('draftStatusUpdated', 'onDraftStatusUpdated');
+                this._listenToEvent('draftTurnTime', 'onDraftTurnTime');
             },
             onDraftStatusUpdated: function(status) {
                 if (!status) {
@@ -111,6 +119,30 @@
                 this.set('captains', status.draftCaptains);
                 this.set('pickedMaps', status.pickedMaps);
                 this.set('remainingMaps', status.remainingMaps);
+            },
+            onDraftTurnTime: function(status) {
+                if (this.currentTimer) {
+                    this.cancelAsync(this.currentTimer);
+                }
+
+                this.async(function() {
+                    var progress = Polymer.dom(this.$.draftTurns).querySelector('.draft-turn[data-status=current] .turn-time');
+                    progress.value = status.elapsed / 1000;
+                    progress.max = status.total / 1000;
+
+                    this.currentTimer = this.async(this.incrementTurnTimer, 1000);
+                });
+            },
+            incrementTurnTimer: function() {
+                var progress = Polymer.dom(this.$.draftTurns).querySelector('.draft-turn[data-status=current] .turn-time');
+                progress.value++;
+
+                if (progress.ratio < 100) {
+                    this.currentTimer = this.async(this.incrementTurnTimer, 1000);
+                }
+            },
+            isCurrentTurn: function(turn, current) {
+                return turn === current;
             },
             turnComparison: function(turn, current) {
                 if (turn < current) {

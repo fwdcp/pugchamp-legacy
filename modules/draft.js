@@ -171,8 +171,6 @@ module.exports = function(app, io, self, server) {
                 return self.getFilteredUser(userID);
             }),
             currentDraftTurn: currentDraftTurn,
-            elapsedTurnTime: Date.now() - currentDraftTurnStartTime,
-            totalTurnTime: turnTimeLimit,
             pickedTeams: lodash.map(pickedTeams, function(team) {
                 return lodash.map(team, function(player) {
                     let filteredPlayer = lodash.clone(player);
@@ -282,6 +280,11 @@ module.exports = function(app, io, self, server) {
 
         prepareStatusMessage();
         io.sockets.emit('draftStatusUpdated', currentStatusMessage);
+
+        io.sockets.emit('draftTurnTime', {
+            elapsed: Date.now() - currentDraftTurnStartTime,
+            total: turnTimeLimit,
+        });
 
         if (turnDefinition.method === 'random') {
             makeRandomChoice();
@@ -412,6 +415,13 @@ module.exports = function(app, io, self, server) {
 
     io.sockets.on('connection', function(socket) {
         socket.emit('draftStatusUpdated', currentStatusMessage);
+
+        if (draftInProgress) {
+            socket.emit('draftTurnTime', {
+                elapsed: Date.now() - currentDraftTurnStartTime,
+                total: turnTimeLimit,
+            });
+        }
     });
 
     io.sockets.on('authenticated', function(socket) {
