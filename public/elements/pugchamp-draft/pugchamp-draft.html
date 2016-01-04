@@ -1,8 +1,8 @@
 <link rel="import" href="/components/polymer/polymer.html">
 
+<link rel="import" href="/components/paper-button/paper-button.html">
 <link rel="import" href="/components/paper-material/paper-material.html">
 <link rel="import" href="/components/paper-progress/paper-progress.html">
-<link rel="import" href="/components/paper-radio-button/paper-radio-button.html">
 
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
@@ -117,7 +117,8 @@
                         <img class="map-background" src$="{{mapImageBackground(item.value.image)}}">
                         <div class="map-info">
                             {{item.value.name}}
-                            <p hidden$="{{!mapChoiceAllowed(user, currentTurn, item.key, remainingMaps)}}"><paper-radio-button name="map" value="{{item.key}}" disabled="{{!mapChoiceAllowed(user, currentTurn, item.key, remainingMaps)}}"></paper-radio-button></p>
+                            <br>
+                            <paper-button data-map$="{{item.key}}" hidden$="{{!mapChoiceAllowed(user, currentTurn, item.key, remainingMaps)}}" disabled="{{!mapChoiceAllowed(user, currentTurn, item.key, remainingMaps)}}" raised>Select</paper-button>
                         </div>
                     </paper-material>
                 </template>
@@ -136,6 +137,7 @@
                                 <paper-icon-item>
                                     <iron-icon icon="{{_iconFromIconset('tf2-classes-24px', role.value.class)}}" item-icon></iron-icon>
                                     <div class="flex">{{item.alias}}</div>
+                                    <paper-button data-role$="{{role.key}}" data-player$="{{item.steamID}}" raised>Select</paper-button>
                                 </paper-icon-item>
                             </template>
                         </div>
