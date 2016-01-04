@@ -30,8 +30,8 @@ module.exports = function(app, io, self, server) {
                 current.underfilledTotal += role.min - currentRoleDistribution[roleName];
             }
 
-            if (currentRoleDistribution[roleName] > role.max) {
-                current.overfilledRoles.push(roleName);
+            if (currentRoleDistribution[roleName] >= role.max) {
+                current.filledRoles.push(roleName);
                 current.overfilledTotal += currentRoleDistribution[roleName] - role.max;
             }
 
@@ -40,7 +40,7 @@ module.exports = function(app, io, self, server) {
             players: 0,
             underfilledRoles: [],
             underfilledTotal: 0,
-            overfilledRoles: [],
+            filledRoles: [],
             overfilledTotal: 0
         });
 
@@ -274,7 +274,7 @@ module.exports = function(app, io, self, server) {
             let teamState = calculateCurrentTeamState(team);
 
             if (teamState.remaining > teamState.underfilledTotal) {
-                allowedRoles = lodash.difference(lodash.keys(), teamState.overfilledRoles);
+                allowedRoles = lodash.difference(lodash.keys(config.get('app.games.roles')), teamState.filledRoles);
             }
             else {
                 allowedRoles = teamState.underfilledRoles;
