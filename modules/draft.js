@@ -399,7 +399,7 @@ module.exports = function(app, io, self, server) {
         let newRemainingMaps = lodash.cloneDeep(remainingMaps);
 
         if (turnDefinition.type === 'factionSelect') {
-            if (choice.faction !== 'RED' || choice.faction !== 'BLU') {
+            if (choice.faction !== 'RED' && choice.faction !== 'BLU') {
                 return;
             }
 

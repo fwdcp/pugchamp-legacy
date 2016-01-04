@@ -3,6 +3,8 @@
 <link rel="import" href="/components/paper-button/paper-button.html">
 <link rel="import" href="/components/paper-material/paper-material.html">
 <link rel="import" href="/components/paper-progress/paper-progress.html">
+<link rel="import" href="/components/paper-styles/color.html">
+<link rel="import" href="/components/paper-styles/typography.html">
 
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
@@ -45,10 +47,26 @@
                 width: 100px;
             }
 
+            .team[data-faction=RED] .captain {
+                background: var(--google-red-500);
+            }
+
+            .team[data-faction=BLU] .captain {
+                background: var(--google-blue-500);
+            }
+
             .team .player {
                 margin: 5px;
                 padding: 5px;
                 text-align: center;
+            }
+
+            .team[data-faction=RED] .player {
+                background: var(--google-red-300);
+            }
+
+            .team[data-faction=BLU] .player {
+                background: var(--google-blue-300);
             }
 
             .map {
@@ -104,9 +122,13 @@
                     </paper-material>
                 </template>
             </div>
+            <div id="factions" class="horizontal layout">
+                <paper-button class="draft-choice" data-faction$="BLU" hidden$="{{!factionChoiceAllowed(user, currentTurn)}}" disabled="{{!factionChoiceAllowed(user, currentTurn)}}" on-tap="selectFaction" raised>Select BLU</paper-button>
+                <paper-button class="draft-choice" data-faction$="RED" hidden$="{{!factionChoiceAllowed(user, currentTurn)}}" disabled="{{!factionChoiceAllowed(user, currentTurn)}}" on-tap="selectFaction" raised>Select RED</paper-button>
+            </div>
             <div id="teams">
                 <template is="dom-repeat" items="{{pickedTeams}}">
-                    <div class="team horizontal layout">
+                    <div data-faction$="{{_getProperty(factions, index)}}" class="team horizontal layout">
                         <paper-material class="captain">
                             {{_getProperty(captains, index, 'alias')}}
                         </paper-material>
@@ -188,6 +210,7 @@
                 this.set('roles', status.roles);
                 this.set('teamSize', status.teamSize);
                 this.set('maps', status.mapPool);
+                this.set('factions', status.teamFactions);
                 this.set('players', status.playerPool);
                 this.set('turns', status.draftTurns);
                 this.set('currentTurn', status.currentDraftTurn);
@@ -234,7 +257,10 @@
                 }
             },
             fullTurnTypeDescription: function(type) {
-                if (type === 'playerPick') {
+                if (type === 'factionSelect') {
+                    return 'Faction Select';
+                }
+                else if (type === 'playerPick') {
                     return 'Player Pick';
                 }
                 else if (type === 'captainRole') {
@@ -298,6 +324,21 @@
 
                 return 'undecided';
             },
+            factionChoiceAllowed: function(user, turn) {
+                if (this.turns[turn].type !== 'factionSelect') {
+                    return false;
+                }
+
+                if (this.turns[turn].method !== 'captain') {
+                    return false;
+                }
+
+                if (!this.user || this.user.steamID !== this.captains[this.turns[turn].captain - 1].steamID) {
+                    return false;
+                }
+
+                return true;
+            },
             mapChoiceAllowed: function(user, turn, map, remainingMaps) {
                 if (this.turns[turn].type !== 'mapBan' && this.turns[turn].type !== 'mapPick') {
                     return false;
@@ -356,6 +397,12 @@
                 }
 
                 return true;
+            },
+            selectFaction: function(event) {
+                this.socket.emit('makeDraftChoice', {
+                    type: this.turns[this.currentTurn].type,
+                    faction: event.target.dataset.faction
+                });
             },
             selectMap: function(event) {
                 this.socket.emit('makeDraftChoice', {
