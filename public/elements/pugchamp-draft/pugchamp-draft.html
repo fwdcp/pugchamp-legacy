@@ -140,6 +140,7 @@
                                 <div class="role-name flex">
                                     <h3>{{role.value.name}}</h3>
                                 </div>
+                                <paper-button class="draft-choice" data-role$="{{role.key}}" hidden$="{{!roleChoiceAllowed(user, currentTurn, role.key, allowedRoles)}}" disabled="{{!roleChoiceAllowed(user, currentTurn, role.key, allowedRoles)}}" on-tap="chooseRole" raised>Select</paper-button>
                             </paper-icon-item>
                             <template is="dom-if" if="{{!_includes(overrideRoles, role.key)}}">
                                 <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
@@ -315,6 +316,23 @@
                 }
 
                 return true;
+            },
+            roleChoiceAllowed: function(user, turn, role, allowedRoles) {
+                if (this.turns[turn].type !== 'captainRole') {
+                    return false;
+                }
+
+                if (this.turns[turn].method !== 'manual') {
+                    return false;
+                }
+
+                if (!this.user || this.user.steamID !== this.captains[this.turns[turn].captain - 1].steamID) {
+                    return false;
+                }
+
+                if (!allowedRoles.includes(role)) {
+                    return false;
+                }
             },
             playerChoiceAllowed: function(user, turn, role, allowedRoles, player, unavailablePlayers) {
                 if (this.turns[turn].type !== 'playerPick') {
