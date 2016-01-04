@@ -126,7 +126,7 @@
                         <div class="map-info">
                             {{item.value.name}}
                             <br>
-                            <paper-button class="draft-choice" data-map$="{{item.key}}" hidden$="{{!mapChoiceAllowed(user, currentTurn, item.key, remainingMaps)}}" disabled="{{!mapChoiceAllowed(user, currentTurn, item.key, remainingMaps)}}" raised>Select</paper-button>
+                            <paper-button class="draft-choice" data-map$="{{item.key}}" hidden$="{{!mapChoiceAllowed(user, currentTurn, item.key, remainingMaps)}}" disabled="{{!mapChoiceAllowed(user, currentTurn, item.key, remainingMaps)}}" on-tap="selectMap" raised>Select</paper-button>
                         </div>
                     </paper-material>
                 </template>
