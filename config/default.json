@@ -74,51 +74,51 @@
             "captainSelectionWeight": "equal",
             "order": [{
                 "type": "playerPick",
-                "method": "manual",
+                "method": "captain",
                 "captain": 1
             }, {
                 "type": "playerPick",
-                "method": "manual",
+                "method": "captain",
                 "captain": 2
             }, {
                 "type": "playerPick",
-                "method": "manual",
+                "method": "captain",
                 "captain": 2
             }, {
                 "type": "playerPick",
-                "method": "manual",
+                "method": "captain",
                 "captain": 1
             }, {
                 "type": "playerPick",
-                "method": "manual",
+                "method": "captain",
                 "captain": 1
             }, {
                 "type": "playerPick",
-                "method": "manual",
+                "method": "captain",
                 "captain": 2
             }, {
                 "type": "playerPick",
-                "method": "manual",
+                "method": "captain",
                 "captain": 2
             }, {
                 "type": "playerPick",
-                "method": "manual",
+                "method": "captain",
                 "captain": 1
             }, {
                 "type": "playerPick",
-                "method": "manual",
+                "method": "captain",
                 "captain": 1
             }, {
                 "type": "playerPick",
-                "method": "manual",
-                "captain": 2
-            }, {
-                "type": "captainRole",
-                "method": "random",
+                "method": "captain",
                 "captain": 2
             }, {
                 "type": "captainRole",
                 "method": "random",
+                "captain": 2
+            }, {
+                "type": "captainRole",
+                "method": "random",
                 "captain": 1
             }, {
                 "type": "mapBan",
@@ -134,11 +134,11 @@
                 "method": "random"
             }, {
                 "type": "mapBan",
-                "method": "manual",
+                "method": "captain",
                 "captain": 1
             }, {
                 "type": "mapBan",
-                "method": "manual",
+                "method": "captain",
                 "captain": 2
             }, {
                 "type": "mapPick",
