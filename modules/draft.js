@@ -281,7 +281,7 @@ module.exports = function(app, io, self, server) {
             }
 
             overrideRoles = lodash.filter(teamState.underfilledRoles, function(role) {
-                return lodash.size(playerPool[role]) === 0;
+                return lodash(playerPool[role]).difference(unavailablePlayers).size() === 0;
             });
         }
         else {
