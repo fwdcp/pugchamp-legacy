@@ -28,17 +28,21 @@ module.exports = function(app, io, self, server) {
     });
 
     self.on('userConnected', function(userID) {
-        self.emit('sendSystemMessage', {
-            user: userID,
-            action: 'connected'
-        });
+        if (self.users.get(userID).setUp) {
+            self.emit('sendSystemMessage', {
+                user: userID,
+                action: 'connected'
+            });
+        }
     });
 
     self.on('userDisconnected', function(userID) {
-        self.emit('sendSystemMessage', {
-            user: userID,
-            action: 'disconnected'
-        });
+        if (self.users.get(userID).setUp) {
+            self.emit('sendSystemMessage', {
+                user: userID,
+                action: 'disconnected'
+            });
+        }
     });
 
     io.sockets.on('authenticated', function(socket) {
