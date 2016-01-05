@@ -16,6 +16,12 @@
 <dom-module id="pugchamp-launchpad">
     <template>
         <style is="custom-style">
+            .condition {
+                background: var(--paper-amber-300);
+                margin: 10px 0;
+                padding: 10px;
+            }
+
             #captains div {
                 padding: 5px;
             }
@@ -40,6 +46,18 @@
 
             <p><paper-progress id="readyTime" class="transiting" min="0"></paper-progress></p>
             <p><paper-toggle-button id="readySelect" disabled="{{isRestricted(restrictions, 'start', 'captain')}}" on-change="updateReadyStatus">Ready</paper-toggle-button></p>
+        </paper-material>
+        <paper-material class="condition" hidden$="{{!_includes(conditions, 'notAvailable')}}">
+            There are currently not enough people to launch a game.
+        </paper-material>
+        <paper-material class="condition" hidden$="{{!_includes(conditions, 'readyNotChecked')}}">
+            A game will launch if enough people are ready after this ready period.
+        </paper-material>
+        <paper-material class="condition" hidden$="{{!_includes(conditions, 'notReady')}}">
+            Not enough people were ready to play.
+        </paper-material>
+        <paper-material class="condition" hidden$="{{!_includes(conditions, 'draftCurrentlyRunning')}}">
+            A draft is currently running.
         </paper-material>
         <div class="horizontal layout" id="captains">
             <div>
@@ -69,7 +87,6 @@
                 </div>
             </template>
         </div>
-        <div id="needed"><strong>Needed</strong>: {{displayRolesNeeded(rolesNeeded)}}</div>
 
         <pugchamp-notification id="launchNotification" body="A new game is launching!" tag="launchAttempt"></pugchamp-notification>
     </template>
@@ -102,6 +119,7 @@
                 this.set('players', status.playersAvailable);
                 this.set('captains', status.captainsAvailable);
                 this.set('rolesNeeded', status.rolesNeeded);
+                this.set('conditions', status.missingLaunchConditions);
             },
             updateAvailability: function() {
                 var roles = [];
