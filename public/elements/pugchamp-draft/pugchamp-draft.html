@@ -157,7 +157,7 @@
                 <template is="dom-repeat" items="{{_convertObjectToRepeatable(maps)}}">
                     <paper-material class="map flex">
                         <div data-status$="{{mapStatus(item.key, pickedMaps, remainingMaps)}}" class="map-overlay"></div>
-                        <img class="map-background" src$="{{mapImageBackground(item.value.image)}}">
+                        <img class="map-background" src$="/assets/maps/{{item.value.image}}">
                         <div class="map-info">
                             {{item.value.name}}
                             <br>
@@ -326,11 +326,6 @@
             fullPlayerInfo: function(player) {
                 if (player) {
                     return player.player.alias + ' (' + this.roles[player.role].name + ')';
-                }
-            },
-            mapImageBackground: function(image) {
-                if (image) {
-                    return '/assets/maps/' + image;
                 }
             },
             mapStatus: function(map, picked, remaining) {
