@@ -72,8 +72,8 @@ module.exports = function(app, io, self, server) {
     var unavailablePlayers = [];
     var pickedMaps = [];
     var remainingMaps = [];
-    var allowedRoles = null;
-    var overrideRoles = null;
+    var allowedRoles = [];
+    var overrideRoles = [];
 
     var currentStatusMessage = null;
 
@@ -234,8 +234,8 @@ module.exports = function(app, io, self, server) {
         unavailablePlayers = [];
         pickedMaps = [];
         remainingMaps = [];
-        allowedRoles = null;
-        overrideRoles = null;
+        allowedRoles = [];
+        overrideRoles = [];
 
         prepareStatusMessage();
         io.sockets.emit('draftStatusUpdated', currentStatusMessage);
@@ -329,8 +329,8 @@ module.exports = function(app, io, self, server) {
                 return lodash(playerPool[role]).difference(unavailablePlayers).size() === 0;
             });
         } else {
-            allowedRoles = null;
-            overrideRoles = null;
+            allowedRoles = [];
+            overrideRoles = [];
         }
 
         unavailablePlayers = lodash(pickedTeams).flatten().map(function(pick) {
