@@ -46,11 +46,17 @@
                     "min": 2,
                     "max": 2
                 },
-                "soldier": {
-                    "name": "Soldier",
+                "roamer": {
+                    "name": "Roamer",
                     "class": "soldier",
-                    "min": 2,
-                    "max": 2
+                    "min": 1,
+                    "max": 1
+                },
+                "pocket": {
+                    "name": "Pocket",
+                    "class": "soldier",
+                    "min": 1,
+                    "max": 1
                 },
                 "demoman": {
                     "name": "Demoman",
