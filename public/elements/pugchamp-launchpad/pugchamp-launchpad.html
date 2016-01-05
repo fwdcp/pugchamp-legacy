@@ -85,6 +85,7 @@
                 this._listenToEvent('userAvailabilityUpdated', 'onUserAvailabilityUpdated');
                 this._listenToEvent('launchInProgress', 'onLaunchInProgress');
                 this._listenToEvent('launchAborted', 'onLaunchAborted');
+                this._listenToEvent('draftStarting', 'onDraftStarting');
 				ion.sound({
 					sounds: [
 						{
@@ -148,6 +149,12 @@
                 this.$.readySelect.checked = ready;
             },
             onLaunchAborted: function() {
+                this.resetReady();
+            },
+            onDraftStarting: function() {
+                this.resetReady();
+            },
+            resetReady: function() {
                 this.set('launchInProgress', false);
 
                 this.$.launchNotification.close();

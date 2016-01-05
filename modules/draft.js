@@ -494,6 +494,8 @@ module.exports = function(app, io, self, server) {
     self.on('launchGameDraft', function(draftInfo) {
         draftInProgress = true;
 
+        io.sockets.emit('draftStarting');
+
         selectCaptains(draftInfo.captains);
 
         playerPool = draftInfo.players;
