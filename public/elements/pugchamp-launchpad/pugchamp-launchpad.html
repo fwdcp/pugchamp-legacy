@@ -28,17 +28,11 @@
             #readyTime {
                 --paper-progress-height: 10px;
             }
-			#role-icons {
-			}
-			#roles-column {
-			width:250px;
-			}
-			#player-alias-row {
-			min-height:30px !important;
-			}
-			#player-alias {
-			}
-			
+
+            .player {
+                min-height: inherit;
+                height: 32px;
+            }
         </style>
 
         <paper-material id="ready" hidden$="{{!launchInProgress}}">
@@ -58,8 +52,8 @@
         <div class="horizontal layout" id="roles">
             <template is="dom-repeat" items="{{_convertObjectToRepeatable(roles)}}" as="role">
                 <div class="flex role-column">
-                    <div id="roles-column" class="vertical layout">
-                        <paper-icon-item id="role-icons">
+                    <div class="vertical layout">
+                        <paper-icon-item>
                             <iron-icon icon="{{_iconFromIconset('tf2-classes-40px', role.value.class)}}" theme="black" item-icon></iron-icon>
                             <div class="role-name flex">
                                 <h3>{{role.value.name}}</h3>
@@ -67,9 +61,9 @@
                             <paper-toggle-button class="role-select" value="{{role.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability"></paper-toggle-button>
                         </paper-icon-item>
                         <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
-						<paper-icon-item id="player-alias-row">
-                                <div id="player-alias" class="flex">{{item.alias}}</div>
-						</paper-icon-items>
+                            <paper-icon-item class="player">
+                                <div class="flex">{{item.alias}}</div>
+                            </paper-icon-item>
                         </template>
                     </div>
                 </div>

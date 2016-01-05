@@ -108,6 +108,16 @@
                 background: var(--accent-color);
                 color: var(--light-theme-text-color);
             }
+
+            #playerPool .player {
+                min-height: inherit;
+                height: 32px;
+            }
+
+            #playerPool .player paper-button {
+                font-size: 13px;
+                line-height: 13px;
+            }
         </style>
 
         <div hidden$="{{!draftInProgress}}">
@@ -169,7 +179,7 @@
                             </paper-icon-item>
                             <template is="dom-if" if="{{!_includes(overrideRoles, role.key)}}">
                                 <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
-                                    <paper-icon-item disabled="{{_includes(unavailablePlayers, item.steamID)}}">
+                                    <paper-icon-item class="player" disabled="{{_includes(unavailablePlayers, item.steamID)}}">
                                         <iron-icon icon="{{_iconFromIconset('tf2-classes-24px', role.value.class)}}" item-icon></iron-icon>
                                         <div class="flex">{{item.alias}}</div>
                                         <paper-button class="draft-choice" data-role$="{{role.key}}" data-player$="{{item.steamID}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}" on-tap="pickPlayer" raised>Select</paper-button>
@@ -178,7 +188,7 @@
                             </template>
                             <template is="dom-if" if="{{_includes(overrideRoles, role.key)}}">
                                 <template is="dom-repeat" items="{{fullPlayerList}}">
-                                    <paper-icon-item disabled="{{_includes(unavailablePlayers, item.steamID)}}">
+                                    <paper-icon-item class="player" disabled="{{_includes(unavailablePlayers, item.steamID)}}">
                                         <iron-icon icon="{{_iconFromIconset('tf2-classes-24px', role.value.class)}}" item-icon></iron-icon>
                                         <div class="flex">{{item.alias}}</div>
                                         <paper-button class="draft-choice override" data-role$="{{role.key}}" data-player$="{{item.steamID}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}" on-tap="pickPlayerOverride" raised>Override</paper-button>
