@@ -35,6 +35,11 @@
                 --paper-progress-height: 10px;
             }
 
+            #ready paper-button {
+                background: var(--primary-color);
+                color: var(--dark-theme-text-color);
+            }
+
             .player {
                 min-height: inherit;
                 height: 32px;
@@ -45,7 +50,10 @@
             <h2>Launch In Progress</h2>
 
             <p><paper-progress id="readyTime" class="transiting" min="0"></paper-progress></p>
-            <p><paper-toggle-button id="readySelect" disabled="{{isRestricted(restrictions, 'start', 'captain')}}" on-change="updateReadyStatus">Ready</paper-toggle-button></p>
+            <p>
+                <paper-button data-status$="ready" hidden$="{{readyToPlay}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateReadyStatus">Set Ready</paper-button>
+                <paper-button data-status$="notReady" hidden$="{{!readyToPlay}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateReadyStatus">Set Not Ready</paper-button>
+            </p>
         </paper-material>
         <paper-material class="condition" hidden$="{{!_includes(conditions, 'notAvailable')}}">
             There are currently not enough people to launch a game.
@@ -97,6 +105,7 @@
             behaviors: [PugChampPolymerHelperBehaviors, PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior],
             ready: function() {
                 this.set('launchInProgress', false);
+                this.set('readyToPlay', false);
 
                 this._listenToEvent('launchStatusUpdated', 'onLaunchStatusUpdated');
                 this._listenToEvent('userAvailabilityUpdated', 'onUserAvailabilityUpdated');
@@ -160,11 +169,11 @@
                     this.async(this.incrementReadyTimer, 1000);
                 }
             },
-            updateReadyStatus: function() {
-                socket.emit('updateReadyStatus', this.$.readySelect.checked);
+            updateReadyStatus: function(event) {
+                socket.emit('updateReadyStatus', event.target.dataset.status === 'ready');
             },
             onReadyStatusUpdated: function(ready) {
-                this.$.readySelect.checked = ready;
+                this.set('readyToPlay', ready);
             },
             onLaunchAborted: function() {
                 this.resetReady();
