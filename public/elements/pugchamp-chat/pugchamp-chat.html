@@ -12,15 +12,17 @@
 <dom-module id="pugchamp-chat">
 	<template>
 		<style is="custom-style">
+			:host {
+				margin-left: 16px;
+			}
+
 			#messages {
-				height: 500px;
-				padding: 5px;
+				height: calc(100vh - 250px);
 				overflow: auto;
 			}
 
 			.message {
-				width: 100%;
-				margin: 5px 0;
+				margin: 5px;
 			}
 
 			.message .message-body {
@@ -29,8 +31,8 @@
 			}
 		</style>
 
-		<div id="messages">
-			<template is="dom-repeat" items="{{messages}}">
+		<div id="messages" class="vertical layout">
+			<template is="dom-repeat" items="{{messages}}" class="flex">
 				<paper-card class="message">
 					<div class="card-content">
 						<strong>{{item.user.alias}}</strong>

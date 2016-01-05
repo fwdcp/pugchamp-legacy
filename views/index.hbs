@@ -12,9 +12,18 @@
 	<link rel="import" href="/elements/pugchamp-restrictions/pugchamp-restrictions.html">
 
     <style is="custom-style">
-        pugchamp-chat {
-            width: 300px;
+        @media (max-width: 1600px) {
+            pugchamp-chat {
+                width: 100%;
+            }
         }
+
+        @media (min-width: 1600px) {
+            pugchamp-chat {
+                width: 300px;
+            }
+        }
+
 		#content {
             min-width: 800px;
 		}
@@ -29,12 +38,12 @@
 			{{> toolbar}}
 
 			<div id="main">
-                <pugchamp-restrictions></pugchamp-restrictions>
-
-                <hr>
-
                 <div class="horizontal layout wrap">
                     <div id="content" class="flex">
+                        <pugchamp-restrictions></pugchamp-restrictions>
+
+                        <hr>
+
     	                <pugchamp-draft></pugchamp-draft>
 
                         <hr>
