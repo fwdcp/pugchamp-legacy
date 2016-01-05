@@ -543,10 +543,10 @@ module.exports = function(app, io, self, server) {
 
             if (choice.player) {
                 let user = lodash.find(fullPlayerList, function(player) {
-                    return player.steamID === choice.player;
+                    return self.users.get(player).steamID === choice.player;
                 });
 
-                choice.player = user.id;
+                choice.player = user;
             }
 
             self.emit('commitDraftChoice', choice);
