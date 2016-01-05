@@ -29,7 +29,7 @@
 
 				<form id="user-settings" method="post">
 					{{#unless user.alias}}
-						<p><paper-input type="text" label="Alias" name="alias" placeholder="thesupremecommander" auto-validate error-message="alphanumeric characters only" pattern="\w+" required></paper-input></p>
+						<p><paper-input type="text" label="Alias" name="alias" placeholder="thesupremecommander" auto-validate error-message="up to fifteen alphanumeric characters only" pattern="\w{1,15}" required></paper-input></p>
 					{{else}}
 						<p><paper-input type="text" label="Alias" value="{{user.alias}}" readonly></paper-input></p>
 					{{/unless}}

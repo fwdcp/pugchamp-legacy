@@ -251,7 +251,7 @@ module.exports = function(app, io, self, server) {
         Promise.all([
             new Promise(function(resolve, reject) {
                 if (req.body.alias && !req.user.alias) {
-                    if (/\w+/.test(req.body.alias)) {
+                    if (/\w{1,15}/.test(req.body.alias)) {
                         database.User.findOne({alias: req.body.alias}, function(err, user) {
                             if (err) {
                                 reject(err);
