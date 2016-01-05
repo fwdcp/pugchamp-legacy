@@ -5,7 +5,7 @@ var lodash = require('lodash');
 
 module.exports = function(app, io, self, server) {
     self.on('sendUserChatMessage', function(chat) {
-        let userRestrictions = self.userRestrictions[chat.userID];
+        let userRestrictions = self.userRestrictions.get(chat.userID);
 
         if (!lodash.includes(userRestrictions.aspects, 'comms')) {
             let trimmedMessage = (chat.message || '').trim();

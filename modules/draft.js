@@ -199,7 +199,7 @@ module.exports = function(app, io, self, server) {
                 });
             }),
             unavailablePlayers: lodash.map(unavailablePlayers, function(userID) {
-                return self.users[userID].steamID;
+                return self.users.get(userID).steamID;
             }),
             pickedMaps: pickedMaps,
             remainingMaps: remainingMaps,

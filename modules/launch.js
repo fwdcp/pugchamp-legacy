@@ -209,7 +209,7 @@ module.exports = function(app, io, self, server) {
     attemptLaunch();
 
     self.on('updateUserAvailability', function(newAvailability) {
-        let userRestrictions = self.userRestrictions[newAvailability.userID];
+        let userRestrictions = self.userRestrictions.get(newAvailability.userID);
 
         if (!lodash.includes(userRestrictions.aspects, 'start')) {
             lodash.forEach(playersAvailable, function(players, role) {

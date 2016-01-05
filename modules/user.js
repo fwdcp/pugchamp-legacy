@@ -17,12 +17,12 @@ module.exports = function(app, io, self, server) {
         aspects: ['start', 'comms'],
         reasons: ['You are currently not logged on.']
     };
-    self.userRestrictions = {};
-    self.userSockets = {};
-    self.users = {};
+    self.userRestrictions = new Map();
+    self.userSockets = new Map();
+    self.users = new Map();
 
     self.getFilteredUser = function getFilteredUser(userID) {
-        return lodash.omit(self.users[userID].toObject(), ['_id', 'id', '__v']);
+        return lodash.omit(self.users.get(userID).toObject(), ['_id', 'id', '__v']);
     };
 
     self.on('retrieveUsers', function(userIDs) {
@@ -43,7 +43,7 @@ module.exports = function(app, io, self, server) {
             }
 
             lodash.forEach(users, function(user) {
-                self.users[user.id] = user;
+                self.users.set(user.id, user);
             });
 
             self.emit('usersRetrieved', lodash.map(users, function(user) {
@@ -53,8 +53,8 @@ module.exports = function(app, io, self, server) {
     });
 
     self.on('sendMessageToUser', function(message) {
-        if (self.userSockets[message.userID]) {
-            for (let socketID of self.userSockets[message.userID]) {
+        if (self.userSockets.has(message.userID)) {
+            for (let socketID of self.userSockets.get(message.userID)) {
                 io.sockets.connected[socketID].emit(message.name, ...message.arguments);
             }
         }
@@ -70,7 +70,7 @@ module.exports = function(app, io, self, server) {
 
             Promise.all([
                 new Promise(function(resolve, reject) {
-                    if (self.users[userID].setUp) {
+                    if (self.users.get(userID).setUp) {
                         resolve({
                             aspects: [],
                             reasons: []
@@ -86,7 +86,7 @@ module.exports = function(app, io, self, server) {
                 // check user bans
                 // check that user is currently not playing in a game
             ]).then(function(restrictions) {
-                self.userRestrictions[userID] = lodash.reduce(restrictions, function(allRestrictions, restriction) {
+                self.userRestrictions.set(userID, lodash.reduce(restrictions, function(allRestrictions, restriction) {
                     return {
                         aspects: lodash.union(allRestrictions.aspects, restriction.aspects),
                         reasons: [...allRestrictions.reasons, ...restriction.reasons]
@@ -94,7 +94,7 @@ module.exports = function(app, io, self, server) {
                 }, {
                     aspects: [],
                     reasons: []
-                });
+                }));
 
                 self.emit('userRestrictionsUpdated', userID);
             });
@@ -105,7 +105,7 @@ module.exports = function(app, io, self, server) {
         self.emit('sendMessageToUser', {
             userID: userID,
             name: 'restrictionsUpdated',
-            arguments: [self.userRestrictions[userID]]
+            arguments: [self.userRestrictions.get(userID)]
         });
     });
 
@@ -206,10 +206,10 @@ module.exports = function(app, io, self, server) {
     io.sockets.on('authenticated', function(socket) {
         let userID = socket.decoded_token;
 
-        if (!self.userSockets[userID]) {
+        if (!self.userSockets.has(userID)) {
             self.emit('retrieveUsers', [userID]);
 
-            self.userSockets[userID] = new Set([socket.id]);
+            self.userSockets.set(userID, new Set([socket.id]));
 
             let userRetrieved = function(users) {
                 if (lodash.includes(users, userID)) {
@@ -220,20 +220,20 @@ module.exports = function(app, io, self, server) {
             };
             self.once('usersRetrieved', userRetrieved);
         } else {
-            self.userSockets[userID].add(socket.id);
+            self.userSockets.get(userID).add(socket.id);
 
             socket.emit('userInfoUpdated', self.getFilteredUser(userID));
-            socket.emit('restrictionsUpdated', self.userRestrictions[userID]);
+            socket.emit('restrictionsUpdated', self.userRestrictions.get(userID));
         }
 
         socket.on('disconnect', function() {
-            self.userSockets[userID].delete(socket.id);
+            self.userSockets.get(userID).delete(socket.id);
 
-            if (self.userSockets[userID].size === 0) {
+            if (self.userSockets.get(userID).size === 0) {
                 self.emit('userDisconnected', userID);
 
-                delete self.userRestrictions[userID];
-                delete self.userSockets[userID];
+                self.userRestrictions.delete(userID);
+                self.userSockets.delete(userID);
             }
         });
     });
