@@ -233,7 +233,6 @@ module.exports = function(app, io, self, server) {
                 self.emit('userDisconnected', userID);
 
                 delete self.userRestrictions[userID];
-                delete self.users[userID];
                 delete self.userSockets[userID];
             }
         });
