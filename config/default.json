@@ -81,19 +81,11 @@
             "order": [{
                 "type": "factionSelect",
                 "method": "random",
-                "captain": 2
-            }, {
-                "type": "playerPick",
-                "method": "captain",
                 "captain": 1
             }, {
                 "type": "playerPick",
                 "method": "captain",
-                "captain": 2
-            }, {
-                "type": "playerPick",
-                "method": "captain",
-                "captain": 2
+                "captain": 0
             }, {
                 "type": "playerPick",
                 "method": "captain",
@@ -105,15 +97,11 @@
             }, {
                 "type": "playerPick",
                 "method": "captain",
-                "captain": 2
+                "captain": 0
             }, {
                 "type": "playerPick",
                 "method": "captain",
-                "captain": 2
-            }, {
-                "type": "playerPick",
-                "method": "captain",
-                "captain": 1
+                "captain": 0
             }, {
                 "type": "playerPick",
                 "method": "captain",
@@ -121,18 +109,27 @@
             }, {
                 "type": "playerPick",
                 "method": "captain",
-                "captain": 2
+                "captain": 1
             }, {
-                "type": "captainRole",
-                "method": "random",
-                "captain": 2
+                "type": "playerPick",
+                "method": "captain",
+                "captain": 0
+            }, {
+                "type": "playerPick",
+                "method": "captain",
+                "captain": 0
+            }, {
+                "type": "playerPick",
+                "method": "captain",
+                "captain": 1
             }, {
                 "type": "captainRole",
                 "method": "random",
                 "captain": 1
             }, {
-                "type": "mapBan",
-                "method": "random"
+                "type": "captainRole",
+                "method": "random",
+                "captain": 0
             }, {
                 "type": "mapBan",
                 "method": "random"
@@ -142,14 +139,17 @@
             }, {
                 "type": "mapBan",
                 "method": "random"
+            }, {
+                "type": "mapBan",
+                "method": "random"
+            }, {
+                "type": "mapBan",
+                "method": "captain",
+                "captain": 0
             }, {
                 "type": "mapBan",
                 "method": "captain",
                 "captain": 1
-            }, {
-                "type": "mapBan",
-                "method": "captain",
-                "captain": 2
             }, {
                 "type": "mapPick",
                 "method": "random"

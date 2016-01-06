@@ -303,7 +303,7 @@
             },
             fullTurnCaptainName: function(captain) {
                 if (captain) {
-                    return this.captains[captain - 1].alias;
+                    return this.captains[captain].alias;
                 }
             },
             fullTurnChoiceInfo: function(choice) {
@@ -348,7 +348,7 @@
                     return false;
                 }
 
-                if (!this.user || this.user.steamID !== this.captains[this.turns[turn].captain - 1].steamID) {
+                if (!this.user || this.user.steamID !== this.captains[this.turns[turn].captain].steamID) {
                     return false;
                 }
 
@@ -363,7 +363,7 @@
                     return false;
                 }
 
-                if (!this.user || this.user.steamID !== this.captains[this.turns[turn].captain - 1].steamID) {
+                if (!this.user || this.user.steamID !== this.captains[this.turns[turn].captain].steamID) {
                     return false;
                 }
 
@@ -382,7 +382,7 @@
                     return false;
                 }
 
-                if (!this.user || this.user.steamID !== this.captains[this.turns[turn].captain - 1].steamID) {
+                if (!this.user || this.user.steamID !== this.captains[this.turns[turn].captain].steamID) {
                     return false;
                 }
 
@@ -399,7 +399,7 @@
                     return false;
                 }
 
-                if (!this.user || this.user.steamID !== this.captains[this.turns[turn].captain - 1].steamID) {
+                if (!this.user || this.user.steamID !== this.captains[this.turns[turn].captain].steamID) {
                     return false;
                 }
 

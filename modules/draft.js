@@ -257,7 +257,7 @@ module.exports = function(app, io, self, server) {
         if (turnDefinition.type === 'factionSelect') {
             choice.faction = chance.pick(['BLU', 'RED']);
         } else if (turnDefinition.type === 'playerPick') {
-            let team = pickedTeams[turnDefinition.captain - 1];
+            let team = pickedTeams[turnDefinition.captain];
             let roleDistribution = calculateRoleDistribution(team);
 
             let roles = config.get('app.games.roles');
@@ -283,7 +283,7 @@ module.exports = function(app, io, self, server) {
                 choice.player = chance.pick(lodash.difference(playerPool[choice.role], unavailablePlayers));
             }
         } else if (turnDefinition.type === 'captainRole') {
-            let team = pickedTeams[turnDefinition.captain - 1];
+            let team = pickedTeams[turnDefinition.captain];
             let roleDistribution = calculateRoleDistribution(team);
 
             let roles = config.get('app.games.roles');
@@ -316,7 +316,7 @@ module.exports = function(app, io, self, server) {
         let turnDefinition = draftOrder[turn];
 
         if (turnDefinition.type === 'playerPick' || turnDefinition.type === 'captainRole') {
-            let team = pickedTeams[turnDefinition.captain - 1];
+            let team = pickedTeams[turnDefinition.captain];
             let teamState = calculateCurrentTeamState(team);
 
             if (teamState.remaining > teamState.underfilledTotal) {
@@ -350,7 +350,7 @@ module.exports = function(app, io, self, server) {
 
         if (turnDefinition.method === 'captain') {
             self.emit('sendMessageToUser', {
-                userID: draftCaptains[turnDefinition.captain - 1],
+                userID: draftCaptains[turnDefinition.captain],
                 name: 'draftTurnChoice',
                 arguments: []
             });
@@ -384,7 +384,7 @@ module.exports = function(app, io, self, server) {
 
         let turnDefinition = draftOrder[currentDraftTurn];
 
-        if (turnDefinition.method === 'captain' && choice.captain !== draftCaptains[turnDefinition.captain - 1]) {
+        if (turnDefinition.method === 'captain' && choice.captain !== draftCaptains[turnDefinition.captain]) {
             return;
         } else if (turnDefinition.method !== 'captain' && choice.captain) {
             return;
@@ -404,13 +404,13 @@ module.exports = function(app, io, self, server) {
                 return;
             }
 
-            if (turnDefinition.captain === 1) {
+            if (turnDefinition.captain === 0) {
                 if (choice.faction === 'RED') {
                     newFactions = ['RED', 'BLU'];
                 } else if (choice.faction === 'BLU') {
                     newFactions = ['BLU', 'RED'];
                 }
-            } else if (turnDefinition.captain === 2) {
+            } else if (turnDefinition.captain === 1) {
                 if (choice.faction === 'RED') {
                     newFactions = ['BLU', 'RED'];
                 } else if (choice.faction === 'BLU') {
@@ -436,7 +436,7 @@ module.exports = function(app, io, self, server) {
                 }
             }
 
-            newTeams[turnDefinition.captain - 1].push({
+            newTeams[turnDefinition.captain].push({
                 player: choice.player,
                 role: choice.role
             });
@@ -445,8 +445,8 @@ module.exports = function(app, io, self, server) {
                 return;
             }
 
-            newTeams[turnDefinition.captain - 1].push({
-                player: draftCaptains[turnDefinition.captain - 1],
+            newTeams[turnDefinition.captain].push({
+                player: draftCaptains[turnDefinition.captain],
                 role: choice.role
             });
         } else if (turnDefinition.type === 'mapBan') {
@@ -536,7 +536,7 @@ module.exports = function(app, io, self, server) {
     });
 
     io.sockets.on('authenticated', function(socket) {
-        if (draftInProgress && draftOrder[currentDraftTurn].method === 'captain' && socket.decoded_token === draftCaptains[draftOrder[currentDraftTurn].captain - 1]) {
+        if (draftInProgress && draftOrder[currentDraftTurn].method === 'captain' && socket.decoded_token === draftCaptains[draftOrder[currentDraftTurn].captain]) {
             socket.emit('draftTurnChoice');
         }
 
