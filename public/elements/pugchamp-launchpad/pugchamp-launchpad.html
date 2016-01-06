@@ -113,6 +113,7 @@
 
                 this._listenToEvent('launchStatusUpdated', 'onLaunchStatusUpdated');
                 this._listenToEvent('userAvailabilityUpdated', 'onUserAvailabilityUpdated');
+                this._listenToEvent('userReadyStatusUpdated', 'onUserReadyStatusUpdated');
                 this._listenToEvent('launchInProgress', 'onLaunchInProgress');
                 this._listenToEvent('launchAborted', 'onLaunchAborted');
                 this._listenToEvent('draftStarting', 'onDraftStarting');
@@ -176,7 +177,7 @@
             updateReadyStatus: function(event) {
                 socket.emit('updateReadyStatus', event.target.dataset.status === 'ready');
             },
-            onReadyStatusUpdated: function(ready) {
+            onUserReadyStatusUpdated: function(ready) {
                 this.set('readyToPlay', ready);
             },
             onLaunchAborted: function() {
