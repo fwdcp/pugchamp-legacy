@@ -316,6 +316,23 @@ module.exports = function(app, io, self, server) {
         });
     });
 
+    self.on('userRestrictionsUpdated', function(userID) {
+        self.emit('updateUserAvailability', {
+            userID: userID,
+            roles: lodash.mapValues(playersAvailable, function(players) {
+                return players.has(userID);
+            }),
+            captain: captainsAvailable.has(userID)
+        });
+
+        if (launchAttemptInProgress) {
+            self.emit('updateUserReadyStatus', {
+                userID: userID,
+                ready: readiesReceived.has(userID)
+            });
+        }
+    });
+
     app.get('/', function(req, res) {
         res.render('index', {
             user: req.user
