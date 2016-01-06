@@ -12,11 +12,15 @@ var userSchema = new mongoose.Schema({
     setUp: {
         type: Boolean,
         default: false
+    },
+    currentRating: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Rating'
     }
 });
 
 var gameSchema = new mongoose.Schema({
-    status: String,
+    status: {type: String, enum: ['launching', 'live', 'aborted', 'completed']},
     date: Date,
     captains: [{
         user: {
@@ -33,9 +37,9 @@ var gameSchema = new mongoose.Schema({
         },
         role: String,
         team: Number,
-        origin: String,
-        time: Number
+        origin: String
     }],
+    server: String,
     results: [{
         score: [Number],
         links: [{
@@ -67,7 +71,28 @@ var gameSchema = new mongoose.Schema({
     }
 });
 
+var ratingSchema = new mongoose.Schema({
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    date: Date,
+    game: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Game'
+    },
+    before: {
+        rating: Number,
+        deviation: Number
+    },
+    after: {
+        rating: Number,
+        deviation: Number
+    }
+});
+
 module.exports = {
+    User: mongoose.model('User', userSchema),
     Game: mongoose.model('Game', gameSchema),
-    User: mongoose.model('User', userSchema)
+    Rating: mongoose.model('Rating', ratingSchema)
 };
