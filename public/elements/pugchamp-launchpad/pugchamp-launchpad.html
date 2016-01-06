@@ -55,8 +55,8 @@
 
             <p><paper-progress id="readyTime" class="transiting" min="0"></paper-progress></p>
             <p>
-                <paper-button data-status$="ready" hidden$="{{readyToPlay}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateReadyStatus">Set Ready</paper-button>
-                <paper-button data-status$="notReady" hidden$="{{!readyToPlay}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateReadyStatus">Set Not Ready</paper-button>
+                <paper-button data-status$="ready" hidden$="{{readyToPlay}}" disabled="{{isRestricted(restrictions, 'start')}}" on-tap="updateReadyStatus">Set Ready</paper-button>
+                <paper-button data-status$="notReady" hidden$="{{!readyToPlay}}" disabled="{{isRestricted(restrictions, 'start')}}" on-tap="updateReadyStatus">Set Not Ready</paper-button>
             </p>
         </paper-material>
         <paper-material class="condition" hidden$="{{!_includes(conditions, 'notAvailable')}}">
@@ -189,7 +189,7 @@
                 this.set('launchInProgress', false);
 
                 this.$.launchNotification.close();
-                if (!this.$.readySelect.checked) {
+                if (!this.readyToPlay) {
                     Polymer.dom(this.$.roles).querySelectorAll('.role-select').forEach(function(button) {
                         button.checked = false;
                     });
@@ -197,7 +197,7 @@
                     this.$.captainSelect.checked = false;
                 }
 
-                this.$.readySelect.checked = false;
+                this.set('readyToPlay', false);
             },
             playerAliasList: function(players) {
                 return players.map(function(player) {
