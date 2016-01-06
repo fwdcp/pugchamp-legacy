@@ -397,7 +397,7 @@ module.exports = function(app, io, self, server) {
         });
 
         game.choices = lodash.map(draftChoices, function(choice, index) {
-            return lodash.assign({}, draftOrder[index], choice);
+            return lodash.assign({}, choice, draftOrder[index]);
         });
         game.pool.maps = lodash.keys(mapPool);
         game.pool.players = lodash(playerPool).transform(function(pool, players, role) {

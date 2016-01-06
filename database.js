@@ -43,12 +43,12 @@ var gameSchema = new mongoose.Schema({
     results: [{
         score: [Number],
         links: [{
-            type: String,
+            type: {type: String},
             url: String
         }]
     }],
     choices: [{
-        type: String,
+        type: {type: String},
         method: String,
         captain: Number,
         faction: String,
