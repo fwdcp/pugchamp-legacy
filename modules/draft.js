@@ -7,6 +7,7 @@ var lodash = require('lodash');
 var ms = require('ms');
 
 var chance = new Chance();
+var database = require('../database');
 
 module.exports = function(app, io, self, server) {
     function calculateRoleDistribution(currentTeam) {
@@ -242,7 +243,9 @@ module.exports = function(app, io, self, server) {
     }
 
     function expireTime() {
-        // TODO: end the draft
+        self.emit('sendSystemMessage', {
+            action: 'game draft aborted due to turn expiration'
+        });
 
         cleanUpDraft();
     }
@@ -369,12 +372,63 @@ module.exports = function(app, io, self, server) {
             throw new Error('Invalid state after draft completed!');
         }
 
-        // TODO: wrap up the draft
+        var game = new database.Game();
+        game.status = 'launching';
+        game.date = Date.now();
 
-        // TODO: add the game to the database
-        // TODO: show game details to players
+        game.captains = lodash.map(draftCaptains, function(captain, index) {
+            return {
+                user: captain,
+                faction: teamFactions[index]
+            };
+        });
 
-        cleanUpDraft();
+        game.maps = pickedMaps;
+
+        lodash.each(pickedTeams, function(team, teamNumber) {
+            lodash.each(team, function(player) {
+                game.players.push({
+                    user: player.player,
+                    role: player.role,
+                    team: teamNumber,
+                    origin: 'draft'
+                });
+            });
+        });
+
+        game.choices = lodash.map(draftChoices, function(choice, index) {
+            return lodash.assign({}, draftOrder[index], choice);
+        });
+        game.pool.maps = lodash.keys(mapPool);
+        game.pool.players = lodash(playerPool).transform(function(pool, players, role) {
+            lodash.each(players, function(player) {
+                if (!pool[player]) {
+                    pool[player] = [];
+                }
+
+                pool[player].push(role);
+            });
+        }).map(function(roles, player) {
+            return {
+                user: player,
+                roles: roles
+            };
+        }).value();
+
+        game.save(function(err) {
+            if (err) {
+                throw err;
+            }
+
+            self.emit('launchGame', game);
+
+            // NOTE: forces a user update so they cannot add up to another game immediately - should this be done here?
+            self.emit('retrieveUsers', lodash.map(game.players, function(player) {
+                return player.user;
+            }));
+
+            cleanUpDraft();
+        });
     }
 
     self.on('commitDraftChoice', function(choice) {
