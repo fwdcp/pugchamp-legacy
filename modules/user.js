@@ -82,9 +82,24 @@ module.exports = function(app, io, self, server) {
                             reasons: ['Your account is not set up properly.']
                         });
                     }
+                }),
+                // TODO: check user bans
+                new Promise(function(resolve, reject) {
+                    database.Game.findOne({status: {$in: ['launching', 'live']}}, function(err, game) {
+                        if (game) {
+                            resolve({
+                                aspects: ['start'],
+                                reasons: ['You are currently in a game.']
+                            });
+                        }
+                        else {
+                            resolve({
+                                aspects: [],
+                                reasons: []
+                            });
+                        }
+                    });
                 })
-                // check user bans
-                // check that user is currently not playing in a game
             ]).then(function(restrictions) {
                 self.userRestrictions.set(userID, lodash.reduce(restrictions, function(allRestrictions, restriction) {
                     return {
