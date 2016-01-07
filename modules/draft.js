@@ -71,7 +71,7 @@ module.exports = function(app, io, self, server) {
         []
     ];
     var unavailablePlayers = [];
-    var pickedMaps = [];
+    var pickedMap = null;
     var remainingMaps = [];
     var allowedRoles = [];
     var overrideRoles = [];
@@ -135,14 +135,12 @@ module.exports = function(app, io, self, server) {
             return false;
         }
 
-        let mapsInSeries = config.get('app.games.mapsInSeries');
-
-        if (lodash.size(maps.picked) + lodash.size(maps.remaining) < mapsInSeries) {
+        if (!maps.picked && lodash.size(maps.remaining) === 0) {
             return false;
         }
 
         if (final) {
-            if (lodash.size(maps.picked) !== mapsInSeries) {
+            if (!maps.picked) {
                 return false;
             }
 
@@ -202,7 +200,7 @@ module.exports = function(app, io, self, server) {
             unavailablePlayers: lodash.map(unavailablePlayers, function(userID) {
                 return self.users.get(userID).steamID;
             }),
-            pickedMaps: pickedMaps,
+            pickedMap: pickedMap,
             remainingMaps: remainingMaps,
             allowedRoles: allowedRoles,
             overrideRoles: overrideRoles
@@ -233,7 +231,7 @@ module.exports = function(app, io, self, server) {
             []
         ];
         unavailablePlayers = [];
-        pickedMaps = [];
+        pickedMap = null;
         remainingMaps = [];
         allowedRoles = [];
         overrideRoles = [];
@@ -364,7 +362,7 @@ module.exports = function(app, io, self, server) {
 
     function completeDraft() {
         let legalNewState = checkIfLegalState(pickedTeams, {
-            picked: pickedMaps,
+            picked: pickedMap,
             remaining: remainingMaps
         }, teamFactions, true);
 
@@ -383,7 +381,7 @@ module.exports = function(app, io, self, server) {
             };
         });
 
-        game.maps = pickedMaps;
+        game.map = pickedMap;
 
         lodash.each(pickedTeams, function(team, teamNumber) {
             lodash.each(team, function(player) {
@@ -450,7 +448,7 @@ module.exports = function(app, io, self, server) {
 
         let newFactions = lodash.cloneDeep(teamFactions);
         let newTeams = lodash.cloneDeep(pickedTeams);
-        let newPickedMaps = lodash.cloneDeep(pickedMaps);
+        let newPickedMap = pickedMap;
         let newRemainingMaps = lodash.cloneDeep(remainingMaps);
 
         if (turnDefinition.type === 'factionSelect') {
@@ -514,12 +512,12 @@ module.exports = function(app, io, self, server) {
                 return;
             }
 
-            newPickedMaps.push(choice.map);
+            newPickedMap = choice.map;
             newRemainingMaps = lodash.without(remainingMaps, choice.map);
         }
 
         let legalNewState = checkIfLegalState(newTeams, {
-            picked: newPickedMaps,
+            picked: newPickedMap,
             remaining: newRemainingMaps
         }, newFactions, false);
 
@@ -529,7 +527,7 @@ module.exports = function(app, io, self, server) {
 
         teamFactions = newFactions;
         pickedTeams = newTeams;
-        pickedMaps = newPickedMaps;
+        pickedMap = newPickedMap;
         remainingMaps = newRemainingMaps;
 
         draftChoices.push(choice);
@@ -564,10 +562,10 @@ module.exports = function(app, io, self, server) {
             [],
             []
         ];
-        pickedMaps = [];
+        pickedMap = null;
 
         let legalState = checkIfLegalState(pickedTeams, {
-            picked: pickedMaps,
+            picked: pickedMap,
             remaining: remainingMaps
         }, teamFactions, false);
 

@@ -29,7 +29,7 @@ var gameSchema = new mongoose.Schema({
         },
         faction: String
     }],
-    maps: [String],
+    map: String,
     players: [{
         user: {
             type: mongoose.Schema.Types.ObjectId,
