@@ -24,7 +24,7 @@ module.exports = function(app, io, self, server) {
                     return rcon.command('pugchamp_game_info');
                 }),
                 new Promise(function(resolve, reject) {
-                    setTimeout(reject, ms(serverTimeout), false);
+                    setTimeout(reject, ms(serverTimeout), 'timed out');
                 })
             ]).then(function(result) {
                 let gameID = result.trim();
@@ -47,7 +47,7 @@ module.exports = function(app, io, self, server) {
                     });
                 }
                 else {
-                    return false;
+                    return server;
                 }
             }, function() {
                 return false;
