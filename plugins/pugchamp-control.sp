@@ -17,12 +17,12 @@ public Plugin myinfo = {
 
 ConVar serverURL;
 
-bool matchAssigned;
-bool matchLive;
+bool gameAssigned;
+bool gameLive;
 
-ConVar matchID;
-ConVar matchMap;
-ConVar matchConfig;
+ConVar gameID;
+ConVar gameMap;
+ConVar gameConfig;
 
 ArrayList allowedPlayers;
 StringMap playerNames;
@@ -30,22 +30,22 @@ StringMap playerTeams;
 StringMap playerClasses;
 
 public void OnPluginStart() {
-    serverURL = CreateConVar("pugchamp_server_url", "", "the server URL to which match info is sent", FCVAR_PROTECTED|FCVAR_DONTRECORD|FCVAR_PLUGIN);
+    serverURL = CreateConVar("pugchamp_server_url", "", "the server URL to which game info is sent", FCVAR_PROTECTED|FCVAR_DONTRECORD|FCVAR_PLUGIN);
 
-    RegServerCmd("pugchamp_match_info", Command_MatchInfo, "replies with current match info");
+    RegServerCmd("pugchamp_game_info", Command_GameInfo, "replies with current game info");
 
-    RegServerCmd("pugchamp_match_reset", Command_MatchReset, "resets a currently active match");
-    RegServerCmd("pugchamp_match_start", Command_MatchStart, "starts a new match");
+    RegServerCmd("pugchamp_game_reset", Command_GameReset, "resets a currently active game");
+    RegServerCmd("pugchamp_game_start", Command_GameStart, "starts a new game");
 
-    matchAssigned = false;
-    matchLive = false;
+    gameAssigned = false;
+    gameLive = false;
 
-    matchID = CreateConVar("pugchamp_match_id", "", "the match ID for the current match", FCVAR_PROTECTED|FCVAR_DONTRECORD|FCVAR_PLUGIN);
-    matchMap = CreateConVar("pugchamp_match_map", "", "the map for the current match", FCVAR_PLUGIN);
-    matchConfig = CreateConVar("pugchamp_match_config", "", "the config for the current match", FCVAR_PLUGIN);
+    gameID = CreateConVar("pugchamp_game_id", "", "the ID for the current game", FCVAR_PROTECTED|FCVAR_DONTRECORD|FCVAR_PLUGIN);
+    gameMap = CreateConVar("pugchamp_game_map", "", "the map for the current game", FCVAR_PLUGIN);
+    gameConfig = CreateConVar("pugchamp_game_config", "", "the config for the current game", FCVAR_PLUGIN);
 
-    RegServerCmd("pugchamp_match_player_add", Command_MatchPlayerAdd, "adds a player to a match");
-    RegServerCmd("pugchamp_match_player_remove", Command_MatchPlayerRemove, "removes a player from a match");
+    RegServerCmd("pugchamp_game_player_add", Command_GamePlayerAdd, "adds a player to a game");
+    RegServerCmd("pugchamp_game_player_remove", Command_GamePlayerRemove, "removes a player from a game");
 
     allowedPlayers = new ArrayList(32);
     playerNames = new StringMap();
@@ -61,9 +61,9 @@ public void OnPluginStart() {
 }
 
 public void OnMapStart() {
-    if (matchAssigned) {
+    if (gameAssigned) {
         char config[PLATFORM_MAX_PATH];
-        matchConfig.GetString(config, sizeof(config));
+        gameConfig.GetString(config, sizeof(config));
 
         ServerCommand("exec %s", config);
 
@@ -72,8 +72,8 @@ public void OnMapStart() {
         HTTPRequestHandle resultReport = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
 
         char id[32];
-        matchID.GetString(id, sizeof(id));
-        Steam_SetHTTPRequestGetOrPostParameter(resultReport, "match", id);
+        gameID.GetString(id, sizeof(id));
+        Steam_SetHTTPRequestGetOrPostParameter(resultReport, "game", id);
 
         Steam_SetHTTPRequestGetOrPostParameter(resultReport, "status", "setup");
 
@@ -117,17 +117,17 @@ public void OnClientPostAdminCheck(int client) {
 }
 
 public void OnClientDisconnect_Post(int client) {
-    if (matchAssigned && matchLive) {
+    if (gameAssigned && gameLive) {
         if (GetTeamClientCount(2) + GetTeamClientCount(3) == 0) {
-            matchLive = false;
+            gameLive = false;
 
             char url[2048];
             serverURL.GetString(url, sizeof(url));
             HTTPRequestHandle resultReport = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
 
             char id[32];
-            matchID.GetString(id, sizeof(id));
-            Steam_SetHTTPRequestGetOrPostParameter(resultReport, "match", id);
+            gameID.GetString(id, sizeof(id));
+            Steam_SetHTTPRequestGetOrPostParameter(resultReport, "game", id);
 
             Steam_SetHTTPRequestGetOrPostParameter(resultReport, "status", "abandoned");
 
@@ -142,26 +142,26 @@ public void OnClientDisconnect_Post(int client) {
     }
 }
 
-public Action Command_MatchInfo(int args) {
+public Action Command_GameInfo(int args) {
     char id[32];
-    matchID.GetString(id, sizeof(id));
+    gameID.GetString(id, sizeof(id));
 
     ReplyToCommand(0, "%s", id);
 
     return Plugin_Handled;
 }
 
-public Action Command_MatchReset(int args) {
+public Action Command_GameReset(int args) {
     allowedPlayers.Clear();
     playerNames.Clear();
     playerTeams.Clear();
     playerClasses.Clear();
 
-    matchAssigned = false;
-    matchLive = false;
-    matchID.SetString("");
-    matchMap.SetString("");
-    matchConfig.SetString("");
+    gameAssigned = false;
+    gameLive = false;
+    gameID.SetString("");
+    gameMap.SetString("");
+    gameConfig.SetString("");
 
     for (int i = 1; i < MaxClients; i++) {
         if (IsClientConnected(i) && !IsClientReplay(i) && !IsClientSourceTV(i)) {
@@ -172,18 +172,18 @@ public Action Command_MatchReset(int args) {
     return Plugin_Handled;
 }
 
-public Action Command_MatchStart(int args) {
-    matchAssigned = true;
+public Action Command_GameStart(int args) {
+    gameAssigned = true;
 
     char map[PLATFORM_MAX_PATH];
-    matchMap.GetString(map, sizeof(map));
+    gameMap.GetString(map, sizeof(map));
 
     ServerCommand("changelevel %s", map);
 
     return Plugin_Handled;
 }
 
-public Action Command_MatchPlayerAdd(int args) {
+public Action Command_GamePlayerAdd(int args) {
     char steamID[32];
     GetCmdArg(1, steamID, sizeof(steamID));
     if (allowedPlayers.FindString(steamID) == -1) {
@@ -211,7 +211,7 @@ public Action Command_MatchPlayerAdd(int args) {
     }
 }
 
-public Action Command_MatchPlayerRemove(int args) {
+public Action Command_GamePlayerRemove(int args) {
     char steamID[32];
     GetCmdArg(1, steamID, sizeof(steamID));
 
@@ -224,15 +224,15 @@ public Action Command_MatchPlayerRemove(int args) {
 }
 
 public void Event_GameStart(Event event, const char[] name, bool dontBroadcast) {
-    matchLive = true;
+    gameLive = true;
 
     char url[2048];
     serverURL.GetString(url, sizeof(url));
     HTTPRequestHandle resultReport = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
 
     char id[32];
-    matchID.GetString(id, sizeof(id));
-    Steam_SetHTTPRequestGetOrPostParameter(resultReport, "match", id);
+    gameID.GetString(id, sizeof(id));
+    Steam_SetHTTPRequestGetOrPostParameter(resultReport, "game", id);
 
     Steam_SetHTTPRequestGetOrPostParameter(resultReport, "status", "live");
 
@@ -240,15 +240,15 @@ public void Event_GameStart(Event event, const char[] name, bool dontBroadcast) 
 }
 
 public void Event_GameOver(Event event, const char[] name, bool dontBroadcast) {
-    matchLive = false;
+    gameLive = false;
 
     char url[2048];
     serverURL.GetString(url, sizeof(url));
     HTTPRequestHandle resultReport = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
 
     char id[32];
-    matchID.GetString(id, sizeof(id));
-    Steam_SetHTTPRequestGetOrPostParameter(resultReport, "match", id);
+    gameID.GetString(id, sizeof(id));
+    Steam_SetHTTPRequestGetOrPostParameter(resultReport, "game", id);
 
     Steam_SetHTTPRequestGetOrPostParameter(resultReport, "status", "completed");
 
