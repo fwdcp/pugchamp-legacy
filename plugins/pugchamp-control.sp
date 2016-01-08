@@ -85,7 +85,9 @@ public bool OnClientPreConnectEx(const char[] name, char password[255], const ch
 
 public void OnClientPostAdminCheck(int client) {
     char steamID[32];
-    GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID));
+    if (!GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID))) {
+        ThrowError("Steam ID not retrieved");
+    }
 
     char name[32];
     if (playerNames.GetString(steamID, name, sizeof(name))) {
