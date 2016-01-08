@@ -75,6 +75,8 @@ public bool OnClientPreConnectEx(const char[] name, char password[255], const ch
     Connect_GetAuthId(AuthId_SteamID64, steamID64, sizeof(steamID64));
 
     if (allowedPlayers.FindString(steamID64) == -1) {
+        strcopy(rejectReason, sizeof(rejectReason), "you are not playing in this match");
+
         return false;
     }
 
