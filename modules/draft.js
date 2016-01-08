@@ -51,6 +51,7 @@ module.exports = function(app, io, self, server) {
     }
 
     var draftInProgress = false;
+    var draftComplete = false;
     var draftOrder = config.get('app.draft.order');
     var turnTimeLimit = ms(config.get('app.draft.turnTimeLimit'));
 
@@ -163,6 +164,7 @@ module.exports = function(app, io, self, server) {
         }
 
         currentStatusMessage = {
+            draftComplete: draftComplete,
             roles: config.get('app.games.roles'),
             teamSize: config.get('app.games.teamSize'),
             draftTurns: lodash.map(draftOrder, function(turn, index) {
@@ -211,6 +213,7 @@ module.exports = function(app, io, self, server) {
 
     function cleanUpDraft() {
         draftInProgress = false;
+        draftComplete = false;
 
         playerPool = lodash.mapValues(config.get('app.games.roles'), function() {
             return [];
@@ -361,6 +364,8 @@ module.exports = function(app, io, self, server) {
     }
 
     function completeDraft() {
+        draftComplete = true;
+
         let legalNewState = checkIfLegalState(pickedTeams, {
             picked: pickedMap,
             remaining: remainingMaps
@@ -369,6 +374,20 @@ module.exports = function(app, io, self, server) {
         if (!legalNewState) {
             throw new Error('Invalid state after draft completed!');
         }
+
+        currentDraftTurn = lodash.length(draftOrder);
+
+        allowedRoles = [];
+        overrideRoles = [];
+
+        unavailablePlayers = lodash(pickedTeams).flatten().map(function(pick) {
+            return pick.player;
+        }).union(draftCaptains).uniq().value();
+
+        currentDraftTurnStartTime = Date.now();
+
+        prepareStatusMessage();
+        io.sockets.emit('draftStatusUpdated', currentStatusMessage);
 
         var game = new database.Game();
         game.status = 'launching';
@@ -424,13 +443,11 @@ module.exports = function(app, io, self, server) {
             self.emit('retrieveUsers', lodash.map(game.players, function(player) {
                 return player.user;
             }));
-
-            cleanUpDraft();
         });
     }
 
     self.on('commitDraftChoice', function(choice) {
-        if (!draftInProgress) {
+        if (!draftInProgress || draftComplete) {
             return;
         }
 
@@ -545,6 +562,7 @@ module.exports = function(app, io, self, server) {
 
     self.on('launchGameDraft', function(draftInfo) {
         draftInProgress = true;
+        draftComplete = false;
 
         io.sockets.emit('draftStarting');
 
@@ -579,7 +597,7 @@ module.exports = function(app, io, self, server) {
     io.sockets.on('connection', function(socket) {
         socket.emit('draftStatusUpdated', currentStatusMessage);
 
-        if (draftInProgress) {
+        if (draftInProgress && !draftComplete) {
             socket.emit('draftTurnTime', {
                 elapsed: Date.now() - currentDraftTurnStartTime,
                 total: turnTimeLimit,
@@ -588,7 +606,7 @@ module.exports = function(app, io, self, server) {
     });
 
     io.sockets.on('authenticated', function(socket) {
-        if (draftInProgress && draftOrder[currentDraftTurn].method === 'captain' && socket.decoded_token === draftCaptains[draftOrder[currentDraftTurn].captain]) {
+        if (draftInProgress && !draftComplete && draftOrder[currentDraftTurn].method === 'captain' && socket.decoded_token === draftCaptains[draftOrder[currentDraftTurn].captain]) {
             socket.emit('draftTurnChoice');
         }
 

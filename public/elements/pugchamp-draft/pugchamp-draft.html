@@ -221,6 +221,7 @@
 
                 this.set('draftInProgress', true);
 
+                this.set('complete', status.draftComplete);
                 this.set('roles', status.roles);
                 this.set('teamSize', status.teamSize);
                 this.set('maps', status.mapPool);
@@ -338,6 +339,10 @@
                 return 'undecided';
             },
             factionChoiceAllowed: function(user, turn) {
+                if (turn >= this.turns.length) {
+                    return false;
+                }
+
                 if (this.turns[turn].type !== 'factionSelect') {
                     return false;
                 }
@@ -353,6 +358,10 @@
                 return true;
             },
             mapChoiceAllowed: function(user, turn, map, remainingMaps) {
+                if (turn >= this.turns.length) {
+                    return false;
+                }
+
                 if (this.turns[turn].type !== 'mapBan' && this.turns[turn].type !== 'mapPick') {
                     return false;
                 }
@@ -372,6 +381,10 @@
                 return true;
             },
             roleChoiceAllowed: function(user, turn, role, allowedRoles) {
+                if (turn >= this.turns.length) {
+                    return false;
+                }
+
                 if (this.turns[turn].type !== 'captainRole') {
                     return false;
                 }
@@ -389,6 +402,10 @@
                 }
             },
             playerChoiceAllowed: function(user, turn, role, allowedRoles, player, unavailablePlayers) {
+                if (turn >= this.turns.length) {
+                    return false;
+                }
+
                 if (this.turns[turn].type !== 'playerPick') {
                     return false;
                 }
