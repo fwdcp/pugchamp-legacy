@@ -131,7 +131,7 @@ public void OnClientDisconnect_Post(int client) {
     }
 }
 
-Action Command_MatchInfo(int args) {
+public Action Command_MatchInfo(int args) {
     char id[32];
     matchID.GetString(id, sizeof(id));
 
@@ -140,7 +140,7 @@ Action Command_MatchInfo(int args) {
     return Plugin_Handled;
 }
 
-Action Command_MatchReset(int args) {
+public Action Command_MatchReset(int args) {
     allowedPlayers.Clear();
     playerNames.Clear();
     playerTeams.Clear();
@@ -161,7 +161,7 @@ Action Command_MatchReset(int args) {
     return Plugin_Handled;
 }
 
-Action Command_MatchStart(int args) {
+public Action Command_MatchStart(int args) {
     matchAssigned = true;
 
     char map[PLATFORM_MAX_PATH];
@@ -172,7 +172,7 @@ Action Command_MatchStart(int args) {
     return Plugin_Handled;
 }
 
-Action Command_MatchPlayerAdd(int args) {
+public Action Command_MatchPlayerAdd(int args) {
     char steamID[32];
     GetCmdArg(1, steamID, sizeof(steamID));
     if (allowedPlayers.FindString(steamID) == -1) {
@@ -200,7 +200,7 @@ Action Command_MatchPlayerAdd(int args) {
     }
 }
 
-Action Command_MatchPlayerRemove(int args) {
+public Action Command_MatchPlayerRemove(int args) {
     char steamID[32];
     GetCmdArg(1, steamID, sizeof(steamID));
 
@@ -212,7 +212,7 @@ Action Command_MatchPlayerRemove(int args) {
     playerClasses.Remove(steamID);
 }
 
-void Event_NameChange(Event event, const char[] name, bool dontBroadcast) {
+public void Event_NameChange(Event event, const char[] name, bool dontBroadcast) {
     int client = GetClientOfUserId(event.GetInt("userid"));
 
     char steamID[32];
@@ -224,11 +224,11 @@ void Event_NameChange(Event event, const char[] name, bool dontBroadcast) {
     }
 }
 
-void Event_GameStart(Event event, const char[] name, bool dontBroadcast) {
+public void Event_GameStart(Event event, const char[] name, bool dontBroadcast) {
     matchLive = true;
 }
 
-void Event_GameOver(Event event, const char[] name, bool dontBroadcast) {
+public void Event_GameOver(Event event, const char[] name, bool dontBroadcast) {
     matchLive = false;
 
     char url[2048];
