@@ -1,11 +1,13 @@
 /* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
 "use strict";
 
+var Chance = require('chance');
 var config = require('config');
 var lodash = require('lodash');
 var ms = require('ms');
 var RCON = require('srcds-rcon');
 
+var chance = new Chance();
 var database = require('../database');
 
 module.exports = function(app, io, self, server) {
@@ -57,7 +59,46 @@ module.exports = function(app, io, self, server) {
         });
     });
 
-    self.emit('getAvailableServers', function(results) {
-        console.log(results);
+    function setUpServer(game) {
+        // TODO: set up the game server for the next game
+    }
+
+    function retryGameLaunch(game) {
+        self.emit('getAvailableServers', function(servers) {
+            if (lodash.size(servers) === 0) {
+                self.emit('sendSystemMessage', {
+                    action: 'server not available for drafted game, aborting game'
+                });
+
+                game.status = 'aborted';
+                game.save();
+
+                return;
+            }
+
+            game.server = chance.pick(servers);
+            game.save();
+
+            setUpServer(game);
+        });
+    }
+
+    self.on('launchGame', function(game) {
+        self.emit('getAvailableServers', function(servers) {
+            if (lodash.size(servers) === 0) {
+                self.emit('sendSystemMessage', {
+                    action: 'server not available for drafted game, retrying soon'
+                });
+
+                setTimeout(retryGameLaunch, ms(config.get('app.servers.retryInterval')), game);
+
+                return;
+            }
+
+            game.server = chance.pick(servers);
+            game.save();
+
+            setUpServer(game);
+        });
     });
 };
