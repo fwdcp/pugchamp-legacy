@@ -19,7 +19,6 @@ ConVar serverURL;
 
 bool matchAssigned;
 bool matchLive;
-int matchTime;
 
 ConVar matchID;
 ConVar matchMap;
@@ -68,7 +67,17 @@ public void OnMapStart() {
 
         ServerCommand("exec %s", config);
 
-        matchTime = GetTime();
+        char url[2048];
+        serverURL.GetString(url, sizeof(url));
+        HTTPRequestHandle resultReport = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
+
+        char id[32];
+        matchID.GetString(id, sizeof(id));
+        Steam_SetHTTPRequestGetOrPostParameter(resultReport, "match", id);
+
+        Steam_SetHTTPRequestGetOrPostParameter(resultReport, "status", "setup");
+
+        Steam_SendHTTPRequest(resultReport, HTTPRequestReturned);
     }
 }
 
@@ -137,7 +146,7 @@ public Action Command_MatchInfo(int args) {
     char id[32];
     matchID.GetString(id, sizeof(id));
 
-    ReplyToCommand(0, "%i %i %i %s", matchAssigned, matchLive, matchTime, id);
+    ReplyToCommand(0, "%s", id);
 
     return Plugin_Handled;
 }
@@ -216,6 +225,18 @@ public Action Command_MatchPlayerRemove(int args) {
 
 public void Event_GameStart(Event event, const char[] name, bool dontBroadcast) {
     matchLive = true;
+
+    char url[2048];
+    serverURL.GetString(url, sizeof(url));
+    HTTPRequestHandle resultReport = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
+
+    char id[32];
+    matchID.GetString(id, sizeof(id));
+    Steam_SetHTTPRequestGetOrPostParameter(resultReport, "match", id);
+
+    Steam_SetHTTPRequestGetOrPostParameter(resultReport, "status", "live");
+
+    Steam_SendHTTPRequest(resultReport, HTTPRequestReturned);
 }
 
 public void Event_GameOver(Event event, const char[] name, bool dontBroadcast) {
