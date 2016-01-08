@@ -53,10 +53,12 @@ public void OnPluginStart() {
     playerTeams = new StringMap();
     playerClasses = new StringMap();
 
-    HookEvent("player_changename", Event_NameChange, EventHookMode_Post);
     HookEvent("teamplay_restart_round", Event_GameStart, EventHookMode_PostNoCopy);
     HookEvent("teamplay_game_over", Event_GameOver, EventHookMode_PostNoCopy);
     HookEvent("tf_game_over", Event_GameOver, EventHookMode_PostNoCopy);
+
+    HookEvent("player_changename", Event_NameChange, EventHookMode_Post);
+    HookUserMessage(GetUserMessageId("SayText2"), UserMessage_SayText2, true);
 }
 
 public void OnMapStart() {
@@ -75,7 +77,7 @@ public bool OnClientPreConnectEx(const char[] name, char password[255], const ch
     Connect_GetAuthId(AuthId_SteamID64, steamID64, sizeof(steamID64));
 
     if (allowedPlayers.FindString(steamID64) == -1) {
-        strcopy(rejectReason, sizeof(rejectReason), "you are not playing in this match");
+        strcopy(rejectReason, sizeof(rejectReason), "You are not authorized to join this server.");
 
         return false;
     }
@@ -154,7 +156,7 @@ public Action Command_MatchReset(int args) {
 
     for (int i = 1; i < MaxClients; i++) {
         if (IsClientConnected(i) && !IsClientReplay(i) && !IsClientSourceTV(i)) {
-            KickClient(i, "a new match is starting");
+            KickClient(i, "the server is being reset");
         }
     }
 
@@ -212,18 +214,6 @@ public Action Command_MatchPlayerRemove(int args) {
     playerClasses.Remove(steamID);
 }
 
-public void Event_NameChange(Event event, const char[] name, bool dontBroadcast) {
-    int client = GetClientOfUserId(event.GetInt("userid"));
-
-    char steamID[32];
-    GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID));
-
-    char playerName[32];
-    if (playerNames.GetString(steamID, playerName, sizeof(playerName))) {
-        SetClientName(client, playerName);
-    }
-}
-
 public void Event_GameStart(Event event, const char[] name, bool dontBroadcast) {
     matchLive = true;
 }
@@ -248,6 +238,41 @@ public void Event_GameOver(Event event, const char[] name, bool dontBroadcast) {
     Steam_SetHTTPRequestGetOrPostParameter(resultReport, "bluscore", score);
 
     Steam_SendHTTPRequest(resultReport, HTTPRequestReturned);
+}
+
+public void Event_NameChange(Event event, const char[] name, bool dontBroadcast) {
+    int client = GetClientOfUserId(event.GetInt("userid"));
+
+    char newName[32];
+    event.GetString("newname", newName, sizeof(newName));
+
+    char steamID[32];
+    GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID));
+
+    char playerName[32];
+    if (playerNames.GetString(steamID, playerName, sizeof(playerName))) {
+        if (!StrEqual(newName, playerName)) {
+            SetClientName(client, playerName);
+        }
+    }
+}
+
+public Action UserMessage_SayText2(UserMsg msg_id, BfRead msg, const int[] players, int playersNum, bool reliable, bool init) {
+    char buffer[512];
+
+    if (!reliable) {
+        return Plugin_Continue;
+    }
+
+    msg.ReadByte();
+    msg.ReadByte();
+    msg.ReadString(buffer, sizeof(buffer), false);
+
+    if (StrContains(buffer, "#TF_Name_Change") != -1) {
+        return Plugin_Handled;
+    }
+
+    return Plugin_Continue;
 }
 
 public int HTTPRequestReturned(HTTPRequestHandle HTTPRequest, bool requestSuccessful, HTTPStatusCode statusCode) {
