@@ -183,14 +183,14 @@ public Action Command_MatchPlayerAdd(int args) {
     GetCmdArg(2, name, sizeof(name));
     playerNames.SetString(steamID, name);
 
-    if (args > 3) {
+    if (args >= 3) {
         char teamString[4];
         int team;
         GetCmdArg(3, teamString, sizeof(teamString));
         team = StringToInt(teamString);
         playerTeams.SetValue(steamID, team);
 
-        if (args > 4) {
+        if (args >= 4) {
             char classString[4];
             int class;
             GetCmdArg(4, classString, sizeof(classString));
