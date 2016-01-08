@@ -211,7 +211,7 @@ module.exports = function(app, io, self, server) {
         return currentStatusMessage;
     }
 
-    function cleanUpDraft() {
+    self.on('cleanUpDraft', function() {
         draftInProgress = false;
         draftComplete = false;
 
@@ -241,14 +241,14 @@ module.exports = function(app, io, self, server) {
 
         prepareStatusMessage();
         io.sockets.emit('draftStatusUpdated', currentStatusMessage);
-    }
+    });
 
     function expireTime() {
         self.emit('sendSystemMessage', {
             action: 'game draft aborted due to turn expiration'
         });
 
-        cleanUpDraft();
+        self.emit('cleanUpDraft');
     }
 
     function makeRandomChoice() {
