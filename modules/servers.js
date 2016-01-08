@@ -14,8 +14,8 @@ module.exports = function(app, io, self, server) {
     var serverPool = config.get('app.servers.pool');
     var serverTimeout = config.get('app.servers.timeout');
 
-    self.on('getAvailableServers', function(callback) {
-        Promise.all(lodash.map(serverPool, function(server, name) {
+    function getAvailableServers() {
+        return Promise.all(lodash.map(serverPool, function(server, name) {
             let rcon = RCON({
                 address: server.address,
                 password: server.rcon
@@ -55,7 +55,16 @@ module.exports = function(app, io, self, server) {
                 return false;
             });
         })).then(function(results) {
-            callback(lodash.compact(results));
+            return lodash.compact(results);
+        });
+    }
+    var throttledGetAvailableServers = lodash.throttle(getAvailableServers, ms(config.get('app.servers.queryInterval')), {
+        leading: true
+    });
+
+    self.on('getAvailableServers', function(callback) {
+        throttledGetAvailableServers().then(function(results) {
+            callback(results);
         });
     });
 

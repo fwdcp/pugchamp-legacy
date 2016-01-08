@@ -171,6 +171,7 @@
                     "salt": "da server"
                 }
             },
+            "queryInterval": "15s",
             "retryInterval": "5m",
             "timeout": "5s"
         }
