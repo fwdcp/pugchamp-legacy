@@ -71,6 +71,9 @@
         <paper-material class="condition" hidden$="{{!_includes(conditions, 'draftCurrentlyRunning')}}">
             A draft is currently running.
         </paper-material>
+        <paper-material class="condition" hidden$="{{!_includes(conditions, 'noAvailableServers')}}">
+            No servers are available to play on.
+        </paper-material>
         <div class="horizontal layout" id="captains">
             <div>
                 <paper-checkbox id="captainSelect" disabled="{{isRestricted(restrictions, 'captain')}}" on-change="updateAvailability">Captain</paper-checkbox>

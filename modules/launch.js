@@ -127,8 +127,22 @@ module.exports = function(app, io, self, server) {
                 if (!received) {
                     resolve([]);
                 }
+            }),
+            new Promise(function(resolve, reject) {
+                let received = self.emit('getAvailableServers', function(servers) {
+                    if (lodash.size(servers) === 0) {
+                        resolve(['noAvailableServers']);
+                    }
+                    else {
+                        resolve([]);
+                    }
+                });
+
+                // NOTE: this resolves a case during startup when the event isn't set up yet
+                if (!received) {
+                    resolve([]);
+                }
             })
-            // TODO: check that a server is free
         ]).then(function(launchConditions) {
             missingLaunchConditions = lodash(launchConditions).flatten().compact().value();
 
