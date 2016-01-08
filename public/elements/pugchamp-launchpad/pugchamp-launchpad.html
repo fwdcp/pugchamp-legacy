@@ -73,7 +73,7 @@
         </paper-material>
         <div class="horizontal layout" id="captains">
             <div>
-                <paper-checkbox id="captainSelect" disabled="{{isRestricted(restrictions, 'start', 'captain')}}" on-change="updateAvailability">Captain</paper-checkbox>
+                <paper-checkbox id="captainSelect" disabled="{{isRestricted(restrictions, 'captain')}}" on-change="updateAvailability">Captain</paper-checkbox>
             </div>
             <div class="flex" id="captains-list">
                 {{playerAliasList(captains)}}

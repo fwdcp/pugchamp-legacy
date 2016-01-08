@@ -45,8 +45,8 @@
 		</div>
 		<div class="horizontal layout end wrap">
 			<iron-a11y-keys id="submitWatcher" keys="enter" on-keys-pressed="onEnter"></iron-a11y-keys>
-			<paper-textarea id="messageText" class="flex" maxlength="140" max-rows="3" char-counter disabled="{{isRestricted(restrictions, 'comms')}}"></paper-textarea>
-			<paper-icon-button icon="send" on-tap="sendMessage" disabled="{{isRestricted(restrictions, 'comms')}}"></paper-icon-button>
+			<paper-textarea id="messageText" class="flex" maxlength="140" max-rows="3" char-counter disabled="{{isRestricted(restrictions, 'chat')}}"></paper-textarea>
+			<paper-icon-button icon="send" on-tap="sendMessage" disabled="{{isRestricted(restrictions, 'chat')}}"></paper-icon-button>
 		</div>
 	</template>
 	<script>

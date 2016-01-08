@@ -14,7 +14,7 @@ var database = require('../database');
 
 module.exports = function(app, io, self, server) {
     self.unauthenticatedRestrictions = {
-        aspects: ['start', 'comms'],
+        aspects: ['sub', 'start', 'captain', 'chat'],
         reasons: ['You are currently not logged on.']
     };
     self.userRestrictions = new Map();
@@ -78,7 +78,7 @@ module.exports = function(app, io, self, server) {
                     }
                     else {
                         resolve({
-                            aspects: ['start', 'comms'],
+                            aspects: ['sub', 'start', 'captain', 'chat'],
                             reasons: ['Your account is not set up properly.']
                         });
                     }
@@ -88,7 +88,7 @@ module.exports = function(app, io, self, server) {
                     database.Game.findOne({status: {$in: ['launching', 'live']}}, function(err, game) {
                         if (game) {
                             resolve({
-                                aspects: ['start'],
+                                aspects: ['sub', 'start', 'captain'],
                                 reasons: ['You are currently in a game.']
                             });
                         }

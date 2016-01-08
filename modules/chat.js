@@ -7,7 +7,7 @@ module.exports = function(app, io, self, server) {
     self.on('sendUserChatMessage', function(chat) {
         let userRestrictions = self.userRestrictions.get(chat.userID);
 
-        if (!lodash.includes(userRestrictions.aspects, 'comms')) {
+        if (!lodash.includes(userRestrictions.aspects, 'chat')) {
             let trimmedMessage = (chat.message || '').trim();
 
             if (trimmedMessage.length > 0) {
