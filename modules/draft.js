@@ -375,7 +375,7 @@ module.exports = function(app, io, self, server) {
             throw new Error('Invalid state after draft completed!');
         }
 
-        currentDraftTurn = lodash.length(draftOrder);
+        currentDraftTurn = lodash.size(draftOrder);
 
         allowedRoles = [];
         overrideRoles = [];
