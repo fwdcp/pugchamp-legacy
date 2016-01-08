@@ -4,38 +4,45 @@
             "maps": {
                 "badlands": {
                     "name": "Badlands",
-                    "file": "cp_badlands.bsp",
-                    "image": "badlands.png"
+                    "file": "cp_badlands",
+                    "image": "badlands.png",
+                    "config": "pugchamp-6v6-standard"
                 },
                 "granary": {
                     "name": "Granary",
-                    "file": "cp_granary_pro_b10.bsp",
-                    "image": "granary.png"
+                    "file": "cp_granary_pro_b10",
+                    "image": "granary.png",
+                    "config": "pugchamp-6v6-standard"
                 },
                 "gullywash": {
                     "name": "Gullywash",
-                    "file": "cp_gullywash_final1.bsp",
-                    "image": "gullywash.png"
+                    "file": "cp_gullywash_final1",
+                    "image": "gullywash.png",
+                    "config": "pugchamp-6v6-standard"
                 },
                 "metalworks": {
                     "name": "Metalworks",
-                    "file": "cp_metalworks_rc7.bsp",
-                    "image": "metalworks.png"
+                    "file": "cp_metalworks_rc7",
+                    "image": "metalworks.png",
+                    "config": "pugchamp-6v6-standard"
                 },
                 "process": {
                     "name": "Process",
-                    "file": "cp_process_final.bsp",
-                    "image": "process.png"
+                    "file": "cp_process_final",
+                    "image": "process.png",
+                    "config": "pugchamp-6v6-standard"
                 },
                 "snakewater": {
                     "name": "Snakewater",
-                    "file": "cp_snakewater_final1.bsp",
-                    "image": "snakewater.png"
+                    "file": "cp_snakewater_final1",
+                    "image": "snakewater.png",
+                    "config": "pugchamp-6v6-standard"
                 },
                 "sunshine": {
                     "name": "Sunshine",
-                    "file": "cp_sunshine_rc9.bsp",
-                    "image": "sunshine.png"
+                    "file": "cp_sunshine_rc9",
+                    "image": "sunshine.png",
+                    "config": "pugchamp-6v6-standard"
                 }
             },
             "mapsInSeries": 1,
@@ -155,9 +162,19 @@
                 "method": "random"
             }],
             "turnTimeLimit": "60s"
+        },
+        "servers": {
+            "pool": [{
+                "address": "localhost:27015",
+                "rcon": "test",
+                "salt": "da server"
+            }],
+            "retryInterval": "5m",
+            "timeout": "5s"
         }
     },
     "server": {
+        "baseURL": "http://localhost:16217",
         "listen": 16217,
         "mongodb": "mongodb://localhost/pugchamp",
         "sessionSecret": "pickup winner",
