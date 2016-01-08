@@ -390,7 +390,7 @@ module.exports = function(app, io, self, server) {
         io.sockets.emit('draftStatusUpdated', currentStatusMessage);
 
         var game = new database.Game();
-        game.status = 'launching';
+        game.status = 'assigning';
         game.date = Date.now();
 
         game.captains = lodash.map(draftCaptains, function(captain, index) {

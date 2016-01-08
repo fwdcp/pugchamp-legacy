@@ -20,7 +20,7 @@ var userSchema = new mongoose.Schema({
 });
 
 var gameSchema = new mongoose.Schema({
-    status: {type: String, enum: ['launching', 'live', 'aborted', 'completed']},
+    status: {type: String, enum: ['assigning', 'launching', 'live', 'aborted', 'completed']},
     date: Date,
     captains: [{
         user: {
