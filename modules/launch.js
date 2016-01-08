@@ -346,10 +346,4 @@ module.exports = function(app, io, self, server) {
             });
         }
     });
-
-    app.get('/', function(req, res) {
-        res.render('index', {
-            user: req.user
-        });
-    });
 };

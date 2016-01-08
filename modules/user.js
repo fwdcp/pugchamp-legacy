@@ -301,4 +301,10 @@ module.exports = function(app, io, self, server) {
             res.redirect('/user/settings');
         });
     });
+
+    app.get('/', function(req, res) {
+        res.render('index', {
+            user: req.user
+        });
+    });
 };
