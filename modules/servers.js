@@ -13,7 +13,7 @@ module.exports = function(app, io, self, server) {
     var serverTimeout = config.get('app.servers.timeout');
 
     self.on('getAvailableServers', function(callback) {
-        Promise.all(lodash.map(serverPool, function(server) {
+        Promise.all(lodash.map(serverPool, function(server, name) {
             let rcon = RCON({
                 address: server.address,
                 password: server.rcon
@@ -41,13 +41,13 @@ module.exports = function(app, io, self, server) {
                                 resolve(false);
                             }
                             else {
-                                resolve(server);
+                                resolve(name);
                             }
                         });
                     });
                 }
                 else {
-                    return server;
+                    return name;
                 }
             }, function() {
                 return false;

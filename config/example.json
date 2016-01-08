@@ -164,11 +164,13 @@
             "turnTimeLimit": "60s"
         },
         "servers": {
-            "pool": [{
-                "address": "localhost:27015",
-                "rcon": "test",
-                "salt": "da server"
-            }],
+            "pool": {
+                "localhost-1": {
+                    "address": "localhost:27015",
+                    "rcon": "test",
+                    "salt": "da server"
+                }
+            },
             "retryInterval": "5m",
             "timeout": "5s"
         }
