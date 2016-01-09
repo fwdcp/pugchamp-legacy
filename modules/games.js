@@ -16,7 +16,7 @@ module.exports = function(app, io, self, server) {
                 lodash.each(updatedGame.players, function(player) {
                     if (!player.replaced) {
                         self.emit('sendMessageToUser', {
-                            userID: player.user,
+                            userID: player.user.toHexString(),
                             name: 'currentGame',
                             arguments: [null]
                         });
@@ -45,7 +45,7 @@ module.exports = function(app, io, self, server) {
         lodash.each(game.players, function(player) {
             if (!player.replaced) {
                 self.emit('sendMessageToUser', {
-                    userID: player.user,
+                    userID: player.user.toHexString(),
                     name: 'currentGame',
                     arguments: [{
                         game: game.id,
