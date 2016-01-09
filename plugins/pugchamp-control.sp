@@ -28,6 +28,8 @@ ArrayList allowedPlayers;
 StringMap playerNames;
 StringMap playerTeams;
 StringMap playerClasses;
+StringMap playerStartTimes;
+StringMap playerPlaytimes;
 
 public void OnPluginStart() {
     serverURL = CreateConVar("pugchamp_server_url", "", "the server URL to which game info is sent", FCVAR_PROTECTED|FCVAR_DONTRECORD|FCVAR_PLUGIN);
@@ -51,6 +53,8 @@ public void OnPluginStart() {
     playerNames = new StringMap();
     playerTeams = new StringMap();
     playerClasses = new StringMap();
+    playerStartTimes = new StringMap();
+    playerPlaytimes = new StringMap();
 
     HookEvent("teamplay_restart_round", Event_GameStart, EventHookMode_PostNoCopy);
     HookEvent("teamplay_game_over", Event_GameOver, EventHookMode_PostNoCopy);
@@ -114,6 +118,16 @@ public void OnClientPostAdminCheck(int client) {
     if (playerClasses.GetValue(steamID, class)) {
         TF2_SetPlayerClass(client, class, _, true);
     }
+
+    if (gameAssigned && gameLive) {
+        StartPlayerTimer(client);
+    }
+}
+
+public void OnClientDisconnect(int client) {
+    if (gameAssigned && gameLive) {
+        EndPlayerTimer(client);
+    }
 }
 
 public void OnClientDisconnect_Post(int client) {
@@ -156,6 +170,8 @@ public Action Command_GameReset(int args) {
     playerNames.Clear();
     playerTeams.Clear();
     playerClasses.Clear();
+    playerStartTimes.Clear();
+    playerPlaytimes.Clear();
 
     gameAssigned = false;
     gameLive = false;
@@ -209,6 +225,9 @@ public Action Command_GamePlayerAdd(int args) {
             playerClasses.SetValue(steamID, class);
         }
     }
+
+    playerStartTimes.SetValue(steamID, -1.0);
+    playerPlaytimes.SetValue(steamID, 0.0);
 }
 
 public Action Command_GamePlayerRemove(int args) {
@@ -235,6 +254,12 @@ public Action Command_GamePlayerRemove(int args) {
 public void Event_GameStart(Event event, const char[] name, bool dontBroadcast) {
     gameLive = true;
 
+    for (int i = 1; i <= MaxClients; i++) {
+        if (IsClientConnected(i) && IsClientAuthorized(i)) {
+            StartPlayerTimer(i);
+        }
+    }
+
     char url[2048];
     serverURL.GetString(url, sizeof(url));
     HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
@@ -251,6 +276,12 @@ public void Event_GameStart(Event event, const char[] name, bool dontBroadcast) 
 public void Event_GameOver(Event event, const char[] name, bool dontBroadcast) {
     gameLive = false;
 
+    for (int i = 1; i <= MaxClients; i++) {
+        if (IsClientConnected(i) && IsClientAuthorized(i)) {
+            EndPlayerTimer(i);
+        }
+    }
+
     char url[2048];
     serverURL.GetString(url, sizeof(url));
     HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
@@ -266,6 +297,23 @@ public void Event_GameOver(Event event, const char[] name, bool dontBroadcast) {
     Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "redscore", score);
     IntToString(GetTeamScore(3), score, sizeof(score));
     Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "bluscore", score);
+
+    StringMapSnapshot players = playerPlaytimes.Snapshot();
+    for (int i = 0; i < players.Length; i++) {
+        char steamID[32];
+        players.GetKey(i, steamID, sizeof(steamID));
+
+        float playtime;
+        if (playerPlaytimes.GetValue(steamID, playtime)) {
+            char key[64];
+            Format(key, sizeof(key), "time[%s]", steamID);
+
+            char value[128];
+            FloatToString(playtime, value, sizeof(value));
+
+            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, key, value);
+        }
+    }
 
     Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned);
 }
@@ -326,5 +374,29 @@ public int HTTPRequestReturned(HTTPRequestHandle HTTPRequest, bool requestSucces
 
     if (!requestSuccessful || statusCode != HTTPStatusCode_OK) {
         ThrowError("HTTP request failed");
+    }
+}
+
+void StartPlayerTimer(int client) {
+    char steamID[32];
+    GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID));
+
+    playerStartTimes.SetValue(steamID, GetGameTime(), true);
+}
+
+void EndPlayerTimer(int client) {
+    char steamID[32];
+    GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID));
+
+    float startTime = -1.0;
+    if (playerStartTimes.GetValue(steamID, startTime) && startTime != -1.0) {
+        float currentPlaytime = GetGameTime() - startTime;
+
+        playerStartTimes.SetValue(steamID, -1.0);
+
+        float previousPlaytime;
+        if (playerPlaytimes.GetValue(steamID, previousPlaytime)) {
+            playerPlaytimes.SetValue(steamID, previousPlaytime + currentPlaytime, true);
+        }
     }
 }
