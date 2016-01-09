@@ -304,6 +304,12 @@ module.exports = function(app, io, self, server) {
                     score: req.query.redscore && req.query.bluscore ? [req.query.redscore, req.query.bluscore] : undefined
                 });
             }
+            else if (req.query.status === 'logavailable') {
+                self.emit('gameLogAvailable', {
+                    game: game,
+                    url: req.query.url
+                });
+            }
 
             res.sendStatus(200);
         });

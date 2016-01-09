@@ -140,6 +140,22 @@ module.exports = function(app, io, self, server) {
         // TODO: calculate ratings
     });
 
+    self.on('gameLogAvailable', function(info) {
+        let index = lodash.findIndex(info.game.results.links, 'type', 'logs.tf');
+
+        if (index !== -1) {
+            info.game.results.links[index].link = info.url;
+        }
+        else {
+            info.game.results.links.push({
+                type: 'logs.tf',
+                link: info.url
+            });
+        }
+
+        info.game.save();
+    });
+
     io.sockets.on('authenticated', function(socket) {
         let userID = socket.decoded_token;
 
