@@ -291,6 +291,7 @@ module.exports = function(app, io, self, server) {
                 self.emit('gameAbandoned', {
                     game: game,
                     score: req.query.score,
+                    time: req.query.time
                 });
             }
             else if (req.query.status === 'completed') {
@@ -302,6 +303,7 @@ module.exports = function(app, io, self, server) {
                 self.emit('gameCompleted', {
                     game: game,
                     score: req.query.score,
+                    time: req.query.time
                 });
             }
             else if (req.query.status === 'logavailable') {

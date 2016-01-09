@@ -88,6 +88,20 @@ module.exports = function(app, io, self, server) {
             });
         }
 
+        if (info.time) {
+            info.game.populate('players.user', function(err, game) {
+                if (err) {
+                    throw err;
+                }
+
+                lodash.each(game.players, function(player) {
+                    player.time = info.time[player.user.steamID];
+                });
+
+                game.save();
+            });
+        }
+
         info.game.save();
 
         // NOTE: forces a user update so they can add up to another game
@@ -114,6 +128,20 @@ module.exports = function(app, io, self, server) {
 
             lodash.each(info.game.captains, function(captain) {
                 info.game.results.score.push(info.score[captain.faction]);
+            });
+        }
+
+        if (info.time) {
+            info.game.populate('players.user', function(err, game) {
+                if (err) {
+                    throw err;
+                }
+
+                lodash.each(game.players, function(player) {
+                    player.time = info.time[player.user.steamID];
+                });
+
+                game.save();
             });
         }
 

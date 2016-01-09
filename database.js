@@ -41,6 +41,10 @@ var gameSchema = new mongoose.Schema({
         replaced: {
             type: Boolean,
             default: false
+        },
+        time: {
+            type: Number,
+            default: 0
         }
     }],
     server: String,
