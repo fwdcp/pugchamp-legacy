@@ -37,7 +37,11 @@ var gameSchema = new mongoose.Schema({
         },
         role: String,
         team: Number,
-        origin: String
+        origin: String,
+        replaced: {
+            type: Boolean,
+            default: false
+        }
     }],
     server: String,
     results: [{
