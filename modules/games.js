@@ -64,15 +64,80 @@ module.exports = function(app, io, self, server) {
     });
 
     self.on('gameLive', function(info) {
-        // TODO: update game
+        info.game.status = 'live';
+
+        if (info.score) {
+            if (info.game.captains[0].faction === 'RED' && info.game.captains[1].faction === 'BLU') {
+                info.game.results.score = info.score;
+            }
+            else if (info.game.captains[0].faction === 'BLU' && info.game.captains[1].faction === 'RED') {
+                info.game.results.score = info.score.reverse();
+            }
+        }
+
+        info.game.save();
     });
 
     self.on('gameAbandoned', function(info) {
-        // TODO: update game
+        info.game.status = 'aborted';
+
+        if (info.score) {
+            if (info.game.captains[0].faction === 'RED' && info.game.captains[1].faction === 'BLU') {
+                info.game.results.score = info.score;
+            }
+            else if (info.game.captains[0].faction === 'BLU' && info.game.captains[1].faction === 'RED') {
+                info.game.results.score = info.score.reverse();
+            }
+        }
+
+        info.game.save();
+
+        // NOTE: forces a user update so they can add up to another game
+        self.emit('retrieveUsers', lodash.map(info.game.players, function(player) {
+            return player.user;
+        }));
+
+        lodash.each(info.game.players, function(player) {
+            if (!player.replaced) {
+                self.emit('sendMessageToUser', {
+                    userID: player.user.toHexString(),
+                    name: 'currentGame',
+                    arguments: [null]
+                });
+            }
+        });
     });
 
     self.on('gameCompleted', function(info) {
-        // TODO: update game
+        info.game.status = 'completed';
+
+        if (info.score) {
+            if (info.game.captains[0].faction === 'RED' && info.game.captains[1].faction === 'BLU') {
+                info.game.results.score = info.score;
+            }
+            else if (info.game.captains[0].faction === 'BLU' && info.game.captains[1].faction === 'RED') {
+                info.game.results.score = info.score.reverse();
+            }
+        }
+
+        info.game.save();
+
+        // NOTE: forces a user update so they can add up to another game
+        self.emit('retrieveUsers', lodash.map(info.game.players, function(player) {
+            return player.user;
+        }));
+
+        lodash.each(info.game.players, function(player) {
+            if (!player.replaced) {
+                self.emit('sendMessageToUser', {
+                    userID: player.user.toHexString(),
+                    name: 'currentGame',
+                    arguments: [null]
+                });
+            }
+        });
+
+        // TODO: calculate ratings
     });
 
     io.sockets.on('authenticated', function(socket) {
