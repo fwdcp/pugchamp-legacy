@@ -33,26 +33,26 @@ module.exports = function(app, io, self, server) {
         });
     }
 
-    self.on('gameSetup', function(game) {
-        game.status = 'launching';
-        game.save();
+    self.on('gameSetup', function(info) {
+        info.game.status = 'launching';
+        info.game.save();
 
         // NOTE: forces a user update so they cannot add up to another game
-        self.emit('retrieveUsers', lodash.map(game.players, function(player) {
+        self.emit('retrieveUsers', lodash.map(info.game.players, function(player) {
             return player.user;
         }));
 
         self.emit('cleanUpDraft');
 
-        let gameServer = gameServerPool[game.server];
+        let gameServer = gameServerPool[info.game.server];
 
-        lodash.each(game.players, function(player) {
+        lodash.each(info.game.players, function(player) {
             if (!player.replaced) {
                 self.emit('sendMessageToUser', {
                     userID: player.user.toHexString(),
                     name: 'currentGame',
                     arguments: [{
-                        game: game.id,
+                        game: info.game.id,
                         address: gameServer.address,
                         password: gameServer.password
                     }]
@@ -60,18 +60,18 @@ module.exports = function(app, io, self, server) {
             }
         });
 
-        setTimeout(abortGame, ms(config.get('app.games.startPeriod')), game);
+        setTimeout(abortGame, ms(config.get('app.games.startPeriod')), info.game);
     });
 
-    self.on('gameLive', function(game) {
+    self.on('gameLive', function(info) {
         // TODO: update game
     });
 
-    self.on('gameAbandoned', function(game) {
+    self.on('gameAbandoned', function(info) {
         // TODO: update game
     });
 
-    self.on('gameCompleted', function(game) {
+    self.on('gameCompleted', function(info) {
         // TODO: update game
     });
 
