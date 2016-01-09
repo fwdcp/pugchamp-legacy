@@ -1,0 +1,50 @@
+<link rel="import" href="/components/polymer/polymer.html">
+
+<link rel="import" href="/components/paper-button/paper-button.html">
+<link rel="import" href="/components/paper-material/paper-material.html">
+<link rel="import" href="/components/paper-styles/color.html">
+
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
+
+<dom-module id="pugchamp-current-game">
+	<template>
+		<style is="custom-style">
+            #game {
+                padding: 5px 25px;
+                margin: 20px;
+            }
+
+            #connect {
+                background: var(--primary-color);
+                color: var(--dark-theme-text-color);
+            }
+		</style>
+
+        <paper-material id="game" hidden$="{{!game}}">
+            <h2>Current Game</h2>
+
+            <p><a href="steam://connect/{{address}}/{{password}}"><paper-button id="connect" raised>Connect to Server</paper-button></a></p>
+        </paper-material>
+	</template>
+	<script>
+	    Polymer({
+			is: 'pugchamp-current-game',
+			behaviors: [PugChampClientBehaviors.BaseBehavior],
+	        ready: function() {
+                this.set('game', null);
+
+				this._listenToEvent('currentGame', 'onCurrentGame');
+	        },
+            onCurrentGame: function(info) {
+                if (!info) {
+                    this.set('game', null);
+                    return;
+                }
+
+                this.set('game', info.game);
+                this.set('address', info.address);
+                this.set('password', info.password);
+            }
+	    });
+	</script>
+</dom-module>
