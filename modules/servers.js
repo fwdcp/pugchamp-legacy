@@ -39,11 +39,16 @@ module.exports = function(app, io, self, server) {
                                 return;
                             }
 
+                            if (!game) {
+                                resolve(gameServerName);
+                                return;
+                            }
+
                             if (game.status === 'completed' || game.status === 'aborted') {
-                                resolve(false);
+                                resolve(gameServerName);
                             }
                             else {
-                                resolve(name);
+                                resolve(false);
                             }
                         });
                     });
