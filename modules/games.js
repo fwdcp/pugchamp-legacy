@@ -67,12 +67,11 @@ module.exports = function(app, io, self, server) {
         info.game.status = 'live';
 
         if (info.score) {
-            if (info.game.captains[0].faction === 'RED' && info.game.captains[1].faction === 'BLU') {
-                info.game.results.score = info.score;
-            }
-            else if (info.game.captains[0].faction === 'BLU' && info.game.captains[1].faction === 'RED') {
-                info.game.results.score = info.score.reverse();
-            }
+            info.game.results.score.splice(0, lodash.size(info.game.results.score));
+
+            lodash.each(info.game.captains, function(captain) {
+                info.game.results.score.push(info.score[captain.faction]);
+            });
         }
 
         info.game.save();
@@ -82,12 +81,11 @@ module.exports = function(app, io, self, server) {
         info.game.status = 'aborted';
 
         if (info.score) {
-            if (info.game.captains[0].faction === 'RED' && info.game.captains[1].faction === 'BLU') {
-                info.game.results.score = info.score;
-            }
-            else if (info.game.captains[0].faction === 'BLU' && info.game.captains[1].faction === 'RED') {
-                info.game.results.score = info.score.reverse();
-            }
+            info.game.results.score.splice(0, lodash.size(info.game.results.score));
+
+            lodash.each(info.game.captains, function(captain) {
+                info.game.results.score.push(info.score[captain.faction]);
+            });
         }
 
         info.game.save();
@@ -112,12 +110,11 @@ module.exports = function(app, io, self, server) {
         info.game.status = 'completed';
 
         if (info.score) {
-            if (info.game.captains[0].faction === 'RED' && info.game.captains[1].faction === 'BLU') {
-                info.game.results.score = info.score;
-            }
-            else if (info.game.captains[0].faction === 'BLU' && info.game.captains[1].faction === 'RED') {
-                info.game.results.score = info.score.reverse();
-            }
+            info.game.results.score.splice(0, lodash.size(info.game.results.score));
+
+            lodash.each(info.game.captains, function(captain) {
+                info.game.results.score.push(info.score[captain.faction]);
+            });
         }
 
         info.game.save();

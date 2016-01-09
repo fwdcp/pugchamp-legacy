@@ -147,9 +147,9 @@ public void OnClientDisconnect_Post(int client) {
 
             char score[4];
             IntToString(GetTeamScore(2), score, sizeof(score));
-            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "redscore", score);
+            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "score[RED]", score);
             IntToString(GetTeamScore(3), score, sizeof(score));
-            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "bluscore", score);
+            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "score[BLU]", score);
 
             Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned);
         }
@@ -294,9 +294,9 @@ public void Event_GameOver(Event event, const char[] name, bool dontBroadcast) {
 
     char score[4];
     IntToString(GetTeamScore(2), score, sizeof(score));
-    Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "redscore", score);
+    Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "score[RED]", score);
     IntToString(GetTeamScore(3), score, sizeof(score));
-    Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "bluscore", score);
+    Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "score[BLU]", score);
 
     StringMapSnapshot players = playerPlaytimes.Snapshot();
     for (int i = 0; i < players.Length; i++) {
