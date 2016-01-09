@@ -169,7 +169,7 @@ module.exports = function(app, io, self, server) {
                             gameClass = 8;
                         }
 
-                        return rcon.command('pugchamp_game_player_add "' + player.user.steamID + '" "' + player.user.alias + '"' + gameTeam + ' ' + gameClass);
+                        return rcon.command('pugchamp_game_player_add "' + player.user.steamID + '" "' + player.user.alias + '" ' + gameTeam + ' ' + gameClass);
                     })).then(resolve, reject);
                 });
             });
