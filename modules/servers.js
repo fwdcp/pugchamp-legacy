@@ -104,6 +104,24 @@ module.exports = function(app, io, self, server) {
             return rcon.command('pugchamp_game_config "' + map.config + '"');
         }).then(function() {
             return new Promise(function(resolve, reject) {
+                game.populate('captains.user', function(err, game) {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+
+                    Promise.all(lodash.map(game.captains, function(captain) {
+                        if (captain.faction === 'RED') {
+                            return rcon.command('mp_tournament_redteamname "' + captain.user.alias + '"');
+                        }
+                        else if (captain.faction === 'BLU') {
+                            return rcon.command('mp_tournament_blueteamname "' + captain.user.alias + '"');
+                        }
+                    })).then(resolve, reject);
+                });
+            });
+        }).then(function() {
+            return new Promise(function(resolve, reject) {
                 game.populate('players.user', function(err, game) {
                     if (err) {
                         reject(err);
