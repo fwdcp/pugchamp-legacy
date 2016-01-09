@@ -87,7 +87,12 @@ module.exports = function(app, io, self, server) {
                 }),
                 // TODO: check user bans
                 new Promise(function(resolve, reject) {
-                    database.Game.findOne({'players.user': userID, status: {$in: ['assigning', 'launching', 'live']}}, function(err, game) {
+                    database.Game.findOne({
+                        'players.user': userID,
+                        status: {
+                            $in: ['assigning', 'launching', 'live']
+                        }
+                    }, function(err, game) {
                         if (game) {
                             resolve({
                                 aspects: ['sub', 'start', 'captain'],
@@ -150,14 +155,16 @@ module.exports = function(app, io, self, server) {
         }, function(err, user) {
             if (err) {
                 done(err);
-            } else if (!user) {
+            }
+            else if (!user) {
                 user = new database.User({
                     steamID: id
                 });
                 user.save(function(err) {
                     done(err, user);
                 });
-            } else {
+            }
+            else {
                 done(null, user);
             }
         });
@@ -178,7 +185,8 @@ module.exports = function(app, io, self, server) {
     app.get('/user/login/return', passport.authenticate('openid'), function(req, res) {
         if (req.user && !req.user.setUp) {
             res.redirect('/user/settings');
-        } else {
+        }
+        else {
             res.redirect('/');
         }
     });
@@ -208,9 +216,11 @@ module.exports = function(app, io, self, server) {
             database.User.findById(token, function(err, user) {
                 if (err) {
                     errorCallback(err);
-                } else if (!user) {
+                }
+                else if (!user) {
                     errorCallback('user was not found');
-                } else {
+                }
+                else {
                     successCallback();
                 }
             });
@@ -231,12 +241,14 @@ module.exports = function(app, io, self, server) {
             let userRetrieved = function(users) {
                 if (lodash.includes(users, userID)) {
                     self.emit('userConnected', userID);
-                } else {
+                }
+                else {
                     self.once('usersRetrieved', userRetrieved);
                 }
             };
             self.once('usersRetrieved', userRetrieved);
-        } else {
+        }
+        else {
             self.userSockets.get(userID).add(socket.id);
 
             socket.emit('userInfoUpdated', self.getFilteredUser(userID));
@@ -258,7 +270,8 @@ module.exports = function(app, io, self, server) {
     app.get('/user/settings', function(req, res) {
         if (req.user) {
             res.render('userSettings');
-        } else {
+        }
+        else {
             res.redirect('/user/login');
         }
     });
@@ -269,7 +282,9 @@ module.exports = function(app, io, self, server) {
             new Promise(function(resolve, reject) {
                 if (req.body.alias && !req.user.alias) {
                     if (/\w{1,15}/.test(req.body.alias)) {
-                        database.User.findOne({alias: req.body.alias}, function(err, user) {
+                        database.User.findOne({
+                            alias: req.body.alias
+                        }, function(err, user) {
                             if (err) {
                                 reject(err);
                             }

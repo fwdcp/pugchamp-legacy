@@ -260,7 +260,8 @@ module.exports = function(app, io, self, server) {
 
         if (turnDefinition.type === 'factionSelect') {
             choice.faction = chance.pick(['BLU', 'RED']);
-        } else if (turnDefinition.type === 'playerPick') {
+        }
+        else if (turnDefinition.type === 'playerPick') {
             let team = pickedTeams[turnDefinition.captain];
             let roleDistribution = calculateRoleDistribution(team);
 
@@ -282,11 +283,13 @@ module.exports = function(app, io, self, server) {
 
             if (lodash.includes(overrideRoles, choice.role)) {
                 choice.player = chance.pick(lodash.difference(fullPlayerList, unavailablePlayers));
-            } else {
+            }
+            else {
                 choice.override = true;
                 choice.player = chance.pick(lodash.difference(playerPool[choice.role], unavailablePlayers));
             }
-        } else if (turnDefinition.type === 'captainRole') {
+        }
+        else if (turnDefinition.type === 'captainRole') {
             let team = pickedTeams[turnDefinition.captain];
             let roleDistribution = calculateRoleDistribution(team);
 
@@ -305,7 +308,8 @@ module.exports = function(app, io, self, server) {
             });
 
             choice.role = chance.weighted(allowedRoles, weights);
-        } else if (turnDefinition.type === 'mapBan' || turnDefinition.type === 'mapPick') {
+        }
+        else if (turnDefinition.type === 'mapBan' || turnDefinition.type === 'mapPick') {
             choice.type = turnDefinition.type;
 
             choice.map = chance.pick(remainingMaps);
@@ -325,14 +329,16 @@ module.exports = function(app, io, self, server) {
 
             if (teamState.remaining > teamState.underfilledTotal) {
                 allowedRoles = lodash.difference(lodash.keys(config.get('app.games.roles')), teamState.filledRoles);
-            } else {
+            }
+            else {
                 allowedRoles = teamState.underfilledRoles;
             }
 
             overrideRoles = lodash.filter(teamState.underfilledRoles, function(role) {
                 return lodash(playerPool[role]).difference(unavailablePlayers).size() === 0;
             });
-        } else {
+        }
+        else {
             allowedRoles = [];
             overrideRoles = [];
         }
@@ -358,7 +364,8 @@ module.exports = function(app, io, self, server) {
                 name: 'draftTurnChoice',
                 arguments: []
             });
-        } else if (turnDefinition.method === 'random') {
+        }
+        else if (turnDefinition.method === 'random') {
             makeRandomChoice();
         }
     }
@@ -450,7 +457,8 @@ module.exports = function(app, io, self, server) {
 
         if (turnDefinition.method === 'captain' && choice.captain !== draftCaptains[turnDefinition.captain]) {
             return;
-        } else if (turnDefinition.method !== 'captain' && choice.captain) {
+        }
+        else if (turnDefinition.method !== 'captain' && choice.captain) {
             return;
         }
 
@@ -471,17 +479,21 @@ module.exports = function(app, io, self, server) {
             if (turnDefinition.captain === 0) {
                 if (choice.faction === 'RED') {
                     newFactions = ['RED', 'BLU'];
-                } else if (choice.faction === 'BLU') {
+                }
+                else if (choice.faction === 'BLU') {
                     newFactions = ['BLU', 'RED'];
                 }
-            } else if (turnDefinition.captain === 1) {
+            }
+            else if (turnDefinition.captain === 1) {
                 if (choice.faction === 'RED') {
                     newFactions = ['BLU', 'RED'];
-                } else if (choice.faction === 'BLU') {
+                }
+                else if (choice.faction === 'BLU') {
                     newFactions = ['RED', 'BLU'];
                 }
             }
-        } else if (turnDefinition.type === 'playerPick') {
+        }
+        else if (turnDefinition.type === 'playerPick') {
             if (lodash.includes(unavailablePlayers, choice.player)) {
                 return;
             }
@@ -494,7 +506,8 @@ module.exports = function(app, io, self, server) {
                 if (!lodash.includes(overrideRoles, choice.role)) {
                     return;
                 }
-            } else {
+            }
+            else {
                 if (!lodash.includes(playerPool[choice.role], choice.player)) {
                     return;
                 }
@@ -504,7 +517,8 @@ module.exports = function(app, io, self, server) {
                 player: choice.player,
                 role: choice.role
             });
-        } else if (turnDefinition.type === 'captainRole') {
+        }
+        else if (turnDefinition.type === 'captainRole') {
             if (!lodash.includes(allowedRoles, choice.role)) {
                 return;
             }
@@ -513,13 +527,15 @@ module.exports = function(app, io, self, server) {
                 player: draftCaptains[turnDefinition.captain],
                 role: choice.role
             });
-        } else if (turnDefinition.type === 'mapBan') {
+        }
+        else if (turnDefinition.type === 'mapBan') {
             if (!lodash.includes(remainingMaps, choice.map)) {
                 return;
             }
 
             newRemainingMaps = lodash.without(remainingMaps, choice.map);
-        } else if (turnDefinition.type === 'mapPick') {
+        }
+        else if (turnDefinition.type === 'mapPick') {
             if (!lodash.includes(remainingMaps, choice.map)) {
                 return;
             }
@@ -550,7 +566,8 @@ module.exports = function(app, io, self, server) {
 
         if (currentDraftTurn + 1 === lodash.size(draftOrder)) {
             completeDraft();
-        } else {
+        }
+        else {
             beginDraftTurn(++currentDraftTurn);
         }
     });

@@ -229,7 +229,8 @@ module.exports = function(app, io, self, server) {
             lodash.forEach(playersAvailable, function(players, role) {
                 if (lodash.includes(newAvailability.roles, role)) {
                     players.add(newAvailability.userID);
-                } else {
+                }
+                else {
                     players.delete(newAvailability.userID);
                 }
             });
@@ -237,13 +238,16 @@ module.exports = function(app, io, self, server) {
             if (!lodash.includes(userRestrictions.aspects, 'captain')) {
                 if (newAvailability.captain) {
                     captainsAvailable.add(newAvailability.userID);
-                } else {
+                }
+                else {
                     captainsAvailable.delete(newAvailability.userID);
                 }
-            } else {
+            }
+            else {
                 captainsAvailable.delete(newAvailability.userID);
             }
-        } else {
+        }
+        else {
             lodash.forEach(playersAvailable, function(players) {
                 players.delete(newAvailability.userID);
             });
@@ -268,7 +272,8 @@ module.exports = function(app, io, self, server) {
         if (launchAttemptInProgress) {
             if (readyInfo.ready) {
                 readiesReceived.add(readyInfo.userID);
-            } else {
+            }
+            else {
                 readiesReceived.delete(readyInfo.userID);
             }
         }

@@ -248,7 +248,9 @@ module.exports = function(app, io, self, server) {
                     throw new Error('game is not expected status');
                 }
 
-                self.emit('gameSetup', {game: game});
+                self.emit('gameSetup', {
+                    game: game
+                });
             }
             else if (req.query.status === 'live') {
                 if (game.status !== 'launching' && game.status !== 'live') {
@@ -256,7 +258,9 @@ module.exports = function(app, io, self, server) {
                     throw new Error('game is not expected status');
                 }
 
-                self.emit('gameLive', {game: game});
+                self.emit('gameLive', {
+                    game: game
+                });
             }
             else if (req.query.status === 'abandoned') {
                 if (game.status !== 'live') {
@@ -264,7 +268,9 @@ module.exports = function(app, io, self, server) {
                     throw new Error('game is not expected status');
                 }
 
-                self.emit('gameAbandoned', {game: game});
+                self.emit('gameAbandoned', {
+                    game: game
+                });
             }
             else if (req.query.status === 'completed') {
                 if (game.status !== 'live') {
@@ -272,7 +278,9 @@ module.exports = function(app, io, self, server) {
                     throw new Error('game is not expected status');
                 }
 
-                self.emit('gameCompleted', {game: game});
+                self.emit('gameCompleted', {
+                    game: game
+                });
             }
 
             res.sendStatus(200);
