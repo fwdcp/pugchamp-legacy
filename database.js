@@ -44,13 +44,13 @@ var gameSchema = new mongoose.Schema({
         }
     }],
     server: String,
-    results: [{
+    results: {
         score: [Number],
         links: [{
             type: {type: String},
             url: String
         }]
-    }],
+    },
     choices: [{
         type: {type: String},
         method: String,
