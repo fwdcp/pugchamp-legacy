@@ -78,6 +78,7 @@
                     "max": 1
                 }
             },
+            "startPeriod": "15m",
             "teamSize": 6
         },
         "launch": {

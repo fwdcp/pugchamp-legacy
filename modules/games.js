@@ -3,11 +3,31 @@
 
 var config = require('config');
 var lodash = require('lodash');
+var ms = require('ms');
 
 var database = require('../database');
 
 module.exports = function(app, io, self, server) {
     var gameServerPool = config.get('app.servers.pool');
+
+    function abortGame(game) {
+        database.Game.findById(game.id, function(err, updatedGame) {
+            if (updatedGame.status === 'assigning' || updatedGame.status === 'launching') {
+                lodash.each(updatedGame.players, function(player) {
+                    if (!player.replaced) {
+                        self.emit('sendMessageToUser', {
+                            userID: player.user,
+                            name: 'currentGame',
+                            arguments: [null]
+                        });
+                    }
+                });
+
+                updatedGame.status = 'aborted';
+                updatedGame.save();
+            }
+        });
+    }
 
     self.on('gameSetup', function(game) {
         game.status = 'launching';
@@ -36,7 +56,7 @@ module.exports = function(app, io, self, server) {
             }
         });
 
-        // TODO: set timeout for game abortion
+        setTimeout(abortGame, ms(config.get('app.games.startPeriod')), game);
     });
 
     self.on('gameLive', function(game) {
