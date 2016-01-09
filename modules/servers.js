@@ -36,25 +36,17 @@ module.exports = function(app, io, self, server) {
                 let gameID = result.trim();
 
                 if (gameID) {
-                    return new Promise(function(resolve, reject) {
-                        database.Game.findById(gameID, function(err, game) {
-                            if (err) {
-                                resolve(false);
-                                return;
-                            }
+                    return database.Game.findById(gameID).exec().then(function(game) {
+                        if (!game) {
+                            return gameServerName;
+                        }
 
-                            if (!game) {
-                                resolve(gameServerName);
-                                return;
-                            }
-
-                            if (game.status === 'completed' || game.status === 'aborted') {
-                                resolve(gameServerName);
-                            }
-                            else {
-                                resolve(false);
-                            }
-                        });
+                        if (game.status === 'completed' || game.status === 'aborted') {
+                            return gameServerName;
+                        }
+                        else {
+                            return false;
+                        }
                     });
                 }
                 else {
@@ -103,75 +95,89 @@ module.exports = function(app, io, self, server) {
         }).then(function() {
             return rcon.command('pugchamp_game_config "' + map.config + '"');
         }).then(function() {
-            return new Promise(function(resolve, reject) {
-                game.populate('captains.user', function(err, game) {
-                    if (err) {
-                        reject(err);
-                        return;
+            return game.populate('captains.user').execPopulate().then(function(game) {
+                return lodash.reduce(game.captains, function(prev, captain) {
+                    let cur;
+
+                    if (captain.faction === 'RED') {
+                        cur = rcon.command('mp_tournament_redteamname "' + captain.user.alias + '"');
+                    }
+                    else if (captain.faction === 'BLU') {
+                        cur = rcon.command('mp_tournament_blueteamname "' + captain.user.alias + '"');
                     }
 
-                    Promise.all(lodash.map(game.captains, function(captain) {
-                        if (captain.faction === 'RED') {
-                            return rcon.command('mp_tournament_redteamname "' + captain.user.alias + '"');
+                    if (cur) {
+                        if (prev) {
+                            return prev.then(cur);
                         }
-                        else if (captain.faction === 'BLU') {
-                            return rcon.command('mp_tournament_blueteamname "' + captain.user.alias + '"');
+                        else {
+                            return cur;
                         }
-                    })).then(resolve, reject);
-                });
+                    }
+                    else {
+                        return prev;
+                    }
+                }, null);
             });
         }).then(function() {
-            return new Promise(function(resolve, reject) {
-                game.populate('players.user', function(err, game) {
-                    if (err) {
-                        reject(err);
-                        return;
+            return game.populate('players.user').execPopulate().then(function(game) {
+                return lodash.reduce(game.players, function(prev, player) {
+                    let cur;
+
+                    let faction = game.captains[player.team].faction;
+                    let role = roles[player.role];
+                    let gameTeam = 1;
+                    let gameClass = 0;
+
+                    if (faction === 'RED') {
+                        gameTeam = 2;
+                    }
+                    else if (faction === 'BLU') {
+                        gameTeam = 3;
                     }
 
-                    Promise.all(lodash.map(game.players, function(player) {
-                        let faction = game.captains[player.team].faction;
-                        let role = roles[player.role];
-                        let gameTeam = 1;
-                        let gameClass = 0;
+                    if (role.class === 'scout') {
+                        gameClass = 1;
+                    }
+                    else if (role.class === 'soldier') {
+                        gameClass = 3;
+                    }
+                    else if (role.class === 'pyro') {
+                        gameClass = 7;
+                    }
+                    else if (role.class === 'demoman') {
+                        gameClass = 4;
+                    }
+                    else if (role.class === 'heavy') {
+                        gameClass = 6;
+                    }
+                    else if (role.class === 'engineer') {
+                        gameClass = 9;
+                    }
+                    else if (role.class === 'medic') {
+                        gameClass = 5;
+                    }
+                    else if (role.class === 'sniper') {
+                        gameClass = 2;
+                    }
+                    else if (role.class === 'spy') {
+                        gameClass = 8;
+                    }
 
-                        if (faction === 'RED') {
-                            gameTeam = 2;
-                        }
-                        else if (faction === 'BLU') {
-                            gameTeam = 3;
-                        }
+                    cur = rcon.command('pugchamp_game_player_add "' + player.user.steamID + '" "' + player.user.alias + '" ' + gameTeam + ' ' + gameClass);
 
-                        if (role.class === 'scout') {
-                            gameClass = 1;
+                    if (cur) {
+                        if (prev) {
+                            return prev.then(cur);
                         }
-                        else if (role.class === 'soldier') {
-                            gameClass = 3;
+                        else {
+                            return cur;
                         }
-                        else if (role.class === 'pyro') {
-                            gameClass = 7;
-                        }
-                        else if (role.class === 'demoman') {
-                            gameClass = 4;
-                        }
-                        else if (role.class === 'heavy') {
-                            gameClass = 6;
-                        }
-                        else if (role.class === 'engineer') {
-                            gameClass = 9;
-                        }
-                        else if (role.class === 'medic') {
-                            gameClass = 5;
-                        }
-                        else if (role.class === 'sniper') {
-                            gameClass = 2;
-                        }
-                        else if (role.class === 'spy') {
-                            gameClass = 8;
-                        }
-
-                        return rcon.command('pugchamp_game_player_add "' + player.user.steamID + '" "' + player.user.alias + '" ' + gameTeam + ' ' + gameClass);
-                    })).then(resolve, reject);
-                });
+                    }
+                    else {
+                        return prev;
+                    }
+                }, null);
             });
         }).then(function() {
             return rcon.command('pugchamp_game_start');
