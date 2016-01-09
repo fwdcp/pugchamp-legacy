@@ -218,4 +218,64 @@ module.exports = function(app, io, self, server) {
             setUpServer(game, false);
         });
     });
+
+    app.get('/api/servers/:key', function(req, res) {
+        if (!req.query.game) {
+            res.sendStatus(400);
+            return;
+        }
+
+        database.Game.findById(req.query.game, function(err, game) {
+            if (err || !game) {
+                res.sendStatus(404);
+                return;
+            }
+
+            let gameServer = gameServerPool[game.server];
+
+            let hash = crypto.createHash('sha256');
+            hash.update(game.id + '|' + gameServer.salt);
+            let key = hash.digest('hex');
+
+            if (req.params.key !== key) {
+                res.sendStatus(403);
+                return;
+            }
+
+            if (req.query.status === 'setup') {
+                if (game.status !== 'assigning') {
+                    res.sendStatus(500);
+                    throw new Error('game is not expected status');
+                }
+
+                self.emit('gameSetup', game);
+            }
+            else if (req.query.status === 'live') {
+                if (game.status !== 'launching' && game.status !== 'live') {
+                    res.sendStatus(500);
+                    throw new Error('game is not expected status');
+                }
+
+                self.emit('gameLive', game);
+            }
+            else if (req.query.status === 'abandoned') {
+                if (game.status !== 'live') {
+                    res.sendStatus(500);
+                    throw new Error('game is not expected status');
+                }
+
+                self.emit('gameAbandoned', game);
+            }
+            else if (req.query.status === 'completed') {
+                if (game.status !== 'live') {
+                    res.sendStatus(500);
+                    throw new Error('game is not expected status');
+                }
+
+                self.emit('gameCompleted', game);
+            }
+
+            res.sendStatus(200);
+        });
+    });
 };

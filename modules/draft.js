@@ -438,11 +438,6 @@ module.exports = function(app, io, self, server) {
             }
 
             self.emit('launchGame', game);
-
-            // NOTE: forces a user update so they cannot add up to another game immediately - should this be done here?
-            self.emit('retrieveUsers', lodash.map(game.players, function(player) {
-                return player.user;
-            }));
         });
     }
 
