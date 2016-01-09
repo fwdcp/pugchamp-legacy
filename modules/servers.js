@@ -188,6 +188,8 @@ module.exports = function(app, io, self, server) {
                 game.status = 'aborted';
                 game.save();
 
+                self.emit('cleanUpDraft');
+
                 return;
             }
 
