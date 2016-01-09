@@ -11,14 +11,14 @@ var chance = new Chance();
 var database = require('../database');
 
 module.exports = function(app, io, self, server) {
-    var serverPool = config.get('app.servers.pool');
+    var gameServerPool = config.get('app.servers.pool');
     var serverTimeout = config.get('app.servers.timeout');
 
     function getAvailableServers() {
-        return Promise.all(lodash.map(serverPool, function(server, name) {
+        return Promise.all(lodash.map(gameServerPool, function(gameServer, gameServerName) {
             let rcon = RCON({
-                address: server.address,
-                password: server.rcon
+                address: gameServer.address,
+                password: gameServer.rcon
             });
 
             return Promise.race([
@@ -49,7 +49,7 @@ module.exports = function(app, io, self, server) {
                     });
                 }
                 else {
-                    return name;
+                    return gameServerName;
                 }
             }, function() {
                 return false;
