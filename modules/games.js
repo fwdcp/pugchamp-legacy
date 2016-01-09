@@ -23,15 +23,17 @@ module.exports = function(app, io, self, server) {
         let gameServer = gameServerPool[game.server];
 
         lodash.each(game.players, function(player) {
-            self.emit('sendMessageToUser', {
-                userID: player.user,
-                name: 'currentGame',
-                arguments: [{
-                    game: game.id,
-                    address: gameServer.address,
-                    password: gameServer.password
-                }]
-            });
+            if (!player.replaced) {
+                self.emit('sendMessageToUser', {
+                    userID: player.user,
+                    name: 'currentGame',
+                    arguments: [{
+                        game: game.id,
+                        address: gameServer.address,
+                        password: gameServer.password
+                    }]
+                });
+            }
         });
 
         // TODO: set timeout for game abortion
