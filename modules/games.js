@@ -52,7 +52,7 @@ module.exports = function(app, io, self, server) {
     io.sockets.on('authenticated', function(socket) {
         let userID = socket.decoded_token;
 
-        database.Game.findOne({players: {user: userID}, status: {$in: ['launching', 'live']}}, function(err, game) {
+        database.Game.findOne({'players.user': userID, status: {$in: ['launching', 'live']}}, function(err, game) {
             if (game) {
                 let gameServer = gameServerPool[game.server];
 
