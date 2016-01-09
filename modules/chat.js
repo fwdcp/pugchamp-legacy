@@ -4,6 +4,18 @@
 var lodash = require('lodash');
 
 module.exports = function(app, io, self, server) {
+    function getOnlineList() {
+        return lodash(self.getOnlineList()).filter(function(user) {
+            return self.users.get(user).setUp;
+        }).map(function(user) {
+            return self.getFilteredUser(user);
+        }).value();
+    }
+
+    function transmitOnlineList() {
+        io.sockets.emit('onlineListUpdated', getOnlineList());
+    }
+
     self.on('sendUserChatMessage', function(chat) {
         let userRestrictions = self.userRestrictions.get(chat.userID);
 
@@ -33,6 +45,8 @@ module.exports = function(app, io, self, server) {
                 user: userID,
                 action: 'connected'
             });
+
+            transmitOnlineList();
         }
     });
 
@@ -42,7 +56,13 @@ module.exports = function(app, io, self, server) {
                 user: userID,
                 action: 'disconnected'
             });
+
+            transmitOnlineList();
         }
+    });
+
+    io.sockets.on('connection', function(socket) {
+        socket.emit('onlineListUpdated', getOnlineList());
     });
 
     io.sockets.on('authenticated', function(socket) {

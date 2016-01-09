@@ -24,6 +24,9 @@ module.exports = function(app, io, self, server) {
     self.getFilteredUser = function getFilteredUser(userID) {
         return lodash.omit(self.users.get(userID).toObject(), ['_id', 'id', '__v']);
     };
+    self.getOnlineList = function getOnlineList() {
+        return [...self.userSockets.keys()];
+    };
 
     self.on('retrieveUsers', function(userIDs) {
         if (!userIDs) {
