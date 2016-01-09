@@ -97,11 +97,11 @@ module.exports = function(app, io, self, server) {
 
             return rcon.command('pugchamp_server_url "' + config.get('server.baseURL') + '/api/servers/' + key + '"');
         }).then(function() {
-            return rcon.command('pugchamp_game_id ' + game.id);
+            return rcon.command('pugchamp_game_id "' + game.id + '"');
         }).then(function() {
-            return rcon.command('pugchamp_game_map ' + map.file);
+            return rcon.command('pugchamp_game_map "' + map.file + '"');
         }).then(function() {
-            return rcon.command('pugchamp_game_config ' + map.config);
+            return rcon.command('pugchamp_game_config "' + map.config + '"');
         }).then(function() {
             return new Promise(function(resolve, reject) {
                 game.populate('players.user', function(err, game) {
@@ -151,7 +151,7 @@ module.exports = function(app, io, self, server) {
                             gameClass = 8;
                         }
 
-                        return rcon.command('pugchamp_game_player_add ' + player.user.steamID + ' ' + gameTeam + ' ' + gameClass);
+                        return rcon.command('pugchamp_game_player_add "' + player.user.steamID + '" "' + player.user.alias + '"' + gameTeam + ' ' + gameClass);
                     })).then(resolve, reject);
                 });
             });
