@@ -69,15 +69,15 @@ public void OnMapStart() {
 
         char url[2048];
         serverURL.GetString(url, sizeof(url));
-        HTTPRequestHandle resultReport = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
+        HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
 
         char id[32];
         gameID.GetString(id, sizeof(id));
-        Steam_SetHTTPRequestGetOrPostParameter(resultReport, "game", id);
+        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "game", id);
 
-        Steam_SetHTTPRequestGetOrPostParameter(resultReport, "status", "setup");
+        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "status", "setup");
 
-        Steam_SendHTTPRequest(resultReport, HTTPRequestReturned);
+        Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned);
     }
 }
 
@@ -123,21 +123,21 @@ public void OnClientDisconnect_Post(int client) {
 
             char url[2048];
             serverURL.GetString(url, sizeof(url));
-            HTTPRequestHandle resultReport = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
+            HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
 
             char id[32];
             gameID.GetString(id, sizeof(id));
-            Steam_SetHTTPRequestGetOrPostParameter(resultReport, "game", id);
+            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "game", id);
 
-            Steam_SetHTTPRequestGetOrPostParameter(resultReport, "status", "abandoned");
+            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "status", "abandoned");
 
             char score[4];
             IntToString(GetTeamScore(2), score, sizeof(score));
-            Steam_SetHTTPRequestGetOrPostParameter(resultReport, "redscore", score);
+            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "redscore", score);
             IntToString(GetTeamScore(3), score, sizeof(score));
-            Steam_SetHTTPRequestGetOrPostParameter(resultReport, "bluscore", score);
+            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "bluscore", score);
 
-            Steam_SendHTTPRequest(resultReport, HTTPRequestReturned);
+            Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned);
         }
     }
 }
@@ -228,15 +228,15 @@ public void Event_GameStart(Event event, const char[] name, bool dontBroadcast) 
 
     char url[2048];
     serverURL.GetString(url, sizeof(url));
-    HTTPRequestHandle resultReport = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
+    HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
 
     char id[32];
     gameID.GetString(id, sizeof(id));
-    Steam_SetHTTPRequestGetOrPostParameter(resultReport, "game", id);
+    Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "game", id);
 
-    Steam_SetHTTPRequestGetOrPostParameter(resultReport, "status", "live");
+    Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "status", "live");
 
-    Steam_SendHTTPRequest(resultReport, HTTPRequestReturned);
+    Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned);
 }
 
 public void Event_GameOver(Event event, const char[] name, bool dontBroadcast) {
@@ -244,21 +244,21 @@ public void Event_GameOver(Event event, const char[] name, bool dontBroadcast) {
 
     char url[2048];
     serverURL.GetString(url, sizeof(url));
-    HTTPRequestHandle resultReport = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
+    HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
 
     char id[32];
     gameID.GetString(id, sizeof(id));
-    Steam_SetHTTPRequestGetOrPostParameter(resultReport, "game", id);
+    Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "game", id);
 
-    Steam_SetHTTPRequestGetOrPostParameter(resultReport, "status", "completed");
+    Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "status", "completed");
 
     char score[4];
     IntToString(GetTeamScore(2), score, sizeof(score));
-    Steam_SetHTTPRequestGetOrPostParameter(resultReport, "redscore", score);
+    Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "redscore", score);
     IntToString(GetTeamScore(3), score, sizeof(score));
-    Steam_SetHTTPRequestGetOrPostParameter(resultReport, "bluscore", score);
+    Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "bluscore", score);
 
-    Steam_SendHTTPRequest(resultReport, HTTPRequestReturned);
+    Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned);
 }
 
 public void Event_NameChange(Event event, const char[] name, bool dontBroadcast) {
