@@ -163,7 +163,7 @@ public Action Command_GameReset(int args) {
     gameMap.SetString("");
     gameConfig.SetString("");
 
-    for (int i = 1; i < MaxClients; i++) {
+    for (int i = 1; i <= MaxClients; i++) {
         if (IsClientConnected(i) && !IsClientReplay(i) && !IsClientSourceTV(i)) {
             KickClient(i, "the server is being reset");
         }
@@ -221,6 +221,15 @@ public Action Command_GamePlayerRemove(int args) {
     playerNames.Remove(steamID);
     playerTeams.Remove(steamID);
     playerClasses.Remove(steamID);
+
+    for (int i = 1; i <= MaxClients; i++) {
+        char clientSteamID[32];
+        if (GetClientAuthId(i, AuthId_SteamID64, clientSteamID, sizeof(clientSteamID))) {
+            if (StrEqual(steamID, clientSteamID)) {
+                KickClient(i, "you have been removed from this game");
+            }
+        }
+    }
 }
 
 public void Event_GameStart(Event event, const char[] name, bool dontBroadcast) {
