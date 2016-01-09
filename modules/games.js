@@ -13,6 +13,10 @@ module.exports = function(app, io, self, server) {
     function abortGame(game) {
         database.Game.findById(game.id, function(err, updatedGame) {
             if (updatedGame.status === 'assigning' || updatedGame.status === 'launching') {
+                self.emit('retrieveUsers', lodash.map(game.players, function(player) {
+                    return player.user;
+                }));
+
                 lodash.each(updatedGame.players, function(player) {
                     if (!player.replaced) {
                         self.emit('sendMessageToUser', {
