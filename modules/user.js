@@ -42,7 +42,6 @@ module.exports = function(app, io, self, server) {
         }, function(err, users) {
             if (err) {
                 throw err;
-                return;
             }
 
             lodash.forEach(users, function(user) {
