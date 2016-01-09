@@ -18,7 +18,7 @@ module.exports = function(app, io, self, server) {
                 }));
 
                 lodash.each(updatedGame.players, function(player) {
-                    if (!player.replaced) {
+                    if (!player.replacement) {
                         self.emit('sendMessageToUser', {
                             userID: player.user.toHexString(),
                             name: 'currentGame',
@@ -47,7 +47,7 @@ module.exports = function(app, io, self, server) {
         let gameServer = gameServerPool[info.game.server];
 
         lodash.each(info.game.players, function(player) {
-            if (!player.replaced) {
+            if (!player.replacement) {
                 self.emit('sendMessageToUser', {
                     userID: player.user.toHexString(),
                     name: 'currentGame',
@@ -110,7 +110,7 @@ module.exports = function(app, io, self, server) {
         }));
 
         lodash.each(info.game.players, function(player) {
-            if (!player.replaced) {
+            if (!player.replacement) {
                 self.emit('sendMessageToUser', {
                     userID: player.user.toHexString(),
                     name: 'currentGame',
@@ -153,7 +153,7 @@ module.exports = function(app, io, self, server) {
         }));
 
         lodash.each(info.game.players, function(player) {
-            if (!player.replaced) {
+            if (!player.replacement) {
                 self.emit('sendMessageToUser', {
                     userID: player.user.toHexString(),
                     name: 'currentGame',
@@ -188,7 +188,9 @@ module.exports = function(app, io, self, server) {
             players: {
                 $elemMatch: {
                     user: userID,
-                    replaced: false
+                    replacement: {
+                        $exists: false
+                    }
                 }
             },
             status: {

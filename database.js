@@ -38,9 +38,9 @@ var gameSchema = new mongoose.Schema({
         role: String,
         team: Number,
         origin: String,
-        replaced: {
-            type: Boolean,
-            default: false
+        replacement: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
         },
         time: {
             type: Number,
