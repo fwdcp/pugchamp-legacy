@@ -19,6 +19,7 @@ ConVar serverURL;
 
 bool gameAssigned;
 bool gameLive;
+float gameStartTime;
 
 ConVar gameID;
 ConVar gameMap;
@@ -41,6 +42,7 @@ public void OnPluginStart() {
 
     gameAssigned = false;
     gameLive = false;
+    gameStartTime = -1.0;
 
     gameID = CreateConVar("pugchamp_game_id", "", "the ID for the current game", FCVAR_PROTECTED|FCVAR_DONTRECORD|FCVAR_PLUGIN);
     gameMap = CreateConVar("pugchamp_game_map", "", "the map for the current game", FCVAR_PLUGIN);
@@ -157,6 +159,12 @@ public void OnClientDisconnect_Post(int client) {
             IntToString(GetTeamScore(3), score, sizeof(score));
             Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "score[BLU]", score);
 
+            if (gameStartTime != -1.0) {
+                char duration[128];
+                FloatToString(GetGameTime() - gameStartTime, duration, sizeof(duration));
+                Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "duration", duration);
+            }
+
             StringMapSnapshot players = playerPlaytimes.Snapshot();
             for (int i = 0; i < players.Length; i++) {
                 char steamID[32];
@@ -198,6 +206,7 @@ public Action Command_GameReset(int args) {
 
     gameAssigned = false;
     gameLive = false;
+    gameStartTime = -1.0;
     gameID.SetString("");
     gameMap.SetString("");
     gameConfig.SetString("");
@@ -276,6 +285,7 @@ public Action Command_GamePlayerRemove(int args) {
 
 public void Event_GameStart(Event event, const char[] name, bool dontBroadcast) {
     gameLive = true;
+    gameStartTime = GetGameTime();
 
     for (int i = 1; i <= MaxClients; i++) {
         if (IsClientConnected(i) && IsClientAuthorized(i)) {
@@ -320,6 +330,12 @@ public void Event_GameOver(Event event, const char[] name, bool dontBroadcast) {
     Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "score[RED]", score);
     IntToString(GetTeamScore(3), score, sizeof(score));
     Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "score[BLU]", score);
+
+    if (gameStartTime != -1.0) {
+        char duration[128];
+        FloatToString(GetGameTime() - gameStartTime, duration, sizeof(duration));
+        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "duration", duration);
+    }
 
     StringMapSnapshot players = playerPlaytimes.Snapshot();
     for (int i = 0; i < players.Length; i++) {

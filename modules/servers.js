@@ -297,6 +297,7 @@ module.exports = function(app, io, self, server) {
                 self.emit('gameAbandoned', {
                     game: game,
                     score: req.query.score,
+                    duration: req.query.duration,
                     time: req.query.time
                 });
             }
@@ -309,6 +310,7 @@ module.exports = function(app, io, self, server) {
                 self.emit('gameCompleted', {
                     game: game,
                     score: req.query.score,
+                    duration: req.query.duration,
                     time: req.query.time
                 });
             }

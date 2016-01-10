@@ -49,6 +49,7 @@ var gameSchema = new mongoose.Schema({
     }],
     server: String,
     results: {
+        duration: Number,
         score: [Number],
         links: [{
             type: {type: String},

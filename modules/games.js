@@ -88,6 +88,10 @@ module.exports = function(app, io, self, server) {
             });
         }
 
+        if (info.duration) {
+            info.game.results.duration = info.duration;
+        }
+
         info.game.save().then(function() {
             if (info.time) {
                 info.game.populate('players.user', function(err, game) {
@@ -129,6 +133,10 @@ module.exports = function(app, io, self, server) {
             lodash.each(info.game.captains, function(captain) {
                 info.game.results.score.push(info.score[captain.faction]);
             });
+        }
+
+        if (info.duration) {
+            info.game.results.duration = info.duration;
         }
 
         info.game.save().then(function() {
