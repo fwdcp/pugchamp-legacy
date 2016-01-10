@@ -7,6 +7,7 @@ module.exports = function(app, io, self, server) {
     require('./draft')(app, io, self, server);
     require('./servers')(app, io, self, server);
     require('./games')(app, io, self, server);
+    require('./admin')(app, io, self, server);
     require('./players')(app, io, self, server);
     require('./chat')(app, io, self, server);
 };
