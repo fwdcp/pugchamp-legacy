@@ -1,48 +1,56 @@
-<script src="/components/webcomponentsjs/webcomponents.js"></script>
-<link rel="import" href="/components/iron-flex-layout/iron-flex-layout.html">
-<link rel="import" href="/components/iron-icons/iron-icons.html">
-<link rel="import" href="/components/paper-button/paper-button.html">
-<link rel="import" href="/components/paper-drawer-panel/paper-drawer-panel.html">
-<link rel="import" href="/components/paper-header-panel/paper-header-panel.html">
-<link rel="import" href="/components/paper-icon-button/paper-icon-button.html">
-<link rel="import" href="/components/paper-item/paper-icon-item.html">
-<link rel="import" href="/components/paper-item/paper-item.html">
-<link rel="import" href="/components/paper-menu/paper-menu.html">
-<link rel="import" href="/components/paper-menu-button/paper-menu-button.html">
-<link rel="import" href="/components/paper-scroll-header-panel/paper-scroll-header-panel.html">
-<link rel="import" href="/components/paper-styles/paper-styles.html">
-<link rel="import" href="/components/paper-toolbar/paper-toolbar.html">
-<script src="/components/ion-sound/js/ion.sound.js"></script>
+<head>
+    {{#if title}}
+        <title>{{title}} | PugChamp</title>
+    {{else}}
+        <title>PugChamp</title>
+    {{/if}}
 
-<style is="custom-style">
-    body {
-        @apply(--paper-font-common-base);
+    <script src="/components/webcomponentsjs/webcomponents.js"></script>
+    <link rel="import" href="/components/iron-icons/hardware-icons.html">
+    <link rel="import" href="/components/iron-icons/iron-icons.html">
+    <link rel="import" href="/components/iron-icons/social-icons.html">
+    <link rel="import" href="/components/paper-drawer-panel/paper-drawer-panel.html">
+    <link rel="import" href="/components/paper-header-panel/paper-header-panel.html">
+    <link rel="import" href="/components/paper-icon-button/paper-icon-button.html">
+    <link rel="import" href="/components/paper-item/paper-icon-item.html">
+    <link rel="import" href="/components/paper-menu/paper-menu.html">
+    <link rel="import" href="/components/paper-menu/paper-submenu.html">
+    <link rel="import" href="/components/paper-scroll-header-panel/paper-scroll-header-panel.html">
+    <link rel="import" href="/components/paper-styles/paper-styles.html">
+    <link rel="import" href="/components/paper-toolbar/paper-toolbar.html">
 
-        color: var(--light-theme-text-color);
-    }
+    <style is="custom-style">
+        body {
+            @apply(--paper-font-common-base);
 
-    h1 {
-        @apply(--paper-font-headline);
-    }
+            color: var(--light-theme-text-color);
+        }
 
-    h2 {
-        @apply(--paper-font-title);
-    }
+        h1 {
+            @apply(--paper-font-headline);
+        }
 
-    h3 {
-        @apply(--paper-font-subhead);
-    }
+        h2 {
+            @apply(--paper-font-title);
+        }
 
-    #app-name {
-        @apply(--paper-font-display1);
-    }
+        h3 {
+            @apply(--paper-font-subhead);
+        }
 
-    #drawer-menu a {
-        color: inherit;
-        text-decoration: inherit;
-    }
+        #app-name {
+            @apply(--paper-font-display1);
+        }
 
-    #main {
-        padding: 16px;
-    }
-</style>
+        #drawer-menu a {
+            color: inherit;
+            text-decoration: inherit;
+        }
+
+        #main {
+            padding: 16px;
+        }
+    </style>
+
+    {{> @partial-block }}
+</head>

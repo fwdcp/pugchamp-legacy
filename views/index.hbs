@@ -2,8 +2,8 @@
 
 <html>
 
-<head>
-    {{> head}}
+{{#> head}}
+    <link rel="import" href="/components/iron-flex-layout/iron-flex-layout.html">
 
     <link rel="import" href="/elements/pugchamp-chat/pugchamp-chat.html">
 	<link rel="import" href="/elements/pugchamp-client/pugchamp-client.html">
@@ -29,37 +29,27 @@
             min-width: 850px;
 		}
     </style>
-</head>
+{{/head}}
 
-<body class="fullbleed" unresolved>
-	<paper-drawer-panel responsive-width="1200px">
-  		{{> drawer }}
+{{#> body}}
+    <div class="horizontal layout wrap">
+        <div id="content" class="flex">
+            <pugchamp-current-game></pugchamp-current-game>
 
-  		<paper-scroll-header-panel main>
-			{{> toolbar}}
+            <pugchamp-restrictions></pugchamp-restrictions>
 
-			<div id="main">
-                <div class="horizontal layout wrap">
-                    <div id="content" class="flex">
-                        <pugchamp-current-game></pugchamp-current-game>
+            <hr>
 
-                        <pugchamp-restrictions></pugchamp-restrictions>
+            <pugchamp-draft></pugchamp-draft>
 
-                        <hr>
+            <hr>
 
-    	                <pugchamp-draft></pugchamp-draft>
-
-                        <hr>
-
-    	                <pugchamp-launchpad></pugchamp-launchpad>
-                    </div>
-                    <pugchamp-chat></pugchamp-chat>
-                </div>
-			</div>
-		</paper-scroll-header-panel>
-	</paper-drawer-panel>
+            <pugchamp-launchpad></pugchamp-launchpad>
+        </div>
+        <pugchamp-chat></pugchamp-chat>
+    </div>
 
     <pugchamp-client></pugchamp-client>
-</body>
+{{/body}}
 
 </html>

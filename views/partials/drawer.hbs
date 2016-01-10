@@ -8,6 +8,18 @@
             </paper-icon-item>
         </a>
 
+        <a href="/players">
+            <paper-icon-item>
+                <iron-icon icon="social:people" item-icon></iron-icon> Players
+            </paper-icon-item>
+        </a>
+
+        <a href="/games">
+            <paper-icon-item>
+                <iron-icon icon="hardware:gamepad" item-icon></iron-icon> Games
+            </paper-icon-item>
+        </a>
+
         {{#if user}}
             <a href="/user/settings">
                 <paper-icon-item>
@@ -15,16 +27,45 @@
                 </paper-icon-item>
             </a>
 
+            {{#if user.admin}}
+                <paper-submenu>
+                    <paper-icon-item class="menu-trigger">
+                        <iron-icon icon="supervisor-account" item-icon></iron-icon> Admin
+                    </paper-icon-item>
+
+                    <paper-menu class="menu-content">
+                        <a href="/admin/users">
+                            <paper-icon-item>
+                                <iron-icon icon="social:people" item-icon></iron-icon> Users
+                            </paper-icon-item>
+                        </a>
+
+                        <a href="/admin/games">
+                            <paper-icon-item>
+                                <iron-icon icon="hardware:gamepad" item-icon></iron-icon> Games
+                            </paper-icon-item>
+                        </a>
+
+                        <a href="/admin/servers">
+                            <paper-icon-item>
+                                <iron-icon icon="hardware:developer-board" item-icon></iron-icon> Servers
+                            </paper-icon-item>
+                        </a>
+                    </paper-menu>
+                </paper-submenu>
+            {{/if}}
+
             <a href="/user/logout">
                 <paper-icon-item>
-                    <iron-icon icon="exit-to-app" item-icon></iron-icon> Sign Out
+                    <iron-icon icon="lock" item-icon></iron-icon> Sign Out
                 </paper-icon-item>
             </a>
         {{else}}
             <a href="/user/login">
-                <paper-item>
+                <paper-icon-item>
+                    <iron-icon icon="lock-open" item-icon></iron-icon>
                     <img src="https://steamcommunity-a.akamaihd.net/public/images/signinthroughsteam/sits_small.png">
-                </paper-item>
+                </paper-icon-item>
             </a>
         {{/if}}
 

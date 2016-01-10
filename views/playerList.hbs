@@ -2,35 +2,39 @@
 
 <html>
 
-<head>
-    {{> head}}
-
+{{#> head}}
     <link rel="import" href="/components/iron-flex-layout/classes/iron-flex-layout.html">
-</head>
+    <link rel="import" href="/components/vaadin-grid/vaadin-grid.html">
+{{/head}}
 
-<body class="fullbleed" unresolved>
-	<paper-drawer-panel>
-  		{{> drawer}}
+{{#> body}}
+    <h1>Players</h1>
 
-  		<div main>
-			{{> toolbar}}
+    <vaadin-grid>
+        <table>
+            <colgroup>
+                <col sortable>
+                <col sortable sort-direction="desc">
+                <col sortable sort-direction="asc">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>Player</th>
+                    <th>Rating</th>
+                    <th>Rating Deviation</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each players}}
+                    <tr>
+                        <td>{{this.alias}}</td>
+                        <td>{{this.currentRating.after.rating}}</td>
+                        <td>{{this.currentRating.after.deviation}}</td>
+                    </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </vaadin-grid>
+{{/body}}
 
-			<div id="main">
-                <div class="horizontal layout">
-                    <div class="flex">
-                        <h2>Players</h2>
-
-                        <ol>
-                            {{#each players}}
-                                <li><a href="/player/{{this.steamID}}">{{this.alias}}</a> ({{this.currentRating.after.rating}} &plusmn; {{this.currentRating.after.deviation}})</li>
-                            {{/each}}
-                        </ol>
-                    </div>
-                    <div class="flex">
-                        <h2>Captains</h2>
-                    </div>
-                </div>
-			</div>
-		</div>
-	</paper-drawer-panel>
-</body>
+</html>
