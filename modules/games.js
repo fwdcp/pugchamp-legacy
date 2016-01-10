@@ -1,9 +1,11 @@
 /* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
 "use strict";
 
+var child_process = require('child_process');
 var config = require('config');
 var lodash = require('lodash');
 var ms = require('ms');
+var path = require('path');
 
 var database = require('../database');
 
@@ -150,7 +152,20 @@ module.exports = function(app, io, self, server) {
                         player.time = info.time[player.user.steamID];
                     });
 
-                    game.save();
+                    game.save().then(function() {
+                        return new Promise(function(resolve, reject) {
+                            child_process.exec('python rate_game.py ' + info.game.id, {
+                                cwd: path.resolve(__dirname, '../ratings')
+                            }, function(error) {
+                                if (!err) {
+                                    resolve();
+                                }
+                                else {
+                                    reject(error);
+                                }
+                            });
+                        });
+                    });
                 });
             }
         });
@@ -169,8 +184,6 @@ module.exports = function(app, io, self, server) {
                 });
             }
         });
-
-        // TODO: calculate ratings
     });
 
     self.on('gameLogAvailable', function(info) {
