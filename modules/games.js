@@ -35,6 +35,73 @@ module.exports = function(app, io, self, server) {
         });
     }
 
+    function rateGame(game) {
+        Promise.all([
+            new Promise(function(resolve, reject) {
+                child_process.exec('python rate_game.py ' + game.id, {
+                    cwd: path.resolve(__dirname, '../ratings')
+                }, function(error) {
+                    if (!error) {
+                        resolve();
+                    }
+                    else {
+                        reject(error);
+                    }
+                });
+            }),
+            game.populate('captains.user').execPopulate().then(function(game) {
+                return Promise.all(lodash.map(game.captains, function(captain) {
+                    let user = captain.user;
+
+                    return database.Game.find({
+                        'captains.user': user.id,
+                        'status': 'completed'
+                    }).exec().then(function(captainGames) {
+                        let captainStats = {
+                            total: 0,
+                            wins: 0,
+                            losses: 0,
+                            ties: 0
+                        };
+
+                        lodash.each(captainGames, function(game) {
+                            captainStats.total++;
+
+                            if (user._id.equals(game.captains[0].user)) {
+                                if (game.results.score[0] > game.results.score[1]) {
+                                    captainStats.wins++;
+                                }
+                                else if (game.results.score[0] < game.results.score[1]) {
+                                    captainStats.losses++;
+                                }
+                                else if (game.results.score[0] === game.results.score[1]) {
+                                    captainStats.ties++;
+                                }
+                            }
+                            else if (user._id.equals(game.captains[1].user)) {
+                                if (game.results.score[1] > game.results.score[0]) {
+                                    captainStats.wins++;
+                                }
+                                else if (game.results.score[1] < game.results.score[0]) {
+                                    captainStats.losses++;
+                                }
+                                else if (game.results.score[1] === game.results.score[0]) {
+                                    captainStats.ties++;
+                                }
+                            }
+                        });
+
+                        user.captainStats = captainStats;
+
+                        return user.save();
+                    });
+                }));
+            })
+        ]).catch(function(err) {
+            throw err;
+        });
+    }
+
     self.on('gameSetup', function(info) {
         info.game.status = 'launching';
         info.game.save();
@@ -153,18 +220,7 @@ module.exports = function(app, io, self, server) {
                     });
 
                     game.save().then(function() {
-                        return new Promise(function(resolve, reject) {
-                            child_process.exec('python rate_game.py ' + info.game.id, {
-                                cwd: path.resolve(__dirname, '../ratings')
-                            }, function(error) {
-                                if (!error) {
-                                    resolve();
-                                }
-                                else {
-                                    reject(error);
-                                }
-                            });
-                        });
+                        rateGame(game);
                     });
                 });
             }
