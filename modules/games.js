@@ -157,7 +157,7 @@ module.exports = function(app, io, self, server) {
                             child_process.exec('python rate_game.py ' + info.game.id, {
                                 cwd: path.resolve(__dirname, '../ratings')
                             }, function(error) {
-                                if (!err) {
+                                if (!error) {
                                     resolve();
                                 }
                                 else {
