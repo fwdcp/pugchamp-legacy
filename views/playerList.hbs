@@ -1,0 +1,36 @@
+<!doctype html>
+
+<html>
+
+<head>
+    {{> head}}
+
+    <link rel="import" href="/components/iron-flex-layout/classes/iron-flex-layout.html">
+</head>
+
+<body class="fullbleed" unresolved>
+	<paper-drawer-panel>
+  		{{> drawer}}
+
+  		<div main>
+			{{> toolbar}}
+
+			<div id="main">
+                <div class="horizontal layout">
+                    <div class="flex">
+                        <h2>Players</h2>
+
+                        <ol>
+                            {{#each players}}
+                                <li><a href="/player/{{this.steamID}}">{{this.alias}}</a> ({{this.currentRating.after.rating}} &plusmn; {{this.currentRating.after.deviation}})</li>
+                            {{/each}}
+                        </ol>
+                    </div>
+                    <div class="flex">
+                        <h2>Captains</h2>
+                    </div>
+                </div>
+			</div>
+		</div>
+	</paper-drawer-panel>
+</body>
