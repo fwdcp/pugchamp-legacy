@@ -175,7 +175,8 @@
             "queryInterval": "15s",
             "retryInterval": "5m",
             "timeout": "5s"
-        }
+        },
+        "admins": ["76561198043850090"]
     },
     "server": {
         "baseURL": "http://localhost:16217",

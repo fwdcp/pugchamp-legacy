@@ -21,9 +21,6 @@ module.exports = function(app, io, self, server) {
     self.userSockets = new Map();
     self.users = new Map();
 
-    self.getFilteredUser = function getFilteredUser(userID) {
-        return lodash.omit(self.users.get(userID).toObject(), ['_id', 'id', '__v']);
-    };
     self.getOnlineList = function getOnlineList() {
         return [...self.userSockets.keys()];
     };
@@ -67,7 +64,7 @@ module.exports = function(app, io, self, server) {
             self.emit('sendMessageToUser', {
                 userID: userID,
                 name: 'userInfoUpdated',
-                arguments: [self.getFilteredUser(userID)]
+                arguments: [self.users.get(userID).toObject()]
             });
 
             Promise.all([
@@ -251,7 +248,7 @@ module.exports = function(app, io, self, server) {
         else {
             self.userSockets.get(userID).add(socket.id);
 
-            socket.emit('userInfoUpdated', self.getFilteredUser(userID));
+            socket.emit('userInfoUpdated', self.users.get(userID).toObject());
             socket.emit('restrictionsUpdated', self.userRestrictions.get(userID));
         }
 

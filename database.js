@@ -2,6 +2,7 @@
 "use strict";
 
 var config = require('config');
+var lodash = require('lodash');
 var mongoose = require('mongoose');
 
 mongoose.connect(config.get('server.mongodb'));
@@ -34,10 +35,17 @@ var userSchema = new mongoose.Schema({
             type: Number,
             default: 0
         }
-    },
-    admin: {
-        type: Boolean,
-        default: false
+    }
+});
+userSchema.virtual('admin').get(function() {
+    return lodash.contains(config.get('app.admins'), this.steamID);
+});
+userSchema.set('toObject', {
+    getters: true,
+    versionKey: false,
+    transform: function(doc, ret) {
+        delete ret._id;
+        delete ret.id;
     }
 });
 

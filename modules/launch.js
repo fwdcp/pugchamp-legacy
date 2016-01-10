@@ -155,11 +155,11 @@ module.exports = function(app, io, self, server) {
             roles: config.get('app.games.roles'),
             playersAvailable: lodash.mapValues(playersAvailable, function(available) {
                 return lodash.map([...available], function(userID) {
-                    return self.getFilteredUser(userID);
+                    return self.users.get(userID).toObject();
                 });
             }),
             captainsAvailable: lodash.map([...captainsAvailable], function(userID) {
-                return self.getFilteredUser(userID);
+                return self.users.get(userID).toObject();
             }),
             rolesNeeded: calculateRolesNeeded(playersAvailable),
             missingLaunchConditions: missingLaunchConditions

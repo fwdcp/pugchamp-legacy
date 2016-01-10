@@ -171,22 +171,22 @@ module.exports = function(app, io, self, server) {
                 let completeTurn = lodash.defaults({}, turn, draftChoices[index]);
 
                 if (completeTurn.player) {
-                    completeTurn.player = self.getFilteredUser(completeTurn.player);
+                    completeTurn.player = self.users.get(completeTurn.player).toObject();
                 }
 
                 return completeTurn;
             }),
             playerPool: lodash.mapValues(playerPool, function(rolePool) {
                 return lodash.map(rolePool, function(userID) {
-                    return self.getFilteredUser(userID);
+                    return self.users.get(userID).toObject();
                 });
             }),
             fullPlayerList: lodash.map(fullPlayerList, function(userID) {
-                return self.getFilteredUser(userID);
+                return self.users.get(userID).toObject();
             }),
             mapPool: mapPool,
             draftCaptains: lodash.map(draftCaptains, function(userID) {
-                return self.getFilteredUser(userID);
+                return self.users.get(userID).toObject();
             }),
             currentDraftTurn: currentDraftTurn,
             teamFactions: teamFactions,
@@ -194,7 +194,7 @@ module.exports = function(app, io, self, server) {
                 return lodash.map(team, function(player) {
                     let filteredPlayer = lodash.clone(player);
 
-                    filteredPlayer.player = self.getFilteredUser(player.player);
+                    filteredPlayer.player = self.users.get(player.player).toObject();
 
                     return filteredPlayer;
                 });

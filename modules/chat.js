@@ -8,7 +8,7 @@ module.exports = function(app, io, self, server) {
         return lodash(self.getOnlineList()).filter(function(user) {
             return self.users.get(user).setUp;
         }).map(function(user) {
-            return self.getFilteredUser(user);
+            return self.users.get(user).toObject();
         }).value();
     }
 
@@ -24,7 +24,7 @@ module.exports = function(app, io, self, server) {
 
             if (trimmedMessage.length > 0) {
                 io.sockets.emit('messageReceived', {
-                    user: self.getFilteredUser(chat.userID),
+                    user: self.users.get(chat.userID).toObject(),
                     body: trimmedMessage
                 });
             }
@@ -33,7 +33,7 @@ module.exports = function(app, io, self, server) {
 
     self.on('sendSystemMessage', function(message) {
         if (message.user) {
-            message.user = self.getFilteredUser(message.user);
+            message.user = self.users.get(message.user).toObject();
         }
 
         io.sockets.emit('messageReceived', message);
