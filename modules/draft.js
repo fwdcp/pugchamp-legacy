@@ -444,7 +444,7 @@ module.exports = function(app, io, self, server) {
                 throw err;
             }
 
-            self.emit('launchGame', game);
+            self.emit('assignGameServer', game);
         });
     }
 

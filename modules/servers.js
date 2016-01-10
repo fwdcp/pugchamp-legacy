@@ -69,6 +69,43 @@ module.exports = function(app, io, self, server) {
         });
     });
 
+    self.on('abortGame', function(game) {
+        // NOTE: force player update so players can add up immediately
+        self.emit('retrieveUsers', lodash.map(game.players, function(player) {
+            return player.user;
+        }));
+
+        lodash.each(game.players, function(player) {
+            if (!player.replacement) {
+                self.emit('sendMessageToUser', {
+                    userID: player.user.toHexString(),
+                    name: 'currentGame',
+                    arguments: [null]
+                });
+            }
+        });
+
+        game.status = 'aborted';
+        game.save();
+
+        lodash.each(gameServerPool, function(gameServer) {
+            let rcon = RCON({
+                address: gameServer.address,
+                password: gameServer.rcon
+            });
+
+            rcon.connect().then(function() {
+                return rcon.command('pugchamp_game_info');
+            }).then(function(result) {
+                let gameID = result.trim();
+
+                if (gameID === game.id) {
+                    return rcon.command('pugchamp_game_reset');
+                }
+            });
+        });
+    });
+
     function setUpServer(game, abortOnFail) {
         let gameServer = gameServerPool[game.server];
 
@@ -194,23 +231,21 @@ module.exports = function(app, io, self, server) {
                     action: 'failed to set up server for drafted game, aborting game'
                 });
 
-                game.status = 'aborted';
-                game.save();
+                self.emit('abortGame', game);
 
                 self.emit('cleanUpDraft');
             }
         });
     }
 
-    function retryGameLaunch(game) {
+    function retryGameAssignment(game) {
         self.emit('getAvailableServers', function(servers) {
             if (lodash.size(servers) === 0) {
                 self.emit('sendSystemMessage', {
                     action: 'server not available for drafted game, aborting game'
                 });
 
-                game.status = 'aborted';
-                game.save();
+                self.emit('abortGame', game);
 
                 self.emit('cleanUpDraft');
 
@@ -224,14 +259,14 @@ module.exports = function(app, io, self, server) {
         });
     }
 
-    self.on('launchGame', function(game) {
+    self.on('assignGameServer', function(game) {
         self.emit('getAvailableServers', function(servers) {
             if (lodash.size(servers) === 0) {
                 self.emit('sendSystemMessage', {
                     action: 'server not available for drafted game, retrying soon'
                 });
 
-                setTimeout(retryGameLaunch, ms(config.get('app.servers.retryInterval')), game);
+                setTimeout(retryGameAssignment, ms(config.get('app.servers.retryInterval')), game);
 
                 return;
             }

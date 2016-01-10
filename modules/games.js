@@ -12,25 +12,10 @@ var database = require('../database');
 module.exports = function(app, io, self, server) {
     var gameServerPool = config.get('app.servers.pool');
 
-    function abortGame(game) {
+    function timeoutGame(game) {
         database.Game.findById(game.id, function(err, updatedGame) {
             if (updatedGame.status === 'assigning' || updatedGame.status === 'launching') {
-                self.emit('retrieveUsers', lodash.map(game.players, function(player) {
-                    return player.user;
-                }));
-
-                lodash.each(updatedGame.players, function(player) {
-                    if (!player.replacement) {
-                        self.emit('sendMessageToUser', {
-                            userID: player.user.toHexString(),
-                            name: 'currentGame',
-                            arguments: [null]
-                        });
-                    }
-                });
-
-                updatedGame.status = 'aborted';
-                updatedGame.save();
+                self.emit('abortGame', updatedGame);
             }
         });
     }
@@ -129,7 +114,7 @@ module.exports = function(app, io, self, server) {
             }
         });
 
-        setTimeout(abortGame, ms(config.get('app.games.startPeriod')), info.game);
+        setTimeout(timeoutGame, ms(config.get('app.games.startPeriod')), info.game);
     });
 
     self.on('gameLive', function(info) {
@@ -147,7 +132,7 @@ module.exports = function(app, io, self, server) {
     });
 
     self.on('gameAbandoned', function(info) {
-        info.game.status = 'aborted';
+        self.emit('abortGame', info.game);
 
         if (info.score) {
             info.game.results.score.splice(0, lodash.size(info.game.results.score));
@@ -173,21 +158,6 @@ module.exports = function(app, io, self, server) {
                     });
 
                     game.save();
-                });
-            }
-        });
-
-        // NOTE: forces a user update so they can add up to another game
-        self.emit('retrieveUsers', lodash.map(info.game.players, function(player) {
-            return player.user;
-        }));
-
-        lodash.each(info.game.players, function(player) {
-            if (!player.replacement) {
-                self.emit('sendMessageToUser', {
-                    userID: player.user.toHexString(),
-                    name: 'currentGame',
-                    arguments: [null]
                 });
             }
         });
