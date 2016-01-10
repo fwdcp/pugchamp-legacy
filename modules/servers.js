@@ -13,7 +13,7 @@ var database = require('../database');
 
 module.exports = function(app, io, self, server) {
     var gameServerPool = config.get('app.servers.pool');
-    var serverTimeout = config.get('app.servers.timeout');
+    var serverTimeout = ms(config.get('app.servers.timeout'));
 
     var maps = config.get('app.games.maps');
     var roles = config.get('app.games.roles');
@@ -27,10 +27,10 @@ module.exports = function(app, io, self, server) {
 
             return Promise.race([
                 rcon.connect().then(function() {
-                    return rcon.command('pugchamp_game_info');
+                    return rcon.command('pugchamp_game_info', serverTimeout);
                 }),
                 new Promise(function(resolve, reject) {
-                    setTimeout(reject, ms(serverTimeout), 'timed out');
+                    setTimeout(reject, serverTimeout, 'timed out');
                 })
             ]).then(function(result) {
                 let gameID = result.trim();
@@ -95,12 +95,12 @@ module.exports = function(app, io, self, server) {
             });
 
             rcon.connect().then(function() {
-                return rcon.command('pugchamp_game_info');
+                return rcon.command('pugchamp_game_info', serverTimeout);
             }).then(function(result) {
                 let gameID = result.trim();
 
                 if (gameID === game.id) {
-                    return rcon.command('pugchamp_game_reset');
+                    return rcon.command('pugchamp_game_reset', serverTimeout);
                 }
             });
         });
@@ -117,30 +117,30 @@ module.exports = function(app, io, self, server) {
         let map = maps[game.map];
 
         rcon.connect().then(function() {
-            return rcon.command('pugchamp_game_reset');
+            return rcon.command('pugchamp_game_reset', serverTimeout);
         }).then(function() {
             let hash = crypto.createHash('sha256');
 
             hash.update(game.id + '|' + gameServer.salt);
             let key = hash.digest('hex');
 
-            return rcon.command('pugchamp_server_url "' + config.get('server.baseURL') + '/api/servers/' + key + '"');
+            return rcon.command('pugchamp_server_url "' + config.get('server.baseURL') + '/api/servers/' + key + '"', serverTimeout);
         }).then(function() {
-            return rcon.command('pugchamp_game_id "' + game.id + '"');
+            return rcon.command('pugchamp_game_id "' + game.id + '"', serverTimeout);
         }).then(function() {
-            return rcon.command('pugchamp_game_map "' + map.file + '"');
+            return rcon.command('pugchamp_game_map "' + map.file + '"', serverTimeout);
         }).then(function() {
-            return rcon.command('pugchamp_game_config "' + map.config + '"');
+            return rcon.command('pugchamp_game_config "' + map.config + '"', serverTimeout);
         }).then(function() {
             return game.populate('captains.user').execPopulate().then(function(game) {
                 return lodash.reduce(game.captains, function(prev, captain) {
                     let cur;
 
                     if (captain.faction === 'RED') {
-                        cur = rcon.command('mp_tournament_redteamname "' + captain.user.alias + '"');
+                        cur = rcon.command('mp_tournament_redteamname "' + captain.user.alias + '"', serverTimeout);
                     }
                     else if (captain.faction === 'BLU') {
-                        cur = rcon.command('mp_tournament_blueteamname "' + captain.user.alias + '"');
+                        cur = rcon.command('mp_tournament_blueteamname "' + captain.user.alias + '"', serverTimeout);
                     }
 
                     if (cur) {
@@ -201,7 +201,7 @@ module.exports = function(app, io, self, server) {
                         gameClass = 8;
                     }
 
-                    cur = rcon.command('pugchamp_game_player_add "' + player.user.steamID + '" "' + player.user.alias + '" ' + gameTeam + ' ' + gameClass);
+                    cur = rcon.command('pugchamp_game_player_add "' + player.user.steamID + '" "' + player.user.alias + '" ' + gameTeam + ' ' + gameClass, serverTimeout);
 
                     if (cur) {
                         if (prev) {
@@ -217,7 +217,7 @@ module.exports = function(app, io, self, server) {
                 }, null);
             });
         }).then(function() {
-            return rcon.command('pugchamp_game_start');
+            return rcon.command('pugchamp_game_start', serverTimeout);
         }).catch(function() {
             if (!abortOnFail) {
                 self.emit('sendSystemMessage', {
