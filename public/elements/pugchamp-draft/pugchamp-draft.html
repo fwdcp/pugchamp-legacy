@@ -5,7 +5,7 @@
 <link rel="import" href="/components/paper-progress/paper-progress.html">
 <link rel="import" href="/components/paper-styles/color.html">
 <link rel="import" href="/components/paper-styles/typography.html">
-<link rel="import" href="/elements/pugchamp-icons/icomoon-iconset-svg.html">
+<link rel="import" href="/elements/pugchamp-icons/pugchamp-role-icons.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-user-behavior.html">
@@ -171,7 +171,7 @@
                     <div class="flex role-column">
                         <div class="vertical layout">
                             <paper-icon-item disabled="{{!_includes(allowedRoles, role.key)}}">
-								<iron-icon class="role-icons" icon="icomoon:{{role.value.name}}" item-icon></iron-icon>
+								<iron-icon icon="pugchamp-role:{{role.key}}" item-icon></iron-icon>
                                 <div class="role-name flex">
                                     <h3>{{role.value.name}}</h3>
                                 </div>

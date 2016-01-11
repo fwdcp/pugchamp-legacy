@@ -7,9 +7,10 @@
 <link rel="import" href="/components/paper-material/paper-material.html">
 <link rel="import" href="/components/paper-progress/paper-progress.html">
 <link rel="import" href="/components/paper-toggle-button/paper-toggle-button.html">
-<link rel="import" href="/elements/pugchamp-icons/icomoon-iconset-svg.html">
+
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
+<link rel="import" href="/elements/pugchamp-icons/pugchamp-role-icons.html">
 <link rel="import" href="/elements/pugchamp-notification/pugchamp-notification.html">
 <link rel="import" href="/elements/pugchamp-utilities/pugchamp-polymer-helpers.html">
 
@@ -44,10 +45,6 @@
                 min-height: inherit;
                 height: 32px;
             }
-			.role-icons{
-				--iron-icon-height: 50px;
-				--iron-icon-width: 50px;			
-				}
         </style>
 
         <paper-material id="ready" hidden$="{{!launchInProgress}}">
@@ -87,7 +84,7 @@
                 <div class="flex role-column">
                     <div class="vertical layout">
                         <paper-icon-item>
-							<iron-icon class="role-icons" icon="icomoon:{{role.value.name}}" item-icon></iron-icon>
+							<iron-icon icon="pugchamp-role:{{role.key}}" item-icon></iron-icon>
                             <div class="role-name flex">
                                 <h3>{{role.value.name}}</h3>
                             </div>
@@ -216,7 +213,6 @@
 
                     return rolesString + ' (' + needed.needed + ')';
                 }, this).join('; ');
-				
             }
         });
     </script>
