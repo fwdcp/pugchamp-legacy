@@ -24,7 +24,7 @@ module.exports = function(app, io, self, server) {
     app.get('/players', function(req, res) {
         database.User.find({}).populate('currentRating').exec(function(err, users) {
             var players = lodash(users).filter(function(user) {
-                if (user.currentRating) {
+                if (user.currentRating || user.captainScore) {
                     return true;
                 }
 
@@ -44,12 +44,12 @@ module.exports = function(app, io, self, server) {
             }], ['desc', 'asc', 'desc']).map(function(user) {
                 let viewUser = user.toObject();
 
-                console.log(user);
-
-                viewUser.currentRating.before.rating = math.round(user.currentRating.before.rating);
-                viewUser.currentRating.before.deviation = math.round(user.currentRating.before.deviation);
-                viewUser.currentRating.after.rating = math.round(user.currentRating.after.rating);
-                viewUser.currentRating.after.deviation = math.round(user.currentRating.after.deviation);
+                if (viewUser.currentRating) {
+                    viewUser.currentRating.before.rating = math.round(user.currentRating.before.rating);
+                    viewUser.currentRating.before.deviation = math.round(user.currentRating.before.deviation);
+                    viewUser.currentRating.after.rating = math.round(user.currentRating.after.rating);
+                    viewUser.currentRating.after.deviation = math.round(user.currentRating.after.deviation);
+                }
 
                 if (viewUser.captainScore) {
                     viewUser.captainScore.low = math.round(user.captainScore.low, 3);
