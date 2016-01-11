@@ -75,15 +75,7 @@ module.exports = function(app, io, self, server) {
             return player.user;
         }));
 
-        lodash.each(game.players, function(player) {
-            if (!player.replacement) {
-                self.emit('sendMessageToUser', {
-                    userID: player.user.toHexString(),
-                    name: 'currentGame',
-                    arguments: [null]
-                });
-            }
-        });
+        self.emit('broadcastGameInfo', game);
 
         game.status = 'aborted';
         game.save();

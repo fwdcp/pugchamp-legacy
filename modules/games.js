@@ -89,6 +89,39 @@ module.exports = function(app, io, self, server) {
         });
     }
 
+    function formatGameInfo(game) {
+        if (!game) {
+            return Promise.resolve(null);
+        }
+
+        return game.populate('captains.user players.user').execPopulate().then(function(game) {
+            if (game.status === 'aborted' || game.status === 'completed') {
+                return null;
+            }
+            else {
+                let gameInfo = game.toObject();
+
+                // TODO: transform game info
+
+                return gameInfo;
+            }
+        });
+    }
+
+    self.on('broadcastGameInfo', function(game) {
+        formatGameInfo(game).then(function(gameInfo) {
+            lodash.each(game.players, function(player) {
+                if (!player.replacement) {
+                    self.emit('sendMessageToUser', {
+                        userID: player.user.toHexString(),
+                        name: 'currentGameUpdated',
+                        arguments: [gameInfo]
+                    });
+                }
+            });
+        });
+    });
+
     self.on('gameSetup', function(info) {
         info.game.status = 'launching';
         info.game.save();
@@ -100,21 +133,7 @@ module.exports = function(app, io, self, server) {
 
         self.emit('cleanUpDraft');
 
-        let gameServer = gameServerPool[info.game.server];
-
-        lodash.each(info.game.players, function(player) {
-            if (!player.replacement) {
-                self.emit('sendMessageToUser', {
-                    userID: player.user.toHexString(),
-                    name: 'currentGame',
-                    arguments: [{
-                        game: info.game.id,
-                        address: gameServer.address,
-                        password: gameServer.password
-                    }]
-                });
-            }
-        });
+        self.emit('broadcastGameInfo', info.game);
 
         setTimeout(timeoutGame, ms(config.get('app.games.startPeriod')), info.game);
     });
@@ -203,15 +222,7 @@ module.exports = function(app, io, self, server) {
             return player.user;
         }));
 
-        lodash.each(info.game.players, function(player) {
-            if (!player.replacement) {
-                self.emit('sendMessageToUser', {
-                    userID: player.user.toHexString(),
-                    name: 'currentGame',
-                    arguments: [null]
-                });
-            }
-        });
+        self.emit('broadcastGameInfo', info.game);
     });
 
     self.on('gameLogAvailable', function(info) {
@@ -246,18 +257,7 @@ module.exports = function(app, io, self, server) {
                 $in: ['launching', 'live']
             }
         }, function(err, game) {
-            if (game) {
-                let gameServer = gameServerPool[game.server];
-
-                socket.emit('currentGame', {
-                    game: game.id,
-                    address: gameServer.address,
-                    password: gameServer.password
-                });
-            }
-            else {
-                socket.emit('currentGame', null);
-            }
+            socket.emit('currentGameUpdated', formatGameInfo(game));
         });
     });
 };

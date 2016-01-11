@@ -33,9 +33,9 @@
 	        ready: function() {
                 this.set('game', null);
 
-				this._listenToEvent('currentGame', 'onCurrentGame');
+				this._listenToEvent('currentGameUpdated', 'onCurrentGameUpdated');
 	        },
-            onCurrentGame: function(info) {
+            onCurrentGameUpdated: function(info) {
                 if (!info) {
                     this.set('game', null);
                     return;
