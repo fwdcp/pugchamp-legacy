@@ -200,6 +200,10 @@
         </div>
 
         <pugchamp-notification id="turnNotification" body="It is your turn to choose in the draft!" tag="draftTurn"></pugchamp-notification>
+
+        <audio preload id="notifySound">
+            <source src="/assets/snd/pop.mp3" type="audio/mpeg">
+        </audio>
     </template>
 
     <script>
@@ -252,6 +256,9 @@
             },
             onDraftTurnChoice: function() {
                 this.$.turnNotification.notify();
+
+                this.$.notifySound.currentTime = 0;
+                this.$.notifySound.play();
             },
             incrementTurnTimer: function() {
                 var progress = Polymer.dom(this.$.draftTurns).querySelector('.draft-turn[data-status=current] .turn-time');
