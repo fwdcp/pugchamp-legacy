@@ -37,7 +37,10 @@ userSchema.set('toObject', {
 });
 
 var gameSchema = new mongoose.Schema({
-    status: {type: String, enum: ['assigning', 'launching', 'live', 'aborted', 'completed']},
+    status: {
+        type: String,
+        enum: ['assigning', 'launching', 'live', 'aborted', 'completed']
+    },
     date: Date,
     captains: [{
         user: {
@@ -69,12 +72,16 @@ var gameSchema = new mongoose.Schema({
         duration: Number,
         score: [Number],
         links: [{
-            type: {type: String},
+            type: {
+                type: String
+            },
             url: String
         }]
     },
     choices: [{
-        type: {type: String},
+        type: {
+            type: String
+        },
         method: String,
         captain: Number,
         faction: String,
