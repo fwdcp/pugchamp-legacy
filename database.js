@@ -124,8 +124,34 @@ var ratingSchema = new mongoose.Schema({
     }
 });
 
+var restrictionSchema = new mongoose.Schema({
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    active: Boolean,
+    aspects: [{
+        type: String,
+        enum: ['sub', 'start', 'captain', 'chat']
+    }],
+    reason: String,
+    expires: Date,
+    actions: [{
+        admin: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        type: {
+            type: String,
+            enum: ['applied', 'changed', 'revoked', 'expired']
+        },
+        time: Date
+    }]
+});
+
 module.exports = {
     User: mongoose.model('User', userSchema),
     Game: mongoose.model('Game', gameSchema),
-    Rating: mongoose.model('Rating', ratingSchema)
+    Rating: mongoose.model('Rating', ratingSchema),
+    Restriction: mongoose.model('Restriction', ratingSchema)
 };
