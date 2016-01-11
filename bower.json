@@ -14,10 +14,6 @@
     "lodash": "~3.10.1",
     "iron-elements": "PolymerElements/iron-elements#~1.0.7",
     "paper-elements": "PolymerElements/paper-elements#~1.0.7",
-    "paper-header-panel": "PolymerElements/paper-header-panel#~1.1.2",
-    "paper-toolbar": "PolymerElements/paper-toolbar#~1.1.2",
-    "iron-flex-layout": "PolymerElements/iron-flex-layout#~1.2.2",
-    "paper-dropdown-menu": "PolymerElements/paper-dropdown-menu#~1.1.1",
     "vaadin-core-elements": "~0.3.0"
   }
 }
