@@ -11,6 +11,10 @@
         <paper-toast text="Connected to the server." id="connectAlert"></paper-toast>
         <paper-toast text="Disconnected from the server." id="disconnectAlert"></paper-toast>
         <paper-toast text="Failed to reconnect to the server." id="reconnectFailedAlert"></paper-toast>
+
+        <audio preload id="disconnectSound">
+            <source src="/assets/snd/alert.mp3" type="audio/mpeg">
+        </audio>
     </template>
 
     <script>
@@ -25,28 +29,22 @@
                 if (this.socket.connected) {
                     this.onConnect();
                 }
-			ion.sound({
-				sounds: [
-					{
-						alias: "disconnect",
-						name: "alert",
-					}
-				],
-				path: "/assets/snd/",
-				preload: true
-			});
             },
             onConnect: function() {
                 this.$.token.generateRequest();
                 this.$.connectAlert.show();
             },
             onDisconnect: function() {
-				ion.sound.play("disconnect");
                 this.$.disconnectAlert.show();
+
+                this.$.disconnectSound.currentTime = 0;
+                this.$.disconnectSound.play();
             },
             onReconnectFailed: function() {
-				ion.sound.play("disconnect");
                 this.$.reconnectFailedAlert.show();
+
+                this.$.disconnectSound.currentTime = 0;
+                this.$.disconnectSound.play();
             },
             infoReceived: function(event) {
                 this.socket.emit('authenticate', {

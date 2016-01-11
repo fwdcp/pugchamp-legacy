@@ -101,6 +101,10 @@
         </div>
 
         <pugchamp-notification id="launchNotification" body="A new game is launching!" tag="launchAttempt"></pugchamp-notification>
+
+        <audio preload id="notifySound">
+            <source src="/assets/snd/pop.mp3" type="audio/mpeg">
+        </audio>
     </template>
 
     <script>
@@ -117,16 +121,6 @@
                 this._listenToEvent('launchInProgress', 'onLaunchInProgress');
                 this._listenToEvent('launchAborted', 'onLaunchAborted');
                 this._listenToEvent('draftStarting', 'onDraftStarting');
-				ion.sound({
-					sounds: [
-						{
-							alias: "notify",
-							name: "pop",
-						}
-					],
-					path: "/assets/snd/",
-					preload: true
-				});
             },
             onLaunchStatusUpdated: function(status) {
                 this.set('roles', status.roles);
@@ -160,8 +154,11 @@
             },
             onLaunchInProgress: function(periodInfo) {
                 this.set('launchInProgress', true);
-				ion.sound.play("notify");
+
                 this.$.launchNotification.notify();
+                this.$.notifySound.currentTime = 0;
+                this.$.notifySound.play();
+
                 this.$.readyTime.value = periodInfo.elapsed / 1000;
                 this.$.readyTime.max = periodInfo.total / 1000;
 

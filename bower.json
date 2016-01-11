@@ -18,7 +18,6 @@
     "paper-toolbar": "PolymerElements/paper-toolbar#~1.1.2",
     "iron-flex-layout": "PolymerElements/iron-flex-layout#~1.2.2",
     "paper-dropdown-menu": "PolymerElements/paper-dropdown-menu#~1.1.1",
-    "ion-sound": "ionsound#~3.0.6",
     "vaadin-core-elements": "~0.3.0"
   }
 }
