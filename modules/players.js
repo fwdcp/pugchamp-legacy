@@ -2,6 +2,7 @@
 "use strict";
 
 var lodash = require('lodash');
+var math = require('mathjs');
 
 var database = require('../database');
 
@@ -28,17 +29,33 @@ module.exports = function(app, io, self, server) {
                 }
 
                 return false;
-            }).sortBy(function(user) {
-                return user.currentRating.after.deviation;
-            }).sortBy(function(user) {
-                return user.currentRating.after.rating;
-            }).map(function(user) {
-                let viewUser = lodash.omit(user.toObject(), ['_id', 'id', '__v']);
+            }).sortByOrder([function(user) {
+                if (user.currentRating) {
+                    return user.currentRating.after.rating;
+                }
+            }, function(user) {
+                if (user.currentRating) {
+                    return user.currentRating.after.deviation;
+                }
+            }, function(user) {
+                if (user.captainScore) {
+                    return user.captainScore.low;
+                }
+            }], ['desc', 'asc', 'desc']).map(function(user) {
+                let viewUser = user.toObject();
 
-                viewUser.currentRating.before.rating = Math.round(viewUser.currentRating.before.rating);
-                viewUser.currentRating.before.deviation = Math.round(viewUser.currentRating.before.deviation);
-                viewUser.currentRating.after.rating = Math.round(viewUser.currentRating.after.rating);
-                viewUser.currentRating.after.deviation = Math.round(viewUser.currentRating.after.deviation);
+                console.log(user);
+
+                viewUser.currentRating.before.rating = math.round(user.currentRating.before.rating);
+                viewUser.currentRating.before.deviation = math.round(user.currentRating.before.deviation);
+                viewUser.currentRating.after.rating = math.round(user.currentRating.after.rating);
+                viewUser.currentRating.after.deviation = math.round(user.currentRating.after.deviation);
+
+                if (viewUser.captainScore) {
+                    viewUser.captainScore.low = math.round(user.captainScore.low, 3);
+                    viewUser.captainScore.center = math.round(user.captainScore.center, 3);
+                    viewUser.captainScore.high = math.round(user.captainScore.high, 3);
+                }
 
                 return viewUser;
             }).reverse().value();

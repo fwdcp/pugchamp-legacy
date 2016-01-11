@@ -42,41 +42,43 @@ module.exports = function(app, io, self, server) {
                         'captains.user': user.id,
                         'status': 'completed'
                     }).exec().then(function(captainGames) {
-                        let captainStats = {
-                            total: 0,
-                            wins: 0,
-                            losses: 0,
-                            ties: 0
-                        };
-
-                        lodash.each(captainGames, function(game) {
-                            captainStats.total++;
+                        let captainStats = lodash.reduce(captainGames, function(stats, game) {
+                            stats.total++;
 
                             if (user._id.equals(game.captains[0].user)) {
                                 if (game.results.score[0] > game.results.score[1]) {
-                                    captainStats.wins++;
+                                    stats.wins++;
                                 }
                                 else if (game.results.score[0] < game.results.score[1]) {
-                                    captainStats.losses++;
+                                    stats.losses++;
                                 }
                                 else if (game.results.score[0] === game.results.score[1]) {
-                                    captainStats.ties++;
+                                    stats.ties++;
                                 }
                             }
                             else if (user._id.equals(game.captains[1].user)) {
                                 if (game.results.score[1] > game.results.score[0]) {
-                                    captainStats.wins++;
+                                    stats.wins++;
                                 }
                                 else if (game.results.score[1] < game.results.score[0]) {
-                                    captainStats.losses++;
+                                    stats.losses++;
                                 }
                                 else if (game.results.score[1] === game.results.score[0]) {
-                                    captainStats.ties++;
+                                    stats.ties++;
                                 }
                             }
+
+                            return stats;
+                        }, {
+                            total: 0,
+                            wins: 0,
+                            losses: 0,
+                            ties: 0
                         });
 
-                        user.captainStats = captainStats;
+                        if (captainStats.total > 0) {
+                            user.captainScore = wilson(captainStats.wins + captainStats.ties, captainStats.total);
+                        }
 
                         return user.save();
                     });

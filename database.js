@@ -18,23 +18,10 @@ var userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Rating'
     },
-    captainStats: {
-        total: {
-            type: Number,
-            default: 0
-        },
-        wins: {
-            type: Number,
-            default: 0
-        },
-        losses: {
-            type: Number,
-            default: 0
-        },
-        ties: {
-            type: Number,
-            default: 0
-        }
+    captainScore: {
+        low: Number,
+        center: Number,
+        high: Number
     }
 });
 userSchema.virtual('admin').get(function() {
