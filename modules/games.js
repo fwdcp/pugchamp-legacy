@@ -100,6 +100,8 @@ module.exports = function(app, database, io, self, server) {
             else {
                 let gameInfo = lodash.omit(game.toObject(), 'choices', 'pool', 'results');
 
+                gameInfo.roles = config.get('app.games.roles');
+
                 return gameInfo;
             }
         });
