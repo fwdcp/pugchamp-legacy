@@ -153,7 +153,7 @@
                     </div>
                 </template>
             </div>
-            <div id="maps" class="horizontal layout">
+            <div id="maps" class="horizontal layout wrap">
                 <template is="dom-repeat" items="{{_convertObjectToRepeatable(maps)}}">
                     <paper-material class="map flex">
                         <div data-status$="{{mapStatus(item.key, pickedMap, remainingMaps)}}" class="map-overlay"></div>
@@ -166,7 +166,7 @@
                     </paper-material>
                 </template>
             </div>
-            <div id="playerPool" class="horizontal layout">
+            <div id="playerPool" class="horizontal layout wrap">
                 <template is="dom-repeat" items="{{_convertObjectToRepeatable(roles)}}" as="role">
                     <div class="flex role-column">
                         <div class="vertical layout">
