@@ -2,26 +2,26 @@
     <paper-toolbar></paper-toolbar>
 
     <paper-menu id="drawer-menu">
-        <a href="/">
+        <a href="/" target="_blank">
             <paper-icon-item>
                 <iron-icon icon="home" item-icon></iron-icon> Home
             </paper-icon-item>
         </a>
 
-        <a href="/players">
+        <a href="/players" target="_blank">
             <paper-icon-item>
                 <iron-icon icon="social:people" item-icon></iron-icon> Players
             </paper-icon-item>
         </a>
 
-        <a href="/games">
+        <a href="/games" target="_blank">
             <paper-icon-item>
                 <iron-icon icon="hardware:gamepad" item-icon></iron-icon> Games
             </paper-icon-item>
         </a>
 
         {{#if user}}
-            <a href="/user/settings">
+            <a href="/user/settings" target="_blank">
                 <paper-icon-item>
                     <iron-icon icon="settings" item-icon></iron-icon> Settings
                 </paper-icon-item>
@@ -34,19 +34,19 @@
                     </paper-icon-item>
 
                     <paper-menu class="menu-content">
-                        <a href="/admin/users">
+                        <a href="/admin/users" target="_blank">
                             <paper-icon-item>
                                 <iron-icon icon="social:people" item-icon></iron-icon> Users
                             </paper-icon-item>
                         </a>
 
-                        <a href="/admin/games">
+                        <a href="/admin/games" target="_blank">
                             <paper-icon-item>
                                 <iron-icon icon="hardware:gamepad" item-icon></iron-icon> Games
                             </paper-icon-item>
                         </a>
 
-                        <a href="/admin/servers">
+                        <a href="/admin/servers" target="_blank">
                             <paper-icon-item>
                                 <iron-icon icon="hardware:developer-board" item-icon></iron-icon> Servers
                             </paper-icon-item>
