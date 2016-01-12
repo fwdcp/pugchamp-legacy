@@ -9,9 +9,8 @@ var ms = require('ms');
 var RCON = require('srcds-rcon');
 
 var chance = new Chance();
-var database = require('../database');
 
-module.exports = function(app, io, self, server) {
+module.exports = function(app, database, io, self, server) {
     var gameServerPool = config.get('app.servers.pool');
     var serverTimeout = ms(config.get('app.servers.timeout'));
 

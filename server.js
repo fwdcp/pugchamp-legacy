@@ -10,6 +10,7 @@ var session = require('express-session');
 var socketIO = require('socket.io');
 
 var app = express();
+var database = require('../database');
 var server = http.Server(app);
 var io = socketIO(server);
 var self = new EventEmitter();
@@ -32,6 +33,6 @@ app.use(passport.session());
 app.use('/', serveStatic(path.resolve(__dirname, 'public')));
 app.use('/components', serveStatic(path.resolve(__dirname, 'bower_components')));
 
-require('./modules')(app, io, self, server);
+require('./modules')(app, database, io, self, server);
 
 server.listen(config.get('server.listen'));

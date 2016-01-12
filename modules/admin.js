@@ -3,7 +3,7 @@
 
 var express = require('express');
 
-module.exports = function(app, io, self, server) {
+module.exports = function(app, database, io, self, server) {
     var router = express.Router();
 
     router.use('/', function(req, res, next) {

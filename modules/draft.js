@@ -7,9 +7,8 @@ var lodash = require('lodash');
 var ms = require('ms');
 
 var chance = new Chance();
-var database = require('../database');
 
-module.exports = function(app, io, self, server) {
+module.exports = function(app, database, io, self, server) {
     function calculateRoleDistribution(currentTeam) {
         return lodash.reduce(currentTeam, function(roles, player) {
             roles[player.role]++;

@@ -153,5 +153,6 @@ module.exports = {
     User: mongoose.model('User', userSchema),
     Game: mongoose.model('Game', gameSchema),
     Rating: mongoose.model('Rating', ratingSchema),
-    Restriction: mongoose.model('Restriction', ratingSchema)
+    Restriction: mongoose.model('Restriction', restrictionSchema),
+    mongoose: mongoose
 };

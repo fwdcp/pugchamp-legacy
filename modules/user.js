@@ -10,9 +10,7 @@ var passport = require('passport');
 var socketioJwt = require('socketio-jwt');
 var url = require('url');
 
-var database = require('../database');
-
-module.exports = function(app, io, self, server) {
+module.exports = function(app, database, io, self, server) {
     self.unauthenticatedRestrictions = {
         aspects: ['sub', 'start', 'captain', 'chat'],
         reasons: ['You are currently not logged on.']

@@ -6,7 +6,7 @@ var config = require('config');
 var lodash = require('lodash');
 var ms = require('ms');
 
-module.exports = function(app, io, self, server) {
+module.exports = function(app, database, io, self, server) {
     function calculateRolesNeeded(playersAvailable) {
         let roles = config.get('app.games.roles');
         let roleNames = lodash.keys(roles);

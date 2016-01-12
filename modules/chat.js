@@ -3,7 +3,7 @@
 
 var lodash = require('lodash');
 
-module.exports = function(app, io, self, server) {
+module.exports = function(app, database, io, self, server) {
     function getOnlineList() {
         return lodash(self.getOnlineList()).filter(function(user) {
             return self.users.get(user).setUp;

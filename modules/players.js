@@ -4,9 +4,7 @@
 var lodash = require('lodash');
 var math = require('mathjs');
 
-var database = require('../database');
-
-module.exports = function(app, io, self, server) {
+module.exports = function(app, database, io, self, server) {
     app.get('/player/:steam', function(req, res) {
         database.User.findOne({
             steamID: req.params.steam

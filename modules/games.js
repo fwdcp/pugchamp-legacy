@@ -7,9 +7,7 @@ var lodash = require('lodash');
 var ms = require('ms');
 var path = require('path');
 
-var database = require('../database');
-
-module.exports = function(app, io, self, server) {
+module.exports = function(app, database, io, self, server) {
     var gameServerPool = config.get('app.servers.pool');
 
     function timeoutGame(game) {
