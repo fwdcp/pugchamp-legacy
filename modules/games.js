@@ -97,9 +97,7 @@ module.exports = function(app, database, io, self, server) {
                 return null;
             }
             else {
-                let gameInfo = game.toObject();
-
-                // TODO: transform game info
+                let gameInfo = lodash.omit(game.toObject(), 'choices', 'pool', 'results');
 
                 return gameInfo;
             }
@@ -255,7 +253,9 @@ module.exports = function(app, database, io, self, server) {
                 $in: ['launching', 'live']
             }
         }, function(err, game) {
-            socket.emit('currentGameUpdated', formatGameInfo(game));
+            formatGameInfo(game).then(function(gameInfo) {
+                socket.emit('currentGameUpdated', gameInfo);
+            });
         });
     });
 };

@@ -14,6 +14,10 @@
                 margin: 20px;
             }
 
+			#buttons a {
+				color: inherit;
+			}
+
             #connect {
                 background: var(--primary-color);
                 color: var(--dark-theme-text-color);
@@ -23,7 +27,30 @@
         <paper-material id="game" hidden$="{{!game}}">
             <h2>Current Game</h2>
 
-            <p><a href="steam://connect/{{address}}/{{password}}"><paper-button id="connect" raised>Connect to Server</paper-button></a></p>
+			<div hidden$="{{!player}}">
+				<h3>Player</h3>
+
+				<p>
+					<strong>Role</strong>: {{player.role}}
+					<br>
+					<strong>Faction</strong>: {{}}
+					<br>
+					<strong>Team</strong>: {{}}
+				</p>
+
+	            <p class="buttons">
+					<a href="steam://connect/{{game.server.address}}/{{game.server.password}}"><paper-button id="connect" raised>Connect to Server</paper-button></a>
+					<a href="/game/{{game.id}}"><paper-button raised>View Game Info</paper-button></a>
+				</p>
+			</div>
+
+			<div hidden$="{{!captain}}">
+				<h3>Captain</h3>
+
+				<h4>Request Sub</h4>
+
+				<!-- TODO: select player to replace -->
+			</div>
         </paper-material>
 	</template>
 	<script>
@@ -32,18 +59,13 @@
 			behaviors: [PugChampClientBehaviors.BaseBehavior],
 	        ready: function() {
                 this.set('game', null);
+				this.set('player', null);
+				this.set('captain', null);
 
 				this._listenToEvent('currentGameUpdated', 'onCurrentGameUpdated');
 	        },
             onCurrentGameUpdated: function(info) {
-                if (!info) {
-                    this.set('game', null);
-                    return;
-                }
-
-                this.set('game', info.game);
-                this.set('address', info.address);
-                this.set('password', info.password);
+                this.set('game', info);
             }
 	    });
 	</script>
