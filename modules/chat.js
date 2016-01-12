@@ -5,10 +5,14 @@ const lodash = require('lodash');
 
 module.exports = function(app, database, io, self, server) {
     function getOnlineList() {
-        return lodash(self.getOnlineList()).filter(function(user) {
-            return self.users.get(user).setUp;
-        }).map(function(user) {
-            return self.users.get(user).toObject();
+        return lodash(self.getOnlineList()).map(function(userID) {
+            return self.users.get(userID).toObject();
+        }).filter(function(user) {
+            if (user) {
+                return user.setUp;
+            }
+
+            return false;
         }).value();
     }
 
