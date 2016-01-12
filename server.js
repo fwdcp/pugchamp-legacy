@@ -12,7 +12,7 @@ var socketIO = require('socket.io');
 var MongoStore = require('connect-mongo')(session);
 
 var app = express();
-var database = require('../database');
+var database = require('./database');
 var server = http.Server(app);
 var io = socketIO(server);
 var self = new EventEmitter();
