@@ -4,7 +4,11 @@
 <link rel="import" href="/components/paper-material/paper-material.html">
 <link rel="import" href="/components/paper-styles/color.html">
 
+<script src="/components/lodash/lodash.min.js"></script>
+
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-user-behavior.html">
+<link rel="import" href="/elements/pugchamp-utilities/pugchamp-polymer-helpers.html">
 
 <dom-module id="pugchamp-current-game">
 	<template>
@@ -14,7 +18,7 @@
                 margin: 20px;
             }
 
-			#buttons a {
+			.buttons a {
 				color: inherit;
 			}
 
@@ -27,20 +31,23 @@
         <paper-material id="game" hidden$="{{!game}}">
             <h2>Current Game</h2>
 
+			<p class="buttons">
+				<a href="/game/{{game.id}}" target="_blank"><paper-button raised>View Game Info</paper-button></a>
+			</p>
+
 			<div hidden$="{{!player}}">
 				<h3>Player</h3>
 
 				<p>
-					<strong>Role</strong>: {{player.role}}
+					<strong>Role</strong>: {{_getProperty(roles, player.role, 'name')}}
 					<br>
-					<strong>Faction</strong>: {{}}
+					<strong>Faction</strong>: {{_getProperty(game.captains, player.team, 'faction')}}
 					<br>
-					<strong>Team</strong>: {{}}
+					<strong>Captain</strong>: {{_getProperty(game.captains, player.team, 'user', 'alias')}}
 				</p>
 
 	            <p class="buttons">
 					<a href="steam://connect/{{game.server.address}}/{{game.server.password}}"><paper-button id="connect" raised>Connect to Server</paper-button></a>
-					<a href="/game/{{game.id}}"><paper-button raised>View Game Info</paper-button></a>
 				</p>
 			</div>
 
@@ -56,7 +63,7 @@
 	<script>
 	    Polymer({
 			is: 'pugchamp-current-game',
-			behaviors: [PugChampClientBehaviors.BaseBehavior],
+			behaviors: [PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.UserBehavior, PugChampPolymerHelperBehaviors],
 	        ready: function() {
                 this.set('game', null);
 				this.set('player', null);
@@ -65,7 +72,18 @@
 				this._listenToEvent('currentGameUpdated', 'onCurrentGameUpdated');
 	        },
             onCurrentGameUpdated: function(info) {
+				this.set('roles', info.roles);
                 this.set('game', info);
+				this.set('player', _.findWhere(info.players, {
+					user: {
+						steamID: this.user.steamID
+					}
+				}));
+				this.set('captain', _.findWhere(info.captains, {
+					user: {
+						steamID: this.user.steamID
+					}
+				}));
             }
 	    });
 	</script>
