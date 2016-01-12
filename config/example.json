@@ -182,6 +182,7 @@
         "baseURL": "http://localhost:16217",
         "listen": 16217,
         "mongodb": "mongodb://localhost/pugchamp",
+        "sessionExpiration": "2w",
         "sessionSecret": "pickup winner",
         "tokenExpiration": "1h",
         "tokenSecret": "public dominator"

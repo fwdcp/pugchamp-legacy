@@ -3,11 +3,13 @@ var EventEmitter = require('events');
 var express = require('express');
 var hbs = require('hbs');
 var http = require('http');
+var ms = require('ms');
 var passport = require('passport');
 var path = require('path');
 var serveStatic = require('serve-static');
 var session = require('express-session');
 var socketIO = require('socket.io');
+var MongoStore = require('connect-mongo')(session);
 
 var app = express();
 var database = require('../database');
@@ -23,9 +25,15 @@ hbs.registerHelper('toJSON', function(object) {
 });
 
 app.use(session({
+    cookie: {
+        maxAge: ms(config.get('server.sessionExpiration'))
+    },
     resave: false,
     saveUninitialized: false,
-    secret: config.get('server.sessionSecret')
+    secret: config.get('server.sessionSecret'),
+    store: new MongoStore({
+        mongooseConnection: database.mongoose.connection
+    })
 }));
 app.use(passport.initialize());
 app.use(passport.session());
