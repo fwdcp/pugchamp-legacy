@@ -1,0 +1,23 @@
+{
+    "app": {
+        "games": {
+            "startPeriod": "15m"
+        },
+        "launch": {
+            "readyPeriod": "60s"
+        },
+        "draft": {
+            "captainSelectionWeight": "equal",
+            "turnTimeLimit": "60s"
+        },
+        "servers": {
+            "queryInterval": "15s",
+            "retryInterval": "5m",
+            "timeout": "5s"
+        }
+    },
+    "server": {
+        "sessionExpiration": "2w",
+        "tokenExpiration": "1h"
+    }
+}
