@@ -1,14 +1,14 @@
 /* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
 "use strict";
 
-var bodyParser = require('body-parser');
-var config = require('config');
-var jwt = require('jsonwebtoken');
-var lodash = require('lodash');
-var OpenIDStrategy = require('passport-openid').Strategy;
-var passport = require('passport');
-var socketioJwt = require('socketio-jwt');
-var url = require('url');
+const bodyParser = require('body-parser');
+const config = require('config');
+const jwt = require('jsonwebtoken');
+const lodash = require('lodash');
+const OpenIDStrategy = require('passport-openid').Strategy;
+const passport = require('passport');
+const socketioJwt = require('socketio-jwt');
+const url = require('url');
 
 module.exports = function(app, database, io, self, server) {
     self.unauthenticatedRestrictions = {

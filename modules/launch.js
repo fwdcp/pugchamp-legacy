@@ -1,10 +1,10 @@
 /* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
 "use strict";
 
-var Combinatorics = require('js-combinatorics');
-var config = require('config');
-var lodash = require('lodash');
-var ms = require('ms');
+const Combinatorics = require('js-combinatorics');
+const config = require('config');
+const lodash = require('lodash');
+const ms = require('ms');
 
 module.exports = function(app, database, io, self, server) {
     function calculateRolesNeeded(playersAvailable) {

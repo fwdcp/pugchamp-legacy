@@ -1,8 +1,8 @@
 /* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
 "use strict";
 
-var lodash = require('lodash');
-var math = require('mathjs');
+const lodash = require('lodash');
+const math = require('mathjs');
 
 module.exports = function(app, database, io, self, server) {
     app.get('/player/:steam', function(req, res) {

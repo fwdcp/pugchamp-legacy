@@ -1,12 +1,12 @@
 /* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
 "use strict";
 
-var Chance = require('chance');
-var config = require('config');
-var crypto = require('crypto');
-var lodash = require('lodash');
-var ms = require('ms');
-var RCON = require('srcds-rcon');
+const Chance = require('chance');
+const config = require('config');
+const crypto = require('crypto');
+const lodash = require('lodash');
+const ms = require('ms');
+const RCON = require('srcds-rcon');
 
 var chance = new Chance();
 

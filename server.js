@@ -1,15 +1,18 @@
-var config = require('config');
-var EventEmitter = require('events');
-var express = require('express');
-var hbs = require('hbs');
-var http = require('http');
-var ms = require('ms');
-var passport = require('passport');
-var path = require('path');
-var serveStatic = require('serve-static');
-var session = require('express-session');
-var socketIO = require('socket.io');
-var MongoStore = require('connect-mongo')(session);
+/* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
+"use strict";
+
+const config = require('config');
+const EventEmitter = require('events');
+const express = require('express');
+const hbs = require('hbs');
+const http = require('http');
+const ms = require('ms');
+const passport = require('passport');
+const path = require('path');
+const serveStatic = require('serve-static');
+const session = require('express-session');
+const socketIO = require('socket.io');
+const MongoStore = require('connect-mongo')(session);
 
 var app = express();
 var database = require('./database');

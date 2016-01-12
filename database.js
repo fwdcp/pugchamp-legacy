@@ -1,9 +1,9 @@
 /* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
 "use strict";
 
-var config = require('config');
-var lodash = require('lodash');
-var mongoose = require('mongoose');
+const config = require('config');
+const lodash = require('lodash');
+const mongoose = require('mongoose');
 
 mongoose.connect(config.get('server.mongodb'));
 

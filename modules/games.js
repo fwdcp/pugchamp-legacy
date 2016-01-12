@@ -1,11 +1,12 @@
 /* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
 "use strict";
 
-var child_process = require('child_process');
-var config = require('config');
-var lodash = require('lodash');
-var ms = require('ms');
-var path = require('path');
+const child_process = require('child_process');
+const config = require('config');
+const lodash = require('lodash');
+const ms = require('ms');
+const path = require('path');
+const wilson = require('wilson-interval');
 
 module.exports = function(app, database, io, self, server) {
     var gameServerPool = config.get('app.servers.pool');

@@ -1,7 +1,7 @@
 /* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
 "use strict";
 
-var express = require('express');
+const express = require('express');
 
 module.exports = function(app, database, io, self, server) {
     var router = express.Router();
