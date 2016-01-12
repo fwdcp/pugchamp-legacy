@@ -45,7 +45,6 @@
                     "config": "pugchamp-6v6-standard"
                 }
             },
-            "mapsInSeries": 1,
             "roles": {
                 "scout": {
                     "name": "Scout",
