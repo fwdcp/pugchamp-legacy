@@ -128,7 +128,7 @@ module.exports = function(app, database, io, self, server) {
                     lodash.each(role.players, function(player) {
                         if (!player.replaced) {
                             self.emit('sendMessageToUser', {
-                                userID: player.user.toHexString(),
+                                userID: player.user.id || player.user.toHexString(),
                                 name: 'currentGameUpdated',
                                 arguments: [gameInfo]
                             });
