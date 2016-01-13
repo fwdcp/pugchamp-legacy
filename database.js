@@ -42,65 +42,65 @@ var gameSchema = new mongoose.Schema({
         enum: ['assigning', 'launching', 'live', 'aborted', 'completed']
     },
     date: Date,
-    captains: [{
-        user: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
-        },
-        faction: String
-    }],
     map: String,
-    players: [{
-        user: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
-        },
-        role: String,
-        team: Number,
-        origin: String,
-        replacement: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
-        },
-        time: {
-            type: Number,
-            default: 0
-        }
-    }],
     server: String,
-    results: {
-        duration: Number,
-        score: [Number],
-        links: [{
-            type: {
-                type: String
-            },
-            url: String
+    duration: Number,
+    score: [Number],
+    teams: [{
+        captain: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        faction: String,
+        composition: [{
+            role: String,
+            players: [{
+                user: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'User'
+                },
+                replaced: {
+                    type: Boolean,
+                    default: false
+                },
+                time: {
+                    type: Number,
+                    default: 0
+                }
+            }]
         }]
-    },
-    choices: [{
+    }],
+    links: [{
         type: {
             type: String
         },
-        method: String,
-        captain: Number,
-        faction: String,
-        role: String,
-        player: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
-        },
-        map: String
+        url: String
     }],
-    pool: {
-        maps: [String],
-        players: [{
-            user: {
+    draft: {
+        choices: [{
+            type: {
+                type: String
+            },
+            method: String,
+            captain: Number,
+            faction: String,
+            role: String,
+            player: {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'User'
             },
-            roles: [String]
-        }]
+            map: String
+        }],
+        pool: {
+            maps: [String],
+            players: [{
+                user: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'User'
+                },
+                roles: [String]
+            }]
+        }
     }
 });
 gameSchema.set('toObject', {

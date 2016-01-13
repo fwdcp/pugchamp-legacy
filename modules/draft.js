@@ -398,32 +398,28 @@ module.exports = function(app, database, io, self, server) {
         var game = new database.Game();
         game.status = 'assigning';
         game.date = Date.now();
+        game.map = pickedMap;
 
-        game.captains = lodash.map(draftCaptains, function(captain, index) {
+        game.teams = lodash.map(pickedTeams, function(team, teamNumber) {
             return {
-                user: captain,
-                faction: teamFactions[index]
+                captain: draftCaptains[teamNumber],
+                faction: teamFactions[teamNumber],
+                composition: lodash.map(team, function(player) {
+                    return {
+                        role: player.role,
+                        players: [{
+                            user: player.player
+                        }]
+                    };
+                })
             };
         });
 
-        game.map = pickedMap;
-
-        lodash.each(pickedTeams, function(team, teamNumber) {
-            lodash.each(team, function(player) {
-                game.players.push({
-                    user: player.player,
-                    role: player.role,
-                    team: teamNumber,
-                    origin: 'draft'
-                });
-            });
-        });
-
-        game.choices = lodash.map(draftChoices, function(choice, index) {
+        game.draft.choices = lodash.map(draftChoices, function(choice, index) {
             return lodash.assign({}, choice, draftOrder[index]);
         });
-        game.pool.maps = lodash.keys(mapPool);
-        game.pool.players = lodash(playerPool).transform(function(pool, players, role) {
+        game.draft.pool.maps = lodash.keys(mapPool);
+        game.draft.pool.players = lodash(playerPool).transform(function(pool, players, role) {
             lodash.each(players, function(player) {
                 if (!pool[player]) {
                     pool[player] = [];

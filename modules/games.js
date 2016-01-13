@@ -33,36 +33,36 @@ module.exports = function(app, database, io, self, server) {
                     }
                 });
             }),
-            game.populate('captains.user').execPopulate().then(function(game) {
-                return Promise.all(lodash.map(game.captains, function(captain) {
-                    let user = captain.user;
+            game.populate('teams.captain').execPopulate().then(function(game) {
+                return Promise.all(lodash.map(teams, function(team) {
+                    let user = team.captain;
 
                     return database.Game.find({
-                        'captains.user': user.id,
+                        'teams.captain': user.id,
                         'status': 'completed'
                     }).exec().then(function(captainGames) {
                         let captainStats = lodash.reduce(captainGames, function(stats, game) {
                             stats.total++;
 
-                            if (user._id.equals(game.captains[0].user)) {
-                                if (game.results.score[0] > game.results.score[1]) {
+                            if (user._id.equals(game.teams[0].captain)) {
+                                if (game.score[0] > game.score[1]) {
                                     stats.wins++;
                                 }
-                                else if (game.results.score[0] < game.results.score[1]) {
+                                else if (game.score[0] < game.score[1]) {
                                     stats.losses++;
                                 }
-                                else if (game.results.score[0] === game.results.score[1]) {
+                                else if (game.score[0] === game.score[1]) {
                                     stats.ties++;
                                 }
                             }
-                            else if (user._id.equals(game.captains[1].user)) {
-                                if (game.results.score[1] > game.results.score[0]) {
+                            else if (user._id.equals(game.teams[1].captain)) {
+                                if (game.score[1] > game.score[0]) {
                                     stats.wins++;
                                 }
-                                else if (game.results.score[1] < game.results.score[0]) {
+                                else if (game.score[1] < game.score[0]) {
                                     stats.losses++;
                                 }
-                                else if (game.results.score[1] === game.results.score[0]) {
+                                else if (game.score[1] === game.score[0]) {
                                     stats.ties++;
                                 }
                             }
@@ -93,12 +93,12 @@ module.exports = function(app, database, io, self, server) {
             return Promise.resolve(null);
         }
 
-        return game.populate('captains.user players.user').execPopulate().then(function(game) {
+        return game.populate('teams.captain teams.composition.players.user').execPopulate().then(function(game) {
             if (game.status === 'aborted' || game.status === 'completed') {
                 return null;
             }
             else {
-                let gameInfo = lodash.omit(game.toObject(), 'choices', 'pool', 'results');
+                let gameInfo = lodash.omit(game.toObject(), 'draft');
 
                 gameInfo.roles = config.get('app.games.roles');
 
@@ -107,16 +107,24 @@ module.exports = function(app, database, io, self, server) {
         });
     }
 
+    self.on('updateGamePlayers', function(game) {
+        // TODO: update status of players in game
+    });
+
     self.on('broadcastGameInfo', function(game) {
         formatGameInfo(game).then(function(gameInfo) {
-            lodash.each(game.players, function(player) {
-                if (!player.replacement) {
-                    self.emit('sendMessageToUser', {
-                        userID: player.user.toHexString(),
-                        name: 'currentGameUpdated',
-                        arguments: [gameInfo]
+            lodash.each(game.teams, function(team) {
+                lodash.each(team.composition, function(role) {
+                    lodash.each(role.players, function(player) {
+                        if (!player.replaced) {
+                            self.emit('sendMessageToUser', {
+                                userID: player.user.toHexString(),
+                                name: 'currentGameUpdated',
+                                arguments: [gameInfo]
+                            });
+                        }
                     });
-                }
+                });
             });
         });
     });
@@ -125,10 +133,7 @@ module.exports = function(app, database, io, self, server) {
         info.game.status = 'launching';
         info.game.save();
 
-        // NOTE: forces a user update so they cannot add up to another game
-        self.emit('retrieveUsers', lodash.map(info.game.players, function(player) {
-            return player.user;
-        }));
+        self.emit('updateGamePlayers', info.game);
 
         self.emit('cleanUpDraft');
 
@@ -141,10 +146,10 @@ module.exports = function(app, database, io, self, server) {
         info.game.status = 'live';
 
         if (info.score) {
-            info.game.results.score.splice(0, lodash.size(info.game.results.score));
+            info.game.score = [];
 
-            lodash.each(info.game.captains, function(captain) {
-                info.game.results.score.push(info.score[captain.faction]);
+            lodash.each(info.game.teams, function(team) {
+                info.game.score.push(info.score[team.faction]);
             });
         }
 
@@ -155,26 +160,30 @@ module.exports = function(app, database, io, self, server) {
         self.emit('abortGame', info.game);
 
         if (info.score) {
-            info.game.results.score.splice(0, lodash.size(info.game.results.score));
+            info.game.score = [];
 
-            lodash.each(info.game.captains, function(captain) {
-                info.game.results.score.push(info.score[captain.faction]);
+            lodash.each(info.game.teams, function(team) {
+                info.game.score.push(info.score[team.faction]);
             });
         }
 
         if (info.duration) {
-            info.game.results.duration = info.duration;
+            info.game.duration = info.duration;
         }
 
         info.game.save().then(function() {
             if (info.time) {
-                info.game.populate('players.user', function(err, game) {
+                info.game.populate('teams.composition.players.user', function(err, game) {
                     if (err) {
                         throw err;
                     }
 
-                    lodash.each(game.players, function(player) {
-                        player.time = info.time[player.user.steamID];
+                    lodash.each(game.teams, function(team) {
+                        lodash.each(team.composition, function(role) {
+                            lodash.each(role.players, function(player) {
+                                player.time = info.time[player.user.steamID];
+                            });
+                        });
                     });
 
                     game.save();
@@ -187,26 +196,30 @@ module.exports = function(app, database, io, self, server) {
         info.game.status = 'completed';
 
         if (info.score) {
-            info.game.results.score.splice(0, lodash.size(info.game.results.score));
+            info.game.score = [];
 
-            lodash.each(info.game.captains, function(captain) {
-                info.game.results.score.push(info.score[captain.faction]);
+            lodash.each(info.game.teams, function(team) {
+                info.game.score.push(info.score[team.faction]);
             });
         }
 
         if (info.duration) {
-            info.game.results.duration = info.duration;
+            info.game.duration = info.duration;
         }
 
         info.game.save().then(function() {
             if (info.time) {
-                info.game.populate('players.user', function(err, game) {
+                info.game.populate('teams.composition.players.user', function(err, game) {
                     if (err) {
                         throw err;
                     }
 
-                    lodash.each(game.players, function(player) {
-                        player.time = info.time[player.user.steamID];
+                    lodash.each(game.teams, function(team) {
+                        lodash.each(team.composition, function(role) {
+                            lodash.each(role.players, function(player) {
+                                player.time = info.time[player.user.steamID];
+                            });
+                        });
                     });
 
                     game.save().then(function() {
@@ -216,22 +229,19 @@ module.exports = function(app, database, io, self, server) {
             }
         });
 
-        // NOTE: forces a user update so they can add up to another game
-        self.emit('retrieveUsers', lodash.map(info.game.players, function(player) {
-            return player.user;
-        }));
+        self.emit('updateGamePlayers', info.game);
 
         self.emit('broadcastGameInfo', info.game);
     });
 
     self.on('gameLogAvailable', function(info) {
-        let index = lodash.findIndex(info.game.results.links, 'type', 'logs.tf');
+        let index = lodash.findIndex(info.game.links, 'type', 'logs.tf');
 
         if (index !== -1) {
-            info.game.results.links[index].link = info.url;
+            info.game.links[index].link = info.url;
         }
         else {
-            info.game.results.links.push({
+            info.game.links.push({
                 type: 'logs.tf',
                 link: info.url
             });
@@ -244,12 +254,10 @@ module.exports = function(app, database, io, self, server) {
         let userID = socket.decoded_token;
 
         database.Game.findOne({
-            players: {
+            'teams.composition.players': {
                 $elemMatch: {
                     user: userID,
-                    replacement: {
-                        $exists: false
-                    }
+                    replaced: false
                 }
             },
             status: {

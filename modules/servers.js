@@ -68,11 +68,12 @@ module.exports = function(app, database, io, self, server) {
         });
     });
 
+    self.on('getServerStatuses', function(callback) {
+        // TODO: implement for admin interface
+    });
+
     self.on('abortGame', function(game) {
-        // NOTE: force player update so players can add up immediately
-        self.emit('retrieveUsers', lodash.map(game.players, function(player) {
-            return player.user;
-        }));
+        self.emit('updateGamePlayers', game);
 
         self.emit('broadcastGameInfo', game);
 
@@ -123,76 +124,64 @@ module.exports = function(app, database, io, self, server) {
         }).then(function() {
             return rcon.command('pugchamp_game_config "' + map.config + '"', serverTimeout);
         }).then(function() {
-            return game.populate('captains.user').execPopulate().then(function(game) {
-                return lodash.reduce(game.captains, function(prev, captain) {
+            return game.populate('teams.composition.players.user').execPopulate().then(function(game) {
+                return lodash(game.teams).map(function(team) {
+                    return lodash(team.composition).map(function(role) {
+                        return lodash.map(role.players, function(player) {
+                            if (!player.replaced) {
+                                return {
+                                    id: player.user.steamID,
+                                    alias: player.user.alias,
+                                    faction: team.faction,
+                                    class: roles[role.role].class
+                                };
+                            }
+                        });
+                    }).flatten().compact().value();
+                }).reduce(function(prev, player) {
                     let cur;
 
-                    if (captain.faction === 'RED') {
-                        cur = rcon.command('mp_tournament_redteamname "' + captain.user.alias + '"', serverTimeout);
-                    }
-                    else if (captain.faction === 'BLU') {
-                        cur = rcon.command('mp_tournament_blueteamname "' + captain.user.alias + '"', serverTimeout);
-                    }
-
-                    if (cur) {
-                        if (prev) {
-                            return prev.then(cur);
-                        }
-                        else {
-                            return cur;
-                        }
-                    }
-                    else {
-                        return prev;
-                    }
-                }, null);
-            });
-        }).then(function() {
-            return game.populate('players.user').execPopulate().then(function(game) {
-                return lodash.reduce(game.players, function(prev, player) {
-                    let cur;
-
-                    let faction = game.captains[player.team].faction;
-                    let role = roles[player.role];
+                    let gameID = player.id;
+                    let gameAlias = player.alias;
                     let gameTeam = 1;
                     let gameClass = 0;
 
-                    if (faction === 'RED') {
+                    if (player.faction === 'RED') {
                         gameTeam = 2;
                     }
-                    else if (faction === 'BLU') {
+                    else if (player.faction === 'BLU') {
                         gameTeam = 3;
                     }
 
-                    if (role.class === 'scout') {
+                    if (player.class === 'scout') {
                         gameClass = 1;
                     }
-                    else if (role.class === 'soldier') {
+                    else if (player.class === 'soldier') {
                         gameClass = 3;
                     }
-                    else if (role.class === 'pyro') {
+                    else if (player.class === 'pyro') {
                         gameClass = 7;
                     }
-                    else if (role.class === 'demoman') {
+                    else if (player.class === 'demoman') {
                         gameClass = 4;
                     }
-                    else if (role.class === 'heavy') {
+                    else if (player.class === 'heavy') {
                         gameClass = 6;
                     }
-                    else if (role.class === 'engineer') {
+                    else if (player.class === 'engineer') {
                         gameClass = 9;
                     }
-                    else if (role.class === 'medic') {
+                    else if (player.class === 'medic') {
                         gameClass = 5;
                     }
-                    else if (role.class === 'sniper') {
+                    else if (player.class === 'sniper') {
                         gameClass = 2;
                     }
-                    else if (role.class === 'spy') {
+                    else if (player.class === 'spy') {
                         gameClass = 8;
                     }
 
-                    cur = rcon.command('pugchamp_game_player_add "' + player.user.steamID + '" "' + player.user.alias + '" ' + gameTeam + ' ' + gameClass, serverTimeout);
+                    cur = rcon.command('pugchamp_game_player_add "' + gameID + '" "' + gameAlias + '" ' + gameTeam + ' ' + gameClass, serverTimeout);
 
                     if (cur) {
                         if (prev) {
@@ -206,7 +195,7 @@ module.exports = function(app, database, io, self, server) {
                         return prev;
                     }
                 }, null);
-            });
+            }).value();
         }).then(function() {
             return rcon.command('pugchamp_game_start', serverTimeout);
         }).catch(function() {

@@ -83,7 +83,7 @@ module.exports = function(app, database, io, self, server) {
                 // TODO: check user bans
                 new Promise(function(resolve, reject) {
                     database.Game.findOne({
-                        'players.user': userID,
+                        'teams.composition.players.user': userID,
                         status: {
                             $in: ['assigning', 'launching', 'live']
                         }
@@ -91,7 +91,7 @@ module.exports = function(app, database, io, self, server) {
                         if (game) {
                             resolve({
                                 aspects: ['sub', 'start', 'captain'],
-                                reasons: ['You are currently in a game.']
+                                reasons: ['You are involved in a currently active game.']
                             });
                         }
                         else {
