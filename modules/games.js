@@ -139,6 +139,12 @@ module.exports = function(app, database, io, self, server) {
         });
     });
 
+    self.on('wrapUpGame', function(game) {
+        self.emit('updateGamePlayers', game);
+
+        self.emit('broadcastGameInfo', game);
+    });
+
     self.on('gameSetup', function(info) {
         info.game.status = 'launching';
         info.game.save().then(function() {
@@ -216,8 +222,7 @@ module.exports = function(app, database, io, self, server) {
         }
 
         info.game.save().then(function() {
-            self.emit('updateGamePlayers', info.game);
-            self.emit('broadcastGameInfo', info.game);
+            self.emit('wrapUpGame', info.game);
 
             if (info.time) {
                 info.game.populate('teams.composition.players.user', function(err, game) {
