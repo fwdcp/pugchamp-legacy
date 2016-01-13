@@ -16,25 +16,29 @@
 <dom-module id="pugchamp-current-game">
 	<template>
 		<style is="custom-style">
-            #game {
-                padding: 5px 25px;
-                margin: 20px;
-            }
+			#game {
+				padding: 5px 25px;
+				margin: 20px;
+			}
 
 			a.button {
 				color: inherit;
 			}
 
-            #connect {
-                background: var(--primary-color);
-                color: var(--dark-theme-text-color);
-            }
+			#connect {
+				background: var(--primary-color);
+				color: var(--dark-theme-text-color);
+			}
 		</style>
 
-        <paper-material id="game" hidden$="{{!game}}">
-            <h2>Current Game</h2>
+		<paper-material id="game" hidden$="{{!game}}">
+			<h2>Current Game</h2>
 
-			<p><a class="button" href="/game/{{game.id}}" target="_blank"><paper-button raised>View Game Info</paper-button></a></p>
+			<p>
+				<a class="button" href="/game/{{game.id}}" target="_blank">
+					<paper-button raised>View Game Info</paper-button>
+				</a>
+			</p>
 
 			<div hidden$="{{!player}}">
 				<h3>Player</h3>
@@ -47,7 +51,11 @@
 					<strong>Captain</strong>: {{team.captain.alias}}
 				</p>
 
-	            <p><a class="button" href="steam://connect/{{game.server.address}}/{{game.server.password}}"><paper-button id="connect" raised>Connect to Server</paper-button></a></p>
+				<p>
+					<a class="button" href="steam://connect/{{game.server.address}}/{{game.server.password}}">
+						<paper-button id="connect" raised>Connect to Server</paper-button>
+					</a>
+				</p>
 			</div>
 
 			<div hidden$="{{!captain}}">
@@ -65,24 +73,25 @@
 							</template>
 						</paper-menu>
 					</paper-dropdown-menu>
-					<paper-button on-tap="requestSubstitute" raised>Request Substitute</paper-button></a>
+					<paper-button on-tap="requestSubstitute" raised>Request Substitute</paper-button>
+					</a>
 				</p>
 			</div>
-        </paper-material>
+		</paper-material>
 	</template>
 	<script>
-	    Polymer({
+		Polymer({
 			is: 'pugchamp-current-game',
 			behaviors: [PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.UserBehavior, PugChampPolymerHelperBehaviors],
-	        ready: function() {
-                this.set('game', null);
+			ready: function() {
+				this.set('game', null);
 				this.set('player', null);
 				this.set('captain', null);
 
 				this._listenToEvent('currentGameUpdated', 'onCurrentGameUpdated');
-	        },
-            onCurrentGameUpdated: function(info) {
-                this.set('game', info);
+			},
+			onCurrentGameUpdated: function(info) {
+				this.set('game', info);
 
 				if (info) {
 					this.set('team', _.find(info.teams, _.bind(function(team) {
@@ -99,14 +108,14 @@
 						return this.captain || this.player;
 					}, this)));
 				}
-            },
+			},
 			requestSubstitute: function(event) {
 				this.socket.emit('requestSubstitute', {
-                    game: this.game.id,
+					game: this.game.id,
 					role: this.$.replacedPlayer.selectedItem.dataset.role,
-                    player: this.$.replacedPlayer.selectedItem.dataset.player
-                });
+					player: this.$.replacedPlayer.selectedItem.dataset.player
+				});
 			}
-	    });
+		});
 	</script>
 </dom-module>

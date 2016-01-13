@@ -2,21 +2,21 @@
 
 <html>
 
-{{#> head}}
+    {{#> head}}
     <link rel="import" href="/components/iron-flex-layout/classes/iron-flex-layout.html">
     <link rel="import" href="/components/vaadin-grid/vaadin-grid.html">
-{{/head}}
+    {{/head}}
 
-{{#> body}}
+    {{#> body}}
     <h1>Players</h1>
 
     <vaadin-grid id="players">
         <table>
             <colgroup>
                 <col name="alias" sortable>
-                <col name="currentRating.after.rating" sortable sort-direction="desc">
-                <col name="currentRating.after.deviation" sortable sort-direction="asc">
-                <col name="captainScore.low" sortable sort-direction="desc">
+                    <col name="currentRating.after.rating" sortable sort-direction="desc">
+                        <col name="currentRating.after.deviation" sortable sort-direction="asc">
+                            <col name="captainScore.low" sortable sort-direction="desc">
             </colgroup>
             <thead>
                 <tr>
@@ -34,7 +34,11 @@
     <script src="/components/lodash/lodash.min.js"></script>
     <script>
         var grid = document.getElementById('players');
-        grid.items = {{toJSON players}};
+        grid.items = {
+            {
+                toJSON players
+            }
+        };
 
         grid.addEventListener('sort-order-changed', function() {
             _.sortByOrder(grid.items, _.map(grid.sortOrder, function(sort) {
@@ -74,6 +78,6 @@
             cell.element.innerHTML = cell.data !== null ? '&plusmn; ' + cell.data : '';
         };
     </script>
-{{/body}}
+    {{/body}}
 
 </html>

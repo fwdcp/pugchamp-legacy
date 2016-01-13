@@ -22,7 +22,6 @@
 
             .draft-turn {
                 @apply(--paper-font-caption);
-
                 min-width: 100px;
                 padding: 5px;
                 text-align: center;
@@ -130,10 +129,8 @@
                 <template is="dom-repeat" items="{{turns}}">
                     <paper-material data-status$="{{turnComparison(index, currentTurn)}}" class="draft-turn flex">
                         <strong>{{fullTurnTypeDescription(item.type)}}</strong>
-                        <br>
-                        {{fullTurnMethodDescription(item.method)}}
-                        <br>
-                        {{fullTurnCaptainName(item.captain)}}
+                        <br> {{fullTurnMethodDescription(item.method)}}
+                        <br> {{fullTurnCaptainName(item.captain)}}
                         <br>
                         <paper-progress hidden$="{{!isCurrentTurn(index, currentTurn)}}" class="turn-time" class="transiting" min="0"></paper-progress>
                         {{fullTurnChoiceInfo(item)}}
@@ -176,7 +173,7 @@
                     <div class="flex role-column">
                         <div class="vertical layout">
                             <paper-icon-item disabled="{{!_includes(allowedRoles, role.key)}}">
-								<iron-icon icon="pugchamp-role:{{role.key}}" item-icon></iron-icon>
+                                <iron-icon icon="pugchamp-role:{{role.key}}" item-icon></iron-icon>
                                 <div class="role-name flex">
                                     <h3>{{role.value.name}}</h3>
                                 </div>
@@ -186,7 +183,8 @@
                                 <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
                                     <paper-icon-item class="player" disabled="{{_includes(unavailablePlayers, item.steamID)}}">
                                         <div class="flex">{{item.alias}}</div>
-                                        <paper-button class="draft-choice" data-role$="{{role.key}}" data-player$="{{item.steamID}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}" on-tap="pickPlayer" raised>Select</paper-button>
+                                        <paper-button class="draft-choice" data-role$="{{role.key}}" data-player$="{{item.steamID}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}"
+                                        on-tap="pickPlayer" raised>Select</paper-button>
                                     </paper-icon-item>
                                 </template>
                             </template>
@@ -194,7 +192,8 @@
                                 <template is="dom-repeat" items="{{fullPlayerList}}">
                                     <paper-icon-item class$="player {{isHighlighted(item.steamID, highlightedPlayer)}}" disabled="{{_includes(unavailablePlayers, item.steamID)}}">
                                         <div class="flex">{{item.alias}}</div>
-                                        <paper-button class="draft-choice override" data-role$="{{role.key}}" data-player$="{{item.steamID}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}" on-tap="pickPlayerOverride" raised>Override</paper-button>
+                                        <paper-button class="draft-choice override" data-role$="{{role.key}}" data-player$="{{item.steamID}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}"
+                                        on-tap="pickPlayerOverride" raised>Override</paper-button>
                                     </paper-icon-item>
                                 </template>
                             </template>

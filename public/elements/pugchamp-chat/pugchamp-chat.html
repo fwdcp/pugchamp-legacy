@@ -50,16 +50,16 @@
 		</div>
 	</template>
 	<script>
-	    Polymer({
+		Polymer({
 			is: 'pugchamp-chat',
 			behaviors: [PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior],
-	        ready: function() {
+			ready: function() {
 				this.set('messages', []);
 
 				this.$.submitWatcher.target = this.$.messageText;
 
 				this._listenToEvent('messageReceived', 'onMessageReceived');
-	        },
+			},
 			onMessageReceived: function(message) {
 				var atBottom = this.$.messages.scrollHeight - this.$.messages.scrollTop === this.$.messages.clientHeight;
 
@@ -80,6 +80,6 @@
 				socket.emit('sendChatMessage', this.$.messageText.value);
 				this.$.messageText.value = '';
 			}
-	    });
+		});
 	</script>
 </dom-module>

@@ -2,7 +2,7 @@
 
 <html>
 
-{{#> head title="User Settings"}}
+    {{#> head title="User Settings"}}
     <link rel="import" href="/components/iron-form/iron-form.html">
     <link rel="import" href="/components/paper-button/paper-button.html">
     <link rel="import" href="/components/paper-input/paper-input.html">
@@ -13,26 +13,30 @@
             color: var(--dark-theme-text-color);
         }
     </style>
-{{/head}}
+    {{/head}}
 
-{{#> body}}
-	<h2>User Settings</h2>
+    {{#> body}}
+    <h2>User Settings</h2>
 
-	<form id="user-settings" method="post">
-		{{#unless user.alias}}
-			<p><paper-input type="text" label="Alias" name="alias" placeholder="thesupremecommander" auto-validate error-message="up to fifteen alphanumeric characters only" pattern="\w{1,15}" required></paper-input></p>
-		{{else}}
-			<p><paper-input type="text" label="Alias" value="{{user.alias}}" readonly></paper-input></p>
-		{{/unless}}
+    <form id="user-settings" method="post">
+        {{#unless user.alias}}
+        <p>
+            <paper-input type="text" label="Alias" name="alias" placeholder="thesupremecommander" auto-validate error-message="up to fifteen alphanumeric characters only" pattern="\w{1,15}" required></paper-input>
+        </p>
+        {{else}}
+        <p>
+            <paper-input type="text" label="Alias" value="{{user.alias}}" readonly></paper-input>
+        </p>
+        {{/unless}}
 
-		<paper-button raised onclick="save()" id="save">Save</paper-button>
-	</form>
+        <paper-button raised onclick="save()" id="save">Save</paper-button>
+    </form>
 
-	<script>
-		function save() {
-			document.getElementById('user-settings').submit();
-		}
-	</script>
-{{/body}}
+    <script>
+        function save() {
+            document.getElementById('user-settings').submit();
+        }
+    </script>
+    {{/body}}
 
 </html>
