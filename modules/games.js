@@ -240,7 +240,6 @@ module.exports = function(app, database, io, self, server) {
         });
 
         self.emit('updateGamePlayers', info.game);
-
         self.emit('broadcastGameInfo', info.game);
     });
 

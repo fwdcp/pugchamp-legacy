@@ -73,12 +73,11 @@ module.exports = function(app, database, io, self, server) {
     });
 
     self.on('abortGame', function(game) {
-        self.emit('updateGamePlayers', game);
-
-        self.emit('broadcastGameInfo', game);
-
         game.status = 'aborted';
         game.save();
+
+        self.emit('updateGamePlayers', game);
+        self.emit('broadcastGameInfo', game);
 
         lodash.each(gameServerPool, function(gameServer) {
             let rcon = RCON({
