@@ -126,7 +126,7 @@ module.exports = function(app, database, io, self, server) {
         }).then(function() {
             return game.populate('teams.composition.players.user').execPopulate().then(function(game) {
                 return lodash(game.teams).map(function(team) {
-                    return lodash(team.composition).map(function(role) {
+                    return lodash.map(team.composition, function(role) {
                         return lodash.map(role.players, function(player) {
                             if (!player.replaced) {
                                 return {
@@ -137,8 +137,8 @@ module.exports = function(app, database, io, self, server) {
                                 };
                             }
                         });
-                    }).flatten().compact().value();
-                }).reduce(function(prev, player) {
+                    });
+                }).flattenDeep().compact().reduce(function(prev, player) {
                     let cur;
 
                     let gameID = player.id;
@@ -181,21 +181,23 @@ module.exports = function(app, database, io, self, server) {
                         gameClass = 8;
                     }
 
-                    cur = rcon.command('pugchamp_game_player_add "' + gameID + '" "' + gameAlias + '" ' + gameTeam + ' ' + gameClass, serverTimeout);
+                    cur = function() {
+                        return rcon.command('pugchamp_game_player_add "' + gameID + '" "' + gameAlias + '" ' + gameTeam + ' ' + gameClass, serverTimeout);
+                    };
 
                     if (cur) {
                         if (prev) {
                             return prev.then(cur);
                         }
                         else {
-                            return cur;
+                            return cur();
                         }
                     }
                     else {
                         return prev;
                     }
                 }, null);
-            }).value();
+            });
         }).then(function() {
             return rcon.command('pugchamp_game_start', serverTimeout);
         }).catch(function() {
