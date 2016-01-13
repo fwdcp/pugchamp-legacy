@@ -4,6 +4,7 @@
 <link rel="import" href="/components/paper-material/paper-material.html">
 <link rel="import" href="/components/paper-progress/paper-progress.html">
 <link rel="import" href="/components/paper-styles/color.html">
+<link rel="import" href="/components/paper-styles/default-theme.html">
 <link rel="import" href="/components/paper-styles/typography.html">
 <link rel="import" href="/elements/pugchamp-icons/pugchamp-role-icons.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
@@ -118,6 +119,10 @@
                 font-size: 13px;
                 line-height: 13px;
             }
+
+            #playerPool .player.highlight {
+                font-weight: 500;
+            }
         </style>
 
         <div hidden$="{{!draftInProgress}}">
@@ -187,7 +192,7 @@
                             </template>
                             <template is="dom-if" if="{{_includes(overrideRoles, role.key)}}">
                                 <template is="dom-repeat" items="{{fullPlayerList}}">
-                                    <paper-icon-item class="player" disabled="{{_includes(unavailablePlayers, item.steamID)}}">
+                                    <paper-icon-item class$="player {{isHighlighted(item.steamID, highlightedPlayer)}}" disabled="{{_includes(unavailablePlayers, item.steamID)}}">
                                         <div class="flex">{{item.alias}}</div>
                                         <paper-button class="draft-choice override" data-role$="{{role.key}}" data-player$="{{item.steamID}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.steamID, unavailablePlayers)}}" on-tap="pickPlayerOverride" raised>Override</paper-button>
                                     </paper-icon-item>
@@ -467,6 +472,19 @@
                     player: event.target.dataset.player,
                     override: true
                 });
+            },
+            isHighlighted: function(player, highlighted) {
+                if (player === highlighted) {
+                    return 'highlight';
+                }
+            },
+            addHighlight: function(event) {
+                this.set('highlightedPlayer', event.model.item.steamID);
+            },
+            removeHighlight: function(event) {
+                if (this.highlightedPlayer === event.model.item.steamID) {
+                    this.set('highlightedPlayer', null);
+                }
             }
         });
     </script>

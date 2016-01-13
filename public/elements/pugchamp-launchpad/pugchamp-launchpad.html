@@ -6,6 +6,8 @@
 <link rel="import" href="/components/paper-item/paper-icon-item.html">
 <link rel="import" href="/components/paper-material/paper-material.html">
 <link rel="import" href="/components/paper-progress/paper-progress.html">
+<link rel="import" href="/components/paper-styles/color.html">
+<link rel="import" href="/components/paper-styles/default-theme.html">
 <link rel="import" href="/components/paper-toggle-button/paper-toggle-button.html">
 
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
@@ -44,6 +46,10 @@
             .player {
                 min-height: inherit;
                 height: 32px;
+            }
+
+            .player.highlight {
+                font-weight: 500;
             }
         </style>
 
@@ -91,7 +97,7 @@
                             <paper-checkbox class="role-select" value="{{role.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability"></paper-checkbox>
                         </paper-icon-item>
                         <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
-                            <paper-icon-item class="player">
+                            <paper-icon-item class$="player {{isHighlighted(item.steamID, highlightedPlayer)}}" on-mouseover="addHighlight" on-mouseout="removeHighlight">
                                 <div class="flex">{{item.alias}}</div>
                             </paper-icon-item>
                         </template>
@@ -210,6 +216,19 @@
 
                     return rolesString + ' (' + needed.needed + ')';
                 }, this).join('; ');
+            },
+            isHighlighted: function(player, highlighted) {
+                if (player === highlighted) {
+                    return 'highlight';
+                }
+            },
+            addHighlight: function(event) {
+                this.set('highlightedPlayer', event.model.item.steamID);
+            },
+            removeHighlight: function(event) {
+                if (this.highlightedPlayer === event.model.item.steamID) {
+                    this.set('highlightedPlayer', null);
+                }
             }
         });
     </script>
