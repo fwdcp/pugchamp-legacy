@@ -141,15 +141,13 @@ module.exports = function(app, database, io, self, server) {
 
     self.on('gameSetup', function(info) {
         info.game.status = 'launching';
-        info.game.save();
+        info.game.save().then(function() {
+            self.emit('updateGamePlayers', info.game);
+            self.emit('broadcastGameInfo', info.game);
+            self.emit('cleanUpDraft');
 
-        self.emit('updateGamePlayers', info.game);
-
-        self.emit('cleanUpDraft');
-
-        self.emit('broadcastGameInfo', info.game);
-
-        setTimeout(timeoutGame, ms(config.get('app.games.startPeriod')), info.game);
+            setTimeout(timeoutGame, ms(config.get('app.games.startPeriod')), info.game);
+        });
     });
 
     self.on('gameLive', function(info) {
@@ -218,6 +216,9 @@ module.exports = function(app, database, io, self, server) {
         }
 
         info.game.save().then(function() {
+            self.emit('updateGamePlayers', info.game);
+            self.emit('broadcastGameInfo', info.game);
+
             if (info.time) {
                 info.game.populate('teams.composition.players.user', function(err, game) {
                     if (err) {
@@ -238,9 +239,6 @@ module.exports = function(app, database, io, self, server) {
                 });
             }
         });
-
-        self.emit('updateGamePlayers', info.game);
-        self.emit('broadcastGameInfo', info.game);
     });
 
     self.on('gameLogAvailable', function(info) {
