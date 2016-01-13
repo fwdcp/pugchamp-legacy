@@ -6,13 +6,15 @@ const lodash = require('lodash');
 module.exports = function(app, database, io, self, server) {
     function getOnlineList() {
         return lodash(self.getOnlineList()).map(function(userID) {
-            return self.users.get(userID).toObject();
+            return self.users.get(userID);
         }).filter(function(user) {
             if (user) {
                 return user.setUp;
             }
 
             return false;
+        }).map(function(user) {
+            return user.toObject();
         }).value();
     }
 
