@@ -1,7 +1,10 @@
 <link rel="import" href="/components/polymer/polymer.html">
 
 <link rel="import" href="/components/paper-button/paper-button.html">
+<link rel="import" href="/components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="/components/paper-item/paper-item.html">
 <link rel="import" href="/components/paper-material/paper-material.html">
+<link rel="import" href="/components/paper-menu/paper-menu.html">
 <link rel="import" href="/components/paper-styles/color.html">
 
 <script src="/components/lodash/lodash.min.js"></script>
@@ -18,7 +21,7 @@
                 margin: 20px;
             }
 
-			.buttons a {
+			a.button {
 				color: inherit;
 			}
 
@@ -31,32 +34,39 @@
         <paper-material id="game" hidden$="{{!game}}">
             <h2>Current Game</h2>
 
-			<p class="buttons">
-				<a href="/game/{{game.id}}" target="_blank"><paper-button raised>View Game Info</paper-button></a>
-			</p>
+			<p><a class="button" href="/game/{{game.id}}" target="_blank"><paper-button raised>View Game Info</paper-button></a></p>
 
 			<div hidden$="{{!player}}">
 				<h3>Player</h3>
 
 				<p>
-					<strong>Role</strong>: {{_getProperty(roles, player.role, 'name')}}
+					<strong>Role</strong>: {{_getProperty(game.roles, player.role, 'name')}}
 					<br>
-					<strong>Faction</strong>: {{_getProperty(game.captains, player.team, 'faction')}}
+					<strong>Faction</strong>: {{team.faction}}
 					<br>
-					<strong>Captain</strong>: {{_getProperty(game.captains, player.team, 'user', 'alias')}}
+					<strong>Captain</strong>: {{team.captain.alias}}
 				</p>
 
-	            <p class="buttons">
-					<a href="steam://connect/{{game.server.address}}/{{game.server.password}}"><paper-button id="connect" raised>Connect to Server</paper-button></a>
-				</p>
+	            <p><a class="button" href="steam://connect/{{game.server.address}}/{{game.server.password}}"><paper-button id="connect" raised>Connect to Server</paper-button></a></p>
 			</div>
 
 			<div hidden$="{{!captain}}">
 				<h3>Captain</h3>
 
-				<h4>Request Sub</h4>
-
-				<!-- TODO: select player to replace -->
+				<p>
+					<paper-dropdown-menu id="replacedPlayer" label="Player to Replace">
+						<paper-menu class="dropdown-content">
+							<template is="dom-repeat" items="{{team.composition}}" as="role">
+								<template is="dom-repeat" items="{{role.players}}">
+									<template is="dom-if" if="{{item.replaced">
+										<paper-item value="{{item.user.steamID}}">{{item.user.alias}} ({{_getProperty(game.roles, role.role, 'name')}})</paper-item>
+									</template>
+								</template>
+							</template>
+						</paper-menu>
+					</paper-dropdown-menu>
+					<paper-button on-tap="requestSubstitute" raised>Request Substitute</paper-button></a>
+				</p>
 			</div>
         </paper-material>
 	</template>
@@ -72,19 +82,30 @@
 				this._listenToEvent('currentGameUpdated', 'onCurrentGameUpdated');
 	        },
             onCurrentGameUpdated: function(info) {
-				this.set('roles', info.roles);
                 this.set('game', info);
-				this.set('player', _.findWhere(info.players, {
-					user: {
-						steamID: this.user.steamID
-					}
-				}));
-				this.set('captain', _.findWhere(info.captains, {
-					user: {
-						steamID: this.user.steamID
-					}
-				}));
-            }
+
+				if (info) {
+					this.set('team', _.find(info.teams, function(team) {
+						this.set('captain', team.captain.steamID == this.user.steamID);
+
+						this.set('player', _.find(team.composition, function(role) {
+							return _.some(role.players, {
+								user: {
+									steamID: this.user.steamID
+								}
+							}, this);
+						}, this));
+
+						return this.captain || this.player;
+					}, this));
+				}
+            },
+			requestSubstitute: function(event) {
+				this.socket.emit('requestSubstitute', {
+                    game: this.game.id,
+                    player: this.$.replacedPlayer.selectedItem.value
+                });
+			}
 	    });
 	</script>
 </dom-module>
