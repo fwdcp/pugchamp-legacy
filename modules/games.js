@@ -108,7 +108,17 @@ module.exports = function(app, database, io, self, server) {
     }
 
     self.on('updateGamePlayers', function(game) {
-        // TODO: update status of players in game
+        game.populate('teams.composition.players.user').execPopulate().then(function(game) {
+            let players = lodash(game.teams).map(function(team) {
+                return lodash.map(team.composition, function(role) {
+                    return lodash.map(role.players, function(player) {
+                        return player.id;
+                    });
+                });
+            }).flatten().value();
+
+            self.emit('updateUsers', players);
+        });
     });
 
     self.on('broadcastGameInfo', function(game) {

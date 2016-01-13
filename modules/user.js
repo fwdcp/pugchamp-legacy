@@ -23,7 +23,7 @@ module.exports = function(app, database, io, self, server) {
         return [...self.userSockets.keys()];
     };
 
-    self.on('retrieveUsers', function(userIDs) {
+    self.on('updateUsers', function(userIDs) {
         if (!userIDs) {
             userIDs = lodash(io.sockets.connected).map(function(socket) {
                 return socket.decoded_token;
@@ -229,7 +229,7 @@ module.exports = function(app, database, io, self, server) {
         let userID = socket.decoded_token;
 
         if (!self.userSockets.has(userID)) {
-            self.emit('retrieveUsers', [userID]);
+            self.emit('updateUsers', [userID]);
 
             self.userSockets.set(userID, new Set([socket.id]));
 
