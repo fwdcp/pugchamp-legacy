@@ -58,8 +58,8 @@
 						<paper-menu class="dropdown-content">
 							<template is="dom-repeat" items="{{team.composition}}" as="role">
 								<template is="dom-repeat" items="{{role.players}}">
-									<template is="dom-if" if="{{item.replaced">
-										<paper-item value="{{item.user.steamID}}">{{item.user.alias}} ({{_getProperty(game.roles, role.role, 'name')}})</paper-item>
+									<template is="dom-if" if="{{!item.replaced}}">
+										<paper-item data-role$="{{role.role}}" data-player$="{{item.user.steamID}}">{{item.user.alias}} ({{_getProperty(game.roles, role.role, 'name')}})</paper-item>
 									</template>
 								</template>
 							</template>
@@ -103,7 +103,8 @@
 			requestSubstitute: function(event) {
 				this.socket.emit('requestSubstitute', {
                     game: this.game.id,
-                    player: this.$.replacedPlayer.selectedItem.value
+					role: this.$.replacedPlayer.selectedItem.dataset.role,
+                    player: this.$.replacedPlayer.selectedItem.dataset.player
                 });
 			}
 	    });

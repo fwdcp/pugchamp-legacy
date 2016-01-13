@@ -257,6 +257,51 @@ module.exports = function(app, database, io, self, server) {
         info.game.save();
     });
 
+    self.on('requestSubstitute', function(info) {
+        database.Game.findById(info.game).populate('teams.captain teams.composition.players.user').exec().then(function(game) {
+            if (!game) {
+                return;
+            }
+
+            if (game.status === 'completed' || game.status === 'aborted') {
+                return;
+            }
+
+            let team = lodash.find(game.teams, {
+                captain: {
+                    id: info.captain
+                }
+            });
+
+            if (!team) {
+                return;
+            }
+
+            let player = lodash(team.composition).map(function(role) {
+                if (role.role === info.role) {
+                    return role.players;
+                }
+                else {
+                    return [];
+                }
+            }).flatten().find({
+                user: {
+                    steamID: info.player
+                }
+            });
+
+            if (!player || player.replaced) {
+                return;
+            }
+
+            // TODO: check that substitution is not already happening
+
+            // TODO: initiate substitution process
+
+            console.log('replacement allowed');
+        });
+    });
+
     io.sockets.on('authenticated', function(socket) {
         let userID = socket.decoded_token;
 
@@ -274,6 +319,12 @@ module.exports = function(app, database, io, self, server) {
             formatGameInfo(game).then(function(gameInfo) {
                 socket.emit('currentGameUpdated', gameInfo);
             });
+        });
+
+        socket.on('requestSubstitute', function(info) {
+            info.captain = socket.decoded_token;
+
+            self.emit('requestSubstitute', info);
         });
     });
 };
