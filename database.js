@@ -25,7 +25,7 @@ var userSchema = new mongoose.Schema({
     }
 });
 userSchema.virtual('admin').get(function() {
-    return lodash.contains(config.get('app.admins'), this.steamID);
+    return lodash.includes(config.get('app.admins'), this.steamID);
 });
 userSchema.set('toObject', {
     getters: true,
