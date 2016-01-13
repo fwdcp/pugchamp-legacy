@@ -34,7 +34,7 @@ module.exports = function(app, database, io, self, server) {
                 });
             }),
             game.populate('teams.captain').execPopulate().then(function(game) {
-                return Promise.all(lodash.map(teams, function(team) {
+                return Promise.all(lodash.map(game.teams, function(team) {
                     let user = team.captain;
 
                     return database.Game.find({
