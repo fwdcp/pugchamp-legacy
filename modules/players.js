@@ -20,9 +20,19 @@ module.exports = function(app, database, io, self, server) {
     });
 
     app.get('/players', function(req, res) {
-        database.User.find({}).populate('currentRating').exec(function(err, users) {
+        database.User.find({
+            $or: [{
+                $exists: {
+                    'currentRating': true
+                }
+            }, {
+                $exists: {
+                    'captainScore.low': true
+                }
+            }]
+        }).populate('currentRating').exec(function(err, users) {
             var players = lodash(users).filter(function(user) {
-                if (user.currentRating || user.captainScore) {
+                if (user.currentRating || lodash.has(user.captainScore, 'low')) {
                     return true;
                 }
 
@@ -40,7 +50,7 @@ module.exports = function(app, database, io, self, server) {
 
                 return Number.POSITIVE_INFINITY;
             }, function(user) {
-                if (user.captainScore) {
+                if (lodash.has(user.captainScore, 'low')) {
                     return user.captainScore.low;
                 }
 
