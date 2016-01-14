@@ -21,8 +21,8 @@
             }
 
             a.button {
-				color: inherit;
-			}
+                color: inherit;
+            }
 
             .request .respond {
                 background: var(--primary-color);
@@ -45,7 +45,7 @@
                     <paper-progress class="period transiting" data-start$="{{item.value.start}}" data-end$="{{item.value.end}}" min="0"></paper-progress>
 
                     <p>
-        				<a class="button" href="/game/{{item.value.game}}" target="_blank"><paper-button raised>View Game Info</paper-button></a>
+                        <a class="button" href="/game/{{item.value.game}}" target="_blank"><paper-button raised>View Game Info</paper-button></a>
 
                         <paper-button class="respond" data-status="apply" data-request$="{{item.key}}" hidden$="{{_includes(item.value.candidates, user.id)}}" disabled="{{isRestricted(restrictions, 'sub')}}" on-tap="updateSubstituteApplication">Apply to Substitute</paper-button>
                         <paper-button class="respond" data-status="retract" data-request$="{{item.key}}" hidden$="{{!_includes(item.value.candidates, user.id)}}" disabled="{{isRestricted(restrictions, 'sub')}}" on-tap="updateSubstituteApplication">Retract Substitute Application</paper-button>

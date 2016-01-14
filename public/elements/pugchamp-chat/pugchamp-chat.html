@@ -10,76 +10,76 @@
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
 
 <dom-module id="pugchamp-chat">
-	<template>
-		<style is="custom-style">
-			:host {
-				margin-left: 16px;
-			}
+    <template>
+        <style is="custom-style">
+            :host {
+                margin-left: 16px;
+            }
 
-			#messages {
-				height: calc(100vh - 250px);
-				overflow: auto;
-			}
+            #messages {
+                height: calc(100vh - 250px);
+                overflow: auto;
+            }
 
-			.message {
-				margin: 5px;
-			}
+            .message {
+                margin: 5px;
+            }
 
-			.message .message-body {
-				overflow-wrap: break-word;
-				word-wrap: break-word;
-			}
-		</style>
+            .message .message-body {
+                overflow-wrap: break-word;
+                word-wrap: break-word;
+            }
+        </style>
 
-		<div id="messages" class="vertical layout">
-			<template is="dom-repeat" items="{{messages}}" class="flex">
-				<paper-card class="message">
-					<div class="card-content">
-						<strong>{{item.user.alias}}</strong>
-						<em>{{item.action}}</em>
-						<br>
-						<span class="message-body">{{item.body}}</span>
-					</div>
-				</paper-card>
-			</template>
-		</div>
-		<div class="horizontal layout end wrap">
-			<iron-a11y-keys id="submitWatcher" keys="enter" on-keys-pressed="onEnter"></iron-a11y-keys>
-			<paper-textarea id="messageText" class="flex" maxlength="140" max-rows="3" char-counter disabled="{{isRestricted(restrictions, 'chat')}}"></paper-textarea>
-			<paper-icon-button icon="send" on-tap="sendMessage" disabled="{{isRestricted(restrictions, 'chat')}}"></paper-icon-button>
-		</div>
-	</template>
-	<script>
-		Polymer({
-			is: 'pugchamp-chat',
-			behaviors: [PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior],
-			ready: function() {
-				this.set('messages', []);
+        <div id="messages" class="vertical layout">
+            <template is="dom-repeat" items="{{messages}}" class="flex">
+                <paper-card class="message">
+                    <div class="card-content">
+                        <strong>{{item.user.alias}}</strong>
+                        <em>{{item.action}}</em>
+                        <br>
+                        <span class="message-body">{{item.body}}</span>
+                    </div>
+                </paper-card>
+            </template>
+        </div>
+        <div class="horizontal layout end wrap">
+            <iron-a11y-keys id="submitWatcher" keys="enter" on-keys-pressed="onEnter"></iron-a11y-keys>
+            <paper-textarea id="messageText" class="flex" maxlength="140" max-rows="3" char-counter disabled="{{isRestricted(restrictions, 'chat')}}"></paper-textarea>
+            <paper-icon-button icon="send" on-tap="sendMessage" disabled="{{isRestricted(restrictions, 'chat')}}"></paper-icon-button>
+        </div>
+    </template>
+    <script>
+        Polymer({
+            is: 'pugchamp-chat',
+            behaviors: [PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior],
+            ready: function() {
+                this.set('messages', []);
 
-				this.$.submitWatcher.target = this.$.messageText;
+                this.$.submitWatcher.target = this.$.messageText;
 
-				this._listenToEvent('messageReceived', 'onMessageReceived');
-			},
-			onMessageReceived: function(message) {
-				var atBottom = this.$.messages.scrollHeight - this.$.messages.scrollTop === this.$.messages.clientHeight;
+                this._listenToEvent('messageReceived', 'onMessageReceived');
+            },
+            onMessageReceived: function(message) {
+                var atBottom = this.$.messages.scrollHeight - this.$.messages.scrollTop === this.$.messages.clientHeight;
 
-				this.push('messages', message);
+                this.push('messages', message);
 
-				if (atBottom) {
-					this.async(function() {
-						this.$.messages.scrollTop = this.$.messages.scrollHeight - this.$.messages.clientHeight;
-					});
-				}
-			},
-			onEnter: function(event) {
-				event.detail.keyboardEvent.preventDefault();
+                if (atBottom) {
+                    this.async(function() {
+                        this.$.messages.scrollTop = this.$.messages.scrollHeight - this.$.messages.clientHeight;
+                    });
+                }
+            },
+            onEnter: function(event) {
+                event.detail.keyboardEvent.preventDefault();
 
-				this.sendMessage();
-			},
-			sendMessage: function() {
-				socket.emit('sendChatMessage', this.$.messageText.value);
-				this.$.messageText.value = '';
-			}
-		});
-	</script>
+                this.sendMessage();
+            },
+            sendMessage: function() {
+                socket.emit('sendChatMessage', this.$.messageText.value);
+                this.$.messageText.value = '';
+            }
+        });
+    </script>
 </dom-module>
