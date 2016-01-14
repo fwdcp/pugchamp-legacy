@@ -390,6 +390,10 @@ module.exports = function(app, database, io, self, server) {
             request.candidates.delete(info.player);
         }
 
+        formatSubstituteRequests().then(function(info) {
+            io.sockets.emit('substituteRequestsUpdated', info);
+        });
+
         if (Date.now() >= request.end) {
             attemptSubstitution(info.request);
         }
