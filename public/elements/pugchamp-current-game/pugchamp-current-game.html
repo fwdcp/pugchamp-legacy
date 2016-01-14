@@ -101,7 +101,8 @@
                             return _.some(role.players, {
                                 user: {
                                     id: this.user.id
-                                }
+                                },
+                                replaced: false
                             });
                         }, this)));
 

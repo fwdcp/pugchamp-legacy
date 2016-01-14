@@ -558,12 +558,16 @@ module.exports = function(app, database, io, self, server) {
         let userID = socket.decoded_token;
 
         database.Game.findOne({
-            'teams.composition.players': {
-                $elemMatch: {
-                    user: userID,
-                    replaced: false
+            $or: [{
+                'teams.captain': userID
+            }, {
+                'teams.composition.players': {
+                    $elemMatch: {
+                        user: userID,
+                        replaced: false
+                    }
                 }
-            },
+            }],
             status: {
                 $in: ['launching', 'live']
             }
