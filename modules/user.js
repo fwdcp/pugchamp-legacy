@@ -83,7 +83,7 @@ module.exports = function(app, database, io, self, server) {
                 // TODO: check user bans
                 new Promise(function(resolve, reject) {
                     database.Game.findOne({
-                        [{
+                        $or: [{
                             'teams.captain': userID
                         }, {
                             'teams.composition.players.user': userID
