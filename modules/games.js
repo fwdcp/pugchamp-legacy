@@ -213,7 +213,7 @@ module.exports = function(app, database, io, self, server) {
                     return candidates[0];
                 }
                 else if (substituteSelectionMethod === 'closest') {
-                    return player.populate('currentRating').execPopulate().then(function(player) {
+                    return player.user.populate('currentRating').execPopulate().then(function(player) {
                         let playerRating = 0;
 
                         if (player.currentRating) {
