@@ -274,10 +274,12 @@ public Action Command_GamePlayerRemove(int args) {
     playerClasses.Remove(steamID);
 
     for (int i = 1; i <= MaxClients; i++) {
-        char clientSteamID[32];
-        if (GetClientAuthId(i, AuthId_SteamID64, clientSteamID, sizeof(clientSteamID))) {
-            if (StrEqual(steamID, clientSteamID)) {
-                KickClient(i, "you have been removed from this game");
+        if (IsClientConnected(i) && !IsClientReplay(i) && !IsClientSourceTV(i)) {
+            char clientSteamID[32];
+            if (GetClientAuthId(i, AuthId_SteamID64, clientSteamID, sizeof(clientSteamID))) {
+                if (StrEqual(steamID, clientSteamID)) {
+                    KickClient(i, "you have been removed from this game");
+                }
             }
         }
     }
