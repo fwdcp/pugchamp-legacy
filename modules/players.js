@@ -27,7 +27,7 @@ module.exports = function(app, database, io, self, server) {
                 }
 
                 return false;
-            }).sortByOrder([function(user) {
+            }).orderBy([function(user) {
                 if (user.currentRating) {
                     return user.currentRating.after.rating;
                 }

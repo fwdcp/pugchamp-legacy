@@ -132,7 +132,7 @@
                         <br> {{fullTurnMethodDescription(item.method)}}
                         <br> {{fullTurnCaptainName(item.captain)}}
                         <br>
-                        <paper-progress hidden$="{{!isCurrentTurn(index, currentTurn)}}" class="turn-time" class="transiting" min="0"></paper-progress>
+                        <paper-progress hidden$="{{!_equals(index, currentTurn)}}" class="turn-time" class="transiting" min="0"></paper-progress>
                         {{fullTurnChoiceInfo(item)}}
                     </paper-material>
                 </template>
@@ -271,9 +271,6 @@
                 if (progress.ratio < 100) {
                     this.currentTimer = this.async(this.incrementTurnTimer, 1000);
                 }
-            },
-            isCurrentTurn: function(turn, current) {
-                return turn === current;
             },
             turnComparison: function(turn, current) {
                 if (turn < current) {

@@ -1,7 +1,9 @@
 {
     "app": {
         "games": {
-            "startPeriod": "15m"
+            "startPeriod": "15m",
+            "substituteRequestPeriod": "2m",
+            "substituteSelectionMethod": "closest"
         },
         "launch": {
             "readyPeriod": "60s"

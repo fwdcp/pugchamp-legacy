@@ -1,0 +1,94 @@
+<link rel="import" href="/components/polymer/polymer.html">
+
+<link rel="import" href="/components/paper-material/paper-material.html">
+<link rel="import" href="/components/paper-styles/color.html">
+
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-user-behavior.html">
+<link rel="import" href="/elements/pugchamp-utilities/pugchamp-polymer-helpers.html">
+
+<dom-module id="pugchamp-substitute-requests">
+    <template>
+        <style is="custom-style">
+            .request {
+                padding: 5px 25px;
+                margin: 20px;
+            }
+
+            .request .period {
+                --paper-progress-height: 10px;
+            }
+
+            a.button {
+				color: inherit;
+			}
+
+            .request .respond {
+                background: var(--primary-color);
+                color: var(--dark-theme-text-color);
+            }
+
+            .request .remove {
+                background: var(--accent-color);
+                color: var(--light-theme-text-color);
+            }
+        </style>
+
+        <div id="requests">
+            <template is="dom-repeat" items="{{_convertObjectToRepeatable(requests)}}">
+                <paper-material class="request">
+                    <h2>Substitute Request</h2>
+
+                    <p><strong>{{item.value.captain.alias}}</strong> has requested a substitute for <strong>{{item.value.player.alias}}</strong> (with role <strong>{{_getProperty(roles, item.value.role, 'name')}}</strong>).</p>
+
+                    <paper-progress class="period transiting" data-start$="{{item.value.start}}" data-end$="{{item.value.end}}" min="0"></paper-progress>
+
+                    <p>
+        				<a class="button" href="/game/{{item.value.game}}" target="_blank"><paper-button raised>View Game Info</paper-button></a>
+
+                        <paper-button class="respond" data-status="apply" data-request$="{{item.key}}" hidden$="{{_includes(item.value.candidates, user.id)}}" disabled="{{isRestricted(restrictions, 'sub')}}" on-tap="updateSubstituteApplication">Apply to Substitute</paper-button>
+                        <paper-button class="respond" data-status="retract" data-request$="{{item.key}}" hidden$="{{!_includes(item.value.candidates, user.id)}}" disabled="{{isRestricted(restrictions, 'sub')}}" on-tap="updateSubstituteApplication">Retract Substitute Application</paper-button>
+
+                        <paper-button class="remove" data-request$="{{item.key}}" hidden$="{{!_equals(item.value.captain.id, user.id)}}" disabled="{{!_equals(item.value.captain.id, user.id)}}" on-tap="retractSubstituteRequest" raised>Retract Substitute Request</paper-button>
+                    </p>
+                </paper-material>
+            </template>
+        </div>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'pugchamp-substitute-requests',
+            behaviors: [PugChampPolymerHelperBehaviors, PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior, PugChampClientBehaviors.UserBehavior],
+            ready: function() {
+                this._listenToEvent('substituteRequestsUpdated', 'onSubstituteRequestsUpdated');
+
+                this.async(this.updateTimers, 1000);
+            },
+            onSubstituteRequestsUpdated: function(info) {
+                this.set('roles', info.roles);
+                this.set('requests', info.requests);
+            },
+            updateTimers: function() {
+                Polymer.dom(this.$.requests).querySelectorAll('.request .period').forEach(function(progress) {
+                    progress.max = (progress.dataset.end - progress.dataset.start) / 1000;
+                    progress.value = (Date.now() - progress.dataset.start) / 1000;
+                });
+
+                this.async(this.updateTimers, 1000);
+            },
+            updateSubstituteApplication: function(event) {
+                socket.emit('updateSubstituteApplication', {
+                    request: event.target.dataset.request,
+                    status: event.target.dataset.status === 'apply'
+                });
+            },
+            retractSubstituteRequest: function(event) {
+                socket.emit('retractSubstituteRequest', {
+                    request: event.target.dataset.request
+                });
+            }
+        });
+    </script>
+</dom-module>
