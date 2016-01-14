@@ -10,7 +10,7 @@ mongoose.connect(config.get('server.mongodb'));
 var userSchema = new mongoose.Schema({
     alias: {
         type: String,
-        match: /[A-Za-z0-9_]{1,15}/
+        match: /^[A-Za-z0-9_]{1,15}$/
     },
     steamID: String,
     setUp: {

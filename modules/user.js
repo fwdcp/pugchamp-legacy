@@ -280,7 +280,7 @@ module.exports = function(app, database, io, self, server) {
         Promise.all([
             new Promise(function(resolve, reject) {
                 if (req.body.alias && !req.user.alias) {
-                    if (/[A-Za-z0-9_]{1,15}/.test(req.body.alias)) {
+                    if (/^[A-Za-z0-9_]{1,15}$/.test(req.body.alias)) {
                         database.User.findOne({
                             alias: req.body.alias
                         }, function(err, user) {
