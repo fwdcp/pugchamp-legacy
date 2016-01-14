@@ -139,8 +139,6 @@ module.exports = function(app, database, io, self, server) {
                 }).flattenDeep().compact().reduce(function(prev, player) {
                     let cur;
 
-                    let gameID = player.id;
-                    let gameAlias = player.alias;
                     let gameTeam = 1;
                     let gameClass = 0;
 
@@ -180,7 +178,7 @@ module.exports = function(app, database, io, self, server) {
                     }
 
                     cur = function() {
-                        return rcon.command('pugchamp_game_player_add "' + gameID + '" "' + gameAlias + '" ' + gameTeam + ' ' + gameClass, serverTimeout);
+                        return rcon.command('pugchamp_game_player_add "' + player.id + '" "' + player.alias + '" ' + gameTeam + ' ' + gameClass, serverTimeout);
                     };
 
                     if (cur) {
@@ -255,6 +253,96 @@ module.exports = function(app, database, io, self, server) {
             game.save();
 
             setUpServer(game, false);
+        });
+    });
+
+    self.on('updateServerRoster', function(game) {
+        let gameServer = gameServerPool[game.server];
+
+        let rcon = RCON({
+            address: gameServer.address,
+            password: gameServer.rcon
+        });
+
+        rcon.connect().then(function() {
+            return game.populate('teams.composition.players.user').execPopulate().then(function(game) {
+                return lodash(game.teams).map(function(team) {
+                    return lodash.map(team.composition, function(role) {
+                        return lodash.map(role.players, function(player) {
+                            return {
+                                id: player.user.steamID,
+                                alias: player.user.alias,
+                                faction: team.faction,
+                                class: roles[role.role].class,
+                                replaced: player.replaced
+                            };
+                        });
+                    });
+                }).flattenDeep().compact().reduce(function(prev, player) {
+                    let cur;
+
+                    if (!player.replaced) {
+                        let gameTeam = 1;
+                        let gameClass = 0;
+
+                        if (player.faction === 'RED') {
+                            gameTeam = 2;
+                        }
+                        else if (player.faction === 'BLU') {
+                            gameTeam = 3;
+                        }
+
+                        if (player.class === 'scout') {
+                            gameClass = 1;
+                        }
+                        else if (player.class === 'soldier') {
+                            gameClass = 3;
+                        }
+                        else if (player.class === 'pyro') {
+                            gameClass = 7;
+                        }
+                        else if (player.class === 'demoman') {
+                            gameClass = 4;
+                        }
+                        else if (player.class === 'heavy') {
+                            gameClass = 6;
+                        }
+                        else if (player.class === 'engineer') {
+                            gameClass = 9;
+                        }
+                        else if (player.class === 'medic') {
+                            gameClass = 5;
+                        }
+                        else if (player.class === 'sniper') {
+                            gameClass = 2;
+                        }
+                        else if (player.class === 'spy') {
+                            gameClass = 8;
+                        }
+
+                        cur = function() {
+                            return rcon.command('pugchamp_game_player_add "' + player.id + '" "' + player.alias + '" ' + gameTeam + ' ' + gameClass, serverTimeout);
+                        };
+                    }
+                    else {
+                        cur = function() {
+                            return rcon.command('pugchamp_game_player_remove "' + player.id + '"', serverTimeout);
+                        };
+                    }
+
+                    if (cur) {
+                        if (prev) {
+                            return prev.then(cur);
+                        }
+                        else {
+                            return cur();
+                        }
+                    }
+                    else {
+                        return prev;
+                    }
+                }, null);
+            });
         });
     });
 

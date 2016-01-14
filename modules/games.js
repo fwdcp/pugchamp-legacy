@@ -188,7 +188,7 @@ module.exports = function(app, database, io, self, server) {
                 return;
             }
 
-            let playerIndex = lodash.findIndex(team.composition[roleIndex].players, {
+            let player = lodash.find(team.composition[roleIndex].players, {
                 user: {
                     id: request.player
                 },
@@ -213,8 +213,6 @@ module.exports = function(app, database, io, self, server) {
                     return candidates[0];
                 }
                 else if (substituteSelectionMethod === 'closest') {
-                    let player = team.composition[roleIndex].players[playerIndex];
-
                     return player.populate('currentRating').execPopulate().then(function(player) {
                         let playerRating = 0;
 
@@ -239,7 +237,7 @@ module.exports = function(app, database, io, self, server) {
                     return chance.pick(candidates);
                 }
             }).then(function(replacement) {
-                team.composition[roleIndex].players[playerIndex].replaced = true;
+                player.replaced = true;
 
                 team.composition[roleIndex].players.push({
                     user: replacement.id
@@ -247,6 +245,8 @@ module.exports = function(app, database, io, self, server) {
 
                 return game.save();
             }).then(function() {
+                self.emit('updateServerRoster', game);
+
                 self.emit('sendMessageToUser', {
                     userID: request.player,
                     name: 'currentGameUpdated',
