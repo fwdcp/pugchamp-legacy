@@ -270,7 +270,7 @@ module.exports = function(app, database, io, self, server) {
                         return player.id;
                     });
                 });
-            }).flatten().value();
+            }).flattenDeep().value();
 
             self.emit('updateUsers', players);
         });
