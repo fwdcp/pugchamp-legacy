@@ -34,11 +34,7 @@
     <script src="/components/lodash/lodash.min.js"></script>
     <script>
         var grid = document.getElementById('players');
-        grid.items = {
-            {
-                toJSON players
-            }
-        };
+        grid.items = {{toJSON players}};
 
         grid.addEventListener('sort-order-changed', function() {
             _.sortByOrder(grid.items, _.map(grid.sortOrder, function(sort) {
