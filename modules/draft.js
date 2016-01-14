@@ -99,6 +99,8 @@ module.exports = function(app, database, io, self, server) {
                     if (captain.captainScore && captain.captainScore.low > 0) {
                         weight += captain.captainScore.low;
                     }
+
+                    return weight;
                 });
             }
 
