@@ -291,7 +291,7 @@ module.exports = function(app, database, io, self, server) {
                 }
             }).flatten().find({
                 user: {
-                    steamID: info.player
+                    id: info.player
                 }
             });
 

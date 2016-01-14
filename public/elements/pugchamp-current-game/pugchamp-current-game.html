@@ -67,7 +67,7 @@
 							<template is="dom-repeat" items="{{team.composition}}" as="role">
 								<template is="dom-repeat" items="{{role.players}}">
 									<template is="dom-if" if="{{!item.replaced}}">
-										<paper-item data-role$="{{role.role}}" data-player$="{{item.user.steamID}}">{{item.user.alias}} ({{_getProperty(game.roles, role.role, 'name')}})</paper-item>
+										<paper-item data-role$="{{role.role}}" data-player$="{{item.user.id}}">{{item.user.alias}} ({{_getProperty(game.roles, role.role, 'name')}})</paper-item>
 									</template>
 								</template>
 							</template>
@@ -95,12 +95,12 @@
 
 				if (info) {
 					this.set('team', _.find(info.teams, _.bind(function(team) {
-						this.set('captain', team.captain.steamID == this.user.steamID);
+						this.set('captain', team.captain.id == this.user.id);
 
 						this.set('player', _.find(team.composition, _.bind(function(role) {
 							return _.some(role.players, {
 								user: {
-									steamID: this.user.steamID
+									id: this.user.id
 								}
 							});
 						}, this)));

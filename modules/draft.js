@@ -198,9 +198,7 @@ module.exports = function(app, database, io, self, server) {
                     return filteredPlayer;
                 });
             }),
-            unavailablePlayers: lodash.map(unavailablePlayers, function(userID) {
-                return self.users.get(userID).steamID;
-            }),
+            unavailablePlayers: unavailablePlayers,
             pickedMap: pickedMap,
             remainingMaps: remainingMaps,
             allowedRoles: allowedRoles,
@@ -281,10 +279,10 @@ module.exports = function(app, database, io, self, server) {
             choice.role = chance.weighted(allowedRoles, weights);
 
             if (lodash.includes(overrideRoles, choice.role)) {
+                choice.override = true;
                 choice.player = chance.pick(lodash.difference(fullPlayerList, unavailablePlayers));
             }
             else {
-                choice.override = true;
                 choice.player = chance.pick(lodash.difference(playerPool[choice.role], unavailablePlayers));
             }
         }
@@ -619,14 +617,6 @@ module.exports = function(app, database, io, self, server) {
 
         socket.on('makeDraftChoice', function(choice) {
             choice.captain = socket.decoded_token;
-
-            if (choice.player) {
-                let user = lodash.find(fullPlayerList, function(player) {
-                    return self.users.get(player).steamID === choice.player;
-                });
-
-                choice.player = user;
-            }
 
             self.emit('commitDraftChoice', choice);
         });

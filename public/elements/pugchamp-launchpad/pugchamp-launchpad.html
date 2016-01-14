@@ -99,7 +99,7 @@
                             <paper-checkbox class="role-select" value="{{role.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability"></paper-checkbox>
                         </paper-icon-item>
                         <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
-                            <paper-icon-item class$="player {{isHighlighted(item.steamID, highlightedPlayer)}}" on-mouseover="addHighlight" on-mouseout="removeHighlight">
+                            <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" on-mouseover="addHighlight" on-mouseout="removeHighlight">
                                 <div class="flex">{{item.alias}}</div>
                             </paper-icon-item>
                         </template>
@@ -225,10 +225,10 @@
                 }
             },
             addHighlight: function(event) {
-                this.set('highlightedPlayer', event.model.item.steamID);
+                this.set('highlightedPlayer', event.model.item.id);
             },
             removeHighlight: function(event) {
-                if (this.highlightedPlayer === event.model.item.steamID) {
+                if (this.highlightedPlayer === event.model.item.id) {
                     this.set('highlightedPlayer', null);
                 }
             }

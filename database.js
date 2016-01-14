@@ -29,11 +29,7 @@ userSchema.virtual('admin').get(function() {
 });
 userSchema.set('toObject', {
     getters: true,
-    versionKey: false,
-    transform: function(doc, ret) {
-        delete ret._id;
-        delete ret.id;
-    }
+    versionKey: false
 });
 
 var gameSchema = new mongoose.Schema({
@@ -109,8 +105,6 @@ gameSchema.set('toObject', {
     transform: function(doc, ret) {
         ret.map = config.get('app.games.maps')[doc.map];
         ret.server = lodash.omit(config.get('app.servers.pool')[doc.server], 'rcon', 'salt');
-
-        delete ret._id;
     }
 });
 
