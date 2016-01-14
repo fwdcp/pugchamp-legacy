@@ -411,8 +411,11 @@ public void LogUploaded(bool success, const char[] logid, const char[] logurl) {
 public int HTTPRequestReturned(HTTPRequestHandle HTTPRequest, bool requestSuccessful, HTTPStatusCode statusCode) {
     Steam_ReleaseHTTPRequest(HTTPRequest);
 
-    if (!requestSuccessful || statusCode != HTTPStatusCode_OK) {
+    if (!requestSuccessful) {
         ThrowError("HTTP request failed");
+    }
+    else if (statusCode != HTTPStatusCode_OK) {
+        ThrowError("HTTP request failed with code %i", statusCode);
     }
 }
 
