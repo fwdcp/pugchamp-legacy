@@ -44,13 +44,13 @@
 
                     <paper-progress class="period transiting" data-start$="{{item.value.start}}" data-end$="{{item.value.end}}" min="0"></paper-progress>
 
-                    <p>
+                    <p hidden$={{!user}}>
                         <a class="button" href="/game/{{item.value.game}}" target="_blank"><paper-button raised>View Game Info</paper-button></a>
 
                         <paper-button class="respond" data-status="apply" data-request$="{{item.key}}" hidden$="{{_includes(item.value.candidates, user.id)}}" disabled="{{isRestricted(restrictions, 'sub')}}" on-tap="updateSubstituteApplication">Apply to Substitute</paper-button>
                         <paper-button class="respond" data-status="retract" data-request$="{{item.key}}" hidden$="{{!_includes(item.value.candidates, user.id)}}" disabled="{{isRestricted(restrictions, 'sub')}}" on-tap="updateSubstituteApplication">Retract Substitute Application</paper-button>
 
-                        <paper-button class="remove" data-request$="{{item.key}}" hidden$="{{!_equals(item.value.captain.id, user.id)}}" disabled="{{!_equals(item.value.captain.id, user.id)}}" on-tap="retractSubstituteRequest" raised>Retract Substitute Request</paper-button>
+                        <paper-button class="remove" data-request$="{{item.key}}" hidden$="{{!_isCurrentUser(user, item.value.captain.id)}}" disabled="{{!_isCurrentUser(user, item.value.captain.id)}}" on-tap="retractSubstituteRequest" raised>Retract Substitute Request</paper-button>
                     </p>
                 </paper-material>
             </template>

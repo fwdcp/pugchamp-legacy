@@ -7,6 +7,9 @@
         },
         _onUserInfoUpdated: function(userInfo) {
             this.set('user', userInfo);
+        },
+        _isCurrentUser: function(self, user) {
+            return self && self.id === user;
         }
     };
 

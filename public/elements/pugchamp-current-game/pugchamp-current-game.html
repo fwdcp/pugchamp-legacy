@@ -95,7 +95,7 @@
 
                 if (info) {
                     this.set('team', _.find(info.teams, _.bind(function(team) {
-                        this.set('captain', team.captain.id == this.user.id);
+                        this.set('captain', this._isCurrentUser(this.user, team.captain.id));
 
                         this.set('player', _.find(team.composition, _.bind(function(role) {
                             return _.some(role.players, {
