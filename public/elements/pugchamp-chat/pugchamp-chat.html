@@ -5,6 +5,7 @@
 <link rel="import" href="/components/paper-card/paper-card.html">
 <link rel="import" href="/components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="/components/paper-input/paper-textarea.html">
+<link rel="import" href="/components/paper-tooltip/paper-tooltip.html">
 
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
@@ -44,6 +45,13 @@
             </template>
         </div>
         <div class="horizontal layout end wrap">
+            <paper-icon-button id="online" icon="social:people"></paper-icon-button>
+            <paper-tooltip for="online" position="top">
+                <strong>Currently online:</strong>
+                <template is="dom-repeat" items="{{onlineList}}">
+                    <br> {{item.alias}}
+                </template>
+            </paper-tooltip>
             <iron-a11y-keys id="submitWatcher" keys="enter" on-keys-pressed="onEnter"></iron-a11y-keys>
             <paper-textarea id="messageText" class="flex" maxlength="140" max-rows="3" char-counter disabled="{{isRestricted(restrictions, 'chat')}}"></paper-textarea>
             <paper-icon-button icon="send" on-tap="sendMessage" disabled="{{isRestricted(restrictions, 'chat')}}"></paper-icon-button>
@@ -55,10 +63,15 @@
             behaviors: [PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior],
             ready: function() {
                 this.set('messages', []);
+                this.set('onlineList', []);
 
                 this.$.submitWatcher.target = this.$.messageText;
 
                 this._listenToEvent('messageReceived', 'onMessageReceived');
+                this._listenToEvent('onlineListUpdated', 'onOnlineListUpdated');
+            },
+            onOnlineListUpdated: function(list) {
+                this.set('onlineList', list);
             },
             onMessageReceived: function(message) {
                 var atBottom = this.$.messages.scrollHeight - this.$.messages.scrollTop === this.$.messages.clientHeight;

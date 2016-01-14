@@ -15,7 +15,7 @@ module.exports = function(app, database, io, self, server) {
             return false;
         }).map(function(user) {
             return user.toObject();
-        }).value();
+        }).sortBy('alias').value();
     }
 
     function transmitOnlineList() {
