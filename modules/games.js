@@ -609,7 +609,7 @@ module.exports = function(app, database, io, self, server) {
     });
 
     app.get('/games', function(req, res) {
-        database.Game.find({}).populate('teams.captain').exec().then(function(games) {
+        database.Game.find({}).sort('-date').populate('teams.captain').exec().then(function(games) {
             res.render('gameList', {
                 games: lodash.map(games, game => game.toObject())
             });
