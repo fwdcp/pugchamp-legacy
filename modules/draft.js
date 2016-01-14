@@ -83,33 +83,35 @@ module.exports = function(app, database, io, self, server) {
     });
 
     function selectCaptains(captains) {
-        let method = config.get('app.draft.captainSelectionWeight');
+        return database.User.find({_id: {$in: captains}}).exec().then(function(captains) {
+            let method = config.get('app.draft.captainSelectionWeight');
 
-        let weights;
+            let weights;
 
-        if (method === 'equal') {
-            weights = new Array(lodash.size(captains));
-            lodash.fill(weights, 1, 0, lodash.size(captains));
-        }
-        else if (method === 'success') {
-            weights = lodash.map(captains, function(captain) {
-                let weight = 0.05;
+            if (method === 'equal') {
+                weights = new Array(lodash.size(captains));
+                lodash.fill(weights, 1, 0, lodash.size(captains));
+            }
+            else if (method === 'success') {
+                weights = lodash.map(captains, function(captain) {
+                    let weight = 0.05;
 
-                if (captain.captainScore && captain.captainScore.low > 0) {
-                    weight += captain.captainScore.low;
-                }
-            });
-        }
+                    if (captain.captainScore && captain.captainScore.low > 0) {
+                        weight += captain.captainScore.low;
+                    }
+                });
+            }
 
-        let chosenCaptains = new Set();
+            let chosenCaptains = new Set();
 
-        while (chosenCaptains.size < 2) {
-            chosenCaptains.add(chance.weighted(captains, weights));
-        }
+            while (chosenCaptains.size < 2) {
+                chosenCaptains.add(chance.weighted(captains, weights));
+            }
 
-        draftCaptains = lodash.take([...chosenCaptains], 2);
+            draftCaptains = lodash([...chosenCaptains]).take(2).map(captain => captain.id).value();
 
-        return draftCaptains;
+            return draftCaptains;
+        });
     }
 
     function checkIfLegalState(teams, maps, factions, final) {
@@ -581,8 +583,6 @@ module.exports = function(app, database, io, self, server) {
 
         io.sockets.emit('draftStarting');
 
-        selectCaptains(draftInfo.captains);
-
         playerPool = draftInfo.players;
         fullPlayerList = lodash.reduce(playerPool, function(allPlayers, players) {
             return lodash.union(allPlayers, players);
@@ -597,16 +597,18 @@ module.exports = function(app, database, io, self, server) {
         ];
         pickedMap = null;
 
-        let legalState = checkIfLegalState(pickedTeams, {
-            picked: pickedMap,
-            remaining: remainingMaps
-        }, teamFactions, false);
+        selectCaptains(draftInfo.captains).then(function() {
+            let legalState = checkIfLegalState(pickedTeams, {
+                picked: pickedMap,
+                remaining: remainingMaps
+            }, teamFactions, false);
 
-        if (!legalState) {
-            throw new Error('Invalid state before draft start!');
-        }
+            if (!legalState) {
+                throw new Error('Invalid state before draft start!');
+            }
 
-        beginDraftTurn(0);
+            beginDraftTurn(0);
+        });
     });
 
     io.sockets.on('connection', function(socket) {
