@@ -240,26 +240,26 @@ public Action Command_GamePlayerAdd(int args) {
 
     char name[32];
     GetCmdArg(2, name, sizeof(name));
-    playerNames.SetString(steamID, name);
+    playerNames.SetString(steamID, name, true);
 
     if (args >= 3) {
         char teamString[4];
         int team;
         GetCmdArg(3, teamString, sizeof(teamString));
         team = StringToInt(teamString);
-        playerTeams.SetValue(steamID, team);
+        playerTeams.SetValue(steamID, team, true);
 
         if (args >= 4) {
             char classString[4];
             int class;
             GetCmdArg(4, classString, sizeof(classString));
             class = StringToInt(classString);
-            playerClasses.SetValue(steamID, class);
+            playerClasses.SetValue(steamID, class, true);
         }
     }
 
-    playerStartTimes.SetValue(steamID, -1.0);
-    playerPlaytimes.SetValue(steamID, 0.0);
+    playerStartTimes.SetValue(steamID, -1.0, false);
+    playerPlaytimes.SetValue(steamID, 0.0, false);
 }
 
 public Action Command_GamePlayerRemove(int args) {
@@ -420,7 +420,7 @@ void StartPlayerTimer(int client) {
     char steamID[32];
     GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID));
 
-    playerStartTimes.SetValue(steamID, GetGameTime(), true);
+    playerStartTimes.SetValue(steamID, GetGameTime(), false);
 }
 
 void EndPlayerTimer(int client) {
@@ -431,11 +431,14 @@ void EndPlayerTimer(int client) {
     if (playerStartTimes.GetValue(steamID, startTime) && startTime != -1.0) {
         float currentPlaytime = GetGameTime() - startTime;
 
-        playerStartTimes.SetValue(steamID, -1.0);
+        playerStartTimes.SetValue(steamID, -1.0, true);
 
         float previousPlaytime;
         if (playerPlaytimes.GetValue(steamID, previousPlaytime)) {
             playerPlaytimes.SetValue(steamID, previousPlaytime + currentPlaytime, true);
+        }
+        else {
+            playerPlaytimes.SetValue(steamID, currentPlaytime, true);
         }
     }
 }
