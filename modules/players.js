@@ -22,22 +22,16 @@ module.exports = function(app, database, io, self, server) {
     app.get('/players', function(req, res) {
         database.User.find({
             $or: [{
-                $exists: {
-                    'currentRating': true
+                'currentRating': {
+                    $exists: true
                 }
             }, {
-                $exists: {
-                    'captainScore.low': true
+                'captainScore.low': {
+                    $exists: true
                 }
             }]
         }).populate('currentRating').exec(function(err, users) {
-            var players = lodash(users).filter(function(user) {
-                if (user.currentRating || lodash.has(user.captainScore, 'low')) {
-                    return true;
-                }
-
-                return false;
-            }).orderBy([function(user) {
+            var players = lodash(users).orderBy([function(user) {
                 if (user.currentRating) {
                     return user.currentRating.after.rating;
                 }
