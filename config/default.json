@@ -13,9 +13,10 @@
             "turnTimeLimit": "60s"
         },
         "servers": {
+            "commandTimeout": "5s",
+            "mapChangeTimeout": "60s",
             "queryInterval": "15s",
-            "retryInterval": "5m",
-            "timeout": "5s"
+            "retryInterval": "5m"
         }
     },
     "server": {

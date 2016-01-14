@@ -12,7 +12,9 @@ var chance = new Chance();
 
 module.exports = function(app, database, io, self, server) {
     var gameServerPool = config.get('app.servers.pool');
-    var serverTimeout = ms(config.get('app.servers.timeout'));
+
+    var commandTimeout = ms(config.get('app.servers.commandTimeout'));
+    var mapChangeTimeout = ms(config.get('app.servers.mapChangeTimeout'));
 
     var maps = config.get('app.games.maps');
     var roles = config.get('app.games.roles');
@@ -26,10 +28,10 @@ module.exports = function(app, database, io, self, server) {
 
             return Promise.race([
                 rcon.connect().then(function() {
-                    return rcon.command('pugchamp_game_info', serverTimeout);
+                    return rcon.command('pugchamp_game_info', commandTimeout);
                 }),
                 new Promise(function(resolve, reject) {
-                    setTimeout(reject, serverTimeout, 'timed out');
+                    setTimeout(reject, commandTimeout, 'timed out');
                 })
             ]).then(function(result) {
                 let gameID = result.trim();
@@ -85,12 +87,12 @@ module.exports = function(app, database, io, self, server) {
             });
 
             rcon.connect().then(function() {
-                return rcon.command('pugchamp_game_info', serverTimeout);
+                return rcon.command('pugchamp_game_info', commandTimeout);
             }).then(function(result) {
                 let gameID = result.trim();
 
                 if (gameID === game.id) {
-                    return rcon.command('pugchamp_game_reset', serverTimeout);
+                    return rcon.command('pugchamp_game_reset', commandTimeout);
                 }
             });
         });
@@ -107,20 +109,20 @@ module.exports = function(app, database, io, self, server) {
         let map = maps[game.map];
 
         rcon.connect().then(function() {
-            return rcon.command('pugchamp_game_reset', serverTimeout);
+            return rcon.command('pugchamp_game_reset', commandTimeout);
         }).then(function() {
             let hash = crypto.createHash('sha256');
 
             hash.update(game.id + '|' + gameServer.salt);
             let key = hash.digest('hex');
 
-            return rcon.command('pugchamp_server_url "' + config.get('server.baseURL') + '/api/servers/' + key + '"', serverTimeout);
+            return rcon.command('pugchamp_server_url "' + config.get('server.baseURL') + '/api/servers/' + key + '"', commandTimeout);
         }).then(function() {
-            return rcon.command('pugchamp_game_id "' + game.id + '"', serverTimeout);
+            return rcon.command('pugchamp_game_id "' + game.id + '"', commandTimeout);
         }).then(function() {
-            return rcon.command('pugchamp_game_map "' + map.file + '"', serverTimeout);
+            return rcon.command('pugchamp_game_map "' + map.file + '"', commandTimeout);
         }).then(function() {
-            return rcon.command('pugchamp_game_config "' + map.config + '"', serverTimeout);
+            return rcon.command('pugchamp_game_config "' + map.config + '"', commandTimeout);
         }).then(function() {
             return game.populate('teams.composition.players.user').execPopulate().then(function(game) {
                 return lodash(game.teams).map(function(team) {
@@ -178,7 +180,7 @@ module.exports = function(app, database, io, self, server) {
                     }
 
                     cur = function() {
-                        return rcon.command('pugchamp_game_player_add "' + player.id + '" "' + player.alias + '" ' + gameTeam + ' ' + gameClass, serverTimeout);
+                        return rcon.command('pugchamp_game_player_add "' + player.id + '" "' + player.alias + '" ' + gameTeam + ' ' + gameClass, commandTimeout);
                     };
 
                     if (cur) {
@@ -195,7 +197,7 @@ module.exports = function(app, database, io, self, server) {
                 }, null);
             });
         }).then(function() {
-            return rcon.command('pugchamp_game_start', serverTimeout);
+            return rcon.command('pugchamp_game_start', mapChangeTimeout);
         }).catch(function() {
             if (!abortOnFail) {
                 self.emit('sendSystemMessage', {
@@ -321,12 +323,12 @@ module.exports = function(app, database, io, self, server) {
                         }
 
                         cur = function() {
-                            return rcon.command('pugchamp_game_player_add "' + player.id + '" "' + player.alias + '" ' + gameTeam + ' ' + gameClass, serverTimeout);
+                            return rcon.command('pugchamp_game_player_add "' + player.id + '" "' + player.alias + '" ' + gameTeam + ' ' + gameClass, commandTimeout);
                         };
                     }
                     else {
                         cur = function() {
-                            return rcon.command('pugchamp_game_player_remove "' + player.id + '"', serverTimeout);
+                            return rcon.command('pugchamp_game_player_remove "' + player.id + '"', commandTimeout);
                         };
                     }
 
