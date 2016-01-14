@@ -9,7 +9,7 @@
             "readyPeriod": "60s"
         },
         "draft": {
-            "captainSelectionWeight": "equal",
+            "captainSelectionWeight": "success",
             "turnTimeLimit": "60s"
         },
         "servers": {

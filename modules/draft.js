@@ -85,10 +85,20 @@ module.exports = function(app, database, io, self, server) {
     function selectCaptains(captains) {
         let method = config.get('app.draft.captainSelectionWeight');
 
-        let weights = new Array(lodash.size(captains));
+        let weights;
 
         if (method === 'equal') {
+            weights = new Array(lodash.size(captains));
             lodash.fill(weights, 1, 0, lodash.size(captains));
+        }
+        else if (method === 'success') {
+            weights = lodash.map(captains, function(captain) {
+                let weight = 0.05;
+
+                if (captain.captainScore && captain.captainScore.low > 0) {
+                    weight += captain.captainScore.low;
+                }
+            });
         }
 
         let chosenCaptains = new Set();
