@@ -37,7 +37,7 @@
         grid.items = {{toJSON players}};
 
         grid.addEventListener('sort-order-changed', function() {
-            _.sortByOrder(grid.items, _.map(grid.sortOrder, function(sort) {
+            grid.items = _.sortByOrder(grid.items, _.map(grid.sortOrder, function(sort) {
                 if (sort.column === 0) {
                     return function(item) {
                         return item.alias;
