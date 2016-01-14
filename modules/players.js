@@ -31,14 +31,20 @@ module.exports = function(app, database, io, self, server) {
                 if (user.currentRating) {
                     return user.currentRating.after.rating;
                 }
+
+                return Number.NEGATIVE_INFINITY;
             }, function(user) {
                 if (user.currentRating) {
                     return user.currentRating.after.deviation;
                 }
+
+                return Number.POSITIVE_INFINITY;
             }, function(user) {
                 if (user.captainScore) {
                     return user.captainScore.low;
                 }
+
+                return Number.NEGATIVE_INFINITY;
             }], ['desc', 'asc', 'desc']).map(function(user) {
                 let viewUser = user.toObject();
 
@@ -56,7 +62,7 @@ module.exports = function(app, database, io, self, server) {
                 }
 
                 return viewUser;
-            }).reverse().value();
+            }).value();
 
             res.render('playerList', {
                 players: players
