@@ -38,7 +38,7 @@ def rate_game(game_id):
                     rating = trueskill.Rating()
 
                 old_team_ratings[user['_id']] = rating
-                if (game['duration'] != 0):
+                if ('duration' in game and game['duration'] != 0):
                     weights[(index, user['_id'])] = player['time'] / game['duration']
 
         old_ratings.append(old_team_ratings)
