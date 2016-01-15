@@ -43,11 +43,11 @@ module.exports = function(app, database, io, self, server) {
                     return database.Game.find({
                         'teams.captain': user.id,
                         'status': 'completed'
-                    }).exec().then(function(captainGames) {
+                    }).populate('teams.captain').exec().then(function(captainGames) {
                         let captainStats = lodash.reduce(captainGames, function(stats, game) {
                             stats.total++;
 
-                            if (user._id.equals(game.teams[0].captain)) {
+                            if (game.teams[0].captain.id === user.id) {
                                 if (game.score[0] > game.score[1]) {
                                     stats.wins++;
                                 }
@@ -58,7 +58,7 @@ module.exports = function(app, database, io, self, server) {
                                     stats.ties++;
                                 }
                             }
-                            else if (user._id.equals(game.teams[1].captain)) {
+                            else if (game.teams[1].captain.id === user.id) {
                                 if (game.score[1] > game.score[0]) {
                                     stats.wins++;
                                 }
