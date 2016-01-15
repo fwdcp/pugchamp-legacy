@@ -373,8 +373,9 @@ module.exports = function(app, database, io, self, server) {
 
             if (req.query.status === 'setup') {
                 if (game.status !== 'assigning') {
+                    console.log('game ' + game.id + ' reported by server to be ' + req.query.status + ' but was previously ' + game.status);
+                    console.log(req.query);
                     res.sendStatus(500);
-                    throw new Error('game is not expected status');
                 }
 
                 self.emit('gameSetup', {
@@ -383,8 +384,9 @@ module.exports = function(app, database, io, self, server) {
             }
             else if (req.query.status === 'live') {
                 if (game.status !== 'launching' && game.status !== 'live') {
+                    console.log('game ' + game.id + ' reported by server to be ' + req.query.status + ' but was previously ' + game.status);
+                    console.log(req.query);
                     res.sendStatus(500);
-                    throw new Error('game is not expected status');
                 }
 
                 self.emit('gameLive', {
@@ -395,8 +397,9 @@ module.exports = function(app, database, io, self, server) {
             }
             else if (req.query.status === 'abandoned') {
                 if (game.status !== 'live') {
+                    console.log('game ' + game.id + ' reported by server to be ' + req.query.status + ' but was previously ' + game.status);
+                    console.log(req.query);
                     res.sendStatus(500);
-                    throw new Error('game is not expected status');
                 }
 
                 self.emit('gameAbandoned', {
@@ -408,8 +411,9 @@ module.exports = function(app, database, io, self, server) {
             }
             else if (req.query.status === 'completed') {
                 if (game.status !== 'live') {
+                    console.log('game ' + game.id + ' reported by server to be ' + req.query.status + ' but was previously ' + game.status);
+                    console.log(req.query);
                     res.sendStatus(500);
-                    throw new Error('game is not expected status');
                 }
 
                 self.emit('gameCompleted', {
