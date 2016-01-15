@@ -479,7 +479,9 @@ module.exports = function(app, database, io, self, server) {
                     lodash.each(game.teams, function(team) {
                         lodash.each(team.composition, function(role) {
                             lodash.each(role.players, function(player) {
-                                player.time = info.time[player.user.steamID];
+                                if (info.time[player.user.steamID]) {
+                                    player.time = info.time[player.user.steamID];
+                                }
                             });
                         });
                     });
@@ -515,7 +517,9 @@ module.exports = function(app, database, io, self, server) {
                     lodash.each(game.teams, function(team) {
                         lodash.each(team.composition, function(role) {
                             lodash.each(role.players, function(player) {
-                                player.time = info.time[player.user.steamID];
+                                if (info.time[player.user.steamID]) {
+                                    player.time = info.time[player.user.steamID];
+                                }
                             });
                         });
                     });
