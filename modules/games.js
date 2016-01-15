@@ -444,10 +444,8 @@ module.exports = function(app, database, io, self, server) {
         info.game.status = 'live';
 
         if (info.score) {
-            info.game.score = [];
-
-            lodash.each(info.game.teams, function(team) {
-                info.game.score.push(info.score[team.faction]);
+            info.game.score = lodash.map(info.game.teams, function(team) {
+                return info.score[team.faction];
             });
         }
 
@@ -462,10 +460,8 @@ module.exports = function(app, database, io, self, server) {
         self.emit('abortGame', info.game);
 
         if (info.score) {
-            info.game.score = [];
-
-            lodash.each(info.game.teams, function(team) {
-                info.game.score.push(info.score[team.faction]);
+            info.game.score = lodash.map(info.game.teams, function(team) {
+                return info.score[team.faction];
             });
         }
 
@@ -498,10 +494,8 @@ module.exports = function(app, database, io, self, server) {
         info.game.status = 'completed';
 
         if (info.score) {
-            info.game.score = [];
-
-            lodash.each(info.game.teams, function(team) {
-                info.game.score.push(info.score[team.faction]);
+            info.game.score = lodash.map(info.game.teams, function(team) {
+                return info.score[team.faction];
             });
         }
 
