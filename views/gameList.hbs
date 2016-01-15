@@ -33,6 +33,7 @@
         .team .score {
             font-size: 28px;
             font-weight: 600;
+            margin: 0 10px;
             text-align: center;
         }
 
@@ -70,11 +71,11 @@
                 <span>{{status}}</span>
             </div>
             <div class="team team-0 {{#if teams.[0].faction}}faction-{{teams.[0].faction}}{{/if}} flex-3 horizontal layout">
-                <div class="captain flex-10 vertical layout center-justified">
+                <div class="captain flex vertical layout center-justified">
                     <span>{{teams.[0].captain.alias}}</span>
                 </div>
                 {{#if score.[0]}}
-                    <div class="score flex vertical layout center-justified">
+                    <div class="score vertical layout center-justified">
                         <span>{{score.[0]}}</span>
                     </div>
                 {{/if}}
@@ -84,11 +85,11 @@
             </div>
             <div class="team team-1 {{#if teams.[1].faction}}faction-{{teams.[1].faction}}{{/if}} flex-3 horizontal layout">
                 {{#if score.[1]}}
-                    <div class="score flex vertical layout center-justified">
+                    <div class="score vertical layout center-justified">
                         <span>{{score.[1]}}</span>
                     </div>
                 {{/if}}
-                <div class="captain flex-10 vertical layout center-justified">
+                <div class="captain flex vertical layout center-justified">
                     <span>{{teams.[1].captain.alias}}</span>
                 </div>
             </div>
