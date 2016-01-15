@@ -97,8 +97,6 @@ module.exports = function(app, database, io, self, server) {
         return combinedRestrictions;
     });
 
-    // TODO: send user ID (NOT full user object) to user upon authentication
-
     self.on('userRestrictionsUpdated', function(userID) {
         self.emitToUser(userID, 'restrictionsUpdated', [self.getUserRestrictions(userID)]);
     });
@@ -201,7 +199,6 @@ module.exports = function(app, database, io, self, server) {
 
     io.sockets.on('connection', function(socket) {
         socket.emit('restrictionsUpdated', UNAUTHENTICATED_RESTRICTIONS);
-        socket.emit('userUpdated', null);
     });
     io.sockets.on('authenticated', function(socket) {
         let userID = socket.decoded_token;
