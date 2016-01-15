@@ -258,7 +258,6 @@ public Action Command_GamePlayerAdd(int args) {
         }
     }
 
-    playerStartTimes.SetValue(steamID, -1.0, false);
     playerPlaytimes.SetValue(steamID, 0.0, false);
 }
 
@@ -436,7 +435,7 @@ void EndPlayerTimer(int client) {
     if (playerStartTimes.GetValue(steamID, startTime) && startTime != -1.0) {
         float currentPlaytime = GetGameTime() - startTime;
 
-        playerStartTimes.SetValue(steamID, -1.0, true);
+        playerStartTimes.Remove(steamID);
 
         float previousPlaytime;
         if (playerPlaytimes.GetValue(steamID, previousPlaytime)) {
