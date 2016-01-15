@@ -20,7 +20,7 @@ module.exports = function(app, database, io, self, server) {
     var userSockets = new Map();
 
     self.getOnlineUsers = function getOnlineUsers() {
-        return [...self.userSockets.keys()];
+        return [...userSockets.keys()];
     };
 
     self.emitToUser = function emitToUser(userID, name, args) {
@@ -50,7 +50,7 @@ module.exports = function(app, database, io, self, server) {
 
         return UNAUTHENTICATED_RESTRICTIONS;
     };
-    self.updateUserRestrictions = co(function* updateUserRestrictions(userID) {
+    self.updateUserRestrictions = co.wrap(function* updateUserRestrictions(userID) {
         let user = yield database.User.findById(userID);
         let restrictions = [];
 
@@ -206,15 +206,14 @@ module.exports = function(app, database, io, self, server) {
         socket.emit('userUpdated', userID);
 
         if (!userSockets.has(userID)) {
-            self.userSockets.set(userID, new Set([socket.id]));
+            userSockets.set(userID, new Set([socket.id]));
 
             self.emit('userConnected', userID);
         }
         else {
-            self.userSockets.get(userID).add(socket.id);
+            userSockets.get(userID).add(socket.id);
 
-            socket.emit('userInfoUpdated', self.users.get(userID).toObject());
-            socket.emit('restrictionsUpdated', self.userRestrictions.get(userID));
+            socket.emit('restrictionsUpdated', self.getUserRestrictions(userID));
         }
 
         socket.on('disconnect', function() {
@@ -223,7 +222,7 @@ module.exports = function(app, database, io, self, server) {
             if (userSockets.get(userID).size === 0) {
                 self.emit('userDisconnected', userID);
 
-                self.userSockets.delete(userID);
+                userSockets.delete(userID);
             }
         });
     });
