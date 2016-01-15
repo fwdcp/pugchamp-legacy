@@ -68,9 +68,9 @@
                 this.$.submitWatcher.target = this.$.messageText;
 
                 this._listenToEvent('messageReceived', 'onMessageReceived');
-                this._listenToEvent('onlineListUpdated', 'onOnlineListUpdated');
+                this._listenToEvent('onlineUserListUpdated', 'onOnlineUserListUpdated');
             },
-            onOnlineListUpdated: function(list) {
+            onOnlineUserListUpdated: function(list) {
                 this.set('onlineList', list);
             },
             onMessageReceived: function(message) {

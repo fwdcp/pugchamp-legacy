@@ -4,79 +4,79 @@
 const lodash = require('lodash');
 
 module.exports = function(app, database, io, self, server) {
-    function getOnlineList() {
-        return lodash(self.getOnlineList()).map(function(userID) {
-            return self.users.get(userID);
-        }).filter(function(user) {
-            if (user) {
-                return user.setUp;
-            }
+    var onlineUsers = new Map();
 
-            return false;
-        }).map(function(user) {
-            return user.toObject();
-        }).sortBy('alias').value();
-    }
+    self.getOnlineUserList = function() {
+        return lodash(onlineUsers.values()).filter(user => user.setUp).map(user => lodash.pick(user.toObject(), 'id', 'alias', 'steamID', 'admin')).sortBy('alias').value();
+    };
 
-    function transmitOnlineList() {
-        io.sockets.emit('onlineListUpdated', getOnlineList());
-    }
-
-    self.on('sendUserChatMessage', function(chat) {
-        let userRestrictions = self.userRestrictions.get(chat.userID);
-
-        if (!lodash.includes(userRestrictions.aspects, 'chat')) {
-            let trimmedMessage = (chat.message || '').trim();
-
-            if (trimmedMessage.length > 0) {
-                io.sockets.emit('messageReceived', {
-                    user: self.users.get(chat.userID).toObject(),
-                    body: trimmedMessage
-                });
-            }
+    self.sendMessage = co(function* sendMessage(message) {
+        if (onlineUsers.has(message.user)) {
+            message.user = onlineUsers.get(message.user);
         }
-    });
-
-    self.on('sendSystemMessage', function(message) {
-        if (message.user) {
-            message.user = self.users.get(message.user).toObject();
+        else {
+            message.user = yield database.User.findById(message.user);
         }
+
+        message.user = lodash.pick(message.user.toObject(), 'id', 'alias', 'steamID', 'admin');
 
         io.sockets.emit('messageReceived', message);
     });
 
-    self.on('userConnected', function(userID) {
-        if (self.users.get(userID).setUp) {
-            self.emit('sendSystemMessage', {
+    self.on('userConnected', co(function*(userID) {
+        if (!onlineUsers.has(userID)) {
+            onlineUsers.set(userID, yield database.User.findById(userID));
+        }
+
+        let user = onlineUsers.get(userID);
+
+        if (user.setUp) {
+            self.sendMessage({
                 user: userID,
                 action: 'connected'
             });
-
-            transmitOnlineList();
         }
-    });
 
-    self.on('userDisconnected', function(userID) {
-        if (self.users.get(userID).setUp) {
-            self.emit('sendSystemMessage', {
+        self.emit('onlineUserListUpdated', self.getOnlineUserList());
+    }));
+
+    self.on('userDisconnected', co(function*(userID) {
+        if (!onlineUsers.has(userID)) {
+            onlineUsers.set(userID, yield database.User.findById(userID));
+        }
+
+        let user = onlineUsers.get(userID);
+
+        if (user.setUp) {
+            self.sendMessage({
                 user: userID,
-                action: 'disconnected'
+                action: 'connected'
             });
-
-            transmitOnlineList();
         }
-    });
+
+        self.emit('onlineUserListUpdated', self.getOnlineUserList());
+
+        onlineUsers.delete(userID);
+    }));
 
     io.sockets.on('connection', function(socket) {
-        socket.emit('onlineListUpdated', getOnlineList());
+        socket.emit('onlineUserListUpdated', self.getOnlineUserList());
     });
 
     io.sockets.on('authenticated', function(socket) {
-        socket.on('sendChatMessage', function(message) {
-            self.emit('sendUserChatMessage', {
-                userID: socket.decoded_token,
-                message: message
-            });
+        socket.on('sendChatMessage', function(chat) {
+            let userRestrictions = self.getUserRestrictions(socket.decoded_token);
+
+            if (!lodash.includes(userRestrictions.aspects, 'chat')) {
+                let trimmedMessage = lodash.trim(chat.message);
+
+                if (trimmedMessage.length > 0) {
+                    self.sendMessage({
+                        user: socket.decoded_token,
+                        body: trimmedMessage
+                    });
+                }
+            }
         });
     });
 };
