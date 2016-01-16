@@ -55,7 +55,7 @@ module.exports = function(app, database, io, self, server) {
     });
     var launchHolds = [];
 
-    var launchAttemptInProgress = false;
+    var launchAttemptActive = false;
     var launchAttemptStart = null;
     var readiesReceived = new Set();
 
@@ -83,7 +83,7 @@ module.exports = function(app, database, io, self, server) {
                 launchHolds.push('availablePlayerRoles');
             }
 
-            if (launchAttemptInProgress) {
+            if (launchAttemptActive) {
                 let captainsReady = new Set(_.intersection([...captainsAvailable], [...readiesReceived]));
 
                 if (captainsReady.size < 2) {
@@ -138,7 +138,7 @@ module.exports = function(app, database, io, self, server) {
     function getCurrentStatusMessage() {
         let statusMessage;
 
-        if (launchAttemptInProgress) {
+        if (launchAttemptActive) {
             statusMessage = {
                 active: true,
                 timeElapsed: Date.now() - launchAttemptStart,
@@ -167,12 +167,14 @@ module.exports = function(app, database, io, self, server) {
 
             if (_.size(launchHolds) === 0) {
                 yield self.launchDraft({
-                    players: playersAvailable,
-                    captains: captainsAvailable
+                    players: _.mapValues(playersAvailable, function(available) {
+                        return [...available];
+                    }),
+                    captains: [...captainsAvailable]
                 });
             }
 
-            launchAttemptInProgress = false;
+            launchAttemptActive = false;
             launchAttemptStart = null;
 
             yield self.updateLaunchStatus();
@@ -181,8 +183,8 @@ module.exports = function(app, database, io, self, server) {
 
     function beginLaunchAttempt() {
         return co(function*() {
-            if (!launchAttemptInProgress) {
-                launchAttemptInProgress = true;
+            if (!launchAttemptActive) {
+                launchAttemptActive = true;
                 launchAttemptStart = Date.now();
 
                 readiesReceived = new Set();
@@ -205,12 +207,12 @@ module.exports = function(app, database, io, self, server) {
 
         io.sockets.emit('launchStatusUpdated', getCurrentStatusMessage());
 
-        if (!launchAttemptInProgress && _.size(launchHolds) === 0) {
+        if (!launchAttemptActive && _.size(launchHolds) === 0) {
             yield beginLaunchAttempt();
         }
     });
 
-    self.updateLaunchStatus();
+    updateStatusInfo();
 
     function updateUserAvailability(userID, availability) {
         let userRestrictions = self.getUserRestrictions(userID);
@@ -246,7 +248,7 @@ module.exports = function(app, database, io, self, server) {
     }
 
     function updateUserReadyStatus(userID, ready) {
-        if (launchAttemptInProgress) {
+        if (launchAttemptActive) {
             if (ready) {
                 readiesReceived.add(userID);
             }

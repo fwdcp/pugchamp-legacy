@@ -211,14 +211,18 @@ module.exports = function(app, database, io, self, server) {
 
     io.sockets.on('connection', function(socket) {
         socket.emit('restrictionsUpdated', UNAUTHENTICATED_RESTRICTIONS);
+        socket.emit('userInfoUpdated', null);
     });
-    io.sockets.on('authenticated', function(socket) {
+    io.sockets.on('authenticated', co.wrap(function*(socket) {
         let userID = socket.decoded_token;
+        yield self.updateCachedUser(userID);
+
+        socket.emit('userInfoUpdated', self.getCachedUser(userID));
 
         if (!userSockets.has(userID)) {
             userSockets.set(userID, new Set([socket.id]));
 
-            self.updateUserRestrictions(userID);
+            yield self.updateUserRestrictions(userID);
 
             self.emit('userConnected', userID);
         }
@@ -237,10 +241,6 @@ module.exports = function(app, database, io, self, server) {
                 userSockets.delete(userID);
             }
         });
-    });
-
-    self.on('userConnected', co.wrap(function*(userID) {
-        yield self.updateCachedUser(userID);
     }));
 
     app.get('/user/settings', function(req, res) {
