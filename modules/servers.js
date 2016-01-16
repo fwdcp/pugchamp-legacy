@@ -48,7 +48,7 @@ module.exports = function(app, database, io, self, server) {
 
                 let response = yield sendCommandToServer(rcon, 'pugchamp_game_info');
 
-                let gameID = response.trim();
+                let gameID = _.trim(response);
 
                 if (gameID) {
                     try {
@@ -87,9 +87,9 @@ module.exports = function(app, database, io, self, server) {
     }
 
     self.getServerStatuses = co.wrap(function* getServerStatuses() {
-        let statuses = yield _.map(GAME_SERVER_POOL, gameServer => getServerStatus(gameServer));
+        let statuses = yield _.map(GAME_SERVER_POOL, (gameServerInfo, gameServer) => getServerStatus(gameServer));
 
-        return _.zip(_.keys(GAME_SERVER_POOL), statuses);
+        return _.zipObject(_.keys(GAME_SERVER_POOL), statuses);
     });
 
     self.getAvailableServers = co.wrap(function* getAvailableServers() {
