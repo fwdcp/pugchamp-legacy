@@ -55,22 +55,33 @@ module.exports = function(app, database, io, self, server) {
                         let game = yield database.Game.findById(gameID);
 
                         if (game) {
-                            return {status: 'assigned', game: game};
+                            return {
+                                status: 'assigned',
+                                game: game
+                            };
                         }
                         else {
-                            return {status: 'unknown'};
+                            return {
+                                status: 'unknown'
+                            };
                         }
                     }
                     catch (err) {
-                        return {status: 'unknown'};
+                        return {
+                            status: 'unknown'
+                        };
                     }
                 }
                 else {
-                    return {status: 'free'};
+                    return {
+                        status: 'free'
+                    };
                 }
             }
             catch (err) {
-                return {status: 'unreachable'};
+                return {
+                    status: 'unreachable'
+                };
             }
         });
     }
