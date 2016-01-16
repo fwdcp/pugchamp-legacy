@@ -24,45 +24,41 @@ module.exports = function(app, database, io, self, server) {
         io.sockets.emit('messageReceived', message);
     });
 
-    self.on('userConnected', function(userID) {
-        co(function*() {
-            if (!onlineUsers.has(userID)) {
-                onlineUsers.set(userID, yield database.User.findById(userID));
-            }
+    self.on('userConnected', co.wrap(function*(userID) {
+        if (!onlineUsers.has(userID)) {
+            onlineUsers.set(userID, yield database.User.findById(userID));
+        }
 
-            let user = onlineUsers.get(userID);
+        let user = onlineUsers.get(userID);
 
-            if (user.setUp) {
-                self.sendMessage({
-                    user: userID,
-                    action: 'connected'
-                });
-            }
+        if (user.setUp) {
+            self.sendMessage({
+                user: userID,
+                action: 'connected'
+            });
+        }
 
-            io.sockets.emit('onlineUserListUpdated', self.getOnlineUserList());
-        });
-    });
+        io.sockets.emit('onlineUserListUpdated', self.getOnlineUserList());
+    }));
 
-    self.on('userDisconnected', function(userID) {
-        co(function*() {
-            if (!onlineUsers.has(userID)) {
-                onlineUsers.set(userID, yield database.User.findById(userID));
-            }
+    self.on('userDisconnected', co.wrap(function*(userID) {
+        if (!onlineUsers.has(userID)) {
+            onlineUsers.set(userID, yield database.User.findById(userID));
+        }
 
-            let user = onlineUsers.get(userID);
+        let user = onlineUsers.get(userID);
 
-            if (user.setUp) {
-                self.sendMessage({
-                    user: userID,
-                    action: 'disconnected'
-                });
-            }
+        if (user.setUp) {
+            self.sendMessage({
+                user: userID,
+                action: 'disconnected'
+            });
+        }
 
-            onlineUsers.delete(userID);
+        onlineUsers.delete(userID);
 
-            io.sockets.emit('onlineUserListUpdated', self.getOnlineUserList());
-        });
-    });
+        io.sockets.emit('onlineUserListUpdated', self.getOnlineUserList());
+    }));
 
     io.sockets.on('connection', function(socket) {
         socket.emit('onlineUserListUpdated', self.getOnlineUserList());

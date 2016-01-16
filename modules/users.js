@@ -245,45 +245,43 @@ module.exports = function(app, database, io, self, server) {
     });
     app.post('/user/settings', bodyParser.urlencoded({
         extended: false
-    }), function(req, res) {
+    }), co.wrap(function*(req, res) {
         if (req.user) {
-            co(function*() {
-                let errors = [];
+            let errors = [];
 
-                if (req.body.alias && !req.user.alias) {
-                    if (/^[A-Za-z0-9_]{1,15}$/.test(req.body.alias)) {
-                        let existingUser = yield database.User.findOne({
-                            alias: req.body.alias
-                        });
+            if (req.body.alias && !req.user.alias) {
+                if (/^[A-Za-z0-9_]{1,15}$/.test(req.body.alias)) {
+                    let existingUser = yield database.User.findOne({
+                        alias: req.body.alias
+                    });
 
-                        if (!existingUser) {
-                            errors.push('The alias you selected is not available.');
-                        }
-                        else {
-                            req.user.alias = req.body.alias;
-                        }
+                    if (!existingUser) {
+                        errors.push('The alias you selected is not available.');
                     }
                     else {
-                        errors.push('The alias you selected is not in the proper format');
+                        req.user.alias = req.body.alias;
                     }
                 }
-
-                if (req.user.alias) {
-                    req.user.setUp = true;
-                }
                 else {
-                    errors.push('Your account is not set up yet.');
+                    errors.push('The alias you selected is not in the proper format');
                 }
+            }
 
-                yield req.user.save();
+            if (req.user.alias) {
+                req.user.setUp = true;
+            }
+            else {
+                errors.push('Your account is not set up yet.');
+            }
 
-                res.render('userSettings', {
-                    errors: errors
-                });
+            yield req.user.save();
+
+            res.render('userSettings', {
+                errors: errors
             });
         }
         else {
             res.redirect('/user/login');
         }
-    });
+    }));
 };
