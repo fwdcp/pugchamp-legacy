@@ -12,11 +12,10 @@ const RCON = require('srcds-rcon');
 var chance = new Chance();
 
 module.exports = function(app, database, io, self, server) {
-    const GAME_SERVER_POOL = config.get('app.servers.pool');
-
+    const BASE_URL = config.get('server.baseURL');
     const COMMAND_TIMEOUT = ms(config.get('app.servers.commandTimeout'));
+    const GAME_SERVER_POOL = config.get('app.servers.pool');
     const MAP_CHANGE_TIMEOUT = ms(config.get('app.servers.mapChangeTimeout'));
-
     const MAPS = config.get('app.games.maps');
     const ROLES = config.get('app.games.roles');
 
@@ -186,7 +185,7 @@ module.exports = function(app, database, io, self, server) {
         let hash = crypto.createHash('sha256');
         hash.update(game.id + '|' + gameServerInfo.salt);
         let key = hash.digest('hex');
-        yield sendCommandToServer(rcon, 'pugchamp_server_url "' + config.get('server.baseURL') + '/api/servers/' + key + '"');
+        yield sendCommandToServer(rcon, 'pugchamp_server_url "' + BASE_URL + '/api/servers/' + key + '"');
 
         yield sendCommandToServer(rcon, 'pugchamp_game_id "' + game.id + '"');
 

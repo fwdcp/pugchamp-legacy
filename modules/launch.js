@@ -11,20 +11,22 @@ module.exports = function(app, database, io, self, server) {
     const READY_PERIOD = ms(config.get('app.launch.readyPeriod'));
 
     var userCache = new Map();
+    const ROLES = config.get('app.games.roles');
+    const TEAM_SIZE = config.get('app.games.teamSize');
 
     function calculateRolesNeeded(playersAvailable) {
         let roles = config.get('app.games.roles');
-        let roleNames = _.keys(roles);
+        let roleNames = _.keys(ROLES);
 
         let neededCombinations = [];
 
-        let n = _.size(roles);
+        let n = _.size(ROLES);
 
         function checkCombination(combination) {
             let combinationInfo = _.reduce(combination, function(current, roleName) {
                 return {
                     available: new Set([...current.available, ...playersAvailable[roleName]]),
-                    required: current.required + (roles[roleName].min * 2)
+                    required: current.required + (ROLES[roleName].min * 2)
                 };
             }, {
                 available: new Set(),
@@ -59,7 +61,7 @@ module.exports = function(app, database, io, self, server) {
     }
 
     var captainsAvailable = new Set();
-    var playersAvailable = _.mapValues(config.get('app.games.roles'), function() {
+    var playersAvailable = _.mapValues(ROLES, function() {
         return new Set();
     });
     var launchHolds = [];
@@ -82,7 +84,7 @@ module.exports = function(app, database, io, self, server) {
                 return new Set(_.union([...allPlayers], [...players]));
             }, new Set());
 
-            if (allPlayersAvailable.size < 2 * config.get('app.games.teamSize')) {
+            if (allPlayersAvailable.size < 2 * TEAM_SIZE) {
                 launchHolds.push('availablePlayers');
             }
 
@@ -101,7 +103,7 @@ module.exports = function(app, database, io, self, server) {
 
                 let allPlayersReady = new Set(_.intersection([...allPlayersAvailable], [...readiesReceived]));
 
-                if (allPlayersReady.size < 2 * config.get('app.games.teamSize')) {
+                if (allPlayersReady.size < 2 * TEAM_SIZE) {
                     launchHolds.push('readyPlayers');
                 }
 
@@ -131,7 +133,7 @@ module.exports = function(app, database, io, self, server) {
     function updateStatusInfo() {
         return co(function*() {
             currentStatusInfo = {
-                roles: config.get('app.games.roles'),
+                roles: ROLES,
                 playersAvailable: _.mapValues(playersAvailable, function(available) {
                     return _.map([...available], function(userID) {
                         return userCache.get(userID);
