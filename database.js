@@ -1,8 +1,8 @@
 /* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
 "use strict";
 
+const _ = require('lodash');
 const config = require('config');
-const lodash = require('lodash');
 const mongoose = require('mongoose');
 
 mongoose.connect(config.get('server.mongodb'));
@@ -28,7 +28,7 @@ var userSchema = new mongoose.Schema({
     }
 });
 userSchema.virtual('admin').get(function() {
-    return lodash.includes(config.get('app.admins'), this.steamID);
+    return _.includes(config.get('app.admins'), this.steamID);
 });
 userSchema.set('toObject', {
     getters: true,
@@ -107,7 +107,7 @@ gameSchema.set('toObject', {
     versionKey: false,
     transform: function(doc, ret) {
         ret.map = config.get('app.games.maps')[doc.map];
-        ret.server = lodash.omit(config.get('app.servers.pool')[doc.server], 'rcon', 'salt');
+        ret.server = _.omit(config.get('app.servers.pool')[doc.server], 'rcon', 'salt');
     }
 });
 

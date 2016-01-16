@@ -1,14 +1,14 @@
 /* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
 "use strict";
 
+const _ = require('lodash');
 const co = require('co');
-const lodash = require('lodash');
 
 module.exports = function(app, database, io, self, server) {
     var onlineUsers = new Map();
 
     self.getOnlineUserList = function() {
-        return lodash([...onlineUsers.values()]).filter(user => user.setUp).map(user => lodash.pick(user.toObject(), 'id', 'alias', 'steamID', 'admin')).sortBy('alias').value();
+        return _([...onlineUsers.values()]).filter(user => user.setUp).map(user => _.pick(user.toObject(), 'id', 'alias', 'steamID', 'admin')).sortBy('alias').value();
     };
 
     self.sendMessage = co.wrap(function* sendMessage(message) {
@@ -19,7 +19,7 @@ module.exports = function(app, database, io, self, server) {
             message.user = yield database.User.findById(message.user);
         }
 
-        message.user = lodash.pick(message.user.toObject(), 'id', 'alias', 'steamID', 'admin');
+        message.user = _.pick(message.user.toObject(), 'id', 'alias', 'steamID', 'admin');
 
         io.sockets.emit('messageReceived', message);
     });
@@ -68,8 +68,8 @@ module.exports = function(app, database, io, self, server) {
         socket.on('sendChatMessage', function(chat) {
             let userRestrictions = self.getUserRestrictions(socket.decoded_token);
 
-            if (!lodash.includes(userRestrictions.aspects, 'chat')) {
-                let trimmedMessage = lodash.trim(chat.message);
+            if (!_.includes(userRestrictions.aspects, 'chat')) {
+                let trimmedMessage = _.trim(chat.message);
 
                 if (trimmedMessage.length > 0) {
                     self.sendMessage({

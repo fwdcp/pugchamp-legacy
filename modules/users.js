@@ -1,11 +1,11 @@
 /* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
 "use strict";
 
+const _ = require('lodash');
 const bodyParser = require('body-parser');
 const co = require('co');
 const config = require('config');
 const jwt = require('jsonwebtoken');
-const lodash = require('lodash');
 const OpenIDStrategy = require('passport-openid').Strategy;
 const passport = require('passport');
 const socketioJwt = require('socketio-jwt');
@@ -82,9 +82,9 @@ module.exports = function(app, database, io, self, server) {
 
         // TODO: check user restrictions
 
-        let combinedRestrictions = lodash.reduce(restrictions, function(combinedRestrictions, restriction) {
+        let combinedRestrictions = _.reduce(restrictions, function(combinedRestrictions, restriction) {
             return {
-                aspects: lodash.union(combinedRestrictions.aspects, restriction.aspects),
+                aspects: _.union(combinedRestrictions.aspects, restriction.aspects),
                 reasons: [...combinedRestrictions.reasons, ...restriction.reasons]
             };
         }, {

@@ -1,11 +1,11 @@
 /* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
 "use strict";
 
+const _ = require('lodash');
 const Chance = require('chance');
 const co = require('co');
 const config = require('config');
 const crypto = require('crypto');
-const lodash = require('lodash');
 const ms = require('ms');
 const RCON = require('srcds-rcon');
 
@@ -76,15 +76,15 @@ module.exports = function(app, database, io, self, server) {
     }
 
     self.getServerStatuses = co.wrap(function* getServerStatuses() {
-        let statuses = yield lodash.map(GAME_SERVER_POOL, gameServer => getServerStatus(gameServer));
+        let statuses = yield _.map(GAME_SERVER_POOL, gameServer => getServerStatus(gameServer));
 
-        return lodash.zip(lodash.keys(GAME_SERVER_POOL), statuses);
+        return _.zip(_.keys(GAME_SERVER_POOL), statuses);
     });
 
     self.getAvailableServers = co.wrap(function* getAvailableServers() {
         let statuses = yield self.getServerStatuses();
 
-        return lodash(statuses).pickBy(function(status) {
+        return _(statuses).pickBy(function(status) {
             if (status.status === 'free') {
                 return true;
             }
@@ -104,9 +104,9 @@ module.exports = function(app, database, io, self, server) {
 
         let populatedGame = yield game.populate('teams.composition.players.user').execPopulate();
 
-        let players = lodash(populatedGame.teams).map(function(team) {
-            return lodash.map(team.composition, function(role) {
-                return lodash.map(role.players, function(player) {
+        let players = _(populatedGame.teams).map(function(team) {
+            return _.map(team.composition, function(role) {
+                return _.map(role.players, function(player) {
                     return {
                         id: player.user.steamID,
                         alias: player.user.alias,
