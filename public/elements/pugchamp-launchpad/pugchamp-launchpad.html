@@ -19,7 +19,7 @@
 <dom-module id="pugchamp-launchpad">
     <template>
         <style is="custom-style">
-            .condition {
+            .hold {
                 background: var(--paper-amber-300);
                 margin: 10px 0;
                 padding: 10px;
@@ -53,7 +53,7 @@
             }
         </style>
 
-        <paper-material id="ready" hidden$="{{!launchInProgress}}">
+        <paper-material id="ready" hidden$="{{!launchActive}}">
             <h2>Launch In Progress</h2>
 
             <p>
@@ -64,19 +64,28 @@
                 <paper-button data-status="notReady" hidden$="{{!readyToPlay}}" disabled="{{isRestricted(restrictions, 'start')}}" on-tap="updateReadyStatus">Set Not Ready</paper-button>
             </p>
         </paper-material>
-        <paper-material class="condition" hidden$="{{!_includes(conditions, 'notAvailable')}}">
-            There are currently not enough people to launch a game.
+        <paper-material class="hold" hidden$="{{!_includes(holds, 'availableCaptains')}}">
+            There are currently not enough captains available.
         </paper-material>
-        <paper-material class="condition" hidden$="{{!_includes(conditions, 'readyNotChecked')}}">
-            A game will launch if enough people are ready after this ready period.
+        <paper-material class="hold" hidden$="{{!_includes(holds, 'availablePlayers')}}">
+            There are currently not enough players available.
         </paper-material>
-        <paper-material class="condition" hidden$="{{!_includes(conditions, 'notReady')}}">
-            Not enough people were ready to play.
+        <paper-material class="hold" hidden$="{{!_includes(holds, 'availablePlayerRoles')}}">
+            The players available cannot fit the role requirements.
         </paper-material>
-        <paper-material class="condition" hidden$="{{!_includes(conditions, 'draftCurrentlyRunning')}}">
+        <paper-material class="hold" hidden$="{{!_includes(holds, 'readyCaptains')}}">
+            There are currently not enough captains ready.
+        </paper-material>
+        <paper-material class="hold" hidden$="{{!_includes(holds, 'readyPlayers')}}">
+            There are currently not enough players ready.
+        </paper-material>
+        <paper-material class="hold" hidden$="{{!_includes(holds, 'readyPlayerRoles')}}">
+            The players ready cannot fit the role requirements.
+        </paper-material>
+        <paper-material class="hold" hidden$="{{!_includes(holds, 'inactiveDraft')}}">
             A draft is currently running.
         </paper-material>
-        <paper-material class="condition" hidden$="{{!_includes(conditions, 'noAvailableServers')}}">
+        <paper-material class="hold" hidden$="{{!_includes(holds, 'availableServers')}}">
             No servers are available to play on.
         </paper-material>
         <div class="horizontal layout" id="captains">
@@ -120,22 +129,26 @@
             is: 'pugchamp-launchpad',
             behaviors: [PugChampPolymerHelperBehaviors, PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior],
             ready: function() {
-                this.set('launchInProgress', false);
+                this.set('launchActive', false);
                 this.set('readyToPlay', false);
 
                 this._listenToEvent('launchStatusUpdated', 'onLaunchStatusUpdated');
                 this._listenToEvent('userAvailabilityUpdated', 'onUserAvailabilityUpdated');
                 this._listenToEvent('userReadyStatusUpdated', 'onUserReadyStatusUpdated');
-                this._listenToEvent('launchInProgress', 'onLaunchInProgress');
-                this._listenToEvent('launchAborted', 'onLaunchAborted');
-                this._listenToEvent('draftStarting', 'onDraftStarting');
             },
             onLaunchStatusUpdated: function(status) {
                 this.set('roles', status.roles);
                 this.set('players', status.playersAvailable);
                 this.set('captains', status.captainsAvailable);
                 this.set('rolesNeeded', status.rolesNeeded);
-                this.set('conditions', status.missingLaunchConditions);
+                this.set('holds', status.launchHolds);
+
+                if (!this.launchActive && status.active) {
+                    this.startReady({elapsed: status.timeElapsed, total: status.timeTotal});
+                }
+                else if (this.launchActive && !status.active) {
+                    this.resetReady();
+                }
             },
             updateAvailability: function() {
                 var roles = [];
@@ -160,18 +173,6 @@
 
                 this.$.captainSelect.checked = availability.captain;
             },
-            onLaunchInProgress: function(periodInfo) {
-                this.set('launchInProgress', true);
-
-                this.$.launchNotification.notify();
-                this.$.notifySound.currentTime = 0;
-                this.$.notifySound.play();
-
-                this.$.readyTime.value = periodInfo.elapsed / 1000;
-                this.$.readyTime.max = periodInfo.total / 1000;
-
-                this.async(this.incrementReadyTimer, 1000);
-            },
             incrementReadyTimer: function() {
                 this.$.readyTime.value++;
 
@@ -185,14 +186,20 @@
             onUserReadyStatusUpdated: function(ready) {
                 this.set('readyToPlay', ready);
             },
-            onLaunchAborted: function() {
-                this.resetReady();
-            },
-            onDraftStarting: function() {
-                this.resetReady();
+            startReady: function(time) {
+                this.set('launchActive', true);
+
+                this.$.launchNotification.notify();
+                this.$.notifySound.currentTime = 0;
+                this.$.notifySound.play();
+
+                this.$.readyTime.value = time.elapsed / 1000;
+                this.$.readyTime.max = time.total / 1000;
+
+                this.async(this.incrementReadyTimer, 1000);
             },
             resetReady: function() {
-                this.set('launchInProgress', false);
+                this.set('launchActive', false);
 
                 this.$.launchNotification.close();
                 if (!this.readyToPlay) {
