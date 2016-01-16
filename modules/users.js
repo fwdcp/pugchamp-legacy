@@ -26,7 +26,7 @@ module.exports = function(app, database, io, self, server) {
     self.emitToUser = function emitToUser(userID, name, args) {
         if (userSockets.has(userID)) {
             for (let socket of userSockets.get(userID)) {
-                io.sockets.connected[socket].emit(name, args);
+                io.sockets.connected[socket].emit(name, ...args);
             }
         }
     };
@@ -91,6 +91,8 @@ module.exports = function(app, database, io, self, server) {
             aspects: [],
             reasons: []
         });
+
+        userRestrictions.set(userID, combinedRestrictions);
 
         self.emit('userRestrictionsUpdated', userID);
 
@@ -207,6 +209,8 @@ module.exports = function(app, database, io, self, server) {
 
         if (!userSockets.has(userID)) {
             userSockets.set(userID, new Set([socket.id]));
+
+            self.updateUserRestrictions(userID);
 
             self.emit('userConnected', userID);
         }
