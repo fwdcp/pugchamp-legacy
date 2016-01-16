@@ -65,11 +65,11 @@ module.exports = function(app, database, io, self, server) {
     });
 
     io.sockets.on('authenticated', function(socket) {
-        socket.on('sendChatMessage', function(chat) {
+        socket.on('sendChatMessage', function(message) {
             let userRestrictions = self.getUserRestrictions(socket.decoded_token);
 
             if (!_.includes(userRestrictions.aspects, 'chat')) {
-                let trimmedMessage = _.trim(chat.message);
+                let trimmedMessage = _.trim(message);
 
                 if (trimmedMessage.length > 0) {
                     self.sendMessage({
