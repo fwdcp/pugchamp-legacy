@@ -12,17 +12,17 @@ const RCON = require('srcds-rcon');
 var chance = new Chance();
 
 module.exports = function(app, database, io, self, server) {
-    var gameServerPool = config.get('app.servers.pool');
+    const GAME_SERVER_POOL = config.get('app.servers.pool');
 
-    var commandTimeout = ms(config.get('app.servers.commandTimeout'));
-    var mapChangeTimeout = ms(config.get('app.servers.mapChangeTimeout'));
+    const COMMAND_TIMEOUT = ms(config.get('app.servers.commandTimeout'));
+    const MAP_CHANGE_TIMEOUT = ms(config.get('app.servers.mapChangeTimeout'));
 
-    var maps = config.get('app.games.maps');
-    var roles = config.get('app.games.roles');
+    const MAPS = config.get('app.games.maps');
+    const ROLES = config.get('app.games.roles');
 
     function connectToServer(gameServer) {
         return co(function*() {
-            let gameServerInfo = gameServerPool[gameServer];
+            let gameServerInfo = GAME_SERVER_POOL[gameServer];
 
             let rcon = RCON({
                 address: gameServerInfo.address,
@@ -37,7 +37,7 @@ module.exports = function(app, database, io, self, server) {
 
     function sendCommandToServer(rcon, command, timeout) {
         return co(function*() {
-            yield rcon.command(command, timeout ? timeout : commandTimeout);
+            yield rcon.command(command, timeout ? timeout : COMMAND_TIMEOUT);
         });
     }
 
@@ -76,9 +76,9 @@ module.exports = function(app, database, io, self, server) {
     }
 
     self.getServerStatuses = co.wrap(function* getServerStatuses() {
-        let statuses = yield lodash.map(gameServerPool, gameServer => getServerStatus(gameServer));
+        let statuses = yield lodash.map(GAME_SERVER_POOL, gameServer => getServerStatus(gameServer));
 
-        return lodash.zip(lodash.keys(gameServerPool), statuses);
+        return lodash.zip(lodash.keys(GAME_SERVER_POOL), statuses);
     });
 
     self.getAvailableServers = co.wrap(function* getAvailableServers() {
@@ -111,7 +111,7 @@ module.exports = function(app, database, io, self, server) {
                         id: player.user.steamID,
                         alias: player.user.alias,
                         faction: team.faction,
-                        class: roles[role.role].class,
+                        class: ROLES[role.role].class,
                         replaced: player.replaced
                     };
                 });
@@ -171,7 +171,7 @@ module.exports = function(app, database, io, self, server) {
 
         yield sendCommandToServer(rcon, 'pugchamp_game_reset');
 
-        let gameServerInfo = gameServerPool[game.server];
+        let gameServerInfo = GAME_SERVER_POOL[game.server];
         let hash = crypto.createHash('sha256');
         hash.update(game.id + '|' + gameServerInfo.salt);
         let key = hash.digest('hex');
@@ -179,13 +179,13 @@ module.exports = function(app, database, io, self, server) {
 
         yield sendCommandToServer(rcon, 'pugchamp_game_id "' + game.id + '"');
 
-        let map = maps[game.map];
+        let map = MAPS[game.map];
         yield sendCommandToServer(rcon, 'pugchamp_game_map "' + map.file + '"');
         yield sendCommandToServer(rcon, 'pugchamp_game_config "' + map.config + '"');
 
         yield self.updateServerPlayers(game);
 
-        yield sendCommandToServer(rcon, 'pugchamp_game_start', mapChangeTimeout);
+        yield sendCommandToServer(rcon, 'pugchamp_game_start', MAP_CHANGE_TIMEOUT);
     });
 
     self.assignGameToServer = co.wrap(function* assignGameToServer(game) {
@@ -210,7 +210,7 @@ module.exports = function(app, database, io, self, server) {
             return;
         }
 
-        let gameServer = gameServerPool[game.server];
+        let gameServer = GAME_SERVER_POOL[game.server];
 
         let hash = crypto.createHash('sha256');
         hash.update(game.id + '|' + gameServer.salt);
