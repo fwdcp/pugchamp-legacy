@@ -2,6 +2,7 @@
 "use strict";
 
 const Chance = require('chance');
+const co = require('co');
 const config = require('config');
 const crypto = require('crypto');
 const lodash = require('lodash');
@@ -19,418 +20,209 @@ module.exports = function(app, database, io, self, server) {
     var maps = config.get('app.games.maps');
     var roles = config.get('app.games.roles');
 
-    function getAvailableServers() {
-        return Promise.all(lodash.map(gameServerPool, function(gameServer, gameServerName) {
+    function connectToServer(gameServer) {
+        return co(function*() {
+            let gameServerInfo = gameServerPool[gameServer];
+
             let rcon = RCON({
-                address: gameServer.address,
-                password: gameServer.rcon
+                address: gameServerInfo.address,
+                password: gameServerInfo.rcon
             });
 
-            return Promise.race([
-                rcon.connect().then(function() {
-                    return rcon.command('pugchamp_game_info', commandTimeout);
-                }),
-                new Promise(function(resolve, reject) {
-                    setTimeout(reject, commandTimeout, 'timed out');
-                })
-            ]).then(function(result) {
-                let gameID = result.trim();
+            yield rcon.connect();
+
+            return rcon;
+        });
+    }
+
+    function sendCommandToServer(rcon, command, timeout) {
+        return co(function*() {
+            yield rcon.command(command, timeout ? timeout : commandTimeout);
+        });
+    }
+
+    function getServerStatus(gameServer) {
+        return co(function*() {
+            try {
+                let rcon = yield connectToServer(gameServer);
+
+                let response = yield sendCommandToServer(rcon, 'pugchamp_game_info');
+
+                let gameID = response.trim();
 
                 if (gameID) {
-                    return database.Game.findById(gameID).exec().then(function(game) {
-                        if (!game) {
-                            return gameServerName;
-                        }
+                    try {
+                        let game = yield database.Game.findById(gameID);
 
-                        if (game.status === 'completed' || game.status === 'aborted') {
-                            return gameServerName;
+                        if (game) {
+                            return {status: 'assigned', game: game};
                         }
                         else {
-                            return false;
+                            return {status: 'unknown'};
                         }
-                    });
+                    }
+                    catch (err) {
+                        return {status: 'unknown'};
+                    }
                 }
                 else {
-                    return gameServerName;
+                    return {status: 'free'};
                 }
-            }, function() {
-                return false;
-            });
-        })).then(function(results) {
-            return lodash.compact(results);
+            }
+            catch (err) {
+                return {status: 'unreachable'};
+            }
         });
     }
-    var throttledGetAvailableServers = lodash.throttle(getAvailableServers, ms(config.get('app.servers.queryInterval')), {
-        leading: true
+
+    self.getServerStatuses = co.wrap(function* getServerStatuses() {
+        let statuses = yield lodash.map(gameServerPool, gameServer => getServerStatus(gameServer));
+
+        return lodash.zip(lodash.keys(gameServerPool), statuses);
     });
 
-    self.on('getAvailableServers', function(callback) {
-        throttledGetAvailableServers().then(function(results) {
-            callback(results);
-        });
-    });
+    self.getAvailableServers = co.wrap(function* getAvailableServers() {
+        let statuses = yield self.getServerStatuses();
 
-    self.on('getServerStatuses', function(callback) {
-        // TODO: implement for admin interface
-    });
+        return lodash(statuses).pickBy(function(status) {
+            if (status.status === 'free') {
+                return true;
+            }
 
-    self.on('abortGame', function(game) {
-        game.status = 'aborted';
-        game.save().then(function() {
-            self.emit('wrapUpGame', game);
-        });
-
-        lodash.each(gameServerPool, function(gameServer) {
-            let rcon = RCON({
-                address: gameServer.address,
-                password: gameServer.rcon
-            });
-
-            rcon.connect().then(function() {
-                return rcon.command('pugchamp_game_info', commandTimeout);
-            }).then(function(result) {
-                let gameID = result.trim();
-
-                if (gameID === game.id) {
-                    return rcon.command('pugchamp_game_reset', commandTimeout);
+            if (status.status === 'assigned') {
+                if (status.game.status === 'completed' || status.game.status === 'aborted') {
+                    return true;
                 }
-            });
-        });
+            }
+
+            return false;
+        }).keys().value();
     });
 
-    function setUpServer(game, abortOnFail) {
-        let gameServer = gameServerPool[game.server];
+    self.updateServerPlayers = co.wrap(function* updateServerPlayers(game) {
+        let rcon = yield connectToServer(game.server);
 
-        let rcon = RCON({
-            address: gameServer.address,
-            password: gameServer.rcon
-        });
+        let populatedGame = yield game.populate('teams.composition.players.user').execPopulate();
 
-        let map = maps[game.map];
-
-        rcon.connect().then(function() {
-            return rcon.command('pugchamp_game_reset', commandTimeout);
-        }).then(function() {
-            let hash = crypto.createHash('sha256');
-
-            hash.update(game.id + '|' + gameServer.salt);
-            let key = hash.digest('hex');
-
-            return rcon.command('pugchamp_server_url "' + config.get('server.baseURL') + '/api/servers/' + key + '"', commandTimeout);
-        }).then(function() {
-            return rcon.command('pugchamp_game_id "' + game.id + '"', commandTimeout);
-        }).then(function() {
-            return rcon.command('pugchamp_game_map "' + map.file + '"', commandTimeout);
-        }).then(function() {
-            return rcon.command('pugchamp_game_config "' + map.config + '"', commandTimeout);
-        }).then(function() {
-            return game.populate('teams.composition.players.user').execPopulate().then(function(game) {
-                return lodash(game.teams).map(function(team) {
-                    return lodash.map(team.composition, function(role) {
-                        return lodash.map(role.players, function(player) {
-                            if (!player.replaced) {
-                                return {
-                                    id: player.user.steamID,
-                                    alias: player.user.alias,
-                                    faction: team.faction,
-                                    class: roles[role.role].class
-                                };
-                            }
-                        });
-                    });
-                }).flattenDeep().compact().reduce(function(prev, player) {
-                    let cur;
-
-                    let gameTeam = 1;
-                    let gameClass = 0;
-
-                    if (player.faction === 'RED') {
-                        gameTeam = 2;
-                    }
-                    else if (player.faction === 'BLU') {
-                        gameTeam = 3;
-                    }
-
-                    if (player.class === 'scout') {
-                        gameClass = 1;
-                    }
-                    else if (player.class === 'soldier') {
-                        gameClass = 3;
-                    }
-                    else if (player.class === 'pyro') {
-                        gameClass = 7;
-                    }
-                    else if (player.class === 'demoman') {
-                        gameClass = 4;
-                    }
-                    else if (player.class === 'heavy') {
-                        gameClass = 6;
-                    }
-                    else if (player.class === 'engineer') {
-                        gameClass = 9;
-                    }
-                    else if (player.class === 'medic') {
-                        gameClass = 5;
-                    }
-                    else if (player.class === 'sniper') {
-                        gameClass = 2;
-                    }
-                    else if (player.class === 'spy') {
-                        gameClass = 8;
-                    }
-
-                    cur = function() {
-                        return rcon.command('pugchamp_game_player_add "' + player.id + '" "' + player.alias + '" ' + gameTeam + ' ' + gameClass, commandTimeout);
+        let players = lodash(populatedGame.teams).map(function(team) {
+            return lodash.map(team.composition, function(role) {
+                return lodash.map(role.players, function(player) {
+                    return {
+                        id: player.user.steamID,
+                        alias: player.user.alias,
+                        faction: team.faction,
+                        class: roles[role.role].class,
+                        replaced: player.replaced
                     };
-
-                    if (cur) {
-                        if (prev) {
-                            return prev.then(cur);
-                        }
-                        else {
-                            return cur();
-                        }
-                    }
-                    else {
-                        return prev;
-                    }
-                }, null);
-            });
-        }).then(function() {
-            return rcon.command('pugchamp_game_start', mapChangeTimeout);
-        }).catch(function() {
-            if (!abortOnFail) {
-                self.emit('sendSystemMessage', {
-                    action: 'failed to set up server for drafted game, retrying soon'
                 });
+            });
+        }).flattenDeep().compact().value();
 
-                setTimeout(setUpServer, ms(config.get('app.servers.retryInterval')), game, true);
+        for (let player of players) {
+            if (!player.replaced) {
+                let gameTeam = 1;
+                let gameClass = 0;
+
+                if (player.faction === 'RED') {
+                    gameTeam = 2;
+                }
+                else if (player.faction === 'BLU') {
+                    gameTeam = 3;
+                }
+
+                if (player.class === 'scout') {
+                    gameClass = 1;
+                }
+                else if (player.class === 'soldier') {
+                    gameClass = 3;
+                }
+                else if (player.class === 'pyro') {
+                    gameClass = 7;
+                }
+                else if (player.class === 'demoman') {
+                    gameClass = 4;
+                }
+                else if (player.class === 'heavy') {
+                    gameClass = 6;
+                }
+                else if (player.class === 'engineer') {
+                    gameClass = 9;
+                }
+                else if (player.class === 'medic') {
+                    gameClass = 5;
+                }
+                else if (player.class === 'sniper') {
+                    gameClass = 2;
+                }
+                else if (player.class === 'spy') {
+                    gameClass = 8;
+                }
+
+                yield sendCommandToServer(rcon, 'pugchamp_game_player_add "' + player.id + '" "' + player.alias + '" ' + gameTeam + ' ' + gameClass);
             }
             else {
-                self.emit('sendSystemMessage', {
-                    action: 'failed to set up server for drafted game, aborting game'
-                });
-
-                self.emit('abortGame', game);
-
-                self.emit('cleanUpDraft');
+                yield sendCommandToServer(rcon, 'pugchamp_game_player_remove "' + player.id + '"');
             }
-        });
-    }
-
-    function retryGameAssignment(game) {
-        self.emit('getAvailableServers', function(servers) {
-            if (lodash.size(servers) === 0) {
-                self.emit('sendSystemMessage', {
-                    action: 'server not available for drafted game, aborting game'
-                });
-
-                self.emit('abortGame', game);
-
-                self.emit('cleanUpDraft');
-
-                return;
-            }
-
-            game.server = chance.pick(servers);
-            game.save();
-
-            setUpServer(game, false);
-        });
-    }
-
-    self.on('assignGameServer', function(game) {
-        self.emit('getAvailableServers', function(servers) {
-            if (lodash.size(servers) === 0) {
-                self.emit('sendSystemMessage', {
-                    action: 'server not available for drafted game, retrying soon'
-                });
-
-                setTimeout(retryGameAssignment, ms(config.get('app.servers.retryInterval')), game);
-
-                return;
-            }
-
-            game.server = chance.pick(servers);
-            game.save();
-
-            setUpServer(game, false);
-        });
+        }
     });
 
-    self.on('updateServerRoster', function(game) {
-        let gameServer = gameServerPool[game.server];
+    self.initializeServer = co.wrap(function* initializeServer(game) {
+        let rcon = yield connectToServer(game.server);
 
-        let rcon = RCON({
-            address: gameServer.address,
-            password: gameServer.rcon
-        });
+        yield sendCommandToServer(rcon, 'pugchamp_game_reset');
 
-        rcon.connect().then(function() {
-            return game.populate('teams.composition.players.user').execPopulate().then(function(game) {
-                return lodash(game.teams).map(function(team) {
-                    return lodash.map(team.composition, function(role) {
-                        return lodash.map(role.players, function(player) {
-                            return {
-                                id: player.user.steamID,
-                                alias: player.user.alias,
-                                faction: team.faction,
-                                class: roles[role.role].class,
-                                replaced: player.replaced
-                            };
-                        });
-                    });
-                }).flattenDeep().compact().reduce(function(prev, player) {
-                    let cur;
+        let gameServerInfo = gameServerPool[game.server];
+        let hash = crypto.createHash('sha256');
+        hash.update(game.id + '|' + gameServerInfo.salt);
+        let key = hash.digest('hex');
+        yield sendCommandToServer(rcon, 'pugchamp_server_url "' + config.get('server.baseURL') + '/api/servers/' + key + '"');
 
-                    if (!player.replaced) {
-                        let gameTeam = 1;
-                        let gameClass = 0;
+        yield sendCommandToServer(rcon, 'pugchamp_game_id "' + game.id + '"');
 
-                        if (player.faction === 'RED') {
-                            gameTeam = 2;
-                        }
-                        else if (player.faction === 'BLU') {
-                            gameTeam = 3;
-                        }
+        let map = maps[game.map];
+        yield sendCommandToServer(rcon, 'pugchamp_game_map "' + map.file + '"');
+        yield sendCommandToServer(rcon, 'pugchamp_game_config "' + map.config + '"');
 
-                        if (player.class === 'scout') {
-                            gameClass = 1;
-                        }
-                        else if (player.class === 'soldier') {
-                            gameClass = 3;
-                        }
-                        else if (player.class === 'pyro') {
-                            gameClass = 7;
-                        }
-                        else if (player.class === 'demoman') {
-                            gameClass = 4;
-                        }
-                        else if (player.class === 'heavy') {
-                            gameClass = 6;
-                        }
-                        else if (player.class === 'engineer') {
-                            gameClass = 9;
-                        }
-                        else if (player.class === 'medic') {
-                            gameClass = 5;
-                        }
-                        else if (player.class === 'sniper') {
-                            gameClass = 2;
-                        }
-                        else if (player.class === 'spy') {
-                            gameClass = 8;
-                        }
+        yield self.updateServerPlayers(game);
 
-                        cur = function() {
-                            return rcon.command('pugchamp_game_player_add "' + player.id + '" "' + player.alias + '" ' + gameTeam + ' ' + gameClass, commandTimeout);
-                        };
-                    }
-                    else {
-                        cur = function() {
-                            return rcon.command('pugchamp_game_player_remove "' + player.id + '"', commandTimeout);
-                        };
-                    }
-
-                    if (cur) {
-                        if (prev) {
-                            return prev.then(cur);
-                        }
-                        else {
-                            return cur();
-                        }
-                    }
-                    else {
-                        return prev;
-                    }
-                }, null);
-            });
-        });
+        yield sendCommandToServer(rcon, 'pugchamp_game_start', mapChangeTimeout);
     });
 
-    app.get('/api/servers/:key', function(req, res) {
+    self.assignGameToServer = co.wrap(function* assignGameToServer(game) {
+        let availableServers = yield self.getAvailableServers();
+
+        game.server = chance.pick(availableServers);
+        yield game.save();
+
+        yield self.initializeServer(game);
+    });
+
+    app.get('/api/servers/:key', co.wrap(function*(req, res) {
         if (!req.query.game) {
             res.sendStatus(400);
             return;
         }
 
-        database.Game.findById(req.query.game, function(err, game) {
-            if (err || !game) {
-                res.sendStatus(404);
-                return;
-            }
+        let game = yield database.Game.findById(req.query.game);
 
-            let gameServer = gameServerPool[game.server];
+        if (!game) {
+            res.sendStatus(404);
+            return;
+        }
 
-            let hash = crypto.createHash('sha256');
-            hash.update(game.id + '|' + gameServer.salt);
-            let key = hash.digest('hex');
+        let gameServer = gameServerPool[game.server];
 
-            if (req.params.key !== key) {
-                res.sendStatus(403);
-                return;
-            }
+        let hash = crypto.createHash('sha256');
+        hash.update(game.id + '|' + gameServer.salt);
+        let key = hash.digest('hex');
 
-            if (req.query.status === 'setup') {
-                if (game.status !== 'assigning') {
-                    console.log('game ' + game.id + ' reported by server to be ' + req.query.status + ' but was previously ' + game.status);
-                    console.log(req.query);
-                    res.sendStatus(500);
-                }
+        if (req.params.key !== key) {
+            res.sendStatus(403);
+            return;
+        }
 
-                self.emit('gameSetup', {
-                    game: game
-                });
-            }
-            else if (req.query.status === 'live') {
-                if (game.status !== 'launching' && game.status !== 'live') {
-                    console.log('game ' + game.id + ' reported by server to be ' + req.query.status + ' but was previously ' + game.status);
-                    console.log(req.query);
-                    res.sendStatus(500);
-                }
+        self.emit('receivedGameServerUpdate', req.query);
 
-                self.emit('gameLive', {
-                    game: game,
-                    score: req.query.score,
-                    time: req.query.time
-                });
-            }
-            else if (req.query.status === 'abandoned') {
-                if (game.status !== 'live') {
-                    console.log('game ' + game.id + ' reported by server to be ' + req.query.status + ' but was previously ' + game.status);
-                    console.log(req.query);
-                    res.sendStatus(500);
-                }
-
-                self.emit('gameAbandoned', {
-                    game: game,
-                    score: req.query.score,
-                    duration: req.query.duration,
-                    time: req.query.time
-                });
-            }
-            else if (req.query.status === 'completed') {
-                if (game.status !== 'live') {
-                    console.log('game ' + game.id + ' reported by server to be ' + req.query.status + ' but was previously ' + game.status);
-                    console.log(req.query);
-                    res.sendStatus(500);
-                }
-
-                self.emit('gameCompleted', {
-                    game: game,
-                    score: req.query.score,
-                    duration: req.query.duration,
-                    time: req.query.time
-                });
-            }
-            else if (req.query.status === 'logavailable') {
-                self.emit('gameLogAvailable', {
-                    game: game,
-                    url: req.query.url
-                });
-            }
-
-            res.sendStatus(200);
-        });
-    });
+        res.sendStatus(200);
+    }));
 };
