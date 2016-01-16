@@ -2,34 +2,26 @@
 "use strict";
 
 const _ = require('lodash');
-const co = require('co');
 
 module.exports = function(app, database, io, self, server) {
-    var onlineUsers = new Map();
+    var onlineUsers = new Set();
 
     self.getOnlineUserList = function() {
-        return _([...onlineUsers.values()]).filter(user => user.setUp).map(user => _.pick(user.toObject(), 'id', 'alias', 'steamID', 'admin')).sortBy('alias').value();
+        return _([...onlineUsers]).map(userID => self.getCachedUser(userID)).filter(user => user.setUp).sortBy('alias').value();
     };
 
-    self.sendMessage = co.wrap(function* sendMessage(message) {
-        if (onlineUsers.has(message.user)) {
-            message.user = onlineUsers.get(message.user);
+    self.sendMessage = function sendMessage(message) {
+        if (message.user) {
+            message.user = self.getCachedUser(message.user);
         }
-        else {
-            message.user = yield database.User.findById(message.user);
-        }
-
-        message.user = _.pick(message.user.toObject(), 'id', 'alias', 'steamID', 'admin');
 
         io.sockets.emit('messageReceived', message);
-    });
+    };
 
-    self.on('userConnected', co.wrap(function*(userID) {
-        if (!onlineUsers.has(userID)) {
-            onlineUsers.set(userID, yield database.User.findById(userID));
-        }
+    self.on('userConnected', function(userID) {
+        onlineUsers.add(userID);
 
-        let user = onlineUsers.get(userID);
+        let user = self.getCachedUser(userID);
 
         if (user.setUp) {
             self.sendMessage({
@@ -39,14 +31,10 @@ module.exports = function(app, database, io, self, server) {
         }
 
         io.sockets.emit('onlineUserListUpdated', self.getOnlineUserList());
-    }));
+    });
 
-    self.on('userDisconnected', co.wrap(function*(userID) {
-        if (!onlineUsers.has(userID)) {
-            onlineUsers.set(userID, yield database.User.findById(userID));
-        }
-
-        let user = onlineUsers.get(userID);
+    self.on('userDisconnected', function(userID) {
+        let user = self.getCachedUser(userID);
 
         if (user.setUp) {
             self.sendMessage({
@@ -58,7 +46,7 @@ module.exports = function(app, database, io, self, server) {
         onlineUsers.delete(userID);
 
         io.sockets.emit('onlineUserListUpdated', self.getOnlineUserList());
-    }));
+    });
 
     io.sockets.on('connection', function(socket) {
         socket.emit('onlineUserListUpdated', self.getOnlineUserList());

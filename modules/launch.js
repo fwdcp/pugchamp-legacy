@@ -9,8 +9,6 @@ const ms = require('ms');
 
 module.exports = function(app, database, io, self, server) {
     const READY_PERIOD = ms(config.get('app.launch.readyPeriod'));
-
-    var userCache = new Map();
     const ROLES = config.get('app.games.roles');
     const TEAM_SIZE = config.get('app.games.teamSize');
 
@@ -50,14 +48,6 @@ module.exports = function(app, database, io, self, server) {
         }
 
         return neededCombinations;
-    }
-
-    function updateCachedUser(userID) {
-        return co(function*() {
-            let user = yield database.User.findById(userID);
-
-            userCache.set(userID, _.pick(user.toObject(), 'id', 'alias', 'steamID', 'admin'));
-        });
     }
 
     var captainsAvailable = new Set();
@@ -131,21 +121,19 @@ module.exports = function(app, database, io, self, server) {
     }
 
     function updateStatusInfo() {
-        return co(function*() {
-            currentStatusInfo = {
-                roles: ROLES,
-                playersAvailable: _.mapValues(playersAvailable, function(available) {
-                    return _.map([...available], function(userID) {
-                        return userCache.get(userID);
-                    });
-                }),
-                captainsAvailable: _.map([...captainsAvailable], function(userID) {
-                    return userCache.get(userID);
-                }),
-                rolesNeeded: calculateRolesNeeded(playersAvailable),
-                launchHolds: launchHolds
-            };
-        });
+        currentStatusInfo = {
+            roles: ROLES,
+            playersAvailable: _.mapValues(playersAvailable, function(available) {
+                return _.map([...available], function(userID) {
+                    return self.getCachedUser(userID);
+                });
+            }),
+            captainsAvailable: _.map([...captainsAvailable], function(userID) {
+                return self.getCachedUser(userID);
+            }),
+            rolesNeeded: calculateRolesNeeded(playersAvailable),
+            launchHolds: launchHolds
+        };
     }
 
     function getCurrentStatusMessage() {
@@ -290,10 +278,6 @@ module.exports = function(app, database, io, self, server) {
             }),
             captain: captainsAvailable.has(socket.decoded_token)
         });
-    });
-
-    self.on('userConnected', function(userID) {
-        updateCachedUser(userID);
     });
 
     self.on('userDisconnected', function(userID) {

@@ -16,8 +16,18 @@ module.exports = function(app, database, io, self, server) {
         aspects: ['sub', 'start', 'captain', 'chat'],
         reasons: ['You are currently not logged on.']
     };
+    var userCache = new Map();
     var userRestrictions = new Map();
     var userSockets = new Map();
+
+    self.getCachedUser = function getCachedUser(userID) {
+        return userCache.get(userID);
+    };
+    self.updateCachedUser = co.wrap(function*(userID) {
+        let user = yield database.User.findById(userID);
+
+        userCache.set(userID, _.pick(user.toObject(), 'id', 'alias', 'steamID', 'admin', 'setUp'));
+    });
 
     self.getOnlineUsers = function getOnlineUsers() {
         return [...userSockets.keys()];
@@ -205,8 +215,6 @@ module.exports = function(app, database, io, self, server) {
     io.sockets.on('authenticated', function(socket) {
         let userID = socket.decoded_token;
 
-        socket.emit('userUpdated', userID);
-
         if (!userSockets.has(userID)) {
             userSockets.set(userID, new Set([socket.id]));
 
@@ -230,6 +238,10 @@ module.exports = function(app, database, io, self, server) {
             }
         });
     });
+
+    self.on('userConnected', co.wrap(function*(userID) {
+        yield self.updateCachedUser(userID);
+    }));
 
     app.get('/user/settings', function(req, res) {
         if (req.user) {
