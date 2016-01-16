@@ -1,20 +1,28 @@
 /* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
 "use strict";
 
+const _ = require('lodash');
+const co = require('co');
 const Chance = require('chance');
 const config = require('config');
-const lodash = require('lodash');
 const ms = require('ms');
 
 var chance = new Chance();
 
 module.exports = function(app, database, io, self, server) {
+    const CAPTAIN_SELECTION_WEIGHT = config.get('app.draft.captainSelectionWeight');
+    const DRAFT_ORDER = config.get('app.draft.order');
+    const MAP_POOL = config.get('app.games.maps');
+    const ROLES = config.get('app.games.roles');
+    const TEAM_SIZE = config.get('app.games.teamSize');
+    const TURN_TIME_LIMIT = ms(config.get('app.draft.turnTimeLimit'));
+
     function calculateRoleDistribution(currentTeam) {
-        return lodash.reduce(currentTeam, function(roles, player) {
+        return _.reduce(currentTeam, function(roles, player) {
             roles[player.role]++;
 
             return roles;
-        }, lodash.mapValues(config.get('app.games.roles'), function() {
+        }, _.mapValues(ROLES, function() {
             return 0;
         }));
     }
@@ -22,7 +30,7 @@ module.exports = function(app, database, io, self, server) {
     function calculateCurrentTeamState(team) {
         let currentRoleDistribution = calculateRoleDistribution(team);
 
-        let currentState = lodash.reduce(config.get('app.games.roles'), function(current, role, roleName) {
+        let currentState = _.reduce(ROLES, function(current, role, roleName) {
             current.players += currentRoleDistribution[roleName];
 
             if (currentRoleDistribution[roleName] < role.min) {
@@ -44,21 +52,18 @@ module.exports = function(app, database, io, self, server) {
             overfilledTotal: 0
         });
 
-        currentState.remaining = config.get('app.games.teamSize') - currentState.players;
+        currentState.remaining = TEAM_SIZE - currentState.players;
 
         return currentState;
     }
 
-    var draftInProgress = false;
+    var draftActive = false;
     var draftComplete = false;
-    var draftOrder = config.get('app.draft.order');
-    var turnTimeLimit = ms(config.get('app.draft.turnTimeLimit'));
 
-    var playerPool = lodash.mapValues(config.get('app.games.roles'), function() {
+    var playerPool = _.mapValues(ROLES, function() {
         return [];
     });
     var fullPlayerList = [];
-    var mapPool = config.get('app.games.maps');
     var draftCaptains = [];
     var currentDraftTurn = 0;
     var currentDraftTurnStartTime = null;
@@ -76,48 +81,14 @@ module.exports = function(app, database, io, self, server) {
     var allowedRoles = [];
     var overrideRoles = [];
 
-    var currentStatusMessage = null;
+    var currentStatusInfo = null;
 
-    self.on('checkIfDraftInProgress', function(callback) {
-        callback(draftInProgress);
-    });
-
-    function selectCaptains(captains) {
-        return database.User.find({_id: {$in: captains}}).exec().then(function(captains) {
-            let method = config.get('app.draft.captainSelectionWeight');
-
-            let weights;
-
-            if (method === 'equal') {
-                weights = new Array(lodash.size(captains));
-                lodash.fill(weights, 1, 0, lodash.size(captains));
-            }
-            else if (method === 'success') {
-                weights = lodash.map(captains, function(captain) {
-                    let weight = 0.05;
-
-                    if (captain.captainScore && captain.captainScore.low > 0) {
-                        weight += captain.captainScore.low;
-                    }
-
-                    return weight;
-                });
-            }
-
-            let chosenCaptains = new Set();
-
-            while (chosenCaptains.size < 2) {
-                chosenCaptains.add(chance.weighted(captains, weights));
-            }
-
-            draftCaptains = lodash([...chosenCaptains]).take(2).map(captain => captain.id).value();
-
-            return draftCaptains;
-        });
-    }
+    self.isDraftActive = function isDraftActive() {
+        return draftActive;
+    };
 
     function checkIfLegalState(teams, maps, factions, final) {
-        let teamsValid = lodash.every(teams, function(team) {
+        let teamsValid = _.every(teams, function(team) {
             let teamState = calculateCurrentTeamState(team);
 
             if (teamState.remaining < 0) {
@@ -149,7 +120,7 @@ module.exports = function(app, database, io, self, server) {
             return false;
         }
 
-        if (!maps.picked && lodash.size(maps.remaining) === 0) {
+        if (!maps.picked && _.size(maps.remaining) === 0) {
             return false;
         }
 
@@ -158,7 +129,7 @@ module.exports = function(app, database, io, self, server) {
                 return false;
             }
 
-            if (lodash(factions).intersection(['RED', 'BLU']).size() !== 2) {
+            if (_(factions).intersection(['RED', 'BLU']).size() !== 2) {
                 return false;
             }
 
@@ -170,44 +141,38 @@ module.exports = function(app, database, io, self, server) {
         return true;
     }
 
-    function prepareStatusMessage() {
-        if (!draftInProgress) {
-            currentStatusMessage = null;
-            return null;
-        }
-
-        currentStatusMessage = {
-            draftComplete: draftComplete,
-            roles: config.get('app.games.roles'),
-            teamSize: config.get('app.games.teamSize'),
-            draftTurns: lodash.map(draftOrder, function(turn, index) {
-                let completeTurn = lodash.defaults({}, turn, draftChoices[index]);
+    function updateStatusInfo() {
+        currentStatusInfo = {
+            roles: ROLES,
+            teamSize: TEAM_SIZE,
+            draftTurns: _.map(DRAFT_ORDER, function(turn, index) {
+                let completeTurn = _.defaults({}, turn, draftChoices[index]);
 
                 if (completeTurn.player) {
-                    completeTurn.player = self.users.get(completeTurn.player).toObject();
+                    completeTurn.player = self.getCachedUser(completeTurn.player);
                 }
 
                 return completeTurn;
             }),
-            playerPool: lodash.mapValues(playerPool, function(rolePool) {
-                return lodash.map(rolePool, function(userID) {
-                    return self.users.get(userID).toObject();
+            playerPool: _.mapValues(playerPool, function(rolePool) {
+                return _.map(rolePool, function(userID) {
+                    return self.getCachedUser(userID);
                 });
             }),
-            fullPlayerList: lodash.map(fullPlayerList, function(userID) {
-                return self.users.get(userID).toObject();
+            fullPlayerList: _.map(fullPlayerList, function(userID) {
+                return self.getCachedUser(userID);
             }),
-            mapPool: mapPool,
-            draftCaptains: lodash.map(draftCaptains, function(userID) {
-                return self.users.get(userID).toObject();
+            mapPool: MAP_POOL,
+            draftCaptains: _.map(draftCaptains, function(userID) {
+                return self.getCachedUser(userID);
             }),
             currentDraftTurn: currentDraftTurn,
             teamFactions: teamFactions,
-            pickedTeams: lodash.map(pickedTeams, function(team) {
-                return lodash.map(team, function(player) {
-                    let filteredPlayer = lodash.clone(player);
+            pickedTeams: _.map(pickedTeams, function(team) {
+                return _.map(team, function(player) {
+                    let filteredPlayer = _.clone(player);
 
-                    filteredPlayer.player = self.users.get(player.player).toObject();
+                    filteredPlayer.player = self.getCachedUser(player.player);
 
                     return filteredPlayer;
                 });
@@ -218,15 +183,29 @@ module.exports = function(app, database, io, self, server) {
             allowedRoles: allowedRoles,
             overrideRoles: overrideRoles
         };
-
-        return currentStatusMessage;
     }
 
-    self.on('cleanUpDraft', function() {
-        draftInProgress = false;
+    function getCurrentStatusMessage() {
+        let statusMessage = {
+            active: draftActive,
+            complete: draftComplete
+        };
+
+        if (draftActive && !draftComplete) {
+            statusMessage.timeElapsed = Date.now() - currentDraftTurnStartTime;
+            statusMessage.timeTotal = TURN_TIME_LIMIT;
+        }
+
+        _.assign(statusMessage, currentStatusInfo);
+
+        return statusMessage;
+    }
+
+    self.cleanUpDraft = function cleanUpDraft() {
+        draftActive = false;
         draftComplete = false;
 
-        playerPool = lodash.mapValues(config.get('app.games.roles'), function() {
+        playerPool = _.mapValues(ROLES, function() {
             return [];
         });
         fullPlayerList = [];
@@ -250,217 +229,96 @@ module.exports = function(app, database, io, self, server) {
         allowedRoles = [];
         overrideRoles = [];
 
-        prepareStatusMessage();
-        io.sockets.emit('draftStatusUpdated', currentStatusMessage);
-    });
+        updateStatusInfo();
+        io.sockets.emit('draftStatusUpdated', getCurrentStatusMessage());
 
-    function expireTime() {
-        self.emit('sendSystemMessage', {
-            action: 'game draft aborted due to turn expiration'
+        self.updateLaunchStatus();
+    };
+
+    function launchGameFromDraft() {
+        co(function*() {
+            var game = new database.Game();
+            game.status = 'assigning';
+            game.date = Date.now();
+            game.map = pickedMap;
+
+            game.teams = _.map(pickedTeams, function(team, teamNumber) {
+                return {
+                    captain: draftCaptains[teamNumber],
+                    faction: teamFactions[teamNumber],
+                    composition: _.map(team, function(player) {
+                        return {
+                            role: player.role,
+                            players: [{
+                                user: player.player
+                            }]
+                        };
+                    })
+                };
+            });
+
+            game.draft.choices = _.map(draftChoices, function(choice, index) {
+                return _.assign({}, choice, DRAFT_ORDER[index]);
+            });
+            game.draft.pool.maps = _.keys(MAP_POOL);
+            game.draft.pool.players = _(playerPool).transform(function(pool, players, role) {
+                _.each(players, function(player) {
+                    if (!pool[player]) {
+                        pool[player] = [];
+                    }
+
+                    pool[player].push(role);
+                });
+            }).map(function(roles, player) {
+                return {
+                    user: player,
+                    roles: roles
+                };
+            }).value();
+
+            yield game.save();
+
+            yield self.assignGameToServer(game);
         });
-
-        self.emit('cleanUpDraft');
-    }
-
-    function makeRandomChoice() {
-        let turnDefinition = draftOrder[currentDraftTurn];
-
-        let choice = {
-            type: turnDefinition.type
-        };
-
-        if (turnDefinition.type === 'factionSelect') {
-            choice.faction = chance.pick(['BLU', 'RED']);
-        }
-        else if (turnDefinition.type === 'playerPick') {
-            let team = pickedTeams[turnDefinition.captain];
-            let roleDistribution = calculateRoleDistribution(team);
-
-            let roles = config.get('app.games.roles');
-
-            let weights = lodash.map(allowedRoles, function(role) {
-                let weight = 0.01;
-
-                if (roleDistribution[role] < roles[role].min) {
-                    weight += roles[role].min - roleDistribution[role];
-                }
-
-                weight /= lodash.size(playerPool[role]) + 0.01;
-
-                return weight;
-            });
-
-            choice.role = chance.weighted(allowedRoles, weights);
-
-            if (lodash.includes(overrideRoles, choice.role)) {
-                choice.override = true;
-                choice.player = chance.pick(lodash.difference(fullPlayerList, unavailablePlayers));
-            }
-            else {
-                choice.player = chance.pick(lodash.difference(playerPool[choice.role], unavailablePlayers));
-            }
-        }
-        else if (turnDefinition.type === 'captainRole') {
-            let team = pickedTeams[turnDefinition.captain];
-            let roleDistribution = calculateRoleDistribution(team);
-
-            let roles = config.get('app.games.roles');
-
-            let weights = lodash.map(allowedRoles, function(role) {
-                let weight = 0.01;
-
-                if (roleDistribution[role] < roles[role].min) {
-                    weight += roles[role].min - roleDistribution[role];
-                }
-
-                weight /= lodash.size(playerPool[role]) + 0.01;
-
-                return weight;
-            });
-
-            choice.role = chance.weighted(allowedRoles, weights);
-        }
-        else if (turnDefinition.type === 'mapBan' || turnDefinition.type === 'mapPick') {
-            choice.type = turnDefinition.type;
-
-            choice.map = chance.pick(remainingMaps);
-        }
-
-        self.emit('commitDraftChoice', choice);
-    }
-
-    function beginDraftTurn(turn) {
-        currentDraftTurn = turn;
-
-        let turnDefinition = draftOrder[turn];
-
-        if (turnDefinition.type === 'playerPick' || turnDefinition.type === 'captainRole') {
-            let team = pickedTeams[turnDefinition.captain];
-            let teamState = calculateCurrentTeamState(team);
-
-            if (teamState.remaining > teamState.underfilledTotal) {
-                allowedRoles = lodash.difference(lodash.keys(config.get('app.games.roles')), teamState.filledRoles);
-            }
-            else {
-                allowedRoles = teamState.underfilledRoles;
-            }
-
-            overrideRoles = lodash.filter(teamState.underfilledRoles, function(role) {
-                return lodash(playerPool[role]).difference(unavailablePlayers).size() === 0;
-            });
-        }
-        else {
-            allowedRoles = [];
-            overrideRoles = [];
-        }
-
-        unavailablePlayers = lodash(pickedTeams).flatten().map(function(pick) {
-            return pick.player;
-        }).union(draftCaptains).uniq().value();
-
-        currentDraftTurnStartTime = Date.now();
-        currentDraftTurnExpireTimeout = setTimeout(expireTime, turnTimeLimit);
-
-        prepareStatusMessage();
-        io.sockets.emit('draftStatusUpdated', currentStatusMessage);
-
-        io.sockets.emit('draftTurnTime', {
-            elapsed: Date.now() - currentDraftTurnStartTime,
-            total: turnTimeLimit,
-        });
-
-        if (turnDefinition.method === 'captain') {
-            self.emit('sendMessageToUser', {
-                userID: draftCaptains[turnDefinition.captain],
-                name: 'draftTurnChoice',
-                arguments: []
-            });
-        }
-        else if (turnDefinition.method === 'random') {
-            makeRandomChoice();
-        }
     }
 
     function completeDraft() {
-        draftComplete = true;
+        return co(function*() {
+            draftComplete = true;
 
-        let legalNewState = checkIfLegalState(pickedTeams, {
-            picked: pickedMap,
-            remaining: remainingMaps
-        }, teamFactions, true);
+            let legalNewState = checkIfLegalState(pickedTeams, {
+                picked: pickedMap,
+                remaining: remainingMaps
+            }, teamFactions, true);
 
-        if (!legalNewState) {
-            throw new Error('Invalid state after draft completed!');
-        }
-
-        currentDraftTurn = lodash.size(draftOrder);
-
-        allowedRoles = [];
-        overrideRoles = [];
-
-        unavailablePlayers = lodash(pickedTeams).flatten().map(function(pick) {
-            return pick.player;
-        }).union(draftCaptains).uniq().value();
-
-        currentDraftTurnStartTime = Date.now();
-
-        prepareStatusMessage();
-        io.sockets.emit('draftStatusUpdated', currentStatusMessage);
-
-        var game = new database.Game();
-        game.status = 'assigning';
-        game.date = Date.now();
-        game.map = pickedMap;
-
-        game.teams = lodash.map(pickedTeams, function(team, teamNumber) {
-            return {
-                captain: draftCaptains[teamNumber],
-                faction: teamFactions[teamNumber],
-                composition: lodash.map(team, function(player) {
-                    return {
-                        role: player.role,
-                        players: [{
-                            user: player.player
-                        }]
-                    };
-                })
-            };
-        });
-
-        game.draft.choices = lodash.map(draftChoices, function(choice, index) {
-            return lodash.assign({}, choice, draftOrder[index]);
-        });
-        game.draft.pool.maps = lodash.keys(mapPool);
-        game.draft.pool.players = lodash(playerPool).transform(function(pool, players, role) {
-            lodash.each(players, function(player) {
-                if (!pool[player]) {
-                    pool[player] = [];
-                }
-
-                pool[player].push(role);
-            });
-        }).map(function(roles, player) {
-            return {
-                user: player,
-                roles: roles
-            };
-        }).value();
-
-        game.save(function(err) {
-            if (err) {
-                throw err;
+            if (!legalNewState) {
+                throw new Error('Invalid state after draft completed!');
             }
 
-            self.emit('assignGameServer', game);
+            currentDraftTurn = _.size(DRAFT_ORDER);
+
+            allowedRoles = [];
+            overrideRoles = [];
+
+            unavailablePlayers = _(pickedTeams).flatten().map(function(pick) {
+                return pick.player;
+            }).union(draftCaptains).uniq().value();
+
+            currentDraftTurnStartTime = Date.now();
+
+            updateStatusInfo();
+            io.sockets.emit('draftStatusUpdated', getCurrentStatusMessage());
+
+            yield launchGameFromDraft();
         });
     }
 
-    self.on('commitDraftChoice', function(choice) {
-        if (!draftInProgress || draftComplete) {
+    function commitDraftChoice(choice) {
+        if (!draftActive || draftComplete) {
             return;
         }
 
-        let turnDefinition = draftOrder[currentDraftTurn];
+        let turnDefinition = DRAFT_ORDER[currentDraftTurn];
 
         if (turnDefinition.method === 'captain' && choice.captain !== draftCaptains[turnDefinition.captain]) {
             return;
@@ -473,10 +331,10 @@ module.exports = function(app, database, io, self, server) {
             return;
         }
 
-        let newFactions = lodash.cloneDeep(teamFactions);
-        let newTeams = lodash.cloneDeep(pickedTeams);
+        let newFactions = _.cloneDeep(teamFactions);
+        let newTeams = _.cloneDeep(pickedTeams);
         let newPickedMap = pickedMap;
-        let newRemainingMaps = lodash.cloneDeep(remainingMaps);
+        let newRemainingMaps = _.cloneDeep(remainingMaps);
 
         if (turnDefinition.type === 'factionSelect') {
             if (choice.faction !== 'RED' && choice.faction !== 'BLU') {
@@ -501,21 +359,21 @@ module.exports = function(app, database, io, self, server) {
             }
         }
         else if (turnDefinition.type === 'playerPick') {
-            if (lodash.includes(unavailablePlayers, choice.player)) {
+            if (_.includes(unavailablePlayers, choice.player)) {
                 return;
             }
 
-            if (!lodash.includes(allowedRoles, choice.role)) {
+            if (!_.includes(allowedRoles, choice.role)) {
                 return;
             }
 
             if (choice.override) {
-                if (!lodash.includes(overrideRoles, choice.role)) {
+                if (!_.includes(overrideRoles, choice.role)) {
                     return;
                 }
             }
             else {
-                if (!lodash.includes(playerPool[choice.role], choice.player)) {
+                if (!_.includes(playerPool[choice.role], choice.player)) {
                     return;
                 }
             }
@@ -526,7 +384,7 @@ module.exports = function(app, database, io, self, server) {
             });
         }
         else if (turnDefinition.type === 'captainRole') {
-            if (!lodash.includes(allowedRoles, choice.role)) {
+            if (!_.includes(allowedRoles, choice.role)) {
                 return;
             }
 
@@ -536,19 +394,19 @@ module.exports = function(app, database, io, self, server) {
             });
         }
         else if (turnDefinition.type === 'mapBan') {
-            if (!lodash.includes(remainingMaps, choice.map)) {
+            if (!_.includes(remainingMaps, choice.map)) {
                 return;
             }
 
-            newRemainingMaps = lodash.without(remainingMaps, choice.map);
+            newRemainingMaps = _.without(remainingMaps, choice.map);
         }
         else if (turnDefinition.type === 'mapPick') {
-            if (!lodash.includes(remainingMaps, choice.map)) {
+            if (!_.includes(remainingMaps, choice.map)) {
                 return;
             }
 
             newPickedMap = choice.map;
-            newRemainingMaps = lodash.without(remainingMaps, choice.map);
+            newRemainingMaps = _.without(remainingMaps, choice.map);
         }
 
         let legalNewState = checkIfLegalState(newTeams, {
@@ -571,26 +429,173 @@ module.exports = function(app, database, io, self, server) {
             clearTimeout(currentDraftTurnExpireTimeout);
         }
 
-        if (currentDraftTurn + 1 === lodash.size(draftOrder)) {
+        if (currentDraftTurn + 1 === _.size(DRAFT_ORDER)) {
             completeDraft();
         }
         else {
             beginDraftTurn(++currentDraftTurn);
         }
-    });
+    }
 
-    self.on('launchGameDraft', function(draftInfo) {
-        draftInProgress = true;
+    function makeRandomChoice() {
+        let turnDefinition = DRAFT_ORDER[currentDraftTurn];
+
+        let choice = {
+            type: turnDefinition.type
+        };
+
+        if (turnDefinition.type === 'factionSelect') {
+            choice.faction = chance.pick(['BLU', 'RED']);
+        }
+        else if (turnDefinition.type === 'playerPick') {
+            let team = pickedTeams[turnDefinition.captain];
+            let roleDistribution = calculateRoleDistribution(team);
+
+            let roles = ROLES;
+
+            let weights = _.map(allowedRoles, function(role) {
+                let weight = 0.01;
+
+                if (roleDistribution[role] < roles[role].min) {
+                    weight += roles[role].min - roleDistribution[role];
+                }
+
+                weight /= _.size(playerPool[role]) + 0.01;
+
+                return weight;
+            });
+
+            choice.role = chance.weighted(allowedRoles, weights);
+
+            if (_.includes(overrideRoles, choice.role)) {
+                choice.override = true;
+                choice.player = chance.pick(_.difference(fullPlayerList, unavailablePlayers));
+            }
+            else {
+                choice.player = chance.pick(_.difference(playerPool[choice.role], unavailablePlayers));
+            }
+        }
+        else if (turnDefinition.type === 'captainRole') {
+            let team = pickedTeams[turnDefinition.captain];
+            let roleDistribution = calculateRoleDistribution(team);
+
+            let roles = ROLES;
+
+            let weights = _.map(allowedRoles, function(role) {
+                let weight = 0.01;
+
+                if (roleDistribution[role] < roles[role].min) {
+                    weight += roles[role].min - roleDistribution[role];
+                }
+
+                weight /= _.size(playerPool[role]) + 0.01;
+
+                return weight;
+            });
+
+            choice.role = chance.weighted(allowedRoles, weights);
+        }
+        else if (turnDefinition.type === 'mapBan' || turnDefinition.type === 'mapPick') {
+            choice.type = turnDefinition.type;
+
+            choice.map = chance.pick(remainingMaps);
+        }
+
+        commitDraftChoice(choice);
+    }
+
+    function expireTime() {
+        self.sendMessage({
+            action: 'game draft aborted due to turn expiration'
+        });
+
+        self.cleanUpDraft();
+    }
+
+    function beginDraftTurn(turn) {
+        currentDraftTurn = turn;
+
+        let turnDefinition = DRAFT_ORDER[turn];
+
+        if (turnDefinition.type === 'playerPick' || turnDefinition.type === 'captainRole') {
+            let team = pickedTeams[turnDefinition.captain];
+            let teamState = calculateCurrentTeamState(team);
+
+            if (teamState.remaining > teamState.underfilledTotal) {
+                allowedRoles = _.difference(_.keys(ROLES), teamState.filledRoles);
+            }
+            else {
+                allowedRoles = teamState.underfilledRoles;
+            }
+
+            overrideRoles = _.filter(teamState.underfilledRoles, function(role) {
+                return _(playerPool[role]).difference(unavailablePlayers).size() === 0;
+            });
+        }
+        else {
+            allowedRoles = [];
+            overrideRoles = [];
+        }
+
+        unavailablePlayers = _(pickedTeams).flatten().map(function(pick) {
+            return pick.player;
+        }).union(draftCaptains).uniq().value();
+
+        currentDraftTurnStartTime = Date.now();
+        currentDraftTurnExpireTimeout = setTimeout(expireTime, TURN_TIME_LIMIT);
+
+        updateStatusInfo();
+        io.sockets.emit('draftStatusUpdated', getCurrentStatusMessage());
+
+        if (turnDefinition.method === 'random') {
+            makeRandomChoice();
+        }
+    }
+
+    function selectCaptains(captains) {
+        return co(function*() {
+            let fullCaptains = yield database.User.find({_id: {$in: captains}}).exec();
+
+            let weights;
+
+            if (CAPTAIN_SELECTION_WEIGHT === 'equal') {
+                weights = new Array(_.size(fullCaptains));
+                _.fill(weights, 1, 0, _.size(fullCaptains));
+            }
+            else if (CAPTAIN_SELECTION_WEIGHT === 'success') {
+                weights = _.map(fullCaptains, function(captain) {
+                    let weight = 0.05;
+
+                    if (captain.captainScore && captain.captainScore.low > 0) {
+                        weight += captain.captainScore.low;
+                    }
+
+                    return weight;
+                });
+            }
+
+            let chosenCaptains = new Set();
+
+            while (chosenCaptains.size < 2) {
+                chosenCaptains.add(chance.weighted(fullCaptains, weights));
+            }
+
+            draftCaptains = _([...chosenCaptains]).take(2).map(captain => captain.id).value();
+
+            return draftCaptains;
+        });
+    }
+
+    self.launchDraft = co.wrap(function* launchDraft(draftInfo) {
+        draftActive = true;
         draftComplete = false;
 
-        io.sockets.emit('draftStarting');
-
         playerPool = draftInfo.players;
-        fullPlayerList = lodash.reduce(playerPool, function(allPlayers, players) {
-            return lodash.union(allPlayers, players);
+        fullPlayerList = _.reduce(playerPool, function(allPlayers, players) {
+            return _.union(allPlayers, players);
         }, []);
 
-        remainingMaps = lodash.keys(mapPool);
+        remainingMaps = _.keys(MAP_POOL);
 
         teamFactions = [];
         pickedTeams = [
@@ -599,40 +604,29 @@ module.exports = function(app, database, io, self, server) {
         ];
         pickedMap = null;
 
-        selectCaptains(draftInfo.captains).then(function() {
-            let legalState = checkIfLegalState(pickedTeams, {
-                picked: pickedMap,
-                remaining: remainingMaps
-            }, teamFactions, false);
+        yield selectCaptains(draftInfo.captains);
 
-            if (!legalState) {
-                throw new Error('Invalid state before draft start!');
-            }
+        let legalState = checkIfLegalState(pickedTeams, {
+            picked: pickedMap,
+            remaining: remainingMaps
+        }, teamFactions, false);
 
-            beginDraftTurn(0);
-        });
+        if (!legalState) {
+            throw new Error('Invalid state before draft start!');
+        }
+
+        beginDraftTurn(0);
     });
 
     io.sockets.on('connection', function(socket) {
-        socket.emit('draftStatusUpdated', currentStatusMessage);
-
-        if (draftInProgress && !draftComplete) {
-            socket.emit('draftTurnTime', {
-                elapsed: Date.now() - currentDraftTurnStartTime,
-                total: turnTimeLimit,
-            });
-        }
+        socket.emit('draftStatusUpdated', getCurrentStatusMessage());
     });
 
     io.sockets.on('authenticated', function(socket) {
-        if (draftInProgress && !draftComplete && draftOrder[currentDraftTurn].method === 'captain' && socket.decoded_token === draftCaptains[draftOrder[currentDraftTurn].captain]) {
-            socket.emit('draftTurnChoice');
-        }
-
         socket.on('makeDraftChoice', function(choice) {
             choice.captain = socket.decoded_token;
 
-            self.emit('commitDraftChoice', choice);
+            commitDraftChoice(choice);
         });
     });
 };

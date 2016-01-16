@@ -124,7 +124,7 @@
             }
         </style>
 
-        <div hidden$="{{!draftInProgress}}">
+        <div hidden$="{{!active}}">
             <div id="draftTurns" class="horizontal layout wrap">
                 <template is="dom-repeat" items="{{turns}}">
                     <paper-material data-status$="{{turnComparison(index, currentTurn)}}" class="draft-turn flex">
@@ -215,21 +215,13 @@
             is: 'pugchamp-draft',
             behaviors: [PugChampPolymerHelperBehaviors, PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior, PugChampClientBehaviors.UserBehavior],
             ready: function() {
-                this.set('draftInProgress', false);
+                this.set('active', false);
 
                 this._listenToEvent('draftStatusUpdated', 'onDraftStatusUpdated');
-                this._listenToEvent('draftTurnTime', 'onDraftTurnTime');
-                this._listenToEvent('draftTurnChoice', 'onDraftTurnChoice');
             },
             onDraftStatusUpdated: function(status) {
-                if (!status) {
-                    this.set('draftInProgress', false);
-                    return;
-                }
-
-                this.set('draftInProgress', true);
-
-                this.set('complete', status.draftComplete);
+                this.set('active', status.active);
+                this.set('complete', status.complete);
                 this.set('roles', status.roles);
                 this.set('teamSize', status.teamSize);
                 this.set('maps', status.mapPool);
@@ -244,21 +236,26 @@
                 this.set('allowedRoles', status.allowedRoles);
                 this.set('overrideRoles', status.overrideRoles);
                 this.set('unavailablePlayers', status.unavailablePlayers);
-            },
-            onDraftTurnTime: function(status) {
-                if (this.currentTimer) {
-                    this.cancelAsync(this.currentTimer);
+
+                if (this.active && !this.complete) {
+                    if (this.turns[this.currentTurn].method === 'captain' && this._isCurrentUser(this.user, this.captains[this.turns[this.currentTurn].captain].id)) {
+                        this.startDraftTurn();
+                    }
+
+                    if (this.currentTimer) {
+                        this.cancelAsync(this.currentTimer);
+                    }
+
+                    this.async(function() {
+                        var progress = Polymer.dom(this.$.draftTurns).querySelector('.draft-turn[data-status=current] .turn-time');
+                        progress.value = status.timeElapsed / 1000;
+                        progress.max = status.timeTotal / 1000;
+
+                        this.currentTimer = this.async(this.incrementTurnTimer, 1000);
+                    });
                 }
-
-                this.async(function() {
-                    var progress = Polymer.dom(this.$.draftTurns).querySelector('.draft-turn[data-status=current] .turn-time');
-                    progress.value = status.elapsed / 1000;
-                    progress.max = status.total / 1000;
-
-                    this.currentTimer = this.async(this.incrementTurnTimer, 1000);
-                });
             },
-            onDraftTurnChoice: function() {
+            startDraftTurn: function() {
                 this.$.turnNotification.notify();
 
                 this.$.notifySound.currentTime = 0;

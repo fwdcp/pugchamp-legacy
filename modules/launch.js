@@ -107,7 +107,9 @@ module.exports = function(app, database, io, self, server) {
                 }
             }
 
-            // TODO: check draft status
+            if (self.isDraftActive()) {
+                launchHolds.push('inactiveDraft');
+            }
 
             let availableServers = yield self.getAvailableServers();
 
