@@ -13,7 +13,6 @@ module.exports = function(app, database, io, self, server) {
     const TEAM_SIZE = config.get('app.games.teamSize');
 
     function calculateRolesNeeded(playersAvailable) {
-        let roles = config.get('app.games.roles');
         let roleNames = _.keys(ROLES);
 
         let neededCombinations = [];
@@ -161,25 +160,27 @@ module.exports = function(app, database, io, self, server) {
         return co(function*() {
             launchHolds = yield getLaunchHolds();
 
-            if (_.size(launchHolds) === 0) {
-                // TODO: launch draft
-                console.log('YAY DRAFT STARTS NOW');
-            }
-
-            launchAttemptInProgress = false;
-            launchAttemptStart = null;
-
             playersAvailable = _.mapValues(playersAvailable, function(available) {
                 return new Set(_.intersection([...available], [...readiesReceived]));
             });
             captainsAvailable = new Set(_.intersection([...captainsAvailable], [...readiesReceived]));
+
+            if (_.size(launchHolds) === 0) {
+                yield self.launchDraft({
+                    players: playersAvailable,
+                    captains: captainsAvailable
+                });
+            }
+
+            launchAttemptInProgress = false;
+            launchAttemptStart = null;
 
             yield self.updateLaunchStatus();
         });
     }
 
     function beginLaunchAttempt() {
-        co(function*() {
+        return co(function*() {
             if (!launchAttemptInProgress) {
                 launchAttemptInProgress = true;
                 launchAttemptStart = Date.now();
@@ -205,7 +206,7 @@ module.exports = function(app, database, io, self, server) {
         io.sockets.emit('launchStatusUpdated', getCurrentStatusMessage());
 
         if (!launchAttemptInProgress && _.size(launchHolds) === 0) {
-            beginLaunchAttempt();
+            yield beginLaunchAttempt();
         }
     });
 
