@@ -12,7 +12,7 @@
     <link rel="import" href="/elements/pugchamp-launchpad/pugchamp-launchpad.html">
     <link rel="import" href="/elements/pugchamp-restrictions/pugchamp-restrictions.html">
     <link rel="import" href="/elements/pugchamp-substitute-requests/pugchamp-substitute-requests.html">
-
+    <link rel="import" href="/elements/pugchamp-help/pugchamp-help.html">
     <style is="custom-style">
         @media (max-width: 1600px) {
             pugchamp-chat {
@@ -35,6 +35,7 @@
     {{#> body home=true}}
     <div class="horizontal layout wrap">
         <div id="content" class="flex">
+
             <pugchamp-current-game></pugchamp-current-game>
 
             <pugchamp-substitute-requests></pugchamp-substitute-requests>
@@ -50,8 +51,8 @@
             <pugchamp-launchpad></pugchamp-launchpad>
         </div>
         <pugchamp-chat></pugchamp-chat>
-    </div>
 
+    </div>
     <pugchamp-client></pugchamp-client>
     {{/body}}
 

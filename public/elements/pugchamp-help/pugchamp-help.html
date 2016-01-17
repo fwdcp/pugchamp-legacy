@@ -1,0 +1,68 @@
+<link rel="import" href="/components/polymer/polymer.html">
+<link rel="import" href="/components/paper-dialog/paper-dialog.html">
+<link rel="import" href="/components/paper-button/paper-button.html">
+<link rel="import" href="/components/paper-dialog-scrollable/paper-dialog-scrollable.html">
+<link rel="import" href="/components/paper-styles/color.html">
+<link rel="import" href="/components/paper-input/paper-textarea.html">
+
+<link rel="import" href="/components/paper-radio-button/paper-radio-button.html">
+<link rel="import" href="/components/paper-radio-group/paper-radio-group.html">
+<link rel="import" href="/components/paper-styles/demo-pages.html">
+<link rel="import" href="/components/neon-animation/neon-animations.html">
+<link rel="import" href="/components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="/components/paper-menu/paper-menu.html">
+<link rel="import" href="/components/paper-item/paper-item.html">
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
+<link rel="import" href="/elements/pugchamp-icons/pugchamp-role-icons.html">
+<link rel="import" href="/elements/pugchamp-notification/pugchamp-notification.html">
+<link rel="import" href="/elements/pugchamp-utilities/pugchamp-polymer-helpers.html">
+<dom-module id="pugchamp-help">
+    <template>
+        <style>
+		
+		</style>
+
+	<paper-button on-tap="openHelp" data-dialog="modal" >Help</paper-button>		
+	
+	<paper-dialog id="modal" modal>
+    <p>Send a request to an Admin. Select the reason and please describe the issue. </p>
+		<paper-radio-group id="options" selected="{{optionSelected}}">
+			<paper-radio-button name="adminchannel">Hacker/Abuse</paper-radio-button>
+			<paper-radio-button name="bugreports">Bug Report</paper-radio-button>
+			<paper-radio-button name="adminchannel">Other</paper-radio-button>
+		</paper-radio-group>
+		<paper-textarea id="helpText" class="flex" maxlength="300" char-counter disabled="{{isRestricted(restrictions, 'chat')}}"></paper-textarea>
+		<div class="buttons">
+		    <paper-button dialog-dismiss>Cancel</paper-button>
+			<paper-button on-tap="sendHelp" dialog-confirm autofocus>Send</paper-button>
+		</div>
+    </paper-dialog>
+	</template>
+	<script>
+        Polymer({
+            is: 'pugchamp-help',
+            behaviors: [PugChampPolymerHelperBehaviors, PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior],
+            ready: function() {	},
+			
+			openHelp: function(e) {
+				if (!e.target.hasAttribute('data-dialog')) {
+					return;
+				}
+				var id = e.target.getAttribute('data-dialog');
+				var dialog = document.getElementById(id);
+				if (dialog) {
+					dialog.toggle();
+					e.target.toggleAttribute && e.target.toggleAttribute('data-dialog-opened', dialog.opened);
+				}				
+			},
+			sendHelp: function () {
+				var option = this.optionSelected;
+				var message = this.$.helpText.value
+				socket.emit('sendHelpMessage', option, message);
+				this.$.helpText.value ='';
+			}
+			
+        });
+    </script>
+</dom-module>

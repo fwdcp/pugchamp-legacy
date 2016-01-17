@@ -31,6 +31,21 @@ module.exports = function(app, database, io, self, server) {
 			}
 		});
 	});
-
-
+	io.sockets.on('authenticated', function(socket) {
+		socket.on('sendHelpMessage', function(option, message) {  
+			var user= socket.decoded_token;
+			user = self.getCachedUser(user);
+			
+		bot.sendWebhook({
+		    username: "champbot",
+			icon_emoji: ":robot_face:",
+			text:"HELP! \n" + user.alias + " SteamId: " + user.steamID + "\nMessage: "   + message  ,
+			channel: '#' + option,
+			}, function(err,res) {
+				if(err) {
+				throw new Error('Something went wrong with the webhook');
+			}
+		});
+	});
+});
 }
