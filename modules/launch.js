@@ -8,6 +8,9 @@ const config = require('config');
 const ms = require('ms');
 
 module.exports = function(app, database, io, self, server) {
+    const GET_AVAILABLE_SERVERS_THROTTLE_INTERVAL = 30000;
+    const GET_LAUNCH_HOLD_DEBOUNCE_MAX_WAIT = 5000;
+    const GET_LAUNCH_HOLD_DEBOUNCE_WAIT = 1000;
     const READY_PERIOD = ms(config.get('app.launch.readyPeriod'));
     const ROLES = config.get('app.games.roles');
     const TEAM_SIZE = config.get('app.games.teamSize');
@@ -61,7 +64,7 @@ module.exports = function(app, database, io, self, server) {
 
     var currentStatusInfo;
 
-    function getLaunchHolds() {
+    function getLaunchHolds(forceUpdate) {
         return co(function*() {
             let launchHolds = [];
 
@@ -111,7 +114,16 @@ module.exports = function(app, database, io, self, server) {
                 launchHolds.push('inactiveDraft');
             }
 
-            let availableServers = yield self.getAvailableServers();
+            let availableServers;
+
+            if (forceUpdate) {
+                 availableServers = yield self.getAvailableServers();
+            }
+            else {
+                const throttledGetAvailableServers = _.throttle(self.getAvailableServers, GET_AVAILABLE_SERVERS_THROTTLE_INTERVAL);
+
+                availableServers = yield throttledGetAvailableServers();
+            }
 
             if (_.size(availableServers) === 0) {
                 launchHolds.push('availableServers');
@@ -160,7 +172,7 @@ module.exports = function(app, database, io, self, server) {
 
     function attemptLaunch() {
         return co(function*() {
-            launchHolds = yield getLaunchHolds();
+            launchHolds = yield getLaunchHolds(true);
 
             playersAvailable = _.mapValues(playersAvailable, function(available) {
                 return new Set(_.intersection([...available], [...readiesReceived]));
@@ -191,7 +203,7 @@ module.exports = function(app, database, io, self, server) {
 
                 readiesReceived = new Set();
 
-                launchHolds = yield getLaunchHolds();
+                launchHolds = yield getLaunchHolds(false);
 
                 updateStatusInfo();
 
@@ -202,8 +214,8 @@ module.exports = function(app, database, io, self, server) {
         });
     }
 
-    self.updateLaunchStatus = co.wrap(function* updateLaunchStatus() {
-        launchHolds = yield getLaunchHolds();
+    const checkLaunchHolds = _.debounce(co.wrap(function* checkLaunchHolds() {
+        launchHolds = yield getLaunchHolds(false);
 
         updateStatusInfo();
 
@@ -212,9 +224,17 @@ module.exports = function(app, database, io, self, server) {
         if (!launchAttemptActive && _.size(launchHolds) === 0) {
             yield beginLaunchAttempt();
         }
-    });
+    }), GET_LAUNCH_HOLD_DEBOUNCE_WAIT, {maxWait: GET_LAUNCH_HOLD_DEBOUNCE_MAX_WAIT});
 
-    updateStatusInfo();
+    self.updateLaunchStatus = function updateLaunchStatus() {
+        updateStatusInfo();
+
+        io.sockets.emit('launchStatusUpdated', getCurrentStatusMessage());
+
+        checkLaunchHolds();
+    };
+
+    self.updateLaunchStatus();
 
     function updateUserAvailability(userID, availability) {
         let userRestrictions = self.getUserRestrictions(userID);
