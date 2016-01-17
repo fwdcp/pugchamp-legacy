@@ -236,7 +236,7 @@ module.exports = function(app, database, io, self, server) {
     };
 
     function launchGameFromDraft() {
-        co(function*() {
+        return co(function*() {
             var game = new database.Game();
             game.status = 'assigning';
             game.date = Date.now();
