@@ -33,7 +33,7 @@ module.exports = function(app, database, io, self, server) {
                 let captainStats = _.reduce(captainGames[index], function(stats, game) {
                     stats.total++;
 
-                    if (game.teams[0].captain.id === captain.id) {
+                    if (self.getDocumentID(game.teams[0].captain) === self.getDocumentID(captain)) {
                         if (game.score[0] > game.score[1]) {
                             stats.wins++;
                         }
@@ -44,7 +44,7 @@ module.exports = function(app, database, io, self, server) {
                             stats.ties++;
                         }
                     }
-                    else if (game.teams[1].captain.id === captain.id) {
+                    else if (self.getDocumentID(game.teams[1].captain) === self.getDocumentID(captain)) {
                         if (game.score[1] > game.score[0]) {
                             stats.wins++;
                         }
@@ -101,7 +101,7 @@ module.exports = function(app, database, io, self, server) {
     function processGameUpdate(game) {
         let gameInfo = formatCurrentGameInfo(game);
 
-        _.each(gameInfo.teams, function(team) {
+        _.each(game.teams, function(team) {
             let captainID = self.getDocumentID(team.captain);
 
             currentGameCache.set(captainID, gameInfo);
@@ -388,7 +388,7 @@ module.exports = function(app, database, io, self, server) {
                 throw new Error('game had status ' + game.status + ' but is being reported as abandoned');
             }
 
-            game.status = 'abandoned';
+            game.status = 'aborted';
 
             if (info.score) {
                 game.score = _.map(game.teams, function(team) {
@@ -404,7 +404,7 @@ module.exports = function(app, database, io, self, server) {
                 _.each(game.teams, function(team) {
                     _.each(team.composition, function(role) {
                         _.each(role.players, function(player) {
-                            let user = self.getCachedUser(player.user);
+                            let user = self.getCachedUser(self.getDocumentID(player.user));
 
                             if (_.has(info.time, user.steamID)) {
                                 player.time = info.time[user.steamID];
@@ -439,7 +439,7 @@ module.exports = function(app, database, io, self, server) {
                 _.each(game.teams, function(team) {
                     _.each(team.composition, function(role) {
                         _.each(role.players, function(player) {
-                            let user = self.getCachedUser(player.user);
+                            let user = self.getCachedUser(self.getDocumentID(player.user));
 
                             if (_.has(info.time, user.steamID)) {
                                 player.time = info.time[user.steamID];

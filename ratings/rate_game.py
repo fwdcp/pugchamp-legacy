@@ -14,7 +14,9 @@ client = MongoClient(config.get('config', 'connect'))
 db = client[config.get('config', 'db')]
 
 rating_base = config.getfloat('config', 'rating_base')
-trueskill.setup(mu=rating_base, sigma=rating_base / 3, beta = rating_base / 6, tau = rating_base / 300)
+trueskill.setup(mu=rating_base, sigma=rating_base / 3,
+                beta=rating_base / 6, tau=rating_base / 300, backend='mpmath')
+
 
 @click.command()
 @click.argument('game_id')
@@ -33,13 +35,15 @@ def rate_game(game_id):
 
                 if 'currentRating' in user:
                     rating_info = db.ratings.find_one(user['currentRating'])
-                    rating = trueskill.Rating(mu=rating_info['after']['rating'], sigma=rating_info['after']['deviation'])
+                    rating = trueskill.Rating(mu=rating_info['after'][
+                                              'rating'], sigma=rating_info['after']['deviation'])
                 else:
                     rating = trueskill.Rating()
 
                 old_team_ratings[user['_id']] = rating
                 if ('duration' in game and game['duration'] != 0):
-                    weights[(index, user['_id'])] = player['time'] / game['duration']
+                    weights[(index, user['_id'])] = player[
+                        'time'] / game['duration']
 
         old_ratings.append(old_team_ratings)
 
@@ -54,8 +58,10 @@ def rate_game(game_id):
                 old_rating = old_ratings[index][player['user']]
                 new_rating = new_ratings[index][player['user']]
 
-                result = db.ratings.insert_one({'user': player['user'], 'date': game['date'], 'game': game['_id'], 'before': {'rating': old_rating.mu, 'deviation': old_rating.sigma}, 'after': {'rating': new_rating.mu, 'deviation': new_rating.sigma}})
-                db.users.find_one_and_update({'_id': player['user']}, {'$set': {'currentRating': result.inserted_id}})
+                result = db.ratings.insert_one({'user': player['user'], 'date': game['date'], 'game': game['_id'], 'before': {
+                                               'rating': old_rating.mu, 'deviation': old_rating.sigma}, 'after': {'rating': new_rating.mu, 'deviation': new_rating.sigma}})
+                db.users.find_one_and_update({'_id': player['user']}, {
+                                             '$set': {'currentRating': result.inserted_id}})
 
 if __name__ == '__main__':
     rate_game()
