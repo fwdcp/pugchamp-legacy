@@ -8,10 +8,10 @@ const config = require('config');
 const Q = require('q');
 
 module.exports = function(app, database, io, self, server) {
-    const SLACK_INCOMING_WEBHOOK_URL = config.get('server.slack.incomingWebhook');
-    const SLACK_MESSAGE_DEFAULTS = config.get('server.slack.messageDefaults');
+    if (config.has('server.slack')) {
+        const SLACK_INCOMING_WEBHOOK_URL = config.get('server.slack.incomingWebhook');
+        const SLACK_MESSAGE_DEFAULTS = config.get('server.slack.messageDefaults');
 
-    if (SLACK_INCOMING_WEBHOOK_URL) {
         var controller = Botkit.slackbot();
         var bot = controller.spawn({
             incoming_webhook: {
