@@ -67,20 +67,6 @@ module.exports = function(app, database, io, self, server) {
                         body: trimmedMessage
                     });
                 }
-				if (trimmedMessage.includes("!admin")) {
-					self.sendMessage({
-						body: "An admin has been requested. Abuse of this command will result in a ban."
-					});
-					var user = userID;
-					user = self.getCachedUser(user)
-
-					self.emit('adminRequested', user);
-				}
-				if (trimmedMessage.includes("!mumble")) {
-					self.sendMessage({
-						body: "216.52.148.10:18460"
-					});
-				}
             }
         });
     });
