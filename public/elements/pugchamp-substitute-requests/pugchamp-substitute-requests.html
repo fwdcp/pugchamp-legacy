@@ -36,21 +36,21 @@
         </style>
 
         <div id="requests">
-            <template is="dom-repeat" items="{{_convertObjectToRepeatable(requests)}}">
+            <template is="dom-repeat" items="{{requests}}">
                 <paper-material class="request">
                     <h2>Substitute Request</h2>
 
-                    <p><strong>{{item.value.captain.alias}}</strong> has requested a substitute for <strong>{{item.value.player.alias}}</strong> (with role <strong>{{_getProperty(roles, item.value.role, 'name')}}</strong>).</p>
+                    <p><strong>{{item.captain.alias}}</strong> has requested a substitute for <strong>{{item.player.alias}}</strong> (with role <strong>{{_getProperty(roles, item.role, 'name')}}</strong>).</p>
 
-                    <paper-progress class="period transiting" data-start$="{{item.value.start}}" data-end$="{{item.value.end}}" min="0"></paper-progress>
+                    <paper-progress class="period transiting" data-start$="{{item.start}}" data-end$="{{item.end}}" min="0"></paper-progress>
 
                     <p hidden$={{!user}}>
-                        <a class="button" href="/game/{{item.value.game}}" target="_blank"><paper-button raised>View Game Info</paper-button></a>
+                        <a class="button" href="/game/{{item.game}}" target="_blank"><paper-button raised>View Game Info</paper-button></a>
 
-                        <paper-button class="respond" data-status="apply" data-request$="{{item.key}}" hidden$="{{_includes(item.value.candidates, user.id)}}" disabled="{{isRestricted(restrictions, 'sub')}}" on-tap="updateSubstituteApplication">Apply to Substitute</paper-button>
-                        <paper-button class="respond" data-status="retract" data-request$="{{item.key}}" hidden$="{{!_includes(item.value.candidates, user.id)}}" disabled="{{isRestricted(restrictions, 'sub')}}" on-tap="updateSubstituteApplication">Retract Substitute Application</paper-button>
+                        <paper-button class="respond" data-status="apply" data-request$="{{item.id}}" hidden$="{{_includes(item.candidates, user.id)}}" disabled="{{isRestricted(restrictions, 'sub')}}" on-tap="updateSubstituteApplication">Apply to Substitute</paper-button>
+                        <paper-button class="respond" data-status="retract" data-request$="{{item.id}}" hidden$="{{!_includes(item.candidates, user.id)}}" disabled="{{isRestricted(restrictions, 'sub')}}" on-tap="updateSubstituteApplication">Retract Substitute Application</paper-button>
 
-                        <paper-button class="remove" data-request$="{{item.key}}" hidden$="{{!_isCurrentUser(user, item.value.captain.id)}}" disabled="{{!_isCurrentUser(user, item.value.captain.id)}}" on-tap="retractSubstituteRequest" raised>Retract Substitute Request</paper-button>
+                        <paper-button class="remove" data-request$="{{item.id}}" hidden$="{{!_isCurrentUser(user, item.captain.id)}}" disabled="{{!_isCurrentUser(user, item.captain.id)}}" on-tap="retractSubstituteRequest" raised>Retract Substitute Request</paper-button>
                     </p>
                 </paper-material>
             </template>
@@ -85,9 +85,7 @@
                 });
             },
             retractSubstituteRequest: function(event) {
-                socket.emit('retractSubstituteRequest', {
-                    request: event.target.dataset.request
-                });
+                socket.emit('retractSubstituteRequest', event.target.dataset.request);
             }
         });
     </script>

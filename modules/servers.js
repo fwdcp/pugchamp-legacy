@@ -110,6 +110,12 @@ module.exports = function(app, database, io, self, server) {
     });
 
     self.updateServerPlayers = co.wrap(function* updateServerPlayers(game) {
+        let serverStatus = yield getServerStatus(game.server);
+
+        if (serverStatus.status !== 'free' && (serverStatus.status !== 'assigned' || self.getDocumentID(serverStatus.game) === self.getDocumentID(game))) {
+            return;
+        }
+
         let rcon = yield connectToServer(game.server);
 
         let populatedGame = yield game.populate('teams.composition.players.user').execPopulate();
@@ -177,6 +183,9 @@ module.exports = function(app, database, io, self, server) {
     });
 
     self.initializeServer = co.wrap(function* initializeServer(game) {
+        game.status = 'assigning';
+        yield game.save();
+
         let rcon = yield connectToServer(game.server);
 
         yield sendCommandToServer(rcon, 'pugchamp_game_reset');
@@ -199,6 +208,9 @@ module.exports = function(app, database, io, self, server) {
     });
 
     self.assignGameToServer = co.wrap(function* assignGameToServer(game) {
+        game.status = 'assigning';
+        yield game.save();
+
         let availableServers = yield self.getAvailableServers();
 
         game.server = chance.pick(availableServers);
@@ -231,8 +243,13 @@ module.exports = function(app, database, io, self, server) {
             return;
         }
 
-        self.emit('receivedGameServerUpdate', req.query);
+        try {
+            yield self.handleGameServerUpdate(req.query);
 
-        res.sendStatus(200);
+            res.sendStatus(200);
+        }
+        catch (err) {
+            res.sendStatus(500);
+        }
     }));
 };

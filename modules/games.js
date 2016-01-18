@@ -1,10 +1,11 @@
 /* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
 "use strict";
 
+const _ = require('lodash');
 const Chance = require('chance');
-const child_process = require('child_process');
+const child_process = require('mz/child_process');
+const co = require('co');
 const config = require('config');
-const lodash = require('lodash');
 const ms = require('ms');
 const path = require('path');
 const wilson = require('wilson-interval');
@@ -12,286 +13,320 @@ const wilson = require('wilson-interval');
 var chance = new Chance();
 
 module.exports = function(app, database, io, self, server) {
-    var roles = config.get('app.games.roles');
+    const ROLES = config.get('app.games.roles');
+    const SUBSTITUTE_REQUEST_PERIOD = ms(config.get('app.games.substituteRequestPeriod'));
+    const SUBSTITUTE_SELECTION_METHOD = config.get('app.games.substituteSelectionMethod');
 
-    function timeoutGame(game) {
-        database.Game.findById(game.id, function(err, updatedGame) {
-            if (updatedGame.status === 'assigning' || updatedGame.status === 'launching') {
-                self.emit('abortGame', updatedGame);
-            }
-        });
-    }
+    var currentGameCache = new Map();
 
     function rateGame(game) {
-        Promise.all([
-            new Promise(function(resolve, reject) {
-                child_process.exec('python rate_game.py ' + game.id, {
-                    cwd: path.resolve(__dirname, '../ratings')
-                }, function(error) {
-                    if (!error) {
-                        resolve();
-                    }
-                    else {
-                        reject(error);
-                    }
+        return co(function*() {
+            let captains = yield _.map(game.teams, team => database.User.findById(self.getDocumentID(team.captain)));
+            let captainGames = yield _.map(captains, function(captain) {
+                return database.Game.find({
+                    'teams.captain': self.getDocumentID(captain),
+                    'status': 'completed'
                 });
-            }),
-            game.populate('teams.captain').execPopulate().then(function(game) {
-                return Promise.all(lodash.map(game.teams, function(team) {
-                    let user = team.captain;
+            });
 
-                    return database.Game.find({
-                        'teams.captain': user.id,
-                        'status': 'completed'
-                    }).populate('teams.captain').exec().then(function(captainGames) {
-                        let captainStats = lodash.reduce(captainGames, function(stats, game) {
-                            stats.total++;
+            _.each(captains, function(captain, index) {
+                let captainStats = _.reduce(captainGames[index], function(stats, game) {
+                    stats.total++;
 
-                            if (game.teams[0].captain.id === user.id) {
-                                if (game.score[0] > game.score[1]) {
-                                    stats.wins++;
-                                }
-                                else if (game.score[0] < game.score[1]) {
-                                    stats.losses++;
-                                }
-                                else if (game.score[0] === game.score[1]) {
-                                    stats.ties++;
-                                }
-                            }
-                            else if (game.teams[1].captain.id === user.id) {
-                                if (game.score[1] > game.score[0]) {
-                                    stats.wins++;
-                                }
-                                else if (game.score[1] < game.score[0]) {
-                                    stats.losses++;
-                                }
-                                else if (game.score[1] === game.score[0]) {
-                                    stats.ties++;
-                                }
-                            }
-
-                            return stats;
-                        }, {
-                            total: 0,
-                            wins: 0,
-                            losses: 0,
-                            ties: 0
-                        });
-
-                        if (captainStats.total > 0) {
-                            user.captainScore = wilson(captainStats.wins + captainStats.ties, captainStats.total);
+                    if (game.teams[0].captain.id === captain.id) {
+                        if (game.score[0] > game.score[1]) {
+                            stats.wins++;
                         }
+                        else if (game.score[0] < game.score[1]) {
+                            stats.losses++;
+                        }
+                        else if (game.score[0] === game.score[1]) {
+                            stats.ties++;
+                        }
+                    }
+                    else if (game.teams[1].captain.id === captain.id) {
+                        if (game.score[1] > game.score[0]) {
+                            stats.wins++;
+                        }
+                        else if (game.score[1] < game.score[0]) {
+                            stats.losses++;
+                        }
+                        else if (game.score[1] === game.score[0]) {
+                            stats.ties++;
+                        }
+                    }
 
-                        return user.save();
-                    });
-                }));
-            })
-        ]).catch(function(err) {
-            throw err;
+                    return stats;
+                }, {
+                    total: 0,
+                    wins: 0,
+                    losses: 0,
+                    ties: 0
+                });
+
+                if (captainStats.total > 0) {
+                    captain.captainScore = wilson(captainStats.wins + captainStats.ties, captainStats.total);
+                }
+            });
+
+            yield _.map(captains, captain => captain.save());
+
+            yield child_process.exec('python rate_game.py ' + game.id, {
+                cwd: path.resolve(__dirname, '../ratings')
+            });
         });
     }
 
-    function formatGameInfo(game) {
-        if (!game) {
-            return Promise.resolve(null);
+    function formatCurrentGameInfo(game) {
+        if (!game || game.status ===  'aborted' || game.status === 'completed') {
+            return null;
         }
 
-        return game.populate('teams.captain teams.composition.players.user').execPopulate().then(function(game) {
-            if (game.status === 'aborted' || game.status === 'completed') {
-                return null;
-            }
-            else {
-                let gameInfo = lodash.omit(game.toObject(), 'draft');
+        let gameInfo = _.omit(game.toObject(), 'draft');
+        gameInfo.roles = ROLES;
 
-                gameInfo.roles = config.get('app.games.roles');
+        _.each(gameInfo.teams, function(team) {
+            team.captain = self.getCachedUser(self.getDocumentID(team.captain));
 
-                return gameInfo;
-            }
+            _.each(team.composition, function(role) {
+                _.each(role.players, function(player) {
+                    player.user = self.getCachedUser(self.getDocumentID(player.user));
+                });
+            });
+        });
+
+        return gameInfo;
+    }
+
+    function processGameUpdate(game) {
+        let gameInfo = formatCurrentGameInfo(game);
+
+        _.each(gameInfo.teams, function(team) {
+            let captainID = self.getDocumentID(team.captain);
+
+            currentGameCache.set(captainID, gameInfo);
+            self.emitToUser(captainID, 'currentGameUpdated', [gameInfo]);
+            self.updateUserRestrictions(captainID);
+
+            _.each(team.composition, function(role) {
+                _.each(role.players, function(player) {
+                    let userID = self.getDocumentID(player.user);
+
+                    currentGameCache.set(userID, gameInfo);
+                    self.emitToUser(userID, 'currentGameUpdated', [gameInfo]);
+                    self.updateUserRestrictions(userID);
+                });
+            });
         });
     }
 
-    var substituteRequestPeriod = ms(config.get('app.games.substituteRequestPeriod'));
-    var substituteSelectionMethod = config.get('app.games.substituteSelectionMethod');
     var currentSubstituteRequests = new Map();
+    var currentSubstituteRequestsInfo;
 
-    var currentSubstituteRequestsMessage;
+    function updateSubstituteRequestsInfo() {
+        currentSubstituteRequestsInfo = {
+            roles: ROLES,
+            requests: _([...currentSubstituteRequests.entries()]).fromPairs().map((request, id) => ({
+                id: id,
+                game: request.game,
+                role: request.role,
+                player: self.getCachedUser(request.player),
+                candidates: [...request.candidates]
+            })).value()
+        };
+    }
 
-    function formatSubstituteRequests() {
-        return Promise.all([
-            database.Game.find({
-                _id: {
-                    $in: lodash.map([...currentSubstituteRequests.values()], request => request.game)
-                }
-            }).populate('teams.captain teams.composition.players.user').exec().then(function(games) {
-                return lodash.keyBy(games, 'id');
-            }),
-            database.User.find({
-                _id: {
-                    $in: lodash.map([...currentSubstituteRequests.values()], request => request.player)
-                }
-            }).exec().then(function(users) {
-                return lodash.keyBy(users, 'id');
-            })
-        ]).then(function(results) {
-            let games = results[0];
-            let players = results[1];
+    function getCurrentSubstituteRequestsMessage() {
+        let message = _.clone(currentSubstituteRequestsInfo);
 
-            currentSubstituteRequestsMessage = {
-                roles: roles,
-                requests: lodash([...currentSubstituteRequests.entries()]).fromPairs().mapValues(request => ({
-                    game: request.game,
-                    captain: games[request.game].teams[request.team].captain.toObject(),
-                    faction: games[request.game].teams[request.team].faction,
-                    role: request.role,
-                    player: players[request.player].toObject(),
-                    candidates: [...request.candidates],
-                    start: request.start,
-                    end: request.end
-                }))
+        message.requests = _.map(message.requests, function(request) {
+            let requestMessage = {
+                timeElapsed: Date.now() - currentSubstituteRequests.get(request.id).opened,
+                timeTotal: SUBSTITUTE_REQUEST_PERIOD
             };
 
-            return currentSubstituteRequestsMessage;
+            _.assign(requestMessage, request);
+
+            return requestMessage;
         });
+
+        return message;
     }
 
-    formatSubstituteRequests().then(function() {
-        io.sockets.emit('substituteRequestsUpdated', currentSubstituteRequestsMessage);
-    });
+    updateSubstituteRequestsInfo();
 
-    function attemptSubstitution(id) {
-        if (!currentSubstituteRequests.has(id)) {
-            return;
+    function getGamePlayerInfo(game, playerID) {
+        let team;
+        let role;
+        let player;
+
+        team = _.find(game.teams, function(team) {
+            role = _.find(team.composition, function(role) {
+                player = _.find(role.players, function(player) {
+                    return playerID === self.getDocumentID(player.user);
+                });
+
+                if (player) {
+                    return true;
+                }
+
+                return false;
+            });
+
+            if (role) {
+                return true;
+            }
+
+            return false;
+        });
+
+        if (player) {
+            return {
+                game: game,
+                team: team,
+                role: role,
+                player: player
+            };
         }
 
-        let request = currentSubstituteRequests.get(id);
+        return null;
+    }
 
-        request.timeout = null;
-
-        database.Game.findById(request.game).populate('teams.composition.players.user').exec().then(function(game) {
-            if (game.status === 'completed' || game.status === 'aborted') {
-                self.emit('removeSubstituteRequest', id);
+    function attemptSubstitution(id) {
+        return co(function*() {
+            if (!currentSubstituteRequests.has(id)) {
                 return;
             }
 
-            let team = game.teams[request.team];
-            let roleIndex = lodash.findIndex(team.composition, function(role) {
-                return role.role === request.role && lodash.some(role.players, {
-                    user: {
-                        id: request.player
-                    },
-                    replaced: false
-                });
-            });
+            let request = currentSubstituteRequests.get(id);
 
-            if (roleIndex === -1) {
-                self.emit('removeSubstituteRequest', id);
+            request.timeout = null;
+
+            let game = yield database.Game.findById(request.game);
+
+            if (!game || game.status === 'completed' || game.status === 'aborted') {
+                self.removeSubstituteRequest(id);
                 return;
             }
 
-            let player = lodash.find(team.composition[roleIndex].players, {
-                user: {
-                    id: request.player
-                },
-                replaced: false
-            });
+            let gamePlayerInfo = getGamePlayerInfo(game, request.player);
+
+            if (!gamePlayerInfo || gamePlayerInfo.player.replaced) {
+                self.removeSubstituteRequest(id);
+                return;
+            }
 
             if (request.candidates.length === 0) {
                 return;
             }
 
-            return database.User.find({
-                _id: {
-                    $in: [...request.candidates]
-                }
-            }).populate('currentRating').exec().then(function(users) {
-                let organizedUsers = lodash.keyBy(users, 'id');
-                let candidates = lodash.map([...request.candidates], function(userID) {
-                    return organizedUsers[userID];
-                });
+            let candidates = [...request.candidates];
+            let selectedCandidate;
 
-                if (substituteSelectionMethod === 'first') {
-                    return candidates[0];
-                }
-                else if (substituteSelectionMethod === 'closest') {
-                    return player.user.populate('currentRating').execPopulate().then(function(player) {
-                        let playerRating = 0;
+            if (SUBSTITUTE_SELECTION_METHOD === 'first') {
+                selectedCandidate = _.head(candidates);
+            }
+            else if (SUBSTITUTE_SELECTION_METHOD === 'closest') {
+                let playerWithRating = yield database.User.findById(request.player).populate('currentRating').exec();
+                let playerRating = playerWithRating.currentRating ? playerWithRating.currentRating.rating - (3 * playerWithRating.currentRating.deviation) : 0;
 
-                        if (player.currentRating) {
-                            playerRating = player.currentRating.rating - (3 * player.currentRating.deviation);
-                        }
+                selectedCandidate = _(yield database.User.find({
+                    _id: {
+                        $in: [...request.candidates]
+                    }
+                }).populate('currentRating').exec()).sortBy(function(candidate) {
+                    let candidateRating = candidate.currentRating ? candidate.currentRating.rating - (3 * candidate.currentRating.deviation) : 0;
 
-                        let sortedCandidates = lodash.sortBy(candidates, function(candidate) {
-                            let candidateRating = 0;
+                    return Math.abs(candidateRating - playerRating);
+                }).map(candidate => self.getDocumentID(candidate)).head();
+            }
+            else if (SUBSTITUTE_SELECTION_METHOD === 'random') {
+                selectedCandidate = chance.pick(candidates);
+            }
 
-                            if (candidate.currentRating) {
-                                candidateRating = candidate.currentRating.rating - (3 * candidate.currentRating.deviation);
-                            }
+            yield self.performSubstitution(game, request.player, selectedCandidate);
 
-                            return Math.abs(candidateRating - playerRating);
-                        });
-
-                        return sortedCandidates[0];
-                    });
-                }
-                else if (substituteSelectionMethod === 'random') {
-                    return chance.pick(candidates);
-                }
-            }).then(function(replacement) {
-                player.replaced = true;
-
-                team.composition[roleIndex].players.push({
-                    user: replacement.id
-                });
-
-                return game.save();
-            }).then(function() {
-                self.emit('updateServerRoster', game);
-
-                self.emit('sendMessageToUser', {
-                    userID: request.player,
-                    name: 'currentGameUpdated',
-                    arguments: [null]
-                });
-                self.emit('updateUsers', [request.player]);
-
-                self.emit('updateGamePlayers', game);
-                self.emit('broadcastGameInfo', game);
-
-                self.emit('removeSubstituteRequest', id);
-            });
+            self.removeSubstituteRequest(id);
         });
     }
 
-    self.on('updateGamePlayers', function(game) {
-        game.populate('teams.composition.players.user').execPopulate().then(function(game) {
-            let players = lodash(game.teams).map(function(team) {
-                return lodash.map(team.composition, function(role) {
-                    return lodash.map(role.players, function(player) {
-                        return player.id;
-                    });
-                });
-            }).flattenDeep().value();
+    function updateSubstituteApplication(requestID, player, active) {
+        if (!currentSubstituteRequests.has(requestID)) {
+            return;
+        }
 
-            self.emit('updateUsers', players);
+        let userRestrictions = self.userRestrictions.get(player);
+        let request = currentSubstituteRequests.get(requestID);
+
+        if (!_.includes(userRestrictions.aspects, 'sub')) {
+            if (active) {
+                request.candidates.add(player);
+            }
+            else {
+                request.candidates.delete(player);
+            }
+        }
+
+        updateSubstituteRequestsInfo();
+        io.sockets.emit('substituteRequestsUpdated', getCurrentSubstituteRequestsMessage());
+
+        if (!request.timeout) {
+            attemptSubstitution(requestID);
+        }
+    }
+
+    self.requestSubstitute = function requestSubstitute(game, player) {
+        if (!game || game.status === 'completed' || game.status === 'aborted') {
+            return;
+        }
+
+        let gamePlayerInfo = getGamePlayerInfo(game, player);
+
+        if (!gamePlayerInfo || gamePlayerInfo.player.replaced) {
+            return;
+        }
+
+        if (currentSubstituteRequests.has(gamePlayerInfo.player.id)) {
+            return;
+        }
+
+        currentSubstituteRequests.set(gamePlayerInfo.player.id, {
+            game: game,
+            role: gamePlayerInfo.role.role,
+            player: player,
+            opened: Date.now(),
+            candidates: new Set(),
+            timeout: setTimeout(attemptSubstitution, SUBSTITUTE_REQUEST_PERIOD, player.id)
         });
-    });
 
-    self.on('broadcastGameInfo', function(game) {
-        formatGameInfo(game).then(function(gameInfo) {
-            lodash.each(game.teams, function(team) {
-                lodash.each(team.composition, function(role) {
-                    lodash.each(role.players, function(player) {
-                        if (!player.replaced) {
-                            self.emit('sendMessageToUser', {
-                                userID: player.user.id || player.user.toHexString(),
-                                name: 'currentGameUpdated',
-                                arguments: [gameInfo]
-                            });
-                        }
-                    });
-                });
+        updateSubstituteRequestsInfo();
+        io.sockets.emit('substituteRequestsUpdated', getCurrentSubstituteRequestsMessage());
+    };
+
+    self.performSubstitution = co.wrap(function* performSubstitution(game, oldPlayer, newPlayer) {
+        if (!game || !oldPlayer || !newPlayer) {
+            return;
+        }
+
+        _(game.teams).map(team => team.composition).flatten().forEach(function(role) {
+            let player = _.find(role.players, function(player) {
+                return !player.replaced && oldPlayer === self.getDocumentID(player.user);
             });
+
+            if (player) {
+                player.replaced = true;
+
+                role.players.push({
+                    user: newPlayer
+                });
+            }
         });
+
+        yield game.save();
+
+        yield self.updateServerPlayers();
+
+        processGameUpdate(game);
     });
 
     self.on('wrapUpGame', function(game) {
@@ -299,123 +334,14 @@ module.exports = function(app, database, io, self, server) {
 
         self.emit('broadcastGameInfo', game);
 
-        lodash.forEach(currentSubstituteRequests, function(request, id) {
+        _.forEach(currentSubstituteRequests, function(request, id) {
             if (request.game === game.id) {
                 self.emit('removeSubstituteRequest', id);
             }
         });
     });
 
-    formatSubstituteRequests().then(function(info) {
-        io.sockets.emit('substituteRequestsUpdated', info);
-    });
-
-    self.on('requestSubstitute', function(info) {
-        database.Game.findById(info.game).populate('teams.captain teams.composition.players.user').exec().then(function(game) {
-            if (!game) {
-                return;
-            }
-
-            if (game.status === 'completed' || game.status === 'aborted') {
-                return;
-            }
-
-            let teamIndex = lodash.findIndex(game.teams, {
-                captain: {
-                    id: info.captain
-                }
-            });
-
-            if (teamIndex === -1) {
-                return;
-            }
-
-            let team = game.teams[teamIndex];
-
-            let player = lodash(team.composition).map(function(role) {
-                if (role.role === info.role) {
-                    return role.players;
-                }
-                else {
-                    return [];
-                }
-            }).flatten().find({
-                user: {
-                    id: info.player
-                }
-            });
-
-            if (!player || player.replaced) {
-                return;
-            }
-
-            if (currentSubstituteRequests.has(player.id)) {
-                return;
-            }
-
-            currentSubstituteRequests.set(player.id, {
-                game: info.game,
-                team: teamIndex,
-                role: info.role,
-                player: player.user.id,
-                start: Date.now(),
-                end: Date.now() + substituteRequestPeriod,
-                candidates: new Set(),
-                timeout: setTimeout(attemptSubstitution, substituteRequestPeriod, player.id)
-            });
-
-            formatSubstituteRequests().then(function(info) {
-                io.sockets.emit('substituteRequestsUpdated', info);
-            });
-        });
-    });
-
-    self.on('updateSubstituteApplication', function(info) {
-        if (!currentSubstituteRequests.has(info.request)) {
-            return;
-        }
-
-        let userRestrictions = self.userRestrictions.get(info.player);
-        let request = currentSubstituteRequests.get(info.request);
-
-        if (!lodash.includes(userRestrictions.aspects, 'sub')) {
-            if (info.status) {
-                request.candidates.add(info.player);
-            }
-            else {
-                request.candidates.delete(info.player);
-            }
-        }
-        else {
-            request.candidates.delete(info.player);
-        }
-
-        formatSubstituteRequests().then(function(info) {
-            io.sockets.emit('substituteRequestsUpdated', info);
-        });
-
-        if (Date.now() >= request.end) {
-            attemptSubstitution(info.request);
-        }
-    });
-
-    self.on('retractSubstituteRequest', function(info) {
-        if (!currentSubstituteRequests.has(info.request)) {
-            return;
-        }
-
-        let request = currentSubstituteRequests.get(info.request);
-
-        database.Game.findById(request.game).populate('teams.captain').exec().then(function(game) {
-            if (game.teams[request.team].captain.id !== info.captain) {
-                return;
-            }
-
-            self.emit('removeSubstituteRequest', info.request);
-        });
-    });
-
-    self.on('removeSubstituteRequest', function(id) {
+    self.removeSubstituteRequest = function removeSubstituteRequest(id) {
         if (currentSubstituteRequests.has(id)) {
             let request = currentSubstituteRequests.delete(id);
 
@@ -423,194 +349,223 @@ module.exports = function(app, database, io, self, server) {
                 clearTimeout(request.timeout);
             }
 
-            formatSubstituteRequests().then(function(info) {
-                io.sockets.emit('substituteRequestsUpdated', info);
-            });
+            updateSubstituteRequestsInfo();
+            io.sockets.emit('substituteRequestsUpdated', getCurrentSubstituteRequestsMessage());
         }
-    });
+    };
 
-    self.on('gameSetup', function(info) {
-        info.game.status = 'launching';
-        info.game.save().then(function() {
-            self.emit('updateGamePlayers', info.game);
-            self.emit('broadcastGameInfo', info.game);
-            self.emit('cleanUpDraft');
+    self.handleGameServerUpdate = co.wrap(function* handleGameServerUpdate(info) {
+        let game = yield database.Game.findById(info.game);
 
-            setTimeout(timeoutGame, ms(config.get('app.games.startPeriod')), info.game);
-        });
-    });
+        if (info.status === 'setup') {
+            if (game.status !== 'assigning' && game.status !== 'launching') {
+                throw new Error('game had status ' + game.status + ' but is being reported as set up');
+            }
 
-    self.on('gameLive', function(info) {
-        info.game.status = 'live';
+            game.status = 'launching';
 
-        if (info.score) {
-            info.game.score = lodash.map(info.game.teams, function(team) {
-                return info.score[team.faction];
-            });
+            yield game.save();
+
+            processGameUpdate(game);
         }
+        else if (info.status === 'live') {
+            if (game.status === 'aborted' || game.status === 'completed') {
+                throw new Error('game had status ' + game.status + ' but is being reported as live');
+            }
 
-        if (info.duration) {
-            info.game.duration = info.duration;
-        }
+            game.status = 'live';
 
-        info.game.save();
-    });
-
-    self.on('gameAbandoned', function(info) {
-        self.emit('abortGame', info.game);
-
-        if (info.score) {
-            info.game.score = lodash.map(info.game.teams, function(team) {
-                return info.score[team.faction];
-            });
-        }
-
-        if (info.duration) {
-            info.game.duration = info.duration;
-        }
-
-        info.game.save().then(function() {
-            if (info.time) {
-                info.game.populate('teams.composition.players.user', function(err, game) {
-                    if (err) {
-                        throw err;
-                    }
-
-                    lodash.each(game.teams, function(team) {
-                        lodash.each(team.composition, function(role) {
-                            lodash.each(role.players, function(player) {
-                                if (info.time[player.user.steamID]) {
-                                    player.time = info.time[player.user.steamID];
-                                }
-                            });
-                        });
-                    });
-
-                    game.save();
+            if (info.score) {
+                game.score = _.map(game.teams, function(team) {
+                    return info.score[team.faction];
                 });
             }
-        });
-    });
 
-    self.on('gameCompleted', function(info) {
-        info.game.status = 'completed';
+            if (info.duration) {
+                game.duration = info.duration;
+            }
 
-        if (info.score) {
-            info.game.score = lodash.map(info.game.teams, function(team) {
-                return info.score[team.faction];
-            });
+            yield game.save();
+
+            processGameUpdate(game);
         }
+        else if (info.status === 'abandoned') {
+            if (game.status === 'aborted' || game.status === 'completed') {
+                throw new Error('game had status ' + game.status + ' but is being reported as abandoned');
+            }
 
-        if (info.duration) {
-            info.game.duration = info.duration;
-        }
+            game.status = 'abandoned';
 
-        info.game.save().then(function() {
-            self.emit('wrapUpGame', info.game);
+            if (info.score) {
+                game.score = _.map(game.teams, function(team) {
+                    return info.score[team.faction];
+                });
+            }
+
+            if (info.duration) {
+                game.duration = info.duration;
+            }
 
             if (info.time) {
-                info.game.populate('teams.composition.players.user', function(err, game) {
-                    if (err) {
-                        throw err;
-                    }
+                _.each(game.teams, function(team) {
+                    _.each(team.composition, function(role) {
+                        _.each(role.players, function(player) {
+                            let user = self.getCachedUser(player.user);
 
-                    lodash.each(game.teams, function(team) {
-                        lodash.each(team.composition, function(role) {
-                            lodash.each(role.players, function(player) {
-                                if (info.time[player.user.steamID]) {
-                                    player.time = info.time[player.user.steamID];
-                                }
-                            });
+                            if (_.has(info.time, user.steamID)) {
+                                player.time = info.time[user.steamID];
+                            }
                         });
-                    });
-
-                    game.save().then(function() {
-                        rateGame(game);
                     });
                 });
             }
+
+            yield game.save();
+
+            processGameUpdate(game);
+        }
+        else if (info.status === 'completed') {
+            if (game.status === 'aborted' || game.status === 'completed') {
+                throw new Error('game had status ' + game.status + ' but is being reported as completed');
+            }
+
+            game.status = 'completed';
+
+            if (info.score) {
+                game.score = _.map(game.teams, function(team) {
+                    return info.score[team.faction];
+                });
+            }
+
+            if (info.duration) {
+                game.duration = info.duration;
+            }
+
+            if (info.time) {
+                _.each(game.teams, function(team) {
+                    _.each(team.composition, function(role) {
+                        _.each(role.players, function(player) {
+                            let user = self.getCachedUser(player.user);
+
+                            if (_.has(info.time, user.steamID)) {
+                                player.time = info.time[user.steamID];
+                            }
+                        });
+                    });
+                });
+            }
+
+            yield game.save();
+
+            processGameUpdate(game);
+
+            yield rateGame(game);
+        }
+        else if (info.status === 'logavailable') {
+            let link = _.find(game.links, 'type', 'logs.tf');
+
+            if (link) {
+                link.link = info.url;
+            }
+            else {
+                game.links.push({
+                    type: 'logs.tf',
+                    link: info.url
+                });
+            }
+
+            yield game.save();
+        }
+    });
+
+    function getUserCurrentGame(userID) {
+        co(function*() {
+            if (!currentGameCache.has(userID)) {
+                let game = yield database.Game.findOne({
+                    $or: [{
+                        'teams.captain': userID
+                    }, {
+                        'teams.composition.players': {
+                            $elemMatch: {
+                                user: userID,
+                                replaced: false
+                            }
+                        }
+                    }],
+                    status: {
+                        $in: ['launching', 'live']
+                    }
+                });
+
+                currentGameCache.set(userID, formatCurrentGameInfo(game));
+            }
+
+            return currentGameCache.get(userID);
         });
-    });
-
-    self.on('gameLogAvailable', function(info) {
-        let index = lodash.findIndex(info.game.links, 'type', 'logs.tf');
-
-        if (index !== -1) {
-            info.game.links[index].link = info.url;
-        }
-        else {
-            info.game.links.push({
-                type: 'logs.tf',
-                link: info.url
-            });
-        }
-
-        info.game.save();
-    });
+    }
 
     io.sockets.on('connection', function(socket) {
-        socket.emit('substituteRequestsUpdated', currentSubstituteRequestsMessage);
+        socket.emit('substituteRequestsUpdated', getCurrentSubstituteRequestsMessage());
     });
 
-    io.sockets.on('authenticated', function(socket) {
+    io.sockets.on('authenticated', co.wrap(function*(socket) {
         let userID = socket.decoded_token;
 
-        database.Game.findOne({
-            $or: [{
-                'teams.captain': userID
-            }, {
-                'teams.composition.players': {
-                    $elemMatch: {
-                        user: userID,
-                        replaced: false
-                    }
-                }
-            }],
-            status: {
-                $in: ['launching', 'live']
+        socket.emit('currentGameUpdated', yield getUserCurrentGame(userID));
+
+        socket.on('requestSubstitute', co.wrap(function*(info) {
+            let game = yield database.Game.findById(info.game);
+
+            let playerInfo = getGamePlayerInfo(game, info.player);
+
+            if (socket.decoded_token !== self.getDocumentID(playerInfo.team.captain)) {
+                return;
             }
-        }, function(err, game) {
-            formatGameInfo(game).then(function(gameInfo) {
-                socket.emit('currentGameUpdated', gameInfo);
-            });
-        });
 
-        socket.on('requestSubstitute', function(info) {
-            info.captain = socket.decoded_token;
-
-            self.emit('requestSubstitute', info);
-        });
+            self.requestSubstitute(game, info.player);
+        }));
 
         socket.on('updateSubstituteApplication', function(info) {
-            info.player = socket.decoded_token;
-
-            self.emit('updateSubstituteApplication', info);
+            updateSubstituteApplication(info.request, socket.decoded_token, info.status);
         });
 
-        socket.on('retractSubstituteRequest', function(info) {
-            info.captain = socket.decoded_token;
+        socket.on('retractSubstituteRequest', co.wrap(function*(requestID) {
+            if (!currentSubstituteRequests.has(requestID)) {
+                return;
+            }
 
-            self.emit('retractSubstituteRequest', info);
-        });
-    });
+            let request = currentSubstituteRequests.get(requestID);
+            let game = yield database.Game.findById(request.game);
+
+            let playerInfo = getGamePlayerInfo(game, request.player);
+
+            if (socket.decoded_token !== self.getDocumentID(playerInfo.team.captain)) {
+                return;
+            }
+
+            self.removeSubstituteRequest(request);
+        }));
+    }));
 
     self.on('userRestrictionsUpdated', function(userID) {
-        for (let requestID in currentSubstituteRequests.keys()) {
-            let request = currentSubstituteRequests.get(requestID);
+        let userRestrictions = self.getUserRestrictions(userID);
 
-            self.emit('updateSubstituteApplication', {
-                player: userID,
-                request: requestID,
-                status: request.candidates.has(userID)
-            });
+        if (_.includes(userRestrictions.aspects, 'sub')) {
+            for (let request of currentSubstituteRequests) {
+                request.candidates.delete(userID);
+            }
         }
     });
 
-    app.get('/games', function(req, res) {
-        database.Game.find({}).sort('-date').populate('teams.captain').exec().then(function(games) {
-            res.render('gameList', {
-                games: lodash.map(games, game => game.toObject())
-            });
-        });
+    app.get('/game/:id', function(req, res) {
+        // TODO: implement
     });
+
+    app.get('/games', co.wrap(function*(req, res) {
+        let games = yield database.Game.find({}).sort('-date').populate('teams.captain').exec();
+
+        res.render('gameList', {
+            games: _.map(games, game => game.toObject())
+        });
+    }));
 };
