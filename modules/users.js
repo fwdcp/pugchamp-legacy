@@ -295,4 +295,12 @@ module.exports = function(app, database, io, self, server) {
             res.redirect('/user/login');
         }
     }));
+
+    co(function*() {
+        let users = yield database.User.find({}, '_id').exec();
+
+        for (let user of users) {
+            yield self.updateCachedUser(user.id);
+        }
+    });
 };
