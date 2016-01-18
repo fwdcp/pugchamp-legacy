@@ -89,12 +89,13 @@
                 this.set('captain', null);
 
                 this._listenToEvent('currentGameUpdated', 'onCurrentGameUpdated');
+                this._listenToEvent('userInfoUpdated', 'onUserInfoUpdated');
             },
             onCurrentGameUpdated: function(info) {
                 this.set('game', info);
 
                 if (info) {
-                    this.set('team', _.find(info.teams, _.bind(function(team) {
+                    this.set('team', _.find(this.game.teams, _.bind(function(team) {
                         this.set('captain', this._isCurrentUser(this.user, team.captain.id));
 
                         this.set('player', _.find(team.composition, _.bind(function(role) {
@@ -108,6 +109,13 @@
 
                         return this.captain || this.player;
                     }, this)));
+                }
+            },
+            onUserInfoUpdated: function() {
+                // NOTE: there appears to be a race condition between the user info and currenet game info, so run that function again just in case
+
+                if (this.game) {
+                    this.onCurrentGameUpdated(this.game);
                 }
             },
             requestSubstitute: function(event) {
