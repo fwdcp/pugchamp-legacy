@@ -1,0 +1,55 @@
+<!doctype html>
+
+<html>
+
+    {{#> head title="Manage Users"}}
+    <link rel="import" href="/components/vaadin-grid/vaadin-grid.html">
+    {{/head}}
+
+    {{#> body}}
+    <h1>Players</h1>
+
+    <vaadin-grid id="users">
+        <table>
+            <colgroup>
+                <col name="alias" sortable sort-direction="asc">
+                <col name="steamID" sortable>
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Steam ID</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </vaadin-grid>
+
+    <script src="/components/lodash/lodash.min.js"></script>
+    <script>
+        var grid = document.getElementById('users');
+        grid.items = {{toJSON users}};
+
+        grid.addEventListener('sort-order-changed', function() {
+            grid.items = _.sortByOrder(grid.items, _.map(grid.sortOrder, function(sort) {
+                if (sort.column === 0) {
+                    return function(item) {
+                        return item.alias;
+                    }
+                }
+                else if (sort.column === 1) {
+                    return function(item) {
+                        return item.steamID;
+                    }
+                }
+            }), _.map(grid.sortOrder, 'direction'));
+        });
+
+        grid.columns[0].renderer = function(cell) {
+            cell.element.innerHTML = '<a href="/admin/user/' + cell.row.data.id + '">' + cell.row.data.alias + '</a>';
+        };
+    </script>
+    {{/body}}
+
+</html>

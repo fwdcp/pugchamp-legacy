@@ -37,9 +37,60 @@ module.exports = function(app, database, io, self, server) {
         });
     }
 
-    router.get('/users', function(req, res) {
-        // TODO: implement admin page
-    });
+    router.get('/users', co.wrap(function*(req, res) {
+        let users = yield database.User.find({}).exec();
+
+        res.render('admin/userList', {
+            users: _(users).map(user => user.toObject()).sortBy('alias')
+        });
+    }));
+
+    router.get('/user/:id', co.wrap(function*(req, res) {
+        let user = yield database.User.findById(req.params.id);
+        let restrictions = yield database.Restriction.find({
+            user: req.params.id
+        }).populate('actions.admin').exec();
+
+        res.render('admin/user', {
+            user: user.toObject(),
+            restrictions: _.map(restrictions, restriction => restriction.toObject())
+        });
+    }));
+
+    router.post('/user/:id', bodyParser.urlencoded({
+        extended: false
+    }), co.wrap(function*(req, res) {
+        let user = yield database.User.findById(req.params.id);
+
+        if (req.body.type === 'changeSettings') {
+            if (req.body.alias !== user.alias) {
+                let existingUser = yield database.User.findOne({
+                    alias: req.body.alias
+                });
+
+                if (!existingUser) {
+                    postToAdminLog(req.user, 'changed the alias of `<' + BASE_URL + '/admin/user/' + user.id + '|' + req.body.alias + '>` from `' + user.alias + '`');
+
+                    user.alias = req.body.alias;
+                }
+            }
+
+            try {
+                yield user.save();
+            }
+            catch (err) {
+                self.postToLog({
+                    description: 'failed to save settings for <' + BASE_URL + '/admin/user/' + user.id + '|' + user.alias + '>: ' + JSON.stringify(req.body),
+                    error: err
+                });
+            }
+
+            res.redirect('/admin/user/' + user.id);
+        }
+        else {
+            res.sendStatus(404);
+        }
+    }));
 
     router.get('/games', function(req, res) {
         // TODO: implement admin page
@@ -73,8 +124,9 @@ module.exports = function(app, database, io, self, server) {
                 });
             }
         }
-
-        res.sendStatus(404);
+        else {
+            res.sendStatus(404);
+        }
     }));
 
     app.use('/admin', router);
