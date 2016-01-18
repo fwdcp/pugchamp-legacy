@@ -130,6 +130,7 @@ module.exports = function(app, database, io, self, server) {
                 id: id,
                 game: request.game,
                 role: request.role,
+                captain: request.captain,
                 player: self.getCachedUser(request.player),
                 candidates: [...request.candidates]
             })).value()
@@ -216,7 +217,7 @@ module.exports = function(app, database, io, self, server) {
                 return;
             }
 
-            if (request.candidates.length === 0) {
+            if (request.candidates.size === 0) {
                 return;
             }
 
@@ -255,7 +256,7 @@ module.exports = function(app, database, io, self, server) {
             return;
         }
 
-        let userRestrictions = self.userRestrictions.get(player);
+        let userRestrictions = self.getUserRestrictions(player);
         let request = currentSubstituteRequests.get(requestID);
 
         if (!_.includes(userRestrictions.aspects, 'sub')) {
@@ -291,12 +292,13 @@ module.exports = function(app, database, io, self, server) {
         }
 
         currentSubstituteRequests.set(gamePlayerInfo.player.id, {
-            game: game,
+            game: game.id,
             role: gamePlayerInfo.role.role,
+            captain: self.getDocumentID(gamePlayerInfo.team.captain),
             player: player,
             opened: Date.now(),
             candidates: new Set(),
-            timeout: setTimeout(attemptSubstitution, SUBSTITUTE_REQUEST_PERIOD, player.id)
+            timeout: setTimeout(attemptSubstitution, SUBSTITUTE_REQUEST_PERIOD, gamePlayerInfo.player.id)
         });
 
         updateSubstituteRequestsInfo();
@@ -324,30 +326,22 @@ module.exports = function(app, database, io, self, server) {
 
         yield game.save();
 
-        yield self.updateServerPlayers();
+        yield self.updateServerPlayers(game);
 
         processGameUpdate(game);
     });
 
-    self.on('wrapUpGame', function(game) {
-        self.emit('updateGamePlayers', game);
-
-        self.emit('broadcastGameInfo', game);
-
-        _.forEach(currentSubstituteRequests, function(request, id) {
-            if (request.game === game.id) {
-                self.emit('removeSubstituteRequest', id);
-            }
-        });
-    });
+    // TODO: clean up once a game has completed
 
     self.removeSubstituteRequest = function removeSubstituteRequest(id) {
         if (currentSubstituteRequests.has(id)) {
-            let request = currentSubstituteRequests.delete(id);
+            let request = currentSubstituteRequests.get(id);
 
             if (request.timeout) {
                 clearTimeout(request.timeout);
             }
+
+            currentSubstituteRequests.delete(id);
 
             updateSubstituteRequestsInfo();
             io.sockets.emit('substituteRequestsUpdated', getCurrentSubstituteRequestsMessage());
@@ -479,7 +473,7 @@ module.exports = function(app, database, io, self, server) {
     });
 
     function getUserCurrentGame(userID) {
-        co(function*() {
+        return co(function*() {
             if (!currentGameCache.has(userID)) {
                 let game = yield database.Game.findOne({
                     $or: [{
@@ -543,7 +537,7 @@ module.exports = function(app, database, io, self, server) {
                 return;
             }
 
-            self.removeSubstituteRequest(request);
+            self.removeSubstituteRequest(requestID);
         }));
     }));
 

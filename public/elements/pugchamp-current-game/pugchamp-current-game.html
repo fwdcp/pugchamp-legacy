@@ -99,12 +99,9 @@
                         this.set('captain', this._isCurrentUser(this.user, team.captain.id));
 
                         this.set('player', _.find(team.composition, _.bind(function(role) {
-                            return _.some(role.players, {
-                                user: {
-                                    id: this.user.id
-                                },
-                                replaced: false
-                            });
+                            return _.some(role.players, _.bind(function(player) {
+                                return this._isCurrentUser(this.user, player.user.id) && !player.replaced;
+                            }, this));
                         }, this)));
 
                         return this.captain || this.player;

@@ -14,7 +14,7 @@ module.exports = function(app, database, io, self, server) {
         }
 
         if (_.isObject(info)) {
-            if (_.hasIn(info, '_id') && _hasIn(info._id, 'toHexString')) {
+            if (_.hasIn(info, '_id') && _.hasIn(info._id, 'toHexString')) {
                 return info._id.toHexString();
             }
 
