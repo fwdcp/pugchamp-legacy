@@ -18,6 +18,9 @@
     {{#> body}}
     <h1>{{user.alias}}</h1>
 
+    <p><strong><a href="/player/{{user.steamID}}">Profile</a></strong></p>
+    <p><strong>Steam ID:</strong> {{user.steamID}}</p>
+
     <h2>User Settings</h2>
     <form id="user-settings" method="post">
         <input type="hidden" name="type" value="changeSettings">
