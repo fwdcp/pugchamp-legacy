@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const co = require('co');
 const config = require('config');
 const jwt = require('jsonwebtoken');
+const moment = require('moment');
 const OpenIDStrategy = require('passport-openid').Strategy;
 const passport = require('passport');
 const socketioJwt = require('socketio-jwt');
@@ -90,7 +91,32 @@ module.exports = function(app, database, io, self, server) {
             restrictions.push(CURRENT_GAME_RESTRICTIONS);
         }
 
-        // TODO: check user restrictions
+        let activeRestrictions = yield database.Restriction.find({
+            user: userID,
+            active: true
+        });
+
+        for (let restriction of activeRestrictions) {
+            if (!restriction.expires || moment().isBefore(restriction.expires)) {
+                let reason = 'The following restrictions are currently active';
+
+                if (restriction.expires) {
+                    reason += ' (expiring ' + moment(restriction.expires).fromNow() + ')';
+                }
+
+                reason += ': ' + restriction.aspects.join(', ') + '.';
+
+                restrictions.push({
+                    aspects: restriction.aspects,
+                    reasons: [reason]
+                });
+            }
+            else {
+                restriction.active = false;
+
+                yield restriction.save();
+            }
+        }
 
         let combinedRestrictions = _.reduce(restrictions, function(combinedRestrictions, restriction) {
             return {
