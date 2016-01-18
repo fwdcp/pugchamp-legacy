@@ -177,7 +177,7 @@ module.exports = function(app, database, io, self, server) {
             return;
         }
 
-        let token = jwt.sign(req.user.id, config.get('server.tokenSecret'), {
+        let token = jwt.sign({user: req.user.id}, config.get('server.tokenSecret'), {
             expiresIn: config.get('server.tokenExpiration')
         });
 
@@ -209,7 +209,7 @@ module.exports = function(app, database, io, self, server) {
         socket.emit('userInfoUpdated', null);
     });
     io.sockets.on('authenticated', co.wrap(function*(socket) {
-        let userID = socket.decoded_token;
+        let userID = socket.decoded_token.user;
         yield self.updateCachedUser(userID);
 
         socket.emit('userInfoUpdated', self.getCachedUser(userID));

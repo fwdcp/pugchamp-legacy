@@ -625,8 +625,10 @@ module.exports = function(app, database, io, self, server) {
     });
 
     io.sockets.on('authenticated', function(socket) {
+        let userID = socket.decoded_token.user;
+
         socket.on('makeDraftChoice', function(choice) {
-            choice.captain = socket.decoded_token;
+            choice.captain = userID;
 
             commitDraftChoice(choice);
         });

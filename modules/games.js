@@ -503,7 +503,7 @@ module.exports = function(app, database, io, self, server) {
     });
 
     io.sockets.on('authenticated', co.wrap(function*(socket) {
-        let userID = socket.decoded_token;
+        let userID = socket.decoded_token.user;
 
         socket.emit('currentGameUpdated', yield getUserCurrentGame(userID));
 
@@ -512,7 +512,7 @@ module.exports = function(app, database, io, self, server) {
 
             let playerInfo = getGamePlayerInfo(game, info.player);
 
-            if (socket.decoded_token !== self.getDocumentID(playerInfo.team.captain)) {
+            if (userID !== self.getDocumentID(playerInfo.team.captain)) {
                 return;
             }
 
@@ -520,7 +520,7 @@ module.exports = function(app, database, io, self, server) {
         }));
 
         socket.on('updateSubstituteApplication', function(info) {
-            updateSubstituteApplication(info.request, socket.decoded_token, info.status);
+            updateSubstituteApplication(info.request, userID, info.status);
         });
 
         socket.on('retractSubstituteRequest', co.wrap(function*(requestID) {
@@ -533,7 +533,7 @@ module.exports = function(app, database, io, self, server) {
 
             let playerInfo = getGamePlayerInfo(game, request.player);
 
-            if (socket.decoded_token !== self.getDocumentID(playerInfo.team.captain)) {
+            if (userID !== self.getDocumentID(playerInfo.team.captain)) {
                 return;
             }
 

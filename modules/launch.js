@@ -289,19 +289,21 @@ module.exports = function(app, database, io, self, server) {
     });
 
     io.sockets.on('authenticated', function(socket) {
+        let userID = socket.decoded_token.user;
+
         socket.on('updateAvailability', function(availability) {
-            updateUserAvailability(socket.decoded_token, availability);
+            updateUserAvailability(userID, availability);
         });
 
         socket.on('updateReadyStatus', function(ready) {
-            updateUserReadyStatus(socket.decoded_token, ready);
+            updateUserReadyStatus(userID, ready);
         });
 
         socket.emit('userAvailabilityUpdated', {
             roles: _.mapValues(playersAvailable, function(players) {
-                return players.has(socket.decoded_token);
+                return players.has(userID);
             }),
-            captain: captainsAvailable.has(socket.decoded_token)
+            captain: captainsAvailable.has(userID)
         });
     });
 

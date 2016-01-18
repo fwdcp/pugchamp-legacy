@@ -53,15 +53,17 @@ module.exports = function(app, database, io, self, server) {
     });
 
     io.sockets.on('authenticated', function(socket) {
+        let userID = socket.decoded_token.user;
+
         socket.on('sendChatMessage', function(message) {
-            let userRestrictions = self.getUserRestrictions(socket.decoded_token);
+            let userRestrictions = self.getUserRestrictions(userID);
 
             if (!_.includes(userRestrictions.aspects, 'chat')) {
                 let trimmedMessage = _.trim(message);
 
                 if (trimmedMessage.length > 0) {
                     self.sendMessage({
-                        user: socket.decoded_token,
+                        user: userID,
                         body: trimmedMessage
                     });
                 }
@@ -69,16 +71,16 @@ module.exports = function(app, database, io, self, server) {
 					self.sendMessage({
 						body: "An admin has been requested. Abuse of this command will result in a ban."
 					});
-					var user = socket.decoded_token;
+					var user = userID;
 					user = self.getCachedUser(user)
-					
+
 					self.emit('adminRequested', user);
 				}
 				if (trimmedMessage.includes("!mumble")) {
 					self.sendMessage({
 						body: "216.52.148.10:18460"
 					});
-				}				
+				}
             }
         });
     });
