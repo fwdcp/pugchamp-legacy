@@ -158,11 +158,6 @@ module.exports = function(app, database, io, self, server) {
         database.User.findById(id, done);
     });
 
-    app.use(function(req, res, next) {
-        res.locals.user = req.user ? req.user.toObject() : null;
-        next();
-    });
-
     app.get('/user/login', passport.authenticate('openid'));
     app.get('/user/login/return', passport.authenticate('openid'), function(req, res) {
         if (req.user && !req.user.setUp) {

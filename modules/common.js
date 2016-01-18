@@ -26,6 +26,12 @@ module.exports = function(app, database, io, self, server) {
         return null;
     };
 
+    // NOTE: must be here in order to take effect for index page
+    app.use(function(req, res, next) {
+        res.locals.user = req.user ? req.user.toObject() : null;
+        next();
+    });
+
     app.get('/', function(req, res) {
         res.render('index');
     });
