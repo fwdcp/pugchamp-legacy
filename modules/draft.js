@@ -280,7 +280,15 @@ module.exports = function(app, database, io, self, server) {
 
             self.cleanUpDraft();
 
-            yield self.assignGameToServer(game);
+            try {
+                yield self.assignGameToServer(game);
+            }
+            catch (err) {
+                self.postToLog({
+                    description: 'encountered error while trying to set up server',
+                    error: err
+                });
+            }
         });
     }
 

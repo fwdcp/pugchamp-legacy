@@ -1,8 +1,10 @@
 <paper-toolbar class="medium-tall">
     <paper-icon-button icon="menu" paper-drawer-toggle></paper-icon-button>
-	<div class="help-button"> 
-		<pugchamp-help></pugchamp-help> 
-	</div>
+
+    <div class="flex"></div>
+    {{#if home}}
+    <pugchamp-admin-request></pugchamp-admin-request>
+    {{/if}}
+
     <div class="bottom" id="app-name">PugChamp</div>
-	
 </paper-toolbar>

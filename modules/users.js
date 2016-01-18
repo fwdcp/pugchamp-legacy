@@ -13,7 +13,7 @@ const url = require('url');
 
 module.exports = function(app, database, io, self, server) {
     const UNAUTHENTICATED_RESTRICTIONS = {
-        aspects: ['sub', 'start', 'captain', 'chat'],
+        aspects: ['sub', 'start', 'captain', 'chat', 'support'],
         reasons: ['You are currently not logged on.']
     };
     var userCache = new Map();
@@ -43,7 +43,7 @@ module.exports = function(app, database, io, self, server) {
 
     self.getUserRestrictions = function getUserRestrictions(userID) {
         const UNKNOWN_RESTRICTIONS = {
-            aspects: ['sub', 'start', 'captain', 'chat'],
+            aspects: ['sub', 'start', 'captain', 'chat', 'support'],
             reasons: ['There was an error retrieving your current restrictions.']
         };
 
@@ -65,7 +65,7 @@ module.exports = function(app, database, io, self, server) {
         let restrictions = [];
 
         const NOT_READY_RESTRICTIONS = {
-            aspects: ['sub', 'start', 'captain', 'chat'],
+            aspects: ['sub', 'start', 'captain', 'chat', 'support'],
             reasons: ['Your account is not set up properly.']
         };
         if (!user.setUp) {

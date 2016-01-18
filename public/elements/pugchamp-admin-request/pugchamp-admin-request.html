@@ -1,0 +1,47 @@
+<link rel="import" href="/components/polymer/polymer.html">
+
+<link rel="import" href="/components/paper-button/paper-button.html">
+<link rel="import" href="/components/paper-dialog/paper-dialog.html">
+<link rel="import" href="/components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="/components/paper-input/paper-textarea.html">
+<link rel="import" href="/components/paper-styles/color.html">
+
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
+
+<dom-module id="pugchamp-admin-request">
+    <template>
+        <style is="custom-style">
+            #dialog {
+                width: 50%;
+            }
+        </style>
+
+    	<paper-icon-button on-tap="openDialog" data-dialog="modal" icon="warning" hidden="{{!user}}"></paper-icon-button>
+
+    	<paper-dialog id="dialog" modal>
+            <h2>Request Admin</h2>
+
+    		<paper-textarea id="message" maxlength="300" char-counter placeholder="issue description" disabled="{{isRestricted(restrictions, 'support')}}" value="{{message}}"></paper-textarea>
+
+    		<div class="buttons">
+    		    <paper-button dialog-dismiss>Cancel</paper-button>
+    			<paper-button dialog-confirm autofocus on-tap="sendRequest">Request Admin</paper-button>
+    		</div>
+        </paper-dialog>
+	</template>
+	<script>
+        Polymer({
+            is: 'pugchamp-admin-request',
+            behaviors: [PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior, PugChampClientBehaviors.UserBehavior],
+			openDialog: function() {
+				this.$.dialog.open();
+			},
+			sendRequest: function() {
+				socket.emit('requestAdmin', this.message);
+
+				this.set('message', '');
+			}
+        });
+    </script>
+</dom-module>

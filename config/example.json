@@ -173,6 +173,14 @@
         "listen": 16217,
         "mongodb": "mongodb://localhost/pugchamp",
         "sessionSecret": "pickup winner",
+        "slack": {
+            "incomingWebhook": "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX",
+            "messageDefaults": {
+                "username": "champbot",
+                "icon_emoji": ":trophy:",
+                "channel": "#app-log"
+            }
+        },
         "tokenSecret": "public dominator"
     }
 }
