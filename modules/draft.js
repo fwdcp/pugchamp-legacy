@@ -278,6 +278,8 @@ module.exports = function(app, database, io, self, server) {
 
             yield game.save();
 
+            self.cleanUpDraft();
+
             yield self.assignGameToServer(game);
         });
     }
