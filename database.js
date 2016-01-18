@@ -139,7 +139,7 @@ var restrictionSchema = new mongoose.Schema({
     active: Boolean,
     aspects: [{
         type: String,
-        enum: ['sub', 'start', 'captain', 'chat']
+        enum: ['sub', 'start', 'captain', 'chat', 'support']
     }],
     reason: String,
     expires: Date,
