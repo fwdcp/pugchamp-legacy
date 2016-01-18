@@ -1,0 +1,47 @@
+<link rel="import" href="/components/polymer/polymer.html">
+
+<link rel="import" href="/components/iron-flex-layout/classes/iron-flex-layout.html">
+<link rel="import" href="/components/iron-form/iron-form.html">
+<link rel="import" href="/components/paper-button/paper-button.html">
+<link rel="import" href="/components/paper-input/paper-textarea.html">
+<link rel="import" href="/components/paper-styles/color.html">
+
+<dom-module id="pugchamp-server-rcon">
+    <template>
+        <style is="custom-style">
+            #send {
+                background: var(--primary-color);
+                color: var(--dark-theme-text-color);
+            }
+        </style>
+
+        <pre>{{output}}</pre>
+
+        <form is="iron-form" id="form" method="post" on-iron-form-error="onError" on-iron-form-response="onSuccess" class="horizontal layout end">
+            <input type="hidden" name="type" value="rconCommand">
+            <input type="hidden" name="server" value="{{server}}">
+            <paper-textarea class="flex" label="Command" name="command" id="command" value="{{command}}" placeholder="sv_cheats 1" required></paper-textarea>
+            <paper-button id="send" on-tap="sendCommand" raised>Send</paper-button>
+        </form>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'pugchamp-server-rcon',
+            ready: function() {
+                this.set('output', '');
+            },
+            sendCommand: function() {
+                this.$.form.submit();
+                this.output += '\n] ' + this.command;
+                this.command = '';
+            },
+            onError: function(event) {
+                this.output += '\nERROR: failed to execute command on server';
+            },
+            onSuccess: function(event) {
+                this.output += '\n' + event.detail.response;
+            }
+        });
+    </script>
+</dom-module>

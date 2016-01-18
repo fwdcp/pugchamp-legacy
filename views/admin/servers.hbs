@@ -1,0 +1,31 @@
+<!doctype html>
+
+<html>
+
+    {{#> head title="Server Admin"}}
+    <link rel="import" href="/elements/pugchamp-server-rcon/pugchamp-server-rcon.html">
+    {{/head}}
+
+    {{#> body}}
+
+    <h1>Servers</h1>
+
+    {{#each servers}}
+    <h2>{{@key}}</h2>
+
+    <strong>Status:</strong> {{status}}
+    {{#if game}}
+        (<a href="/game/{{game.id}}">Game</a>)
+    {{/if}}
+
+    <pugchamp-server-rcon server="{{@key}}"></pugchamp-server-rcon>
+    {{/each}}
+
+    <script>
+        function sendCommand(server) {
+            document.querySelector('.rcon[data-server=' + server + ']').submit();
+        }
+    </script>
+    {{/body}}
+
+</html>

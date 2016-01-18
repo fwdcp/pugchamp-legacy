@@ -19,7 +19,7 @@ module.exports = function(app, database, io, self, server) {
     const MAPS = config.get('app.games.maps');
     const ROLES = config.get('app.games.roles');
 
-    function connectToServer(gameServer) {
+    function connectToRCON(gameServer) {
         return co(function*() {
             let gameServerInfo = GAME_SERVER_POOL[gameServer];
 
@@ -36,14 +36,16 @@ module.exports = function(app, database, io, self, server) {
 
     function sendCommandToServer(rcon, command, timeout) {
         return co(function*() {
-            yield rcon.command(command, timeout ? timeout : COMMAND_TIMEOUT);
+            let result = yield rcon.command(command, timeout ? timeout : COMMAND_TIMEOUT);
+
+            return result;
         });
     }
 
     function getServerStatus(gameServer) {
         return co(function*() {
             try {
-                let rcon = yield connectToServer(gameServer);
+                let rcon = yield connectToRCON(gameServer);
 
                 let response = yield sendCommandToServer(rcon, 'pugchamp_game_info');
 
@@ -109,6 +111,13 @@ module.exports = function(app, database, io, self, server) {
         }).keys().value();
     });
 
+    self.sendRCONCommand = co.wrap(function* sendRCONCommand(server, command) {
+        let rcon = yield connectToRCON(server);
+        let result = yield sendCommandToServer(rcon, command);
+
+        return result;
+    });
+
     self.updateServerPlayers = co.wrap(function* updateServerPlayers(game) {
         let serverStatus = yield getServerStatus(game.server);
 
@@ -116,7 +125,7 @@ module.exports = function(app, database, io, self, server) {
             return;
         }
 
-        let rcon = yield connectToServer(game.server);
+        let rcon = yield connectToRCON(game.server);
 
         let populatedGame = yield game.populate('teams.composition.players.user').execPopulate();
 
@@ -186,7 +195,7 @@ module.exports = function(app, database, io, self, server) {
         game.status = 'assigning';
         yield game.save();
 
-        let rcon = yield connectToServer(game.server);
+        let rcon = yield connectToRCON(game.server);
 
         yield sendCommandToServer(rcon, 'pugchamp_game_reset');
 
