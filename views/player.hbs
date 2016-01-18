@@ -1,0 +1,125 @@
+<!doctype html>
+
+<html>
+
+    {{#> head title=user.alias }}
+
+    <style is="custom-style">
+        .match {
+            margin: 5px;
+        }
+
+        .match > div {
+            padding: 10px;
+        }
+
+        .status {
+            text-align: center;
+        }
+
+        .details {
+            text-align: center;
+        }
+
+        .team .captain {
+            font-size: 21px;
+            font-weight: 500;
+        }
+
+        .team .score {
+            font-size: 28px;
+            font-weight: 600;
+            margin: 0 10px;
+            text-align: center;
+        }
+
+        .team.team-0 .captain {
+            margin-right: 10px;
+            text-align: right;
+        }
+
+        .team.team-1 .captain {
+            margin-left: 10px;
+            text-align: left;
+        }
+
+        .team.faction-BLU {
+            background: var(--paper-red-500);
+            color: var(--paper-grey-300);
+            opacity: var(--light-primary-opacity);
+        }
+
+        .team.faction-RED {
+            background: var(--paper-blue-500);
+            color: var(--paper-grey-300);
+            opacity: var(--light-primary-opacity);
+        }
+    </style>
+    {{/head}}
+
+    {{#> body}}
+    <h1>{{user.alias}}</h1>
+
+    <p>
+        <strong>Player Rating:</strong>
+
+        {{#if user.currentRating}}
+            {{user.currentRating.rating}} &plusmn;{{user.currentRating.deviation}}
+        {{else}}
+            N/A
+        {{/if}}
+    </p>
+
+    <p>
+        <strong>Captain Score:</strong>
+
+        {{#if user.captainScore.low}}
+            {{user.captainScore.low}}
+        {{else}}
+            N/A
+        {{/if}}
+    </p>
+
+    <h2>Rating History</h2>
+
+    <!-- TODO: create nice visualization -->
+
+    </h2>
+
+    <h2>Games</h2>
+
+    {{#each games}}
+        <paper-material class="match horizontal layout">
+            <div class="status flex vertical layout center center-justified">
+                <a href="/game/{{id}}">{{momentFromNow date}}</a>
+                <span>{{status}}</span>
+            </div>
+            <div class="team team-0 {{#if teams.[0].faction}}faction-{{teams.[0].faction}}{{/if}} flex-3 horizontal layout">
+                <div class="captain flex vertical layout center-justified">
+                    <span>{{teams.[0].captain.alias}}</span>
+                </div>
+                {{#if score.[0]}}
+                    <div class="score vertical layout center-justified">
+                        <span>{{score.[0]}}</span>
+                    </div>
+                {{/if}}
+            </div>
+            <div class="details flex vertical layout center center-justified">
+                <span>{{map.name}}</span>
+            </div>
+            <div class="team team-1 {{#if teams.[1].faction}}faction-{{teams.[1].faction}}{{/if}} flex-3 horizontal layout">
+                {{#if score.[1]}}
+                    <div class="score vertical layout center-justified">
+                        <span>{{score.[1]}}</span>
+                    </div>
+                {{/if}}
+                <div class="captain flex vertical layout center-justified">
+                    <span>{{teams.[1].captain.alias}}</span>
+                </div>
+            </div>
+        </paper-material>
+    {{/each}}
+
+    {{/body}}
+
+</html>
