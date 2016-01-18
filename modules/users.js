@@ -272,10 +272,10 @@ module.exports = function(app, database, io, self, server) {
                     });
 
                     if (!existingUser) {
-                        errors.push('The alias you selected is not available.');
+                        req.user.alias = req.body.alias;
                     }
                     else {
-                        req.user.alias = req.body.alias;
+                        errors.push('The alias you selected is not available.');
                     }
                 }
                 else {
