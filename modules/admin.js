@@ -48,6 +48,12 @@ module.exports = function(app, database, io, self, server) {
 
     router.get('/user/:id', co.wrap(function*(req, res) {
         let user = yield database.User.findById(req.params.id);
+
+        if (!user) {
+            res.sendStatus(404);
+            return;
+        }
+
         let restrictions = yield database.Restriction.find({
             user: req.params.id
         }).populate('actions.admin').exec();
@@ -62,6 +68,11 @@ module.exports = function(app, database, io, self, server) {
         extended: false
     }), co.wrap(function*(req, res) {
         let user = yield database.User.findById(req.params.id);
+
+        if (!user) {
+            res.sendStatus(404);
+            return;
+        }
 
         if (req.body.type === 'changeSettings') {
             if (req.body.alias !== user.alias) {
@@ -78,12 +89,16 @@ module.exports = function(app, database, io, self, server) {
 
             try {
                 yield user.save();
+
+                res.redirect('/admin/user/' + user.id);
             }
             catch (err) {
                 self.postToLog({
                     description: 'failed to save settings for <' + BASE_URL + '/admin/user/' + user.id + '|' + user.alias + '>: ' + JSON.stringify(req.body),
                     error: err
                 });
+
+                res.sendStatus(500);
             }
         }
         else if (req.body.type === 'createRestriction') {
@@ -92,7 +107,7 @@ module.exports = function(app, database, io, self, server) {
             let reason = req.body.reason ? req.body.reason : null;
 
             if (_.size(aspects) === 0) {
-                res.redirect('/admin/user/' + user.id);
+                res.sendStatus(400);
                 return;
             }
 
@@ -109,12 +124,16 @@ module.exports = function(app, database, io, self, server) {
             try {
                 yield restriction.save();
                 yield self.updateUserRestrictions(user.id);
+
+                res.redirect('/admin/user/' + user.id);
             }
             catch (err) {
                 self.postToLog({
                     description: 'failed to apply restriction to <' + BASE_URL + '/admin/user/' + user.id + '|' + user.alias + '>: ' + JSON.stringify(req.body),
                     error: err
                 });
+
+                res.sendStatus(500);
             }
         }
         else if (req.body.type === 'revokeRestriction') {
@@ -122,7 +141,7 @@ module.exports = function(app, database, io, self, server) {
                 let restriction = yield database.Restriction.findById(req.body.restriction);
 
                 if (!restriction) {
-                    res.redirect('/admin/user/' + user.id);
+                    res.sendStatus(404);
                     return;
                 }
 
@@ -134,23 +153,26 @@ module.exports = function(app, database, io, self, server) {
                     try {
                         yield restriction.save();
                         yield self.updateUserRestrictions(user.id);
+
+                        res.redirect('/admin/user/' + user.id);
                     }
                     catch (err) {
                         self.postToLog({
                             description: 'failed to revoke restriction `' + restriction.id + '` for <' + BASE_URL + '/admin/user/' + user.id + '|' + user.alias + '>',
                             error: err
                         });
+
+                        res.sendStatus(500);
                     }
                 }
             }
             catch (err) {
                 console.log(err);
             }
-
-
         }
-
-        res.redirect('/admin/user/' + user.id);
+        else {
+            res.sendStatus(400);
+        }
     }));
 
     router.get('/games', co.wrap(function*(req, res) {
@@ -177,16 +199,16 @@ module.exports = function(app, database, io, self, server) {
                 res.send(result);
             }
             catch (err) {
-                res.sendStatus(500);
-
                 self.postToLog({
                     description: 'RCON command `' + req.body.command + '` on server `' + req.body.server + '` failed',
                     error: err
                 });
+
+                res.sendStatus(500);
             }
         }
         else {
-            res.sendStatus(404);
+            res.sendStatus(400);
         }
     }));
 
