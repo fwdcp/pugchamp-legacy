@@ -20,6 +20,20 @@
             </paper-icon-item>
         </a>
 
+        <hr>
+
+        {{#if pages}}
+        {{#each pages}}
+        <a href="{{url}}" {{#if ../home}}target="_blank"{{/if}}>
+            <paper-icon-item>
+                <iron-icon icon="{{icon}}" item-icon></iron-icon> {{title}}
+            </paper-icon-item>
+        </a>
+        {{/each}}
+
+        <hr>
+        {{/if}}
+
         {{#if user}}
             <a href="/user/settings" {{#if home}}target="_blank"{{/if}}>
                 <paper-icon-item>

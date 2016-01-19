@@ -1,5 +1,24 @@
 {
     "app": {
+        "pages": [{
+            "title": "About",
+            "icon": "info",
+            "url": "/about",
+            "view": "static/about"
+        }, {
+            "title": "Rules",
+            "icon": "announcement",
+            "url": "/rules",
+            "view": "static/rules"
+        }, {
+            "title": "Source Repository",
+            "icon": "code",
+            "url": "https://github.com/fwdcp/pugchamp"
+        }, {
+            "title": "Voice Server",
+            "icon": "hardware:headset",
+            "url": "mumble://localhost:64738"
+        }],
         "servers": {
             "pool": {
                 "localhost-1": {

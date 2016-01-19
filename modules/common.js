@@ -2,6 +2,7 @@
 "use strict";
 
 const _ = require('lodash');
+const config = require('config');
 
 module.exports = function(app, database, io, self, server) {
     self.getDocumentID = function getDocumentID(info) {
@@ -26,11 +27,28 @@ module.exports = function(app, database, io, self, server) {
         return null;
     };
 
-    // NOTE: must be here in order to take effect for index page
+    // NOTE: must be here in order to take effect for all pages
     app.use(function(req, res, next) {
         res.locals.user = req.user ? req.user.toObject() : null;
         next();
     });
+
+    if (config.has('app.pages')) {
+        const PAGES = config.get('app.pages');
+
+        app.use(function(req, res, next) {
+            res.locals.pages = PAGES;
+            next();
+        });
+
+        _.forEach(PAGES, function(page) {
+            if (page.view) {
+                app.get(page.url, function(req, res) {
+                    res.render(page.view);
+                });
+            }
+        });
+    }
 
     app.get('/', function(req, res) {
         res.render('index');
