@@ -121,7 +121,7 @@ module.exports = function(app, database, io, self, server) {
     self.updateServerPlayers = co.wrap(function* updateServerPlayers(game) {
         let serverStatus = yield getServerStatus(game.server);
 
-        if (serverStatus.status !== 'free' && (serverStatus.status !== 'assigned' || self.getDocumentID(serverStatus.game) === self.getDocumentID(game))) {
+        if (serverStatus.status !== 'assigned' || self.getDocumentID(serverStatus.game) !== self.getDocumentID(game)) {
             return;
         }
 
