@@ -153,9 +153,9 @@ module.exports = function(app, database, io, self, server) {
         res.redirect('/admin/user/' + user.id);
     }));
 
-    router.get('/games', function(req, res) {
+    router.get('/games', co.wrap(function*(req, res) {
         // TODO: implement admin page
-    });
+    }));
 
     router.get('/servers', co.wrap(function*(req, res) {
         let servers = yield self.getServerStatuses();

@@ -130,6 +130,10 @@ var ratingSchema = new mongoose.Schema({
         deviation: Number
     }
 });
+ratingSchema.set('toObject', {
+    getters: true,
+    versionKey: false
+});
 
 var restrictionSchema = new mongoose.Schema({
     user: {
