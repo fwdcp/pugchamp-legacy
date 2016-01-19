@@ -204,7 +204,9 @@ module.exports = function(app, database, io, self, server) {
             return;
         }
 
-        let token = jwt.sign({user: req.user.id}, config.get('server.tokenSecret'), {
+        let token = jwt.sign({
+            user: req.user.id
+        }, config.get('server.tokenSecret'), {
             expiresIn: config.get('server.tokenExpiration')
         });
 
