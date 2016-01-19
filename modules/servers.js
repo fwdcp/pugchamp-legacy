@@ -228,13 +228,17 @@ module.exports = function(app, database, io, self, server) {
         yield sendCommandToServer(rcon, 'pugchamp_game_start', MAP_CHANGE_TIMEOUT);
     });
 
-    self.assignGameToServer = co.wrap(function* assignGameToServer(game) {
+    self.assignGameToServer = co.wrap(function* assignGameToServer(game, server) {
         game.status = 'assigning';
         yield game.save();
 
-        let availableServers = yield self.getAvailableServers();
+        if (!server) {
+            let availableServers = yield self.getAvailableServers();
 
-        game.server = chance.pick(availableServers);
+            server = chance.pick(availableServers);
+        }
+
+        game.server = server;
         yield game.save();
 
         yield self.initializeServer(game);
