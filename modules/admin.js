@@ -187,20 +187,32 @@ module.exports = function(app, database, io, self, server) {
         });
     }));
 
-    router.post('/servers', bodyParser.urlencoded({
+    router.post('/server/:server', bodyParser.urlencoded({
         extended: false
     }), co.wrap(function*(req, res) {
+        if (!_.has(GAME_SERVER_POOL, req.params.server)) {
+            res.sendStatus(404);
+            return;
+        }
+
         if (req.body.type === 'rconCommand') {
-            postToAdminLog(req.user, 'executed `' + req.body.command + '` on server `' + req.body.server + '`');
+            let trimmedCommand = _.trim(req.body.command);
+
+            if (!trimmedCommand) {
+                res.sendStatus(400);
+                return;
+            }
+
+            postToAdminLog(req.user, 'executed `' + req.body.command + '` on server `' + req.params.server + '`');
 
             try {
-                let result = yield self.sendRCONCommand(req.body.server, req.body.command);
+                let result = yield self.sendRCONCommand(req.params.server, req.body.command);
 
                 res.send(result);
             }
             catch (err) {
                 self.postToLog({
-                    description: 'RCON command `' + req.body.command + '` on server `' + req.body.server + '` failed',
+                    description: 'RCON command `' + req.body.command + '` on server `' + req.params.server + '` failed',
                     error: err
                 });
 

@@ -17,9 +17,8 @@
 
         <pre>{{output}}</pre>
 
-        <form is="iron-form" id="form" method="post" on-iron-form-error="onError" on-iron-form-response="onSuccess" class="horizontal layout end">
+        <form is="iron-form" id="form" method="post" action="/admin/server/{{server}}" on-iron-form-error="onError" on-iron-form-response="onSuccess" class="horizontal layout end">
             <input type="hidden" name="type" value="rconCommand">
-            <input type="hidden" name="server" value="{{server}}">
             <paper-textarea class="flex" label="Command" name="command" id="command" value="{{command}}" placeholder="sv_cheats 1" required></paper-textarea>
             <paper-button id="send" on-tap="sendCommand" raised>Send</paper-button>
         </form>
