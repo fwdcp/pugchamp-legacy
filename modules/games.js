@@ -549,6 +549,9 @@ module.exports = function(app, database, io, self, server) {
                 request.candidates.delete(userID);
             }
         }
+
+        updateSubstituteRequestsInfo();
+        io.sockets.emit('substituteRequestsUpdated', getCurrentSubstituteRequestsMessage());
     });
 
     app.get('/game/:id', function(req, res) {

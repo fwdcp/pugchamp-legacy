@@ -10,6 +10,14 @@ module.exports = function(app, database, io, self, server) {
         return _([...onlineUsers]).map(userID => self.getCachedUser(userID)).filter(user => user.setUp).sortBy('alias').value();
     };
 
+    self.sendMessageToUser = function sendMessageToUser(userID, message) {
+        if (message.user) {
+            message.user = self.getCachedUser(message.user);
+        }
+
+        self.emitToUser(userID, 'messageReceived', [message]);
+    };
+
     self.sendMessage = function sendMessage(message) {
         if (message.user) {
             message.user = self.getCachedUser(message.user);

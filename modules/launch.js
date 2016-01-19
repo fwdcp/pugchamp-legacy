@@ -236,6 +236,15 @@ module.exports = function(app, database, io, self, server) {
 
     self.updateLaunchStatus();
 
+    function syncUserAvailability(userID) {
+        self.emitToUser(userID, 'userAvailabilityUpdated', [{
+            roles: _.mapValues(playersAvailable, function(players) {
+                return players.has(userID);
+            }),
+            captain: captainsAvailable.has(userID)
+        }]);
+    }
+
     function updateUserAvailability(userID, availability) {
         let userRestrictions = self.getUserRestrictions(userID);
 
@@ -259,12 +268,7 @@ module.exports = function(app, database, io, self, server) {
             }
         }
 
-        self.emitToUser(userID, 'userAvailabilityUpdated', [{
-            roles: _.mapValues(playersAvailable, function(players) {
-                return players.has(userID);
-            }),
-            captain: captainsAvailable.has(userID)
-        }]);
+        syncUserAvailability(userID);
 
         self.updateLaunchStatus();
     }
@@ -328,5 +332,9 @@ module.exports = function(app, database, io, self, server) {
         if (_.includes(userRestrictions.aspects, 'captain')) {
             captainsAvailable.delete(userID);
         }
+
+        syncUserAvailability(userID);
+
+        self.updateLaunchStatus();
     });
 };
