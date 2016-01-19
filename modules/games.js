@@ -381,25 +381,6 @@ module.exports = function(app, database, io, self, server) {
 
             yield game.save();
 
-            processGameUpdate(game);
-        }
-        else if (info.status === 'abandoned') {
-            if (game.status === 'aborted' || game.status === 'completed') {
-                throw new Error('game had status ' + game.status + ' but is being reported as abandoned');
-            }
-
-            game.status = 'aborted';
-
-            if (info.score) {
-                game.score = _.map(game.teams, function(team) {
-                    return info.score[team.faction];
-                });
-            }
-
-            if (info.duration) {
-                game.duration = info.duration;
-            }
-
             if (info.time) {
                 _.each(game.teams, function(team) {
                     _.each(team.composition, function(role) {
@@ -413,8 +394,6 @@ module.exports = function(app, database, io, self, server) {
                     });
                 });
             }
-
-            yield game.save();
 
             processGameUpdate(game);
         }

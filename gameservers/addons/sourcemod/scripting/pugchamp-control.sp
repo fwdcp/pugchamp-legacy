@@ -132,61 +132,6 @@ public void OnClientDisconnect(int client) {
     }
 }
 
-public void OnClientDisconnect_Post(int client) {
-    if (gameAssigned && gameLive) {
-        if (GetTeamClientCount(2) + GetTeamClientCount(3) == 0) {
-            gameLive = false;
-
-            for (int i = 1; i <= MaxClients; i++) {
-                if (IsClientConnected(i) && IsClientAuthorized(i)) {
-                    EndPlayerTimer(i);
-                }
-            }
-
-            char url[2048];
-            serverURL.GetString(url, sizeof(url));
-            HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
-
-            char id[32];
-            gameID.GetString(id, sizeof(id));
-            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "game", id);
-
-            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "status", "abandoned");
-
-            char score[4];
-            IntToString(GetTeamScore(2), score, sizeof(score));
-            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "score[RED]", score);
-            IntToString(GetTeamScore(3), score, sizeof(score));
-            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "score[BLU]", score);
-
-            if (gameStartTime != -1.0) {
-                char duration[128];
-                FloatToString(GetGameTime() - gameStartTime, duration, sizeof(duration));
-                Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "duration", duration);
-            }
-
-            StringMapSnapshot players = playerPlaytimes.Snapshot();
-            for (int i = 0; i < players.Length; i++) {
-                char steamID[32];
-                players.GetKey(i, steamID, sizeof(steamID));
-
-                float playtime;
-                if (playerPlaytimes.GetValue(steamID, playtime)) {
-                    char key[64];
-                    Format(key, sizeof(key), "time[%s]", steamID);
-
-                    char value[128];
-                    FloatToString(playtime, value, sizeof(value));
-
-                    Steam_SetHTTPRequestGetOrPostParameter(httpRequest, key, value);
-                }
-            }
-
-            Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned);
-        }
-    }
-}
-
 public Action Command_GameInfo(int args) {
     char id[32];
     gameID.GetString(id, sizeof(id));
