@@ -180,6 +180,21 @@ module.exports = function(app, database, io, self, server) {
         // TODO: implement admin page
     }));
 
+    router.post('/games', bodyParser.urlencoded({
+        extended: false
+    }), co.wrap(function*(req, res) {
+        let game = yield database.User.findById(req.body.game);
+
+        if (!game) {
+            res.sendStatus(404);
+            return;
+        }
+
+        // TODO: handle actions
+
+        res.redirect('/admin/games');
+    }));
+
     router.get('/servers', co.wrap(function*(req, res) {
         let servers = yield self.getServerStatuses();
 
