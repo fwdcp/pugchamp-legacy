@@ -233,13 +233,17 @@ module.exports = function(app, database, io, self, server) {
         let userID = socket.decoded_token.user;
 
         socket.on('requestAdmin', co.wrap(function*(message) {
-            try {
-                yield self.requestAdmin(userID, message);
-            }
-            catch (err) {
-                self.sendMessage({
-                    action: 'admin request failed'
-                });
+            let userRestrictions = self.getUserRestrictions(userID);
+
+            if (!_.includes(userRestrictions, 'support')) {
+                try {
+                    yield self.requestAdmin(userID, message);
+                }
+                catch (err) {
+                    self.sendMessageToUser(userID, {
+                        action: 'admin request failed'
+                    });
+                }
             }
         }));
     });
