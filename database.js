@@ -142,18 +142,11 @@ var restrictionSchema = new mongoose.Schema({
         enum: ['sub', 'start', 'captain', 'chat', 'support']
     }],
     reason: String,
-    expires: Date,
-    actions: [{
-        admin: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
-        },
-        type: {
-            type: String,
-            enum: ['applied', 'changed', 'revoked', 'expired']
-        },
-        time: Date
-    }]
+    expires: Date
+});
+restrictionSchema.set('toObject', {
+    getters: true,
+    versionKey: false
 });
 
 module.exports = {

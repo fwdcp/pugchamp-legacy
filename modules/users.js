@@ -98,13 +98,14 @@ module.exports = function(app, database, io, self, server) {
 
         for (let restriction of activeRestrictions) {
             if (!restriction.expires || moment().isBefore(restriction.expires)) {
-                let reason = 'The following restrictions are currently active';
+                let reason = 'You are currently restricted (aspects: ' + restriction.aspects.join(', ') + ') (expires: ' + (restriction.expires ? moment(restriction.expires).fromNow() : 'never') + ')';
 
-                if (restriction.expires) {
-                    reason += ' (expiring ' + moment(restriction.expires).fromNow() + ')';
+                if (restriction.reason) {
+                    reason += ' for the reason: ' + restriction.reason + '.';
                 }
-
-                reason += ': ' + restriction.aspects.join(', ') + '.';
+                else {
+                    reason += '.';
+                }
 
                 restrictions.push({
                     aspects: restriction.aspects,

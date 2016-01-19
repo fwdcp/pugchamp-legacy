@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const co = require('co');
 const config = require('config');
 const express = require('express');
+const moment = require('moment');
 
 module.exports = function(app, database, io, self, server) {
     const BASE_URL = config.get('server.baseURL');
@@ -53,7 +54,7 @@ module.exports = function(app, database, io, self, server) {
 
         res.render('admin/user', {
             user: user.toObject(),
-            restrictions: _.map(restrictions, restriction => restriction.toObject())
+            restrictions: _(restrictions).map(restriction => restriction.toObject()).orderBy(['active', 'expires'], ['desc', 'desc']).value()
         });
     }));
 
@@ -84,12 +85,72 @@ module.exports = function(app, database, io, self, server) {
                     error: err
                 });
             }
+        }
+        else if (req.body.type === 'createRestriction') {
+            let aspects = _.split(req.body.aspects, ',');
+            let expires = req.body.expires ? req.body.expires : null;
+            let reason = req.body.reason ? req.body.reason : null;
 
-            res.redirect('/admin/user/' + user.id);
+            if (_.size(aspects) === 0) {
+                res.redirect('/admin/user/' + user.id);
+                return;
+            }
+
+            let restriction = new database.Restriction({
+                user: user.id,
+                active: true,
+                aspects: aspects,
+                reason: reason,
+                expires: expires
+            });
+
+            postToAdminLog(req.user, 'restricted `<' + BASE_URL + '/admin/user/' + user.id + '|' + user.alias + '>` (aspects: ' + restriction.aspects.join(', ') + ') (expires: ' + (restriction.expires ? moment(restriction.expires).format('llll') : 'never') + ') (reason: ' + restriction.reason + ')');
+
+            try {
+                yield restriction.save();
+                yield self.updateUserRestrictions(user.id);
+            }
+            catch (err) {
+                self.postToLog({
+                    description: 'failed to apply restriction to <' + BASE_URL + '/admin/user/' + user.id + '|' + user.alias + '>: ' + JSON.stringify(req.body),
+                    error: err
+                });
+            }
         }
-        else {
-            res.sendStatus(404);
+        else if (req.body.type === 'revokeRestriction') {
+            try {
+                let restriction = yield database.Restriction.findById(req.body.restriction);
+
+                if (!restriction) {
+                    res.redirect('/admin/user/' + user.id);
+                    return;
+                }
+
+                if (user.id === self.getDocumentID(restriction.user) && restriction.active) {
+                    postToAdminLog(req.user, 'revoked restriction for `<' + BASE_URL + '/admin/user/' + user.id + '|' + user.alias + '>` (aspects: ' + restriction.aspects.join(', ') + ') (expires: ' + (restriction.expires ? moment(restriction.expires).format('llll') : 'never') + ') (reason: ' + restriction.reason + ')');
+
+                    restriction.active = false;
+
+                    try {
+                        yield restriction.save();
+                        yield self.updateUserRestrictions(user.id);
+                    }
+                    catch (err) {
+                        self.postToLog({
+                            description: 'failed to revoke restriction `' + restriction.id + '` for <' + BASE_URL + '/admin/user/' + user.id + '|' + user.alias + '>',
+                            error: err
+                        });
+                    }
+                }
+            }
+            catch (err) {
+                console.log(err);
+            }
+
+
         }
+
+        res.redirect('/admin/user/' + user.id);
     }));
 
     router.get('/games', function(req, res) {

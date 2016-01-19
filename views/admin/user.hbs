@@ -4,12 +4,25 @@
 
     {{#> head title=user.alias }}
     <link rel="import" href="/components/iron-form/iron-form.html">
+    <link rel="import" href="/components/iron-icon/iron-icon.html">
     <link rel="import" href="/components/paper-button/paper-button.html">
+    <link rel="import" href="/components/paper-checkbox/paper-checkbox.html">
     <link rel="import" href="/components/paper-input/paper-input.html">
+    <link rel="import" href="/components/vaadin-grid/vaadin-grid.html">
 
     <style is="custom-style">
-        #save {
+        #saveSettings {
             background: var(--primary-color);
+            color: var(--dark-theme-text-color);
+        }
+
+        #createRestriction {
+            background: var(--primary-color);
+            color: var(--dark-theme-text-color);
+        }
+
+        .revoke {
+            background: var(--accent-color);
             color: var(--dark-theme-text-color);
         }
     </style>
@@ -26,19 +39,125 @@
         <input type="hidden" name="type" value="changeSettings">
         <p><paper-input type="text" label="Alias" name="alias" placeholder="thesupremecommander" auto-validate error-message="up to fifteen alphanumeric characters only" pattern="^[A-Za-z0-9_]{1,15}$" value="{{user.alias}}" required></paper-input></p>
 
-        <paper-button raised onclick="save()" id="save">Save</paper-button>
+        <paper-button raised onclick="saveSettings()" id="saveSettings">Save</paper-button>
     </form>
 
-    <h2>Restriction History</h2>
+    <h2>Restrictions</h2>
 
-    {{#each restrictions}}
-        {{toJSON restriction}}
-    {{/each}}
+    <form is="iron-form" id="create-restriction" method="post">
+        <input type="hidden" name="type" value="createRestriction">
 
+        <p>
+            <label>Restrictions:</label>
+            <paper-checkbox name="aspects" value="sub">sub</paper-checkbox>
+            <paper-checkbox name="aspects" value="start">start</paper-checkbox>
+            <paper-checkbox name="aspects" value="captain">captain</paper-checkbox>
+            <paper-checkbox name="aspects" value="chat">chat</paper-checkbox>
+            <paper-checkbox name="aspects" value="support">support</paper-checkbox>
+        </p>
+        <p><paper-input type="text" label="Reason" name="reason" placeholder="being the worst medic in TF2 history"></paper-input></p>
+        <p><label>Expires:</label> <input type="datetime-local" label="Expires" name="expires"></input></p>
+
+        <paper-button raised onclick="createRestriction()" id="createRestriction">Create</paper-button>
+    </form>
+
+    <h3>History</h3>
+
+    <vaadin-grid id="restrictions">
+        <table>
+            <colgroup>
+                <col name="active" sortable sort-direction="desc">
+                <col name="aspects">
+                <col name="reason">
+                <col name="expires" sortable sort-direction="desc">
+                <col>
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>Active</th>
+                    <th>Aspects</th>
+                    <th>Reason</th>
+                    <th>Expires</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </vaadin-grid>
+
+    <form is="iron-form" id="revoke-restriction" method="post">
+        <input type="hidden" name="type" value="revokeRestriction">
+        <input type="hidden" name="restriction">
+    </form>
+
+    <script src="/components/lodash/lodash.min.js"></script>
+    <script src="/components/moment/moment.js"></script>
     <script>
-        function save() {
+        var grid = document.getElementById('restrictions');
+        grid.items = {{toJSON restrictions}};
+
+        grid.addEventListener('sort-order-changed', function() {
+            grid.items = _.sortByOrder(grid.items, _.map(grid.sortOrder, function(sort) {
+                if (sort.column === 0) {
+                    return function(item) {
+                        return item.active;
+                    }
+                }
+                else if (sort.column === 3) {
+                    return function(item) {
+                        return item.expires;
+                    }
+                }
+            }), _.map(grid.sortOrder, 'direction'));
+        });
+
+        grid.columns[0].renderer = function(cell) {
+            if (cell.data) {
+                cell.element.innerHTML = '<iron-icon icon="check"></iron-icon>';
+            }
+        };
+        grid.columns[1].renderer = function(cell) {
+            cell.element.innerHTML = cell.data.join(', ');
+        };
+        grid.columns[3].renderer = function(cell) {
+            if (cell.data) {
+                cell.element.innerHTML = moment(cell.data).format('llll');
+            }
+            else {
+                cell.element.innerHTML = 'never';
+            }
+        }
+        grid.columns[4].renderer = function(cell) {
+            if (cell.row.data.active) {
+                cell.element.innerHTML = '<paper-button class="revoke" onclick="revokeRestriction(\'' + cell.row.data.id + '\')" raised>Revoke</paper-button>';
+            }
+            else {
+                cell.element.innerHTML = '';
+            }
+        }
+
+        function saveSettings() {
             document.getElementById('user-settings').submit();
         }
+
+        function createRestriction() {
+            document.getElementById('create-restriction').submit();
+        }
+
+        function revokeRestriction(id) {
+            document.querySelector('#revoke-restriction input[name=restriction]').value = id;
+
+            document.getElementById('revoke-restriction').submit();
+        }
+
+        document.addEventListener('iron-form-response', function() {
+            document.location.reload();
+        });
+
+        document.addEventListener('iron-form-error', function() {
+            document.location.reload();
+        });
     </script>
     {{/body}}
 
