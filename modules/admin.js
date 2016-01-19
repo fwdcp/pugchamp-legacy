@@ -56,7 +56,7 @@ module.exports = function(app, database, io, self, server) {
         }
 
         let restrictions = yield database.Restriction.find({
-            user: req.params.id
+            user: user.id
         }).populate('actions.admin').exec();
 
         res.render('admin/user', {
@@ -203,10 +203,10 @@ module.exports = function(app, database, io, self, server) {
         });
     }));
 
-    router.post('/server/:server', bodyParser.urlencoded({
+    router.post('/server/:id', bodyParser.urlencoded({
         extended: false
     }), co.wrap(function*(req, res) {
-        if (!_.has(GAME_SERVER_POOL, req.params.server)) {
+        if (!_.has(GAME_SERVER_POOL, req.params.id)) {
             res.sendStatus(404);
             return;
         }
@@ -219,16 +219,16 @@ module.exports = function(app, database, io, self, server) {
                 return;
             }
 
-            postToAdminLog(req.user, 'executed `' + req.body.command + '` on server `' + req.params.server + '`');
+            postToAdminLog(req.user, 'executed `' + req.body.command + '` on server `' + req.params.id + '`');
 
             try {
-                let result = yield self.sendRCONCommand(req.params.server, req.body.command);
+                let result = yield self.sendRCONCommand(req.params.id, req.body.command);
 
                 res.send(result);
             }
             catch (err) {
                 self.postToLog({
-                    description: 'RCON command `' + req.body.command + '` on server `' + req.params.server + '` failed',
+                    description: 'RCON command `' + req.body.command + '` on server `' + req.params.id + '` failed',
                     error: err
                 });
 
