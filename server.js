@@ -23,6 +23,8 @@ var self = new EventEmitter();
 
 app.set('view engine', 'hbs');
 
+app.set('trust proxy', 'loopback');
+
 hbs.registerPartials(__dirname + '/views/partials');
 hbs.registerHelper('toJSON', function(object) {
     return new hbs.handlebars.SafeString(JSON.stringify(object));
