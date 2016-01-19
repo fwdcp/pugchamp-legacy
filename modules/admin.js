@@ -10,6 +10,7 @@ const moment = require('moment');
 
 module.exports = function(app, database, io, self, server) {
     const BASE_URL = config.get('server.baseURL');
+    const GAME_SERVER_POOL = config.get('app.servers');
 
     var router = express.Router();
 
