@@ -331,7 +331,23 @@ module.exports = function(app, database, io, self, server) {
         processGameUpdate(game);
     });
 
-    // TODO: clean up once a game has completed
+    self.abortGame = co.wrap(function* abortGame(game) {
+        if (!game) {
+            return;
+        }
+
+        if (game.status === 'aborted' || game.status === 'completed') {
+            return;
+        }
+
+        game.status = 'aborted';
+
+        yield game.save();
+
+        processGameUpdate(game);
+
+        yield self.shutdownGame(game);
+    });
 
     self.removeSubstituteRequest = function removeSubstituteRequest(id) {
         if (currentSubstituteRequests.has(id)) {
