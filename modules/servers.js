@@ -122,9 +122,9 @@ module.exports = function(app, database, io, self, server) {
         let statuses = yield self.getServerStatuses();
 
         for (let server of _.keys(GAME_SERVER_POOL)) {
-            let status = statuses[server];
+            let serverStatus = statuses[server];
 
-            if (status.status === 'assigned' && self.getDocumentID(serverStatus.game) === self.getDocumentID(game)) {
+            if (serverStatus.status === 'assigned' && self.getDocumentID(serverStatus.game) === self.getDocumentID(game)) {
                 yield self.sendRCONCommand(server, 'pugchamp_game_reset');
             }
         }
