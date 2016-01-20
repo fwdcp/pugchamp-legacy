@@ -33,7 +33,7 @@ module.exports = function(app, database, io, self, server) {
                 attachments: [{
                     fallback: user.alias + ' ' + action,
                     author_name: user.alias,
-                    author_link: BASE_URL + '/admin/user/' + user.steamID,
+                    author_link: BASE_URL + '/admin/user/' + user.id,
                     text: action
                 }]
             };
@@ -378,7 +378,7 @@ module.exports = function(app, database, io, self, server) {
                 fallback: trimmedMessage ? user.alias + ' requested help: ' + trimmedMessage : user.alias + ' requested help',
                 color: 'warning',
                 author_name: user.alias,
-                author_link: BASE_URL + '/admin/user/' + user.steamID,
+                author_link: BASE_URL + '/admin/user/' + user.id,
                 text: trimmedMessage
             }]
         });
