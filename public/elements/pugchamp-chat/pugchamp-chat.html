@@ -42,6 +42,7 @@
                 <paper-card class="message">
                     <div class="card-content">
                         <span class="message-time">{{formatTime(item.time)}}</span>
+                        <br>
                         <template is="dom-if" if="{{item.user}}">
                             <strong><iron-icon hidden$="{{!item.user.admin}}" icon="flag"></iron-icon> {{item.user.alias}}</strong>
                         </template>
