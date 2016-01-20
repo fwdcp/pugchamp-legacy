@@ -36,6 +36,7 @@
             <template is="dom-repeat" items="{{messages}}" class="flex">
                 <paper-card class="message">
                     <div class="card-content">
+                        <span class="message-time">{{formatTime(item.time)}}</span>
                         <template is="dom-if" if="{{item.user}}">
                             <strong><iron-icon hidden$="{{!item.user.admin}}" icon="flag"></iron-icon> {{item.user.alias}}</strong>
                         </template>
@@ -59,6 +60,8 @@
             <paper-icon-button icon="send" on-tap="sendMessage" disabled="{{isRestricted(restrictions, 'chat')}}"></paper-icon-button>
         </div>
     </template>
+
+    <script src="/components/moment/dist/moment.min.js"></script>
     <script>
         Polymer({
             is: 'pugchamp-chat',
@@ -78,6 +81,8 @@
             onMessageReceived: function(message) {
                 var atBottom = this.$.messages.scrollHeight - this.$.messages.scrollTop === this.$.messages.clientHeight;
 
+                message.time = new Date();
+
                 this.push('messages', message);
 
                 if (atBottom) {
@@ -94,6 +99,9 @@
             sendMessage: function() {
                 socket.emit('sendChatMessage', this.$.messageText.value);
                 this.$.messageText.value = '';
+            },
+            formatTime: function(time) {
+                return moment(time).format('llll');
             }
         });
     </script>
