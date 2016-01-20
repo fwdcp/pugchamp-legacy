@@ -46,7 +46,7 @@ module.exports = function(app, database, io, self, server) {
         let users = yield database.User.find({}).exec();
 
         res.render('admin/userList', {
-            users: _(users).map(user => user.toObject()).sortBy('alias')
+            users: _(users).map(user => user.toObject()).sortBy('alias').value()
         });
     }));
 
