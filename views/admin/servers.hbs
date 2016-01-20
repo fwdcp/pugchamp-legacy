@@ -13,10 +13,14 @@
     {{#each servers}}
     <h2>{{@key}}</h2>
 
-    <strong>Status:</strong> {{status}}
-    {{#if game}}
-        (<a href="/game/{{game.id}}">Game</a>)
-    {{/if}}
+    <p><strong>Address:</strong> {{address}}</p>
+    <p><strong>Password:</strong> {{password}}</p>
+    <p>
+        <strong>Status:</strong> {{status}}
+        {{#if game}}
+            (<a href="/game/{{game.id}}">Game</a>)
+        {{/if}}
+    </p>
 
     <pugchamp-server-rcon server="{{@key}}"></pugchamp-server-rcon>
     {{/each}}
