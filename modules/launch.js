@@ -7,7 +7,7 @@ const Combinatorics = require('js-combinatorics');
 const config = require('config');
 const ms = require('ms');
 
-module.exports = function(app, database, io, self, server) {
+module.exports = function(app, database, io, self) {
     const GET_AVAILABLE_SERVERS_THROTTLE_INTERVAL = 30000;
     const GET_LAUNCH_HOLD_DEBOUNCE_MAX_WAIT = 5000;
     const GET_LAUNCH_HOLD_DEBOUNCE_WAIT = 1000;

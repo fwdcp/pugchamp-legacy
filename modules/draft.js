@@ -9,7 +9,7 @@ const ms = require('ms');
 
 var chance = new Chance();
 
-module.exports = function(app, database, io, self, server) {
+module.exports = function(app, database, io, self) {
     const CAPTAIN_SELECTION_WEIGHT = config.get('app.draft.captainSelectionWeight');
     const DRAFT_ORDER = config.get('app.draft.order');
     const MAP_POOL = config.get('app.games.maps');

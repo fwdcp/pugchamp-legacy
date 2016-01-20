@@ -4,7 +4,7 @@
 const _ = require('lodash');
 const co = require('co');
 
-module.exports = function(app, database, io, self, server) {
+module.exports = function(app, database, io, self) {
     app.get('/player/:steam', co.wrap(function*(req, res) {
         let user = yield database.User.findOne({
             steamID: req.params.steam

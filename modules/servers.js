@@ -11,7 +11,7 @@ const RCON = require('srcds-rcon');
 
 var chance = new Chance();
 
-module.exports = function(app, database, io, self, server) {
+module.exports = function(app, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const COMMAND_TIMEOUT = ms(config.get('app.servers.commandTimeout'));
     const GAME_SERVER_POOL = config.get('app.servers.pool');

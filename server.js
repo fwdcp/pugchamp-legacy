@@ -43,6 +43,6 @@ app.use(passport.session());
 app.use('/', serveStatic(path.resolve(__dirname, 'public')));
 app.use('/components', serveStatic(path.resolve(__dirname, 'bower_components')));
 
-require('./modules')(app, database, io, self, server);
+require('./modules')(app, database, io, self);
 
 server.listen(config.get('server.listen'));

@@ -12,7 +12,7 @@ const passport = require('passport');
 const socketioJwt = require('socketio-jwt');
 const url = require('url');
 
-module.exports = function(app, database, io, self, server) {
+module.exports = function(app, database, io, self) {
     const UNAUTHENTICATED_RESTRICTIONS = {
         aspects: ['sub', 'start', 'captain', 'chat', 'support'],
         reasons: ['You are currently not logged on.']

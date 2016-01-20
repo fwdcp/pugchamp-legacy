@@ -5,7 +5,7 @@ const _ = require('lodash');
 const co = require('co');
 const config = require('config');
 
-module.exports = function(app, database, io, self, server) {
+module.exports = function(app, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
 
     var onlineUsers = new Set();

@@ -12,7 +12,7 @@ const wilson = require('wilson-interval');
 
 var chance = new Chance();
 
-module.exports = function(app, database, io, self, server) {
+module.exports = function(app, database, io, self) {
     const ROLES = config.get('app.games.roles');
     const SUBSTITUTE_REQUEST_PERIOD = ms(config.get('app.games.substituteRequestPeriod'));
     const SUBSTITUTE_SELECTION_METHOD = config.get('app.games.substituteSelectionMethod');
