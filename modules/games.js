@@ -336,7 +336,7 @@ module.exports = function(app, database, io, self, server) {
 
         yield game.save();
 
-        self.updateServerPlayers(game);
+        yield self.updateServerPlayers(game);
 
         processGameUpdate(game);
     });
