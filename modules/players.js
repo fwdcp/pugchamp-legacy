@@ -3,8 +3,51 @@
 
 const _ = require('lodash');
 const co = require('co');
+const config = require('config');
 
 module.exports = function(app, database, io, self) {
+    const ROLES = config.get('app.games.roles');
+
+    function getPlayerDraftStats(player) {
+        return co(function*() {
+            if (!player) {
+                return null;
+            }
+
+            let stats = {};
+
+            stats.Captain = yield database.Game.find({
+                'teams.captain': player.id
+            }).count().exec();
+
+            for (let role of _.toPairs(ROLES)) {
+                stats['Picked ' + role[1].name] = yield database.Game.find({
+                    'draft.choices': {
+                        $elemMatch: {
+                            'type': 'playerPick',
+                            'role': role[0],
+                            'player': player.id
+                        }
+                    }
+                }).count.exec();
+            }
+
+            stats.Undrafted = yield database.Game.find({
+                'draft.choices': {
+                    $not: {
+                        $elemMatch: {
+                            'type': 'playerPick',
+                            'player': player.id
+                        }
+                    }
+                },
+                'draft.pool.players.user': player.id
+            }).count.exec();
+
+            return stats;
+        });
+    }
+
     app.get('/player/:steam', co.wrap(function*(req, res) {
         let user = yield database.User.findOne({
             steamID: req.params.steam
@@ -26,6 +69,8 @@ module.exports = function(app, database, io, self) {
             'user': user.id
         }).populate('game', 'date').exec();
 
+        let draftStats = yield getPlayerDraftStats(user);
+
         res.render('player', {
             user: user,
             games: games,
@@ -35,7 +80,8 @@ module.exports = function(app, database, io, self) {
                 mean: rating.after.rating,
                 lowerBound: rating.after.rating - (3 * rating.after.deviation),
                 upperBound: rating.after.rating + (3 * rating.after.deviation)
-            })).sortBy('date').value()
+            })).sortBy('date').value(),
+            draftStats: draftStats
         });
     }));
 

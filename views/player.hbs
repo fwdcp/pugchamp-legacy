@@ -94,6 +94,14 @@
         {{/if}}
     </p>
 
+    <p>
+        <strong>Draft Stats:</strong>
+
+        {{#each draftStats}}
+            <em>{{@key}}:</em> {{this}}
+        {{/each}}
+    </p>
+
     <h2>Rating History</h2>
 
     <google-chart id="ratingHistory" type="line"></google-chart>
