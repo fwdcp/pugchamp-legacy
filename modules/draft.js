@@ -519,6 +519,10 @@ module.exports = function(app, database, io, self, server) {
     function beginDraftTurn(turn) {
         currentDraftTurn = turn;
 
+        unavailablePlayers = _(pickedTeams).flatten().map(function(pick) {
+            return pick.player;
+        }).union(draftCaptains).uniq().value();
+
         let turnDefinition = DRAFT_ORDER[turn];
 
         if (turnDefinition.type === 'playerPick' || turnDefinition.type === 'captainRole') {
@@ -540,10 +544,6 @@ module.exports = function(app, database, io, self, server) {
             allowedRoles = [];
             overrideRoles = [];
         }
-
-        unavailablePlayers = _(pickedTeams).flatten().map(function(pick) {
-            return pick.player;
-        }).union(draftCaptains).uniq().value();
 
         currentDraftTurnStartTime = Date.now();
         currentDraftTurnExpireTimeout = setTimeout(expireTime, TURN_TIME_LIMIT);
