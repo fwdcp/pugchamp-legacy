@@ -2,7 +2,7 @@
     <paper-toolbar></paper-toolbar>
 
     <paper-menu id="drawer-menu">
-        <a href="/" {{#if home}}target="_blank"{{/if}}>
+        <a href="/" {{#if home}} target="_blank" {{/if}}>
             <paper-icon-item>
                 <iron-icon icon="home" item-icon></iron-icon> Home
             </paper-icon-item>
@@ -10,13 +10,13 @@
 
         <hr>
 
-        <a href="/players" {{#if home}}target="_blank"{{/if}}>
+        <a href="/players" {{#if home}} target="_blank" {{/if}}>
             <paper-icon-item>
                 <iron-icon icon="social:people" item-icon></iron-icon> Players
             </paper-icon-item>
         </a>
 
-        <a href="/games" {{#if home}}target="_blank"{{/if}}>
+        <a href="/games" {{#if home}} target="_blank" {{/if}}>
             <paper-icon-item>
                 <iron-icon icon="hardware:gamepad" item-icon></iron-icon> Games
             </paper-icon-item>
@@ -25,24 +25,18 @@
         <hr>
 
         {{#if pages}}
-        {{#each pages}}
-        <a href="{{url}}" {{#if ../home}}target="_blank"{{/if}}>
-            <paper-icon-item>
-                <iron-icon icon="{{icon}}" item-icon></iron-icon> {{title}}
-            </paper-icon-item>
-        </a>
-        {{/each}}
+            {{#each pages}}
+                <a href="{{url}}" {{#if ../home}} target="_blank" {{/if}}>
+                    <paper-icon-item>
+                        <iron-icon icon="{{icon}}" item-icon></iron-icon> {{title}}
+                    </paper-icon-item>
+                </a>
+            {{/each}}
 
-        <hr>
+            <hr>
         {{/if}}
 
         {{#if user}}
-            <a href="/user/settings" {{#if home}}target="_blank"{{/if}}>
-                <paper-icon-item>
-                    <iron-icon icon="settings" item-icon></iron-icon> Settings
-                </paper-icon-item>
-            </a>
-
             {{#if user.admin}}
                 <paper-submenu>
                     <paper-icon-item class="menu-trigger">
@@ -50,26 +44,34 @@
                     </paper-icon-item>
 
                     <paper-menu class="menu-content">
-                        <a href="/admin/users" {{#if home}}target="_blank"{{/if}}>
+                        <a href="/admin/users" {{#if home}} target="_blank" {{/if}}>
                             <paper-icon-item>
                                 <iron-icon icon="social:people" item-icon></iron-icon> Users
                             </paper-icon-item>
                         </a>
 
-                        <a href="/admin/games" {{#if home}}target="_blank"{{/if}}>
+                        <a href="/admin/games" {{#if home}} target="_blank" {{/if}}>
                             <paper-icon-item>
                                 <iron-icon icon="hardware:gamepad" item-icon></iron-icon> Games
                             </paper-icon-item>
                         </a>
 
-                        <a href="/admin/servers" {{#if home}}target="_blank"{{/if}}>
+                        <a href="/admin/servers" {{#if home}} target="_blank" {{/if}}>
                             <paper-icon-item>
                                 <iron-icon icon="hardware:developer-board" item-icon></iron-icon> Servers
                             </paper-icon-item>
                         </a>
                     </paper-menu>
                 </paper-submenu>
+
+                <hr>
             {{/if}}
+
+            <a href="/user/settings" {{#if home}} target="_blank" {{/if}}>
+                <paper-icon-item>
+                    <iron-icon icon="settings" item-icon></iron-icon> Settings
+                </paper-icon-item>
+            </a>
 
             <a href="/user/logout">
                 <paper-icon-item>
