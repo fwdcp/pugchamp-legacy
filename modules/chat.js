@@ -20,15 +20,15 @@ module.exports = function(app, database, io, self) {
 
             if (message.user) {
                 attachment = {
-                    fallback: message.user ? message.user.alias + ': ' + message.body : message.body,
+                    fallback: message.user.alias + ': ' + message.body,
+                    author_name: message.user.alias,
+                    author_link: BASE_URL + '/user/' + message.user.id,
                     text: message.body
                 };
             }
             else {
                 attachment = {
-                    fallback: message.user ? message.user.alias + ': ' + message.body : message.body,
-                    author_name: message.user ? message.user.alias : undefined,
-                    author_link: message.user ? BASE_URL + '/user/' + message.user.id : undefined,
+                    fallback: message.body,
                     text: message.body
                 };
             }
