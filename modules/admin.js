@@ -138,37 +138,35 @@ module.exports = function(app, database, io, self, server) {
             }
         }
         else if (req.body.type === 'revokeRestriction') {
-            try {
-                let restriction = yield database.Restriction.findById(req.body.restriction);
+            let restriction = yield database.Restriction.findById(req.body.restriction);
 
-                if (!restriction) {
-                    res.sendStatus(404);
-                    return;
+            if (!restriction) {
+                res.sendStatus(404);
+                return;
+            }
+
+            if (user.id === self.getDocumentID(restriction.user) && restriction.active) {
+                postToAdminLog(req.user, 'revoked restriction for `<' + BASE_URL + '/admin/user/' + user.id + '|' + user.alias + '>` (aspects: ' + restriction.aspects.join(', ') + ') (expires: ' + (restriction.expires ? moment(restriction.expires).format('llll') : 'never') + ') (reason: ' + restriction.reason + ')');
+
+                restriction.active = false;
+
+                try {
+                    yield restriction.save();
+                    yield self.updateUserRestrictions(user.id);
+
+                    res.redirect('/admin/user/' + user.id);
                 }
+                catch (err) {
+                    self.postToLog({
+                        description: 'failed to revoke restriction `' + restriction.id + '` for <' + BASE_URL + '/admin/user/' + user.id + '|' + user.alias + '>',
+                        error: err
+                    });
 
-                if (user.id === self.getDocumentID(restriction.user) && restriction.active) {
-                    postToAdminLog(req.user, 'revoked restriction for `<' + BASE_URL + '/admin/user/' + user.id + '|' + user.alias + '>` (aspects: ' + restriction.aspects.join(', ') + ') (expires: ' + (restriction.expires ? moment(restriction.expires).format('llll') : 'never') + ') (reason: ' + restriction.reason + ')');
-
-                    restriction.active = false;
-
-                    try {
-                        yield restriction.save();
-                        yield self.updateUserRestrictions(user.id);
-
-                        res.redirect('/admin/user/' + user.id);
-                    }
-                    catch (err) {
-                        self.postToLog({
-                            description: 'failed to revoke restriction `' + restriction.id + '` for <' + BASE_URL + '/admin/user/' + user.id + '|' + user.alias + '>',
-                            error: err
-                        });
-
-                        res.sendStatus(500);
-                    }
+                    res.sendStatus(500);
                 }
             }
-            catch (err) {
-                console.log(err);
+            else {
+                res.sendStatus(400);
             }
         }
         else {
