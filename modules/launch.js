@@ -180,12 +180,20 @@ module.exports = function(app, database, io, self, server) {
             captainsAvailable = new Set(_.intersection([...captainsAvailable], [...readiesReceived]));
 
             if (_.size(launchHolds) === 0) {
-                yield self.launchDraft({
-                    players: _.mapValues(playersAvailable, function(available) {
-                        return [...available];
-                    }),
-                    captains: [...captainsAvailable]
-                });
+                try {
+                    yield self.launchDraft({
+                        players: _.mapValues(playersAvailable, function(available) {
+                            return [...available];
+                        }),
+                        captains: [...captainsAvailable]
+                    });
+                }
+                catch (err) {
+                    self.postToLog({
+                        description: 'encountered error while launching draft',
+                        error: err
+                    });
+                }
             }
 
             launchAttemptActive = false;
