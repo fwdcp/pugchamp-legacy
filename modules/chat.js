@@ -2,13 +2,43 @@
 "use strict";
 
 const _ = require('lodash');
+const co = require('co');
+const config = require('config');
 
 module.exports = function(app, database, io, self, server) {
+    const BASE_URL = config.get('server.baseURL');
+
     var onlineUsers = new Set();
 
     self.getOnlineUserList = function() {
         return _([...onlineUsers]).map(userID => self.getCachedUser(userID)).filter(user => user.setUp).sortBy('alias').value();
     };
+
+    function postToMessageLog(message) {
+        return co(function*() {
+            let attachment;
+
+            if (message.user) {
+                attachment = {
+                    fallback: message.user ? message.user.alias + ': ' + message.body : message.body,
+                    text: message.body
+                };
+            }
+            else {
+                attachment = {
+                    fallback: message.user ? message.user.alias + ': ' + message.body : message.body,
+                    author_name: message.user ? message.user.alias : undefined,
+                    author_link: message.user ? BASE_URL + '/user/' + message.user.id : undefined,
+                    text: message.body
+                };
+            }
+
+            yield self.postToSlack({
+                channel: '#chat-log',
+                attachments: [attachment]
+            });
+        });
+    }
 
     self.sendMessageToUser = function sendMessageToUser(userID, message) {
         if (message.user) {
@@ -21,6 +51,10 @@ module.exports = function(app, database, io, self, server) {
     self.sendMessage = function sendMessage(message) {
         if (message.user) {
             message.user = self.getCachedUser(message.user);
+        }
+
+        if (message.body) {
+            postToMessageLog(message);
         }
 
         io.sockets.emit('messageReceived', message);
