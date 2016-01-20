@@ -72,7 +72,7 @@
         <strong>Player Rating:</strong>
 
         {{#if user.currentRating}}
-            {{user.currentRating.rating}} &plusmn;{{user.currentRating.deviation}}
+            {{user.currentRating.after.rating}} &plusmn;{{user.currentRating.after.deviation}}
         {{else}}
             N/A
         {{/if}}
