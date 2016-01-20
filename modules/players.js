@@ -33,14 +33,16 @@ module.exports = function(app, database, io, self) {
             }
 
             stats.Undrafted = yield database.Game.find({
-                'draft.choices': {
-                    $not: {
+                $nor: [{
+                    'draft.choices': {
                         $elemMatch: {
                             'type': 'playerPick',
                             'player': player.id
                         }
                     }
-                },
+                }, {
+                    'teams.captain': player.id
+                }],
                 'draft.pool.players.user': player.id
             }).count().exec();
 
