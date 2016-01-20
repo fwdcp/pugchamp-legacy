@@ -208,7 +208,7 @@ module.exports = function(app, database, io, self) {
                 return;
             }
 
-            server = chance.pick(availableServers);
+            let server = chance.pick(availableServers);
 
             postToAdminLog(req.user, 'reassigned game `<' + BASE_URL + '/game/' + game.id + '|' + game.id + '>` to server `' + server + '`');
 
