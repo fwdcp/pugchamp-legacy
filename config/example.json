@@ -35,6 +35,7 @@
         "listen": 16217,
         "mongodb": "mongodb://localhost/pugchamp",
         "sessionSecret": "pickup winner",
+        "siteName": "PugChamp",
         "slack": {
             "incomingWebhook": "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX",
             "messageDefaults": {

@@ -8,6 +8,8 @@ const math = require('mathjs');
 const moment = require('moment');
 
 module.exports = function(app, database, io, self, server) {
+    const SITE_NAME = config.get('server.siteName');
+
     self.getDocumentID = function getDocumentID(info) {
         if (_.hasIn(info, 'toHexString')) {
             return info.toHexString();
@@ -45,6 +47,11 @@ module.exports = function(app, database, io, self, server) {
     });
 
     // NOTE: must be here in order to take effect for all pages
+    app.use(function(req, res, next) {
+        res.locals.siteName = SITE_NAME;
+        next();
+    });
+
     app.use(function(req, res, next) {
         res.locals.user = req.user ? req.user.toObject() : null;
         next();
