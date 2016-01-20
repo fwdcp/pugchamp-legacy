@@ -6,7 +6,6 @@ const EventEmitter = require('events');
 const express = require('express');
 const hbs = require('hbs');
 const http = require('http');
-const moment = require('moment');
 const ms = require('ms');
 const passport = require('passport');
 const path = require('path');
@@ -26,12 +25,6 @@ app.set('view engine', 'hbs');
 app.set('trust proxy', 'loopback');
 
 hbs.registerPartials(__dirname + '/views/partials');
-hbs.registerHelper('toJSON', function(object) {
-    return new hbs.handlebars.SafeString(JSON.stringify(object));
-});
-hbs.registerHelper('momentFromNow', function(date) {
-    return new hbs.handlebars.SafeString(moment(date).fromNow());
-});
 
 app.use(session({
     cookie: {

@@ -3,6 +3,8 @@
 
 const _ = require('lodash');
 const config = require('config');
+const hbs = require('hbs');
+const moment = require('moment');
 
 module.exports = function(app, database, io, self, server) {
     self.getDocumentID = function getDocumentID(info) {
@@ -27,6 +29,12 @@ module.exports = function(app, database, io, self, server) {
         return null;
     };
 
+    hbs.registerHelper('toJSON', function(object) {
+        return new hbs.handlebars.SafeString(JSON.stringify(object));
+    });
+    hbs.registerHelper('momentFromNow', function(date) {
+        return new hbs.handlebars.SafeString(moment(date).fromNow());
+    });
     // NOTE: must be here in order to take effect for all pages
     app.use(function(req, res, next) {
         res.locals.user = req.user ? req.user.toObject() : null;
