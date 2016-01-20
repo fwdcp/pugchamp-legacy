@@ -13,7 +13,7 @@ var chance = new Chance();
 
 module.exports = function(app, database, io, self, server) {
     const BASE_URL = config.get('server.baseURL');
-    const GAME_SERVER_POOL = config.get('app.servers');
+    const GAME_SERVER_POOL = config.get('app.servers.pool');
 
     var router = express.Router();
 
