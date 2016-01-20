@@ -304,7 +304,7 @@ module.exports = function(app, database, io, self, server) {
         let servers = yield self.getServerStatuses();
 
         res.render('admin/servers', {
-            servers: _(servers).mapValues((status, name) => _(status).assign(GAME_SERVER_POOL[name]).omit('rcon', 'salt').value())
+            servers: _(servers).mapValues((status, name) => _(status).assign(GAME_SERVER_POOL[name]).omit('rcon', 'salt').value()).value()
         });
     }));
 
