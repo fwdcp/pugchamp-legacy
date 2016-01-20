@@ -181,7 +181,7 @@
                             </paper-icon-item>
                             <template is="dom-if" if="{{!_includes(overrideRoles, role.key)}}">
                                 <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
-                                    <paper-icon-item class="player" disabled="{{_includes(unavailablePlayers, item.id)}}">
+                                    <paper-icon-item class="player {{isHighlighted(item.id, highlightedPlayer)}}" disabled="{{_includes(unavailablePlayers, item.id)}}">
                                         <div class="flex">{{item.alias}}</div>
                                         <paper-button class="draft-choice" data-role$="{{role.key}}" data-player$="{{item.id}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers)}}"
                                         on-tap="pickPlayer" raised>Select</paper-button>
