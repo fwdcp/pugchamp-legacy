@@ -276,6 +276,16 @@ module.exports = function(app, database, io, self, server) {
         }
     }
 
+    self.removeGameSubstituteRequests = function removeGameSubstituteRequests(gameID) {
+        for (let requestID of currentSubstituteRequests.keys()) {
+            let request = currentSubstituteRequests.get(requestID);
+
+            if (request.game === gameID) {
+                self.removeSubstituteRequest(requestID);
+            }
+        }
+    };
+
     self.requestSubstitute = function requestSubstitute(game, player) {
         if (!game || game.status === 'completed' || game.status === 'aborted') {
             return;
@@ -346,6 +356,7 @@ module.exports = function(app, database, io, self, server) {
 
         processGameUpdate(game);
 
+        self.removeGameSubstituteRequests(game.id);
         self.updateLaunchStatus();
 
         yield self.shutdownGame(game);
@@ -450,6 +461,7 @@ module.exports = function(app, database, io, self, server) {
 
             processGameUpdate(game);
 
+            self.removeGameSubstituteRequests(game.id);
             self.updateLaunchStatus();
 
             yield rateGame(game);
