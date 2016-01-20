@@ -189,7 +189,7 @@
                                 </template>
                             </template>
                             <template is="dom-if" if="{{_includes(overrideRoles, role.key)}}">
-                                <template is="dom-repeat" items="{{fullPlayerList}}">
+                                <template is="dom-repeat" items="{{allPlayers}}">
                                     <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" disabled="{{_includes(unavailablePlayers, item.id)}}">
                                         <div class="flex">{{item.alias}}</div>
                                         <paper-button class="draft-choice override" data-role$="{{role.key}}" data-player$="{{item.id}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers)}}"
@@ -228,6 +228,7 @@
                 this.set('factions', status.teamFactions);
                 this.set('players', status.playerPool);
                 this.set('turns', status.draftTurns);
+                this.set('allPlayers', status.fullPlayerList);
                 this.set('currentTurn', status.currentDraftTurn);
                 this.set('captains', status.draftCaptains);
                 this.set('pickedTeams', status.pickedTeams);
