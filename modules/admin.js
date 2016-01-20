@@ -28,7 +28,7 @@ module.exports = function(app, database, io, self, server) {
 
     function postToAdminLog(user, action) {
         return co(function*() {
-            var message = {
+            let message = {
                 channel: '#admin-log',
                 attachments: [{
                     fallback: user.alias + ' ' + action,
@@ -348,7 +348,7 @@ module.exports = function(app, database, io, self, server) {
     app.use('/admin', router);
 
     self.postToLog = co.wrap(function* postToLog(info) {
-        var message = {
+        let message = {
             channel: '#app-log',
             attachments: []
         };

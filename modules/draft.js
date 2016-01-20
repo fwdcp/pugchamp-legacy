@@ -81,7 +81,7 @@ module.exports = function(app, database, io, self, server) {
     var allowedRoles = [];
     var overrideRoles = [];
 
-    var currentStatusInfo = null;
+    var currentStatusInfo;
 
     self.isDraftActive = function isDraftActive() {
         return draftActive;
@@ -237,7 +237,7 @@ module.exports = function(app, database, io, self, server) {
 
     function launchGameFromDraft() {
         return co(function*() {
-            var game = new database.Game();
+            let game = new database.Game();
             game.status = 'assigning';
             game.date = new Date();
             game.map = pickedMap;
