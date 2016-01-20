@@ -83,7 +83,7 @@
             cell.element.innerHTML = cell.data !== null ? '&plusmn; ' + math.round(cell.data) : '';
         };
         grid.columns[3].renderer = function(cell) {
-            cell.element.innerHTML = math.round(cell.data, 3);
+            cell.element.innerHTML = cell.data !== null ? math.round(cell.data, 3) : '';
         };
     </script>
     {{/body}}
