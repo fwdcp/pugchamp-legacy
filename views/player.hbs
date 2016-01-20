@@ -3,6 +3,7 @@
 <html>
 
     {{#> head title=user.alias }}
+    <link rel="import" href="/components/google-chart/google-chart.html">
     <link rel="import" href="/components/paper-button/paper-button.html">
 
     <style is="custom-style">
@@ -68,7 +69,7 @@
 
     <a href="https://steamcommunity.com/profiles/{{user.steamID}}"><paper-button>Steam Profile</paper-button></a>
 	<a href="http://logs.tf/profile/{{user.steamID}}"><paper-button>Logs.tf Profile</paper-button></a>
-	
+
     <p>
         <strong>Player Rating:</strong>
 
@@ -91,7 +92,7 @@
 
     <h2>Rating History</h2>
 
-    <!-- TODO: create nice visualization -->
+    <google-chart cols="[{&quot;type&quot;: &quot;datetime&quot;, &quot;label&quot;: &quot;Date&quot;}, {&quot;type&quot;: &quot;string&quot;, &quot;role&quot;: &quot;tooltip&quot;}, {&quot;type&quot;: &quot;number&quot;, &quot;label&quot;: &quot;Rating&quot;}, {&quot;type&quot;: &quot;number&quot;, &quot;role&quot;: &quot;interval&quot;}, {&quot;type&quot;: &quot;number&quot;, &quot;role&quot;: &quot;interval&quot;}]" rows="[{{#each ratings}}[new Date({{date}}), &quot;<a href=\&quot;/game/{{game}}\&quot;>Game</a>&quot;, {{mean}}, {{lowerBound}}, {{upperBound}}]{{/each}}]" options="{&quot;tooltip&quot;: {&quot;isHtml&quot;: true}}" type="line"></google-chart>
 
     </h2>
 

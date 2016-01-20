@@ -32,8 +32,9 @@ module.exports = function(app, database, io, self) {
             ratings: _(ratings).map(rating => ({
                 game: rating.game.id,
                 date: rating.game.date,
-                rating: rating.after.rating,
-                deviation: rating.after.deviation
+                mean: rating.after.rating,
+                lowerBound: rating.after.rating - (3 * rating.after.deviation),
+                upperBound: rating.after.rating + (3 * rating.after.deviation)
             })).sortBy('date').value()
         });
     }));

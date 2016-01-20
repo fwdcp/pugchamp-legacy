@@ -16,6 +16,7 @@
     "paper-elements": "PolymerElements/paper-elements#~1.0.7",
     "vaadin-core-elements": "~0.3.0",
     "moment": "~2.11.1",
-    "mathjs": "~2.6.0"
+    "mathjs": "~2.6.0",
+    "google-chart": "GoogleWebComponents/google-chart#~1.0.4"
   }
 }
