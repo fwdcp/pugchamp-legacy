@@ -239,7 +239,7 @@ module.exports = function(app, database, io, self, server) {
         return co(function*() {
             var game = new database.Game();
             game.status = 'assigning';
-            game.date = Date.now();
+            game.date = new Date();
             game.map = pickedMap;
 
             game.teams = _.map(pickedTeams, function(team, teamNumber) {
