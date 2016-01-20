@@ -5,6 +5,7 @@
 <link rel="import" href="/components/paper-card/paper-card.html">
 <link rel="import" href="/components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="/components/paper-input/paper-textarea.html">
+<link rel="import" href="/components/paper-styles/typography.html">
 <link rel="import" href="/components/paper-tooltip/paper-tooltip.html">
 
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
@@ -24,6 +25,10 @@
 
             .message {
                 margin: 5px;
+            }
+
+            .message .message-time {
+                @apply(--paper-font-caption);
             }
 
             .message .message-body {
@@ -61,7 +66,7 @@
         </div>
     </template>
 
-    <script src="/components/moment/dist/moment.min.js"></script>
+    <script src="/components/moment/moment.js"></script>
     <script>
         Polymer({
             is: 'pugchamp-chat',
