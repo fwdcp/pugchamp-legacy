@@ -51,6 +51,11 @@
             .player.highlight {
                 font-weight: 700;
             }
+			.player a {
+				color: inherit;
+				text-decoration: none;
+
+			}
         </style>
 
         <paper-material id="ready" hidden$="{{!launchActive}}">
@@ -109,7 +114,7 @@
                         </paper-icon-item>
                         <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
                             <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" on-mouseover="addHighlight" on-mouseout="removeHighlight">
-                                <div class="flex">{{item.alias}}</div>
+                                <div class="flex"><a href="/player/{{item.steamID}}" target="_blank"> {{item.alias}} </a></div>
                             </paper-icon-item>
                         </template>
                     </div>
