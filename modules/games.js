@@ -346,6 +346,8 @@ module.exports = function(app, database, io, self, server) {
 
         processGameUpdate(game);
 
+        yield self.updateLaunchStatus();
+
         yield self.shutdownGame(game);
     });
 
@@ -447,6 +449,8 @@ module.exports = function(app, database, io, self, server) {
             yield game.save();
 
             processGameUpdate(game);
+
+            yield self.updateLaunchStatus();
 
             yield rateGame(game);
         }
