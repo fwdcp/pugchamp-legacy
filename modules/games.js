@@ -245,7 +245,19 @@ module.exports = function(app, database, io, self, server) {
                 selectedCandidate = chance.pick(candidates);
             }
 
-            yield self.performSubstitution(game, request.player, selectedCandidate);
+            try {
+                yield self.performSubstitution(game, request.player, selectedCandidate);
+            }
+            catch (err) {
+                self.postToLog({
+                    description: 'error in making substitution for game `' + game.id + '`',
+                    error: err
+                });
+
+                self.sendMessage({
+                    action: 'failed to complete substitution for game'
+                });
+            }
 
             self.removeSubstituteRequest(id);
         });
@@ -382,7 +394,11 @@ module.exports = function(app, database, io, self, server) {
 
         if (info.status === 'setup') {
             if (game.status !== 'assigning' && game.status !== 'launching') {
-                throw new Error('game had status ' + game.status + ' but is being reported as set up');
+                self.postToLog({
+                    description: 'game `' + game.id + '` was ' + game.status + ' but is being reported as set up'
+                });
+
+                return;
             }
 
             game.status = 'launching';
@@ -393,7 +409,11 @@ module.exports = function(app, database, io, self, server) {
         }
         else if (info.status === 'live') {
             if (game.status === 'aborted' || game.status === 'completed') {
-                throw new Error('game had status ' + game.status + ' but is being reported as live');
+                self.postToLog({
+                    description: 'game `' + game.id + '` was ' + game.status + ' but is being reported as live'
+                });
+
+                return;
             }
 
             game.status = 'live';
@@ -428,7 +448,11 @@ module.exports = function(app, database, io, self, server) {
         }
         else if (info.status === 'completed') {
             if (game.status === 'aborted' || game.status === 'completed') {
-                throw new Error('game had status ' + game.status + ' but is being reported as completed');
+                self.postToLog({
+                    description: 'game `' + game.id + '` was ' + game.status + ' but is being reported as completed'
+                });
+
+                return;
             }
 
             game.status = 'completed';
@@ -464,7 +488,15 @@ module.exports = function(app, database, io, self, server) {
             self.removeGameSubstituteRequests(game.id);
             self.updateLaunchStatus();
 
-            yield rateGame(game);
+            try {
+                yield rateGame(game);
+            }
+            catch (err) {
+                self.postToLog({
+                    description: 'game `' + game.id + '` failed to rate',
+                    error: err
+                });
+            }
         }
         else if (info.status === 'logavailable') {
             let link = _.find(game.links, 'type', 'logs.tf');
