@@ -134,7 +134,7 @@ module.exports = function(app, database, io, self, server) {
         let serverStatus = yield getServerStatus(game.server);
 
         if (serverStatus.status !== 'assigned' || self.getDocumentID(serverStatus.game) !== self.getDocumentID(game)) {
-            return;
+            throw new Error('server not assigned to game');
         }
 
         let rcon = yield connectToRCON(game.server);
@@ -234,6 +234,10 @@ module.exports = function(app, database, io, self, server) {
 
         if (!server) {
             let availableServers = yield self.getAvailableServers();
+
+            if (_.size(availableServers) === 0) {
+                throw new Error('no servers available');
+            }
 
             server = chance.pick(availableServers);
         }
