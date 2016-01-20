@@ -450,7 +450,7 @@ module.exports = function(app, database, io, self, server) {
 
             processGameUpdate(game);
 
-            yield self.updateLaunchStatus();
+            self.updateLaunchStatus();
 
             yield rateGame(game);
         }
