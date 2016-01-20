@@ -462,9 +462,9 @@ module.exports = function(app, database, io, self, server) {
     }
 
     function makeRandomChoice() {
-        try {
-            let turnDefinition = DRAFT_ORDER[currentDraftTurn];
+        let turnDefinition = DRAFT_ORDER[currentDraftTurn];
 
+        try {
             let choice = {
                 type: turnDefinition.type
             };
@@ -473,9 +473,6 @@ module.exports = function(app, database, io, self, server) {
                 choice.faction = chance.pick(['BLU', 'RED']);
             }
             else if (turnDefinition.type === 'playerPick') {
-                let team = pickedTeams[turnDefinition.captain];
-                let roleDistribution = calculateRoleDistribution(team);
-
                 choice.role = chance.pick(allowedRoles);
 
                 if (_.includes(overrideRoles, choice.role)) {
@@ -487,9 +484,6 @@ module.exports = function(app, database, io, self, server) {
                 }
             }
             else if (turnDefinition.type === 'captainRole') {
-                let team = pickedTeams[turnDefinition.captain];
-                let roleDistribution = calculateRoleDistribution(team);
-
                 choice.role = chance.pick(allowedRoles);
             }
             else if (turnDefinition.type === 'mapBan' || turnDefinition.type === 'mapPick') {
@@ -497,6 +491,8 @@ module.exports = function(app, database, io, self, server) {
 
                 choice.map = chance.pick(remainingMaps);
             }
+
+            commitDraftChoice(choice);
         }
         catch (err) {
             self.postToLog({
@@ -510,8 +506,6 @@ module.exports = function(app, database, io, self, server) {
 
             self.cleanUpDraft();
         }
-
-        commitDraftChoice(choice);
     }
 
     function expireTime() {
