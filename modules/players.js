@@ -24,12 +24,17 @@ module.exports = function(app, database, io, self) {
 
         let ratings = yield database.Rating.find({
             'user': user.id
-        }).exec();
+        }).populate('game', 'date').exec();
 
         res.render('player', {
             user: user,
             games: games,
-            ratings: ratings
+            ratings: _(ratings).map(rating => ({
+                game: rating.game.id,
+                date: rating.game.date,
+                rating: rating.after.rating,
+                deviation: rating.after.deviation
+            })).sortBy('date').value()
         });
     }));
 
