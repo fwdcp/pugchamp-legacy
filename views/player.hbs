@@ -92,7 +92,7 @@
 
     <h2>Rating History</h2>
 
-    <google-chart cols="[{&quot;type&quot;: &quot;datetime&quot;, &quot;label&quot;: &quot;Date&quot;}, {&quot;type&quot;: &quot;string&quot;, &quot;role&quot;: &quot;tooltip&quot;}, {&quot;type&quot;: &quot;number&quot;, &quot;label&quot;: &quot;Rating&quot;}, {&quot;type&quot;: &quot;number&quot;, &quot;role&quot;: &quot;interval&quot;}, {&quot;type&quot;: &quot;number&quot;, &quot;role&quot;: &quot;interval&quot;}]" rows="[{{#each ratings}}[new Date({{date}}), &quot;<a href=\&quot;/game/{{game}}\&quot;>Game</a>&quot;, {{mean}}, {{lowerBound}}, {{upperBound}}]{{/each}}]" options="{&quot;tooltip&quot;: {&quot;isHtml&quot;: true}}" type="line"></google-chart>
+    <google-chart id="ratingHistory" type="line"></google-chart>
 
     </h2>
 
@@ -129,6 +129,13 @@
             </div>
         </paper-material>
     {{/each}}
+
+    <script>
+        var chart = document.getElementById('ratingHistory');
+        chart.cols = [{type: 'datetime', label: 'Date'}, {type: 'string', role: 'tooltip'}, {type: 'number', label: 'Rating'}, {type: 'number', role: 'interval'}, {type: 'number', role: 'interval'}]
+        chart.rows = [{{#each ratings}} [new Date('{{date}}'), '<a href="/game/{{game}}">Game</a>', {{mean}}, {{lowerBound}}, {{upperBound}}] {{/each}}];
+        chart.options = {tooltip: {isHtml: true}};
+    </script>
 
     {{/body}}
 
