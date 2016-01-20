@@ -3,6 +3,7 @@
 <html>
 
     {{#> head title=user.alias }}
+    <link rel="import" href="/components/paper-button/paper-button.html">
 
     <style is="custom-style">
         .match {
@@ -54,11 +55,18 @@
             color: var(--paper-grey-300);
             opacity: var(--light-primary-opacity);
         }
+
+        #steam {
+            background: var(--accent-color);
+            color: var(--light-theme-text-color);
+        }
     </style>
     {{/head}}
 
     {{#> body}}
     <h1>{{user.alias}}</h1>
+
+    <a href="https://steamcommunity.com/profiles/{{user.steamID}}"><paper-button>Steam Profile</paper-button></a>
 
     <p>
         <strong>Player Rating:</strong>
