@@ -3,7 +3,6 @@
 
 const _ = require('lodash');
 const co = require('co');
-const math = require('mathjs');
 
 module.exports = function(app, database, io, self, server) {
     app.get('/player/:steam', co.wrap(function*(req, res) {
@@ -65,24 +64,7 @@ module.exports = function(app, database, io, self, server) {
             }
 
             return Number.NEGATIVE_INFINITY;
-        }], ['desc', 'asc', 'desc']).map(function(user) {
-            let viewUser = user.toObject();
-
-            if (viewUser.currentRating) {
-                viewUser.currentRating.before.rating = math.round(user.currentRating.before.rating);
-                viewUser.currentRating.before.deviation = math.round(user.currentRating.before.deviation);
-                viewUser.currentRating.after.rating = math.round(user.currentRating.after.rating);
-                viewUser.currentRating.after.deviation = math.round(user.currentRating.after.deviation);
-            }
-
-            if (viewUser.captainScore) {
-                viewUser.captainScore.low = math.round(user.captainScore.low, 3);
-                viewUser.captainScore.center = math.round(user.captainScore.center, 3);
-                viewUser.captainScore.high = math.round(user.captainScore.high, 3);
-            }
-
-            return viewUser;
-        }).value();
+        }], ['desc', 'asc', 'desc']).map(user => user.toObject()).value();
 
         res.render('playerList', {
             players: players

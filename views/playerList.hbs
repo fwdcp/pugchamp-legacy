@@ -31,6 +31,7 @@
     </vaadin-grid>
 
     <script src="/components/lodash/lodash.min.js"></script>
+    <script src="/components/mathjs/dist/math.min.js"></script>
     <script>
         var grid = document.getElementById('players');
         grid.items = {{toJSON players}};
@@ -75,8 +76,14 @@
         grid.columns[0].renderer = function(cell) {
             cell.element.innerHTML = '<a href="/player/' + cell.row.data.steamID + '">' + cell.row.data.alias + '</a>';
         };
+        grid.columns[1].renderer = function(cell) {
+            cell.element.innerHTML = cell.data !== null ? math.round(cell.data) : '';
+        };
         grid.columns[2].renderer = function(cell) {
-            cell.element.innerHTML = cell.data !== null ? '&plusmn; ' + cell.data : '';
+            cell.element.innerHTML = cell.data !== null ? '&plusmn; ' + math.round(cell.data) : '';
+        };
+        grid.columns[3].renderer = function(cell) {
+            cell.element.innerHTML = math.round(cell.data, 3);
         };
     </script>
     {{/body}}

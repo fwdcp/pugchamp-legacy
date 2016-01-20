@@ -72,7 +72,7 @@
         <strong>Player Rating:</strong>
 
         {{#if user.currentRating}}
-            {{user.currentRating.after.rating}} &plusmn;{{user.currentRating.after.deviation}}
+            {{round user.currentRating.after.rating 0}} &plusmn;{{round user.currentRating.after.deviation 0}}
         {{else}}
             N/A
         {{/if}}
@@ -82,7 +82,7 @@
         <strong>Captain Score:</strong>
 
         {{#if user.captainScore.low}}
-            {{user.captainScore.low}}
+            {{round user.captainScore.low 3}}
         {{else}}
             N/A
         {{/if}}

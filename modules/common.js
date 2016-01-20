@@ -4,6 +4,7 @@
 const _ = require('lodash');
 const config = require('config');
 const hbs = require('hbs');
+const math = require('mathjs');
 const moment = require('moment');
 
 module.exports = function(app, database, io, self, server) {
@@ -35,6 +36,14 @@ module.exports = function(app, database, io, self, server) {
     hbs.registerHelper('momentFromNow', function(date) {
         return new hbs.handlebars.SafeString(moment(date).fromNow());
     });
+    hbs.registerHelper('round', function(number, decimals) {
+        if (!decimals) {
+            decimals = 0;
+        }
+
+        return math.round(number, decimals);
+    });
+
     // NOTE: must be here in order to take effect for all pages
     app.use(function(req, res, next) {
         res.locals.user = req.user ? req.user.toObject() : null;
