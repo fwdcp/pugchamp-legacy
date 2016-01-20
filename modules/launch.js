@@ -191,7 +191,7 @@ module.exports = function(app, database, io, self, server) {
             launchAttemptActive = false;
             launchAttemptStart = null;
 
-            yield self.updateLaunchStatus();
+            self.updateLaunchStatus();
         });
     }
 
