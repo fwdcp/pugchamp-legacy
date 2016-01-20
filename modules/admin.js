@@ -3,10 +3,13 @@
 
 const _ = require('lodash');
 const bodyParser = require('body-parser');
+const Chance = require('chance');
 const co = require('co');
 const config = require('config');
 const express = require('express');
 const moment = require('moment');
+
+var chance = new Chance();
 
 module.exports = function(app, database, io, self, server) {
     const BASE_URL = config.get('server.baseURL');
@@ -178,17 +181,117 @@ module.exports = function(app, database, io, self, server) {
         // TODO: implement admin page
     }));
 
-    router.post('/games', bodyParser.urlencoded({
+    router.post('/game/:id', bodyParser.urlencoded({
         extended: false
     }), co.wrap(function*(req, res) {
-        let game = yield database.User.findById(req.body.game);
+        let game = yield database.User.findById(req.params.id);
 
         if (!game) {
             res.sendStatus(404);
             return;
         }
 
-        // TODO: handle actions
+        if (req.body.type === 'reassignServer') {
+            if (game.status === 'completed') {
+                res.sendStatus(400);
+                return;
+            }
+
+            let availableServers = yield self.getAvailableServers();
+
+            if (_.size(availableServers) === 0) {
+                res.sendStatus(500);
+                return;
+            }
+
+            server = chance.pick(availableServers);
+
+            postToAdminLog(req.user, 'reassigned game <' + BASE_URL + '/game/' + game.id + '|`' + game.id + '`> to server `' + server + '`');
+
+            try {
+                yield self.shutdownGame(game);
+                yield self.assignGameToServer(game, server);
+
+                res.sendStatus(200);
+            }
+            catch (err) {
+                self.postToLog({
+                    description: 'failed to reassign game <' + BASE_URL + '/game/' + game.id + '|`' + game.id + '`> to server `' + game.server + '`',
+                    error: err
+                });
+
+                res.sendStatus(500);
+            }
+        }
+        else if (req.body.type === 'reinitializeServer') {
+            if (game.status === 'aborted' || game.status === 'completed') {
+                res.sendStatus(400);
+                return;
+            }
+
+            postToAdminLog(req.user, 'reinitialized server `' + game.server + '` for game <' + BASE_URL + '/game/' + game.id + '|`' + game.id + '`>');
+
+            try {
+                yield self.initializeServer(game);
+
+                res.sendStatus(200);
+            }
+            catch (err) {
+                self.postToLog({
+                    description: 'failed to reinitialize server `' + game.server + '` for game <' + BASE_URL + '/game/' + game.id + '|`' + game.id + '`>',
+                    error: err
+                });
+
+                res.sendStatus(500);
+            }
+        }
+        else if (req.body.type === 'updateServerPlayers') {
+            if (game.status === 'aborted' || game.status === 'completed') {
+                res.sendStatus(400);
+                return;
+            }
+
+            postToAdminLog(req.user, 'updated players for server `' + game.server + '` for game <' + BASE_URL + '/game/' + game.id + '|`' + game.id + '`>');
+
+            try {
+                yield self.updateServerPlayers(game);
+
+                res.sendStatus(200);
+            }
+            catch (err) {
+                self.postToLog({
+                    description: 'failed to update players for server `' + game.server + '` for game <' + BASE_URL + '/game/' + game.id + '|`' + game.id + '`>',
+                    error: err
+                });
+
+                res.sendStatus(500);
+            }
+        }
+        else if (req.body.type === 'abortGame') {
+            if (game.status === 'aborted' || game.status === 'completed') {
+                res.sendStatus(400);
+                return;
+            }
+
+            postToAdminLog(req.user, 'aborted game <' + BASE_URL + '/game/' + game.id + '|`' + game.id + '`>');
+
+            try {
+                yield self.abortGame(game);
+
+                res.sendStatus(200);
+            }
+            catch (err) {
+                self.postToLog({
+                    description: 'failed to abort game <' + BASE_URL + '/game/' + game.id + '|`' + game.id + '`>',
+                    error: err
+                });
+
+                res.sendStatus(500);
+            }
+        }
+        else {
+            res.sendStatus(400);
+        }
 
         res.redirect('/admin/games');
     }));
