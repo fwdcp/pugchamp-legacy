@@ -62,7 +62,7 @@
             color: var(--light-theme-text-color);
         }
 
-        #ratingHistory {
+        google-chart {
             width: 100%;
         }
     </style>
@@ -94,19 +94,13 @@
         {{/if}}
     </p>
 
-    <p>
-        <strong>Draft Stats:</strong>
+    <h2>Draft Stats</h2>
 
-        {{#each draftStats}}
-            <br> <em>{{@key}}:</em> {{this}}
-        {{/each}}
-    </p>
+    <google-chart id="draftStats" type="pie"></google-chart>
 
     <h2>Rating History</h2>
 
     <google-chart id="ratingHistory" type="line"></google-chart>
-
-    </h2>
 
     <h2>Games</h2>
 
@@ -143,10 +137,14 @@
     {{/each}}
 
     <script>
-        var chart = document.getElementById('ratingHistory');
-        chart.cols = [{type: 'datetime', label: 'Date'}, {type: 'string', role: 'tooltip'}, {type: 'number', label: 'Rating'}, {type: 'number', role: 'interval'}, {type: 'number', role: 'interval'}]
-        chart.rows = [{{#each ratings}} [new Date('{{date}}'), '<a href="/game/{{game}}">Game</a>', {{mean}}, {{lowerBound}}, {{upperBound}}] {{/each}}];
-        chart.options = {tooltip: {isHtml: true}};
+        var draftStats = document.getElementById('draftStats');
+        draftStats.cols = [{type: 'string', label: 'Outcome'}, {type: 'number', label: 'Occurrences'}]
+        draftStats.rows = {{toJSON draftStats}};
+
+        var ratingHistory = document.getElementById('ratingHistory');
+        ratingHistory.cols = [{type: 'datetime', label: 'Date'}, {type: 'string', role: 'tooltip'}, {type: 'number', label: 'Rating'}, {type: 'number', role: 'interval'}, {type: 'number', role: 'interval'}]
+        ratingHistory.rows = [{{#each ratings}} [new Date('{{date}}'), '<a href="/game/{{game}}">Game</a>', {{mean}}, {{lowerBound}}, {{upperBound}}] {{/each}}];
+        ratingHistory.options = {tooltip: {isHtml: true}};
     </script>
 
     {{/body}}

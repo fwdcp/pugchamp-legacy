@@ -83,7 +83,7 @@ module.exports = function(app, database, io, self) {
                 lowerBound: rating.after.rating - (3 * rating.after.deviation),
                 upperBound: rating.after.rating + (3 * rating.after.deviation)
             })).sortBy('date').value(),
-            draftStats: draftStats
+            draftStats: _.toPairs(draftStats)
         });
     }));
 
