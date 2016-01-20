@@ -16,7 +16,7 @@ module.exports = function(app, database, io, self) {
 
             let stats = {};
 
-            stats.Captain = yield database.Game.find({
+            stats.Captain = yield database.Game.count({
                 'teams.captain': player.id
             }).count().exec();
 
@@ -29,7 +29,7 @@ module.exports = function(app, database, io, self) {
                             'player': player.id
                         }
                     }
-                }).count.exec();
+                }).count().exec();
             }
 
             stats.Undrafted = yield database.Game.find({
@@ -42,7 +42,7 @@ module.exports = function(app, database, io, self) {
                     }
                 },
                 'draft.pool.players.user': player.id
-            }).count.exec();
+            }).count().exec();
 
             return stats;
         });
