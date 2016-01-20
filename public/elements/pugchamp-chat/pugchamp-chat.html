@@ -36,7 +36,9 @@
             <template is="dom-repeat" items="{{messages}}" class="flex">
                 <paper-card class="message">
                     <div class="card-content">
-                        <strong>{{item.user.alias}}</strong>
+                        <template is="dom-if" if="{{item.user}}">
+                            <strong><iron-icon hidden$="{{!item.user.admin}}" icon="flag"></iron-icon> {{item.user.alias}}</strong>
+                        </template>
                         <em>{{item.action}}</em>
                         <br>
                         <span class="message-body">{{item.body}}</span>
