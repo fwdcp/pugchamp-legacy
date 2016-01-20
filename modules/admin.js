@@ -178,13 +178,17 @@ module.exports = function(app, database, io, self, server) {
     }));
 
     router.get('/games', co.wrap(function*(req, res) {
-        // TODO: implement admin page
+        let games = yield database.Game.find({}).exec();
+
+        res.render('admin/gameList', {
+            games: _(games).orderBy(['date'], ['desc']).value()
+        });
     }));
 
     router.post('/game/:id', bodyParser.urlencoded({
         extended: false
     }), co.wrap(function*(req, res) {
-        let game = yield database.User.findById(req.params.id);
+        let game = yield database.Game.findById(req.params.id);
 
         if (!game) {
             res.sendStatus(404);
@@ -206,7 +210,7 @@ module.exports = function(app, database, io, self, server) {
 
             server = chance.pick(availableServers);
 
-            postToAdminLog(req.user, 'reassigned game <' + BASE_URL + '/game/' + game.id + '|`' + game.id + '`> to server `' + server + '`');
+            postToAdminLog(req.user, 'reassigned game `<' + BASE_URL + '/game/' + game.id + '|' + game.id + '>` to server `' + server + '`');
 
             try {
                 yield self.shutdownGame(game);
@@ -216,7 +220,7 @@ module.exports = function(app, database, io, self, server) {
             }
             catch (err) {
                 self.postToLog({
-                    description: 'failed to reassign game <' + BASE_URL + '/game/' + game.id + '|`' + game.id + '`> to server `' + game.server + '`',
+                    description: 'failed to reassign game `<' + BASE_URL + '/game/' + game.id + '|' + game.id + '>` to server `' + game.server + '`',
                     error: err
                 });
 
@@ -229,7 +233,7 @@ module.exports = function(app, database, io, self, server) {
                 return;
             }
 
-            postToAdminLog(req.user, 'reinitialized server `' + game.server + '` for game <' + BASE_URL + '/game/' + game.id + '|`' + game.id + '`>');
+            postToAdminLog(req.user, 'reinitialized server `' + game.server + '` for game `<' + BASE_URL + '/game/' + game.id + '|' + game.id + '>`');
 
             try {
                 yield self.initializeServer(game);
@@ -238,7 +242,7 @@ module.exports = function(app, database, io, self, server) {
             }
             catch (err) {
                 self.postToLog({
-                    description: 'failed to reinitialize server `' + game.server + '` for game <' + BASE_URL + '/game/' + game.id + '|`' + game.id + '`>',
+                    description: 'failed to reinitialize server `' + game.server + '` for game `<' + BASE_URL + '/game/' + game.id + '|' + game.id + '>`',
                     error: err
                 });
 
@@ -251,7 +255,7 @@ module.exports = function(app, database, io, self, server) {
                 return;
             }
 
-            postToAdminLog(req.user, 'updated players for server `' + game.server + '` for game <' + BASE_URL + '/game/' + game.id + '|`' + game.id + '`>');
+            postToAdminLog(req.user, 'updated players for server `' + game.server + '` for game `<' + BASE_URL + '/game/' + game.id + '|' + game.id + '>`');
 
             try {
                 yield self.updateServerPlayers(game);
@@ -260,7 +264,7 @@ module.exports = function(app, database, io, self, server) {
             }
             catch (err) {
                 self.postToLog({
-                    description: 'failed to update players for server `' + game.server + '` for game <' + BASE_URL + '/game/' + game.id + '|`' + game.id + '`>',
+                    description: 'failed to update players for server `' + game.server + '` for game `<' + BASE_URL + '/game/' + game.id + '|' + game.id + '>`',
                     error: err
                 });
 
@@ -273,7 +277,7 @@ module.exports = function(app, database, io, self, server) {
                 return;
             }
 
-            postToAdminLog(req.user, 'aborted game <' + BASE_URL + '/game/' + game.id + '|`' + game.id + '`>');
+            postToAdminLog(req.user, 'aborted game `<' + BASE_URL + '/game/' + game.id + '|' + game.id + '>`');
 
             try {
                 yield self.abortGame(game);
@@ -282,7 +286,7 @@ module.exports = function(app, database, io, self, server) {
             }
             catch (err) {
                 self.postToLog({
-                    description: 'failed to abort game <' + BASE_URL + '/game/' + game.id + '|`' + game.id + '`>',
+                    description: 'failed to abort game `<' + BASE_URL + '/game/' + game.id + '|' + game.id + '>`',
                     error: err
                 });
 

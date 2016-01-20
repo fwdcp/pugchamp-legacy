@@ -1,0 +1,140 @@
+<!doctype html>
+
+<html>
+
+    {{#> head title="Manage Games"}}
+    <link rel="import" href="/components/iron-form/iron-form.html">
+    <link rel="import" href="/components/paper-button/paper-button.html">
+    <link rel="import" href="/components/vaadin-grid/vaadin-grid.html">
+
+    <style is="custom-style">
+        .action {
+            background: var(--accent-color);
+            color: var(--dark-theme-text-color);
+        }
+    </style>
+    {{/head}}
+
+    {{#> body}}
+    <h1>Games</h1>
+
+    <vaadin-grid id="games">
+        <table>
+            <colgroup>
+                <col name="_id">
+                <col name="status" sortable>
+                <col name="date" sortable sort-direction="desc">
+                <col name="server">
+                <col>
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>Game</th>
+                    <th>Status</th>
+                    <th>Start</th>
+                    <th>Server</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </vaadin-grid>
+
+    <form is="iron-form" id="reassign-server" method="post">
+        <input type="hidden" name="type" value="reassignServer">
+    </form>
+
+    <form is="iron-form" id="reinitialize-server" method="post">
+        <input type="hidden" name="type" value="reinitializeServer">
+    </form>
+
+    <form is="iron-form" id="update-server-players" method="post">
+        <input type="hidden" name="type" value="updateServerPlayers">
+    </form>
+
+    <form is="iron-form" id="abort-game" method="post">
+        <input type="hidden" name="type" value="abortGame">
+    </form>
+
+    <script src="/components/lodash/lodash.min.js"></script>
+    <script src="/components/moment/moment.js"></script>
+    <script>
+        var grid = document.getElementById('games');
+        grid.items = {{toJSON games}};
+
+        grid.addEventListener('sort-order-changed', function() {
+            grid.items = _.sortByOrder(grid.items, _.map(grid.sortOrder, function(sort) {
+                if (sort.column === 1) {
+                    return function(item) {
+                        if (item.status === 'assigning') {
+                            return 1;
+                        }
+                        else if (item.status === 'launching') {
+                            return 2;
+                        }
+                        else if (item.status === 'live') {
+                            return 3;
+                        }
+                        else if (item.status === 'completed') {
+                            return 4;
+                        }
+                        else if (item.status === 'aborted') {
+                            return 5;
+                        }
+                    }
+                }
+                else if (sort.column === 2) {
+                    return function(item) {
+                        return item.date;
+                    }
+                }
+            }), _.map(grid.sortOrder, 'direction'));
+        });
+
+        grid.columns[2].renderer = function(cell) {
+            cell.element.innerHTML = moment(cell.data).format('llll');
+        }
+        grid.columns[4].renderer = function(cell) {
+            if (cell.row.data.status === 'completed') {
+                cell.element.innerHTML = '';
+            }
+            else if (cell.row.data.status === 'aborted') {
+                cell.element.innerHTML = '<paper-button class="action" onclick="reassignServer(\'' + cell.row.data._id + '\')" raised>Reassign to New Server</paper-button>';
+            }
+            else {
+                cell.element.innerHTML = '<paper-button class="action" onclick="reassignServer(\'' + cell.row.data._id + '\')" raised>Reassign to New Server</paper-button><paper-button class="action" onclick="reinitializeServer(\'' + cell.row.data._id + '\')" raised>Reinitialize Server</paper-button><paper-button class="action" onclick="updateServerPlayers(\'' + cell.row.data._id + '\')" raised>Update Server Players</paper-button><paper-button class="action" onclick="abortGame(\'' + cell.row.data._id + '\')" raised>Abort</paper-button>';
+            }
+        }
+
+        function reassignServer(id) {
+            document.getElementById('reassign-server').action = '/admin/game/' + id;
+            document.getElementById('reassign-server').submit();
+        }
+
+        function reinitializeServer(id) {
+            document.getElementById('reinitialize-server').action = '/admin/game/' + id;
+            document.getElementById('reinitialize-server').submit();
+        }
+
+        function updateServerPlayers(id) {
+            document.getElementById('update-server-players').action = '/admin/game/' + id;
+            document.getElementById('update-server-players').submit();
+        }
+
+        function abortGame(id) {
+            document.getElementById('abort-game').action = '/admin/game/' + id;
+            document.getElementById('abort-game').submit();
+        }
+
+        document.addEventListener('iron-form-response', function() {
+            document.location.reload();
+        });
+
+        document.addEventListener('iron-form-error', function() {
+            document.location.reload();
+        });
+    </script>
+    {{/body}}
+
+</html>
