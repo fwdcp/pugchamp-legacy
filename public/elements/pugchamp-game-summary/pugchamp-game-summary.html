@@ -78,6 +78,7 @@
             </div>
             <div id="details" class="flex vertical layout center center-justified">
                 <span>{{game.map.name}}</span>
+                <span>{{formatDuration(game.duration)}}</span>
             </div>
             <div class$="team team-1 flex-3 horizontal layout faction-{{_getProperty(game.teams, 1, 'faction')}}">
                 <template is="dom-if" if="{{_hasProperty(game.score, 0)}}">
@@ -93,6 +94,7 @@
 	</template>
 
     <script src="/components/moment/moment.js"></script>
+    <script src="/components/moment-duration-format/lib/moment-duration-format.js"></script>
 	<script>
         Polymer({
             is: 'pugchamp-game-summary',
@@ -102,6 +104,9 @@
             },
             momentFromNow: function(date) {
                 return moment(date).fromNow();
+            },
+            formatDuration: function(duration) {
+                return moment.duration(duration, 'seconds').format();
             }
         });
     </script>
