@@ -604,13 +604,13 @@ module.exports = function(app, database, io, self) {
 
     hbs.registerHelper('ratingChange', function(change) {
         if (change > 0) {
-            return hbs.handlebars.SafeString('<span class="rating-increase"><iron-icon icon="arrow-upward"></iron-icon> ' + math.round(+change) + '</span>');
+            return new hbs.handlebars.SafeString('<span class="rating-increase"><iron-icon icon="arrow-upward"></iron-icon> ' + math.round(+change) + '</span>');
         }
         else if (change < 0) {
-            return hbs.handlebars.SafeString('<span class="rating-decrease"><iron-icon icon="arrow-downward"></iron-icon> ' + math.round(-change) + '</span>');
+            return new hbs.handlebars.SafeString('<span class="rating-decrease"><iron-icon icon="arrow-downward"></iron-icon> ' + math.round(-change) + '</span>');
         }
         else if (change === 0) {
-            return hbs.handlebars.SafeString('<span class="rating-no-change"><iron-icon icon="compare-arrows"></iron-icon> 0</span>');
+            return new hbs.handlebars.SafeString('<span class="rating-no-change"><iron-icon icon="compare-arrows"></iron-icon> 0</span>');
         }
     });
     hbs.registerHelper('gameDuration', function(duration) {

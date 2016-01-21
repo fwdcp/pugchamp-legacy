@@ -95,7 +95,7 @@
             {{#each game.teams.[0].composition as |role|}}
                 <paper-icon-item class="role">
                     <iron-icon icon="pugchamp-role:{{role.role.id}}" item-icon></iron-icon>
-                    <div class="role-name flex"><h3>{{role.role.name}}</h3></div>
+                    <div class="role-name flex"><h2>{{role.role.name}}</h2></div>
                 </paper-icon-item>
                 {{#each role.players as |player|}}
                     <paper-icon-item class="player">
