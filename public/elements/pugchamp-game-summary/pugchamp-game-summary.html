@@ -78,7 +78,9 @@
             </div>
             <div id="details" class="flex vertical layout center center-justified">
                 <span>{{game.map.name}}</span>
-                <span>{{formatDuration(game.duration)}}</span>
+                <template is="dom-if" if="{{_hasProperty(game, 'duration')}}">
+                    <span>{{formatDuration(game.duration)}}</span>
+                </template>
             </div>
             <div class$="team team-1 flex-3 horizontal layout faction-{{_getProperty(game.teams, 1, 'faction')}}">
                 <template is="dom-if" if="{{_hasProperty(game.score, 0)}}">
