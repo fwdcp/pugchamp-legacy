@@ -8,6 +8,7 @@
 <link rel="import" href="/components/paper-progress/paper-progress.html">
 <link rel="import" href="/components/paper-styles/color.html">
 <link rel="import" href="/components/paper-styles/default-theme.html">
+<link rel="import" href="/components/paper-styles/typography.html">
 <link rel="import" href="/components/paper-toggle-button/paper-toggle-button.html">
 
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
@@ -19,6 +20,11 @@
 <dom-module id="pugchamp-launchpad">
     <template>
         <style is="custom-style">
+            .hold {
+                @apply(--paper-font-body2);
+                text-align: center;
+            }
+
             .hold.hold-cleared {
                 color: var(--paper-green-500);
             }
@@ -73,43 +79,43 @@
         </paper-material>
         <div class="horizontal layout">
             <div class$="hold flex {{classForHold(holds, 'availableCaptains')}}" hidden$="{{launchActive}}">
-                <iron-icon icon="check" hidden$="{{!_includes(holds, 'availableCaptains')}}"></iron-icon>
-                <iron-icon icon="block" hidden$="{{_includes(holds, 'availableCaptains')}}"></iron-icon>
+                <iron-icon icon="check" hidden$="{{_includes(holds, 'availableCaptains')}}"></iron-icon>
+                <iron-icon icon="block" hidden$="{{!_includes(holds, 'availableCaptains')}}"></iron-icon>
                 Captains
             </div>
             <div class$="hold flex {{classForHold(holds, 'readyCaptains')}}" hidden$="{{!launchActive}}">
-                <iron-icon icon="check" hidden$="{{!_includes(holds, 'readyCaptains')}}"></iron-icon>
-                <iron-icon icon="block" hidden$="{{_includes(holds, 'readyCaptains')}}"></iron-icon>
+                <iron-icon icon="check" hidden$="{{_includes(holds, 'readyCaptains')}}"></iron-icon>
+                <iron-icon icon="block" hidden$="{{!_includes(holds, 'readyCaptains')}}"></iron-icon>
                 Captains
             </div>
             <div class$="hold flex {{classForHold(holds, 'availablePlayers')}}" hidden$="{{launchActive}}">
-                <iron-icon icon="check" hidden$="{{!_includes(holds, 'availablePlayers')}}"></iron-icon>
-                <iron-icon icon="block" hidden$="{{_includes(holds, 'availablePlayers')}}"></iron-icon>
+                <iron-icon icon="check" hidden$="{{_includes(holds, 'availablePlayers')}}"></iron-icon>
+                <iron-icon icon="block" hidden$="{{!_includes(holds, 'availablePlayers')}}"></iron-icon>
                 Players
             </div>
             <div class$="hold flex {{classForHold(holds, 'readyPlayers')}}" hidden$="{{!launchActive}}">
-                <iron-icon icon="check" hidden$="{{!_includes(holds, 'readyPlayers')}}"></iron-icon>
-                <iron-icon icon="block" hidden$="{{_includes(holds, 'readyPlayers')}}"></iron-icon>
+                <iron-icon icon="check" hidden$="{{_includes(holds, 'readyPlayers')}}"></iron-icon>
+                <iron-icon icon="block" hidden$="{{!_includes(holds, 'readyPlayers')}}"></iron-icon>
                 Players
             </div>
             <div class$="hold flex {{classForHold(holds, 'availablePlayerRoles')}}" hidden$="{{launchActive}}">
-                <iron-icon icon="check" hidden$="{{!_includes(holds, 'availablePlayerRoles')}}"></iron-icon>
-                <iron-icon icon="block" hidden$="{{_includes(holds, 'availablePlayerRoles')}}"></iron-icon>
+                <iron-icon icon="check" hidden$="{{_includes(holds, 'availablePlayerRoles')}}"></iron-icon>
+                <iron-icon icon="block" hidden$="{{!_includes(holds, 'availablePlayerRoles')}}"></iron-icon>
                 Roles
             </div>
             <div class$="hold flex {{classForHold(holds, 'readyPlayerRoles')}}" hidden$="{{!launchActive}}">
-                <iron-icon icon="check" hidden$="{{!_includes(holds, 'readyPlayerRoles')}}"></iron-icon>
-                <iron-icon icon="block" hidden$="{{_includes(holds, 'readyPlayerRoles')}}"></iron-icon>
+                <iron-icon icon="check" hidden$="{{_includes(holds, 'readyPlayerRoles')}}"></iron-icon>
+                <iron-icon icon="block" hidden$="{{!_includes(holds, 'readyPlayerRoles')}}"></iron-icon>
                 Roles
             </div>
             <div class$="hold flex {{classForHold(holds, 'inactiveDraft')}}">
-                <iron-icon icon="check" hidden$="{{!_includes(holds, 'availableServers')}}"></iron-icon>
-                <iron-icon icon="block" hidden$="{{_includes(holds, 'availableServers')}}"></iron-icon>
+                <iron-icon icon="check" hidden$="{{_includes(holds, 'availableServers')}}"></iron-icon>
+                <iron-icon icon="block" hidden$="{{!_includes(holds, 'availableServers')}}"></iron-icon>
                 Servers
             </div>
             <div class$="hold flex {{classForHold(holds, 'inactiveDraft')}}">
-                <iron-icon icon="check" hidden$="{{!_includes(holds, 'inactiveDraft')}}"></iron-icon>
-                <iron-icon icon="block" hidden$="{{_includes(holds, 'inactiveDraft')}}"></iron-icon>
+                <iron-icon icon="check" hidden$="{{_includes(holds, 'inactiveDraft')}}"></iron-icon>
+                <iron-icon icon="block" hidden$="{{!_includes(holds, 'inactiveDraft')}}"></iron-icon>
                 Draft Inactive
             </div>
         </div>
