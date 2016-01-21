@@ -168,7 +168,7 @@
                         <div class="map-info">
                             {{item.value.name}}
                             <br>
-                            <paper-button class="draft-choice" data-map$="{{item.key}}" hidden$="{{!mapChoiceAllowed(user, currentTurn, item.key, remainingMaps)}}" disabled="{{!mapChoiceAllowed(user, currentTurn, item.key, remainingMaps)}}" on-tap="selectMap" raised>Select</paper-button>
+                            <paper-button class="draft-choice" data-map$="{{item.key}}" hidden$="{{!mapChoiceAllowed(user, currentTurn, item.key, remainingMaps)}}" disabled="{{!mapChoiceAllowed(user, currentTurn, item.key, remainingMaps)}}" on-tap="selectMap" raised>{{currentMapChoiceType(currentTurn)}}</paper-button>
                         </div>
                     </paper-material>
                 </template>
@@ -483,6 +483,14 @@
             removeHighlight: function(event) {
                 if (this.highlightedPlayer === event.model.item.id) {
                     this.set('highlightedPlayer', null);
+                }
+            },
+            currentMapChoiceType: function(turn) {
+                if (this.turns[turn].type === 'mapBan') {
+                    return 'Ban';
+                }
+                else if (this.turns[turn].type === 'mapPick') {
+                    return 'Pick';
                 }
             }
         });
