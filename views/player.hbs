@@ -143,7 +143,7 @@
 
         var ratingHistory = document.getElementById('ratingHistory');
         ratingHistory.cols = [{type: 'datetime', label: 'Date'}, {type: 'string', role: 'tooltip'}, {type: 'number', label: 'Rating'}, {type: 'number', role: 'interval'}, {type: 'number', role: 'interval'}]
-        ratingHistory.rows = [{{#each ratings}} [new Date('{{date}}'), '<a href="/game/{{game}}">Game</a>', {{mean}}, {{lowerBound}}, {{upperBound}}] {{/each}}];
+        ratingHistory.rows = [{{#each ratings}}[new Date('{{date}}'), '<a href="/game/{{game}}">Game</a>', {{mean}}, {{lowerBound}}, {{upperBound}}],{{/each}}];
         ratingHistory.options = {tooltip: {isHtml: true}};
     </script>
 
