@@ -122,10 +122,11 @@
             #playerPool .player.highlight {
                 font-weight: 500;
             }
-			.pugchamp-draft a {
+
+			#playerPool .player a {
 				color: inherit;
-				text-decoration: none; 
-			}			
+				text-decoration: none;
+			}
         </style>
 
         <div hidden$="{{!active}}">
@@ -185,8 +186,8 @@
                             </paper-icon-item>
                             <template is="dom-if" if="{{!_includes(overrideRoles, role.key)}}">
                                 <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
-                                    <paper-icon-item class="player {{isHighlighted(item.id, highlightedPlayer)}}" disabled="{{_includes(unavailablePlayers, item.id)}}">
-                                        <div class="flex"><a href="/player/{{item.steamID}}" target="_blank"> {{item.alias}} </a></div>
+                                    <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" disabled="{{_includes(unavailablePlayers, item.id)}}">
+                                        <div class="flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></div>
                                         <paper-button class="draft-choice" data-role$="{{role.key}}" data-player$="{{item.id}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers)}}"
                                         on-tap="pickPlayer" raised>Select</paper-button>
                                     </paper-icon-item>
@@ -195,7 +196,7 @@
                             <template is="dom-if" if="{{_includes(overrideRoles, role.key)}}">
                                 <template is="dom-repeat" items="{{allPlayers}}">
                                     <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" disabled="{{_includes(unavailablePlayers, item.id)}}">
-                                        <div class="flex"><a href="/player/{{item.steamID}}" target="_blank"> {{item.alias}} </a></div>
+                                        <div class="flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></div>
                                         <paper-button class="draft-choice override" data-role$="{{role.key}}" data-player$="{{item.id}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers)}}"
                                         on-tap="pickPlayerOverride" raised>Override</paper-button>
                                     </paper-icon-item>
