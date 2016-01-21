@@ -67,6 +67,10 @@
             height: 32px;
         }
 
+        .player.replaced {
+            color: var(--paper-grey-500);
+        }
+
         .player a {
             color: inherit;
             text-decoration: none;
@@ -129,7 +133,7 @@
                     <div class="role-name flex"><h3>{{role.role.name}}</h3></div>
                 </paper-icon-item>
                 {{#each role.players as |player|}}
-                    <paper-icon-item class="player" {{#if player.disabled}}disabled{{/if}}>
+                    <paper-icon-item class="player {{#if player.replaced}}replaced{{/if}}">
                         <div class="flex"><a href="/player/{{player.user.steamID}}" target="_blank">{{player.user.alias}}</a></div>
                         <div>{{round player.rating.rating 0}} &plusmn;{{round player.rating.deviation 0}} ({{ratingChange player.rating.change}})</div>
                     </paper-icon-item>
