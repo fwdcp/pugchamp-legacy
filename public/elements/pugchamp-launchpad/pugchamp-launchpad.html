@@ -19,10 +19,12 @@
 <dom-module id="pugchamp-launchpad">
     <template>
         <style is="custom-style">
-            .hold {
-                background: var(--paper-amber-300);
-                margin: 10px 0;
-                padding: 10px;
+            .hold.hold-cleared {
+                color: var(--paper-green-500);
+            }
+
+            .hold.hold-blocked {
+                color: var(--paper-red-500);
             }
 
             #captains div {
@@ -69,30 +71,48 @@
                 <paper-button data-status="notReady" hidden$="{{!readyToPlay}}" disabled="{{isRestricted(restrictions, 'start')}}" on-tap="updateReadyStatus">Set Not Ready</paper-button>
             </p>
         </paper-material>
-        <paper-material class="hold" hidden$="{{!_includes(holds, 'availableCaptains')}}">
-            There are currently not enough captains available.
-        </paper-material>
-        <paper-material class="hold" hidden$="{{!_includes(holds, 'availablePlayers')}}">
-            There are currently not enough players available.
-        </paper-material>
-        <paper-material class="hold" hidden$="{{!_includes(holds, 'availablePlayerRoles')}}">
-            The players available cannot fit the role requirements.
-        </paper-material>
-        <paper-material class="hold" hidden$="{{!_includes(holds, 'readyCaptains')}}">
-            There are currently not enough captains ready.
-        </paper-material>
-        <paper-material class="hold" hidden$="{{!_includes(holds, 'readyPlayers')}}">
-            There are currently not enough players ready.
-        </paper-material>
-        <paper-material class="hold" hidden$="{{!_includes(holds, 'readyPlayerRoles')}}">
-            The players ready cannot fit the role requirements.
-        </paper-material>
-        <paper-material class="hold" hidden$="{{!_includes(holds, 'inactiveDraft')}}">
-            A draft is currently running.
-        </paper-material>
-        <paper-material class="hold" hidden$="{{!_includes(holds, 'availableServers')}}">
-            No servers are available to play on.
-        </paper-material>
+        <div class="horizontal layout">
+            <div class$="hold flex {{classForHold(holds, 'availableCaptains')}}" hidden$="{{launchActive}}">
+                <iron-icon icon="check" hidden$="{{!_includes(holds, 'availableCaptains')}}"></iron-icon>
+                <iron-icon icon="block" hidden$="{{_includes(holds, 'availableCaptains')}}"></iron-icon>
+                Captains
+            </div>
+            <div class$="hold flex {{classForHold(holds, 'readyCaptains')}}" hidden$="{{!launchActive}}">
+                <iron-icon icon="check" hidden$="{{!_includes(holds, 'readyCaptains')}}"></iron-icon>
+                <iron-icon icon="block" hidden$="{{_includes(holds, 'readyCaptains')}}"></iron-icon>
+                Captains
+            </div>
+            <div class$="hold flex {{classForHold(holds, 'availablePlayers')}}" hidden$="{{launchActive}}">
+                <iron-icon icon="check" hidden$="{{!_includes(holds, 'availablePlayers')}}"></iron-icon>
+                <iron-icon icon="block" hidden$="{{_includes(holds, 'availablePlayers')}}"></iron-icon>
+                Players
+            </div>
+            <div class$="hold flex {{classForHold(holds, 'readyPlayers')}}" hidden$="{{!launchActive}}">
+                <iron-icon icon="check" hidden$="{{!_includes(holds, 'readyPlayers')}}"></iron-icon>
+                <iron-icon icon="block" hidden$="{{_includes(holds, 'readyPlayers')}}"></iron-icon>
+                Players
+            </div>
+            <div class$="hold flex {{classForHold(holds, 'availablePlayerRoles')}}" hidden$="{{launchActive}}">
+                <iron-icon icon="check" hidden$="{{!_includes(holds, 'availablePlayerRoles')}}"></iron-icon>
+                <iron-icon icon="block" hidden$="{{_includes(holds, 'availablePlayerRoles')}}"></iron-icon>
+                Roles
+            </div>
+            <div class$="hold flex {{classForHold(holds, 'readyPlayerRoles')}}" hidden$="{{!launchActive}}">
+                <iron-icon icon="check" hidden$="{{!_includes(holds, 'readyPlayerRoles')}}"></iron-icon>
+                <iron-icon icon="block" hidden$="{{_includes(holds, 'readyPlayerRoles')}}"></iron-icon>
+                Roles
+            </div>
+            <div class$="hold flex {{classForHold(holds, 'inactiveDraft')}}">
+                <iron-icon icon="check" hidden$="{{!_includes(holds, 'availableServers')}}"></iron-icon>
+                <iron-icon icon="block" hidden$="{{_includes(holds, 'availableServers')}}"></iron-icon>
+                Servers
+            </div>
+            <div class$="hold flex {{classForHold(holds, 'inactiveDraft')}}">
+                <iron-icon icon="check" hidden$="{{!_includes(holds, 'inactiveDraft')}}"></iron-icon>
+                <iron-icon icon="block" hidden$="{{_includes(holds, 'inactiveDraft')}}"></iron-icon>
+                Draft Inactive
+            </div>
+        </div>
         <div class="horizontal layout" id="captains">
             <div>
                 <paper-checkbox id="captainSelect" disabled="{{isRestricted(restrictions, 'captain')}}" on-change="updateAvailability">Captain</paper-checkbox>
@@ -242,6 +262,14 @@
             removeHighlight: function(event) {
                 if (this.highlightedPlayer === event.model.item.id) {
                     this.set('highlightedPlayer', null);
+                }
+            },
+            classForHold: function(holds, hold) {
+                if (holds.includes(hold)) {
+                    return 'hold-blocked';
+                }
+                else {
+                    return 'hold-cleared';
                 }
             }
         });
