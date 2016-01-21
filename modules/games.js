@@ -605,6 +605,10 @@ module.exports = function(app, database, io, self) {
             return;
         }
 
+        let ratings = yield database.Rating.find({
+            game: game.id
+        }).exec();
+
         game = game.toObject();
         ratings = _.keyBy(ratings, rating => self.getDocumentID(rating.user));
 
@@ -629,10 +633,6 @@ module.exports = function(app, database, io, self) {
                 return _(ROLES).keys().indexOf(role.role);
             });
         });
-
-        let ratings = yield database.Rating.find({
-            game: game.id
-        }).exec();
 
         res.render('game', {
             game: game
