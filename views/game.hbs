@@ -11,13 +11,18 @@
     <link rel="import" href="/elements/pugchamp-icons/pugchamp-role-icons.html">
 
     <style is="custom-style">
+        .header {
+            line-height: 48px;
+            padding: 10px;
+        }
+
         .header .captain {
-            font-size: 21px;
+            font-size: 48px;
             font-weight: 500;
         }
 
         .header .score {
-            font-size: 28px;
+            font-size: 54px;
             font-weight: 600;
             margin: 0 10px;
             text-align: center;
@@ -75,7 +80,7 @@
                 {{/if}}
             </div>
             {{#each game.teams.[0].composition as |role|}}
-                <paper-icon-item>
+                <paper-icon-item class="role">
                     <iron-icon icon="pugchamp-role:{{role.role.id}}" item-icon></iron-icon>
                     <div class="role-name flex"><h3>{{role.role.name}}</h3></div>
                 </paper-icon-item>
@@ -99,7 +104,7 @@
                 {{/if}}
             </div>
             {{#each game.teams.[1].composition as |role|}}
-                <paper-icon-item>
+                <paper-icon-item class="role">
                     <iron-icon icon="pugchamp-role:{{role.role}}" item-icon></iron-icon>
                     <div class="role-name flex"><h3>{{role.role.name}}</h3></div>
                 </paper-icon-item>
