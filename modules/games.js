@@ -6,6 +6,8 @@ const Chance = require('chance');
 const child_process = require('mz/child_process');
 const co = require('co');
 const config = require('config');
+const hbs = require('hbs');
+const math = require('math');
 const ms = require('ms');
 const path = require('path');
 const wilson = require('wilson-interval');
@@ -597,6 +599,18 @@ module.exports = function(app, database, io, self) {
         io.sockets.emit('substituteRequestsUpdated', getCurrentSubstituteRequestsMessage());
     });
 
+    hbs.registerHelper('ratingChange', function(change) {
+        if (change > 0) {
+            return hbs.handlebars.SafeString('<span class="rating-increase"><iron-icon icon="arrow-upward"></iron-icon> ' + math.round(+change) + '</span>');
+        }
+        else if (change < 0) {
+            return hbs.handlebars.SafeString('<span class="rating-decrease"><iron-icon icon="arrow-downward"></iron-icon> ' + math.round(-change) + '</span>');
+        }
+        else if (change === 0) {
+            return hbs.handlebars.SafeString('<span class="rating-no-change"><iron-icon icon="compare-arrows"></iron-icon> 0</span>');
+        }
+    });
+
     app.get('/game/:id', co.wrap(function*(req, res) {
         let game = yield database.Game.findById(req.params.id).exec();
 
@@ -616,6 +630,8 @@ module.exports = function(app, database, io, self) {
             team.captain = self.getCachedUser(self.getDocumentID(team.captain));
 
             _.each(team.composition, function(role) {
+                role.role = _.assign({id: role}, ROLES[role]);
+
                 _.each(role.players, function(player) {
                     player.user = self.getCachedUser(self.getDocumentID(player.user));
 

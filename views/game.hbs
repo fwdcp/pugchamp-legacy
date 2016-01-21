@@ -9,18 +9,67 @@
     <link rel="import" href="/components/paper-item/paper-icon-item.html">
 
     <link rel="import" href="/elements/pugchamp-icons/pugchamp-role-icons.html">
+
+    <style is="custom-style">
+        .player {
+            min-height: inherit;
+            height: 32px;
+        }
+    </style>
     {{/head}}
 
     {{#> body}}
-    {{#each teams.[0].composition as |role|}}
-        <paper-icon-item>
-            <iron-icon icon="pugchamp-role:{{role.role}}" item-icon></iron-icon>
-            <div class="role-name flex"><h3>{{role.value.name}}</h3></div>
-        </paper-icon-item>
-        {{#each role.players as |player|}}
-            <paper-icon-item class="player"><div class="flex"><a href="/player/{{player.user.steamID}}" target="_blank">{{player.user.alias}}</a></div></paper-icon-item>
-        {{/each}}
-    {{/each}}
+
+    <div class="horizontal layout">
+        <div class="flex faction-{{game.teams.[0].faction}}">
+            <div class="header horizontal layout">
+                <div class="captain flex vertical layout center-justified">
+                    <span>{{game.teams.[0].captain.alias}}</span>
+                </div>
+                {{#if game.score.[0] includeZero=true}}
+                <div class="score vertical layout center-justified">
+                    <span>{{game.score.[0]}}</span>
+                </div>
+                {{/if}}
+            </div>
+            {{#each game.teams.[0].composition as |role|}}
+                <paper-icon-item>
+                    <iron-icon icon="pugchamp-role:{{role.role.id}}" item-icon></iron-icon>
+                    <div class="role-name flex"><h3>{{role.role.name}}</h3></div>
+                </paper-icon-item>
+                {{#each role.players as |player|}}
+                    <paper-icon-item class="player">
+                        <div class="flex"><a href="/player/{{player.user.steamID}}" target="_blank">{{player.user.alias}}</a></div>
+                        <div>{{round player.rating.rating 0}} &plusmn;{{round player.rating.deviation 0}} ({{ratingChange player.rating.change}})</div>
+                    </paper-icon-item>
+                {{/each}}
+            {{/each}}
+        </div>
+        <div class="flex faction-{{game.teams.[1].faction}}">
+            <div class="header horizontal layout">
+                <div class="captain flex vertical layout center-justified">
+                    <span>{{game.teams.[1].captain.alias}}</span>
+                </div>
+                {{#if game.score.[1] includeZero=true}}
+                <div class="score vertical layout center-justified">
+                    <span>{{game.score.[1]}}</span>
+                </div>
+                {{/if}}
+            </div>
+            {{#each game.teams.[1].composition as |role|}}
+                <paper-icon-item>
+                    <iron-icon icon="pugchamp-role:{{role.role}}" item-icon></iron-icon>
+                    <div class="role-name flex"><h3>{{role.role.name}}</h3></div>
+                </paper-icon-item>
+                {{#each role.players as |player|}}
+                    <paper-icon-item class="player">
+                        <div class="flex"><a href="/player/{{player.user.steamID}}" target="_blank">{{player.user.alias}}</a></div>
+                        <div>{{round player.rating.rating 0}} &plusmn;{{round player.rating.deviation 0}} ({{ratingChange player.rating.change}})</div>
+                    </paper-icon-item>
+                {{/each}}
+            {{/each}}
+        </div>
+    </div>
     {{/body}}
 
 </html>
