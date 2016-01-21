@@ -20,6 +20,10 @@
 <dom-module id="pugchamp-launchpad">
     <template>
         <style is="custom-style">
+            #holds {
+                color: var(--paper-grey-300);
+            }
+
             .hold {
                 @apply(--paper-font-body2);
                 text-align: center;
@@ -77,7 +81,7 @@
                 <paper-button data-status="notReady" hidden$="{{!readyToPlay}}" disabled="{{isRestricted(restrictions, 'start')}}" on-tap="updateReadyStatus">Set Not Ready</paper-button>
             </p>
         </paper-material>
-        <div class="horizontal layout">
+        <div id="holds" class="horizontal layout">
             <div class$="hold flex {{classForHold(holds, 'availableCaptains')}}" hidden$="{{launchActive}}">
                 <iron-icon icon="check" hidden$="{{_includes(holds, 'availableCaptains')}}"></iron-icon>
                 <iron-icon icon="block" hidden$="{{!_includes(holds, 'availableCaptains')}}"></iron-icon>
@@ -116,7 +120,7 @@
             <div class$="hold flex {{classForHold(holds, 'inactiveDraft')}}">
                 <iron-icon icon="check" hidden$="{{_includes(holds, 'inactiveDraft')}}"></iron-icon>
                 <iron-icon icon="block" hidden$="{{!_includes(holds, 'inactiveDraft')}}"></iron-icon>
-                Draft Inactive
+                Draft
             </div>
         </div>
         <div class="horizontal layout" id="captains">
