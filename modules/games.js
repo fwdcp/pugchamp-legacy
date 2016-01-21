@@ -630,7 +630,7 @@ module.exports = function(app, database, io, self) {
             team.captain = self.getCachedUser(self.getDocumentID(team.captain));
 
             _.each(team.composition, function(role) {
-                role.role = _.assign({id: role}, ROLES[role]);
+                role.role = _.assign({id: role}, ROLES[role.role]);
 
                 _.each(role.players, function(player) {
                     player.user = self.getCachedUser(self.getDocumentID(player.user));
