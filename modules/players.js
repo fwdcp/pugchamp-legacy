@@ -79,7 +79,7 @@ module.exports = function(app, database, io, self) {
 
         res.render('player', {
             user: user,
-            games: games,
+            games: _(games).map(game => game.toObject()).value(),
             ratings: _(ratings).map(rating => ({
                 game: rating.game.id,
                 date: rating.game.date,
