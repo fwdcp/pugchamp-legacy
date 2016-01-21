@@ -27,6 +27,11 @@
                 margin: 5px;
             }
 
+            .message p {
+                line-height: 24px;
+                margin: 0;
+            }
+
             .message .message-time {
                 @apply(--paper-font-caption);
             }
@@ -45,14 +50,14 @@
             <template is="dom-repeat" items="{{messages}}" class="flex">
                 <paper-card class="message">
                     <div class="card-content">
-                        <span class="message-time">{{formatTime(item.time)}}</span>
-                        <br>
-                        <template is="dom-if" if="{{item.user}}">
-                            <span class="message-author"><iron-icon hidden$="{{!item.user.admin}}" icon="flag"></iron-icon> {{item.user.alias}}</span>
-                        </template>
-                        <em>{{item.action}}</em>
-                        <br>
-                        <span class="message-body">{{item.body}}</span>
+                        <p class="message-time">{{formatTime(item.time)}}</p>
+                        <p class="message-header">
+                            <template is="dom-if" if="{{item.user}}">
+                                <iron-icon hidden$="{{!item.user.admin}}" icon="flag"></iron-icon> {{item.user.alias}}
+                            </template>
+                            <em>{{item.action}}</em>
+                        </p>
+                        <p class="message-body">{{item.body}}</p>
                     </div>
                 </paper-card>
             </template>
