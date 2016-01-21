@@ -71,7 +71,11 @@ module.exports = function(app, database, io, self) {
             'user': user.id
         }).populate('game', 'date').exec();
 
-        let draftStats = yield getPlayerDraftStats(user);
+        let draftStats;
+
+        if (user.options.showDraftStats) {
+            draftStats = yield getPlayerDraftStats(user);
+        }
 
         res.render('player', {
             user: user,
@@ -83,7 +87,7 @@ module.exports = function(app, database, io, self) {
                 lowerBound: rating.after.rating - (3 * rating.after.deviation),
                 upperBound: rating.after.rating + (3 * rating.after.deviation)
             })).sortBy('date').value(),
-            draftStats: _.toPairs(draftStats)
+            draftStats: draftStats ? _.toPairs(draftStats) : null
         });
     }));
 

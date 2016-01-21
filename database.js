@@ -17,6 +17,12 @@ var userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    options: {
+        showDraftStats: {
+            type: Boolean,
+            default: false
+        }
+    },
     currentRating: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Rating'
