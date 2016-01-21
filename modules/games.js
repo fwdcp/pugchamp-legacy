@@ -8,9 +8,12 @@ const co = require('co');
 const config = require('config');
 const hbs = require('hbs');
 const math = require('mathjs');
+const moment = require('moment');
 const ms = require('ms');
 const path = require('path');
 const wilson = require('wilson-interval');
+
+require("moment-duration-format");
 
 var chance = new Chance();
 
@@ -609,6 +612,9 @@ module.exports = function(app, database, io, self) {
         else if (change === 0) {
             return hbs.handlebars.SafeString('<span class="rating-no-change"><iron-icon icon="compare-arrows"></iron-icon> 0</span>');
         }
+    });
+    hbs.registerHelper('gameDuration', function(duration) {
+        return moment.duration(duration, 'seconds').format();
     });
 
     app.get('/game/:id', co.wrap(function*(req, res) {

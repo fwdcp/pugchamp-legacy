@@ -106,18 +106,16 @@
             {{/each}}
         </div>
         <div class="flex" id="details">
-            <p>
-                <img src="/assets/maps/{{game.map.image}}">
-                <br>
-                {{game.map.name}}
-            </p>
+            <img src="/assets/maps/{{game.map.image}}">
+            <br>
+            {{game.map.name}}
 
             <p>{{momentFromNow game.date}}</p>
 
             <p>{{game.status}}</p>
 
             {{#if game.duration includeZero=true}}
-                {{game.duration}}
+                {{gameDuration game.duration}}
             {{/if}}
         </div>
         <div class="flex-2 faction-{{game.teams.[1].faction}}">
