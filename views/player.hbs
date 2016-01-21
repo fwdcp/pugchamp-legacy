@@ -97,12 +97,12 @@
     {{#if user.options.showDraftStats}}
     <h2>Draft Stats</h2>
 
-    <google-chart id="draftStats" cols="[{&quot;type&quot;: &quot;string&quot;, &quot;label&quot;: &quot;Outcome&quot;}, {&quot;type&quot;: &quot;number&quot;, &quot;label&quot;: &quot;Occurrences&quot;}]" rows="{{toJSON draftStats}}" type="pie"></google-chart>
+    <google-chart id="draftStats" type="pie"></google-chart>
     {{/if}}
 
     <h2>Rating History</h2>
 
-    <google-chart id="ratingHistory" cols="[{&quot;type&quot;: &quot;datetime&quot;, &quot;label&quot;: &quot;Date&quot;}, {&quot;type&quot;: &quot;string&quot;, &quot;role&quot;: &quot;tooltip&quot;}, {&quot;type&quot;: &quot;number&quot;, &quot;label&quot;: &quot;Rating&quot;}, {&quot;type&quot;: &quot;number&quot;, &quot;role&quot;: &quot;interval&quot;}, {&quot;type&quot;: &quot;number&quot;, &quot;role&quot;: &quot;interval&quot;}]" options="{&quot;tooltip&quot;: {&quot;isHtml&quot;: true}}" type="line"></google-chart>
+    <google-chart id="ratingHistory" type="line"></google-chart>
 
     <h2>Games</h2>
 
@@ -139,8 +139,16 @@
     {{/each}}
 
     <script>
+        {{#if user.options.showDraftStats}}
+        var draftStats = document.getElementById('draftStats');
+        draftStats.cols = [{type: 'string', label: 'Outcome'}, {type: 'number', label: 'Occurrences'}]
+        draftStats.rows = {{{toJSON draftStats}}};
+        {{/if}}
+
         var ratingHistory = document.getElementById('ratingHistory');
+        ratingHistory.cols = [{type: 'datetime', label: 'Date'}, {type: 'string', role: 'tooltip'}, {type: 'number', label: 'Rating'}, {type: 'number', role: 'interval'}, {type: 'number', role: 'interval'}]
         ratingHistory.rows = [{{#each ratings}}[new Date('{{date}}'), '<a href="/game/{{game}}">Game</a>', {{mean}}, {{lowerBound}}, {{upperBound}}],{{/each}}];
+        ratingHistory.options = {tooltip: {isHtml: true}};
     </script>
 
     {{/body}}

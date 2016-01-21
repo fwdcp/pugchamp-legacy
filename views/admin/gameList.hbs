@@ -18,7 +18,7 @@
     {{#> body}}
     <h1>Games</h1>
 
-    <vaadin-grid items="{{toJSON games}}" id="games">
+    <vaadin-grid id="games">
         <table>
             <colgroup>
                 <col name="_id">
@@ -61,6 +61,7 @@
     <script src="/components/moment/moment.js"></script>
     <script>
         var grid = document.getElementById('games');
+        grid.items = {{{toJSON games}}};
 
         grid.addEventListener('sort-order-changed', function() {
             grid.items = _.sortByOrder(grid.items, _.map(grid.sortOrder, function(sort) {

@@ -9,7 +9,7 @@
     {{#> body}}
     <h1>Players</h1>
 
-    <vaadin-grid items="{{toJSON users}}" id="users">
+    <vaadin-grid id="users">
         <table>
             <colgroup>
                 <col name="alias" sortable sort-direction="asc">
@@ -29,6 +29,7 @@
     <script src="/components/lodash/lodash.min.js"></script>
     <script>
         var grid = document.getElementById('users');
+        grid.items = {{{toJSON users}}};
 
         grid.addEventListener('sort-order-changed', function() {
             grid.items = _.sortByOrder(grid.items, _.map(grid.sortOrder, function(sort) {

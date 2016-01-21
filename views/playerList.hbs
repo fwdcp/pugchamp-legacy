@@ -9,7 +9,7 @@
     {{#> body}}
     <h1>Players</h1>
 
-    <vaadin-grid items="{{toJSON players}}" id="players">
+    <vaadin-grid id="players">
         <table>
             <colgroup>
                 <col name="alias" sortable>
@@ -34,6 +34,7 @@
     <script src="/components/mathjs/dist/math.min.js"></script>
     <script>
         var grid = document.getElementById('players');
+        grid.items = {{{toJSON players}}};
 
         grid.addEventListener('sort-order-changed', function() {
             grid.items = _.sortByOrder(grid.items, _.map(grid.sortOrder, function(sort) {
