@@ -124,7 +124,9 @@
                 {{#each role.players as |player|}}
                     <paper-icon-item class="player">
                         <div class="flex"><a href="/player/{{player.user.steamID}}" target="_blank">{{player.user.alias}}</a></div>
+                        {{#if player.rating}}
                         <div>{{round player.rating.rating 0}} &plusmn;{{round player.rating.deviation 0}} ({{ratingChange player.rating.change}})</div>
+                        {{/if}}
                     </paper-icon-item>
                 {{/each}}
             {{/each}}
@@ -165,7 +167,9 @@
                 {{#each role.players as |player|}}
                     <paper-icon-item class="player {{#if player.replaced}}replaced{{/if}}">
                         <div class="flex"><a href="/player/{{player.user.steamID}}" target="_blank">{{player.user.alias}}</a></div>
+                        {{#if player.rating}}
                         <div>{{round player.rating.rating 0}} &plusmn;{{round player.rating.deviation 0}} ({{ratingChange player.rating.change}})</div>
+                        {{/if}}
                     </paper-icon-item>
                 {{/each}}
             {{/each}}
