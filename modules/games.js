@@ -597,7 +597,7 @@ module.exports = function(app, database, io, self) {
         io.sockets.emit('substituteRequestsUpdated', getCurrentSubstituteRequestsMessage());
     });
 
-    app.get('/game/:id', co.wrap(function(req, res) {
+    app.get('/game/:id', co.wrap(function*(req, res) {
         let game = yield database.Game.findById(req.params.id).exec();
 
         if (!game) {
