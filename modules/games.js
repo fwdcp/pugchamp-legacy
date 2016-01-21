@@ -635,6 +635,10 @@ module.exports = function(app, database, io, self) {
         _.each(game.teams, function(team) {
             team.captain = self.getCachedUser(self.getDocumentID(team.captain));
 
+            _.sortBy(team.composition, function(role) {
+                return _(ROLES).keys().indexOf(role.role);
+            });
+
             _.each(team.composition, function(role) {
                 role.role = _.assign({id: role.role}, ROLES[role.role]);
 
@@ -651,10 +655,6 @@ module.exports = function(app, database, io, self) {
                         };
                     }
                 });
-            });
-
-            _.sortBy(team.composition, function(role) {
-                return _(ROLES).keys().indexOf(role.role);
             });
         });
 
