@@ -78,7 +78,7 @@ module.exports = function(app, database, io, self) {
     }
 
     function formatCurrentGameInfo(game) {
-        if (!game || game.status ===  'aborted' || game.status === 'completed') {
+        if (!game || game.status === 'aborted' || game.status === 'completed') {
             return null;
         }
 
@@ -597,9 +597,41 @@ module.exports = function(app, database, io, self) {
         io.sockets.emit('substituteRequestsUpdated', getCurrentSubstituteRequestsMessage());
     });
 
-    app.get('/game/:id', function(req, res) {
-        // TODO: implement
-    });
+    app.get('/game/:id', co.wrap(function(req, res) {
+        let game = yield database.Game.findById(req.params.id).exec();
+
+        if (!game) {
+            res.sendStatus(404);
+            return;
+        }
+
+        _.each(game.teams, function(team) {
+            team.captain = self.getCachedUser(self.getDocumentID(team.captain));
+
+            _.each(team.composition, function(role) {
+                _.each(role.players, function(player) {
+                    player.user = self.getCachedUser(self.getDocumentID(player.user));
+                });
+            });
+
+            _.sortBy(team.composition, function(role) {
+                return _(ROLES).keys().indexOf(role.role);
+            });
+        });
+
+        let ratings = yield database.Rating.find({
+            game: game.id
+        }).exec();
+
+        res.render('game', {
+            game: game.toObject(),
+            ratings: _(ratings).keyBy(self.getDocumentID(rating.user)).mapValues(rating => ({
+                rating: rating.after.rating,
+                deviation: rating.after.deviation,
+                change: rating.after.rating - rating.before.rating
+            })).value()
+        });
+    }));
 
     app.get('/games', co.wrap(function*(req, res) {
         let games = yield database.Game.find({}).sort('-date').populate('teams.captain').exec();

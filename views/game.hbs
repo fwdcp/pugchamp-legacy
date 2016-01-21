@@ -1,0 +1,29 @@
+<!doctype html>
+
+<html>
+
+    {{#> head title="Game Details" }}
+    <link rel="import" href="/components/iron-flex-layout/classes/iron-flex-layout.html">
+    <link rel="import" href="/components/iron-icon/iron-icon.html">
+    <link rel="import" href="/components/paper-item/paper-item.html">
+    <link rel="import" href="/components/paper-item/paper-icon-item.html">
+
+    <link rel="import" href="/elements/pugchamp-icons/pugchamp-role-icons.html">
+    {{/head}}
+
+    {{#body}}
+
+    {{#each teams.[0].composition as |role|}}
+        <paper-icon-item>
+            <iron-icon icon="pugchamp-role:{{role.role}}" item-icon></iron-icon>
+            <div class="role-name flex"><h3>{{role.value.name}}</h3></div>
+        </paper-icon-item>
+        {{#each role.players as |player|}}
+            <paper-icon-item class="player"><div class="flex"><a href="/player/{{player.user.steamID}}" target="_blank">{{player.user.alias}}</a></div></paper-icon-item>
+        {{/each}}
+    </template>
+    {{/each}}
+
+    {{/body}}
+
+</html>
