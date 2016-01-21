@@ -81,10 +81,16 @@ module.exports = function(app, database, io, self) {
     var allowedRoles = [];
     var overrideRoles = [];
 
+    var currentDraftGame = null;
+
     var currentStatusInfo;
 
     self.isDraftActive = function isDraftActive() {
         return draftActive;
+    };
+
+    self.getCurrentDraftGame = function getCurrentDraftGame() {
+        return currentDraftGame;
     };
 
     function checkIfLegalState(teams, maps, factions, final) {
@@ -229,6 +235,8 @@ module.exports = function(app, database, io, self) {
         allowedRoles = [];
         overrideRoles = [];
 
+        currentDraftGame = null;
+
         updateStatusInfo();
         io.sockets.emit('draftStatusUpdated', getCurrentStatusMessage());
 
@@ -278,8 +286,6 @@ module.exports = function(app, database, io, self) {
 
             yield game.save();
 
-            self.cleanUpDraft();
-
             try {
                 yield self.assignGameToServer(game);
             }
@@ -289,6 +295,8 @@ module.exports = function(app, database, io, self) {
                     error: err
                 });
             }
+
+            return game.id;
         });
     }
 
@@ -319,7 +327,7 @@ module.exports = function(app, database, io, self) {
             updateStatusInfo();
             io.sockets.emit('draftStatusUpdated', getCurrentStatusMessage());
 
-            yield launchGameFromDraft();
+            currentDraftGame = yield launchGameFromDraft();
         });
     }
 
@@ -607,6 +615,8 @@ module.exports = function(app, database, io, self) {
             []
         ];
         pickedMap = null;
+
+        currentDraftGame = null;
 
         yield selectCaptains(draftInfo.captains);
 

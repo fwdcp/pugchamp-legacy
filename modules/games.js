@@ -104,6 +104,12 @@ module.exports = function(app, database, io, self) {
     }
 
     function processGameUpdate(game) {
+        if (game.status !== 'assigning') {
+            if (self.getDocumentID(game) === self.getCurrentDraftGame()) {
+                self.cleanUpDraft();
+            }
+        }
+
         let gameInfo = formatCurrentGameInfo(game);
 
         _.each(game.teams, function(team) {
