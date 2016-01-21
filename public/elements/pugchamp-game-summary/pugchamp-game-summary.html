@@ -38,10 +38,6 @@
                 text-align: center;
             }
 
-            .team .score:empty {
-                display: none;
-            }
-
             .team.team-0 .captain {
                 margin-right: 10px;
                 text-align: right;
@@ -74,17 +70,21 @@
                 <div class="captain flex vertical layout center-justified">
                     <span>{{_getProperty(game.teams, 0, 'captain', 'alias')}}</span>
                 </div>
-                <div class="score vertical layout center-justified">
-                    <span>{{_getProperty(game.score, 0)}}</span>
-                </div>
+                <template is="dom-if" if="{{_hasProperty(game.score, 0)}}">
+                    <div class="score vertical layout center-justified">
+                        <span>{{_getProperty(game.score, 0)}}</span>
+                    </div>
+                </template>
             </div>
             <div id="details" class="flex vertical layout center center-justified">
                 <span>{{game.map.name}}</span>
             </div>
             <div class$="team team-1 flex-3 horizontal layout faction-{{_getProperty(game.teams, 1, 'faction')}}">
-                <div class="score vertical layout center-justified">
-                    <span>{{_getProperty(game.score, 1)}}</span>
-                </div>
+                <template is="dom-if" if="{{_hasProperty(game.score, 0)}}">
+                    <div class="score vertical layout center-justified">
+                        <span>{{_getProperty(game.score, 1)}}</span>
+                    </div>
+                </template>
                 <div class="captain flex vertical layout center-justified">
                     <span>{{_getProperty(game.teams, 1, 'captain', 'alias')}}</span>
                 </div>
