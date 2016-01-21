@@ -62,13 +62,18 @@
             min-height: inherit;
             height: 32px;
         }
+
+        .player a {
+            color: inherit;
+            text-decoration: none;
+        }
     </style>
     {{/head}}
 
     {{#> body}}
 
     <div class="horizontal layout">
-        <div class="flex faction-{{game.teams.[0].faction}}">
+        <div class="flex-2 faction-{{game.teams.[0].faction}}">
             <div class="header horizontal layout">
                 <div class="captain flex vertical layout center-justified">
                     <span>{{game.teams.[0].captain.alias}}</span>
@@ -92,7 +97,10 @@
                 {{/each}}
             {{/each}}
         </div>
-        <div class="flex faction-{{game.teams.[1].faction}}">
+        <div class="flex">
+            <img src="/assets/maps/{{game.map.image}}">
+        </div>
+        <div class="flex-2 faction-{{game.teams.[1].faction}}">
             <div class="header horizontal layout">
                 <div class="captain flex vertical layout center-justified">
                     <span>{{game.teams.[1].captain.alias}}</span>
