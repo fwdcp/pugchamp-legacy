@@ -31,6 +31,10 @@
                 @apply(--paper-font-caption);
             }
 
+            .message .message-author {
+                @apply(--paper-font-body2);
+            }
+
             .message .message-body {
                 overflow-wrap: break-word;
                 word-wrap: break-word;
@@ -44,7 +48,7 @@
                         <span class="message-time">{{formatTime(item.time)}}</span>
                         <br>
                         <template is="dom-if" if="{{item.user}}">
-                            <strong><iron-icon hidden$="{{!item.user.admin}}" icon="flag"></iron-icon> {{item.user.alias}}</strong>
+                            <span class="message-author"><iron-icon hidden$="{{!item.user.admin}}" icon="flag"></iron-icon> {{item.user.alias}}</span>
                         </template>
                         <em>{{item.action}}</em>
                         <br>
