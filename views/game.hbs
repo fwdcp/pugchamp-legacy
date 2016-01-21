@@ -15,6 +15,10 @@
             text-align: center;
         }
 
+        #details img {
+            max-width: 100%;
+        }
+
         .header {
             line-height: 48px;
             padding: 10px;
@@ -93,7 +97,7 @@
     {{#> body}}
 
     <div class="horizontal layout">
-        <div class="flex-2 faction-{{game.teams.[0].faction}}">
+        <div class="flex-3 faction-{{game.teams.[0].faction}}">
             <div class="header horizontal layout">
                 <div class="captain flex vertical layout center-justified">
                     <span>{{game.teams.[0].captain.alias}}</span>
@@ -117,7 +121,7 @@
                 {{/each}}
             {{/each}}
         </div>
-        <div class="flex" id="details">
+        <div class="flex-2" id="details">
             <img src="/assets/maps/{{game.map.image}}">
             <br>
             {{game.map.name}}
@@ -130,7 +134,7 @@
                 {{gameDuration game.duration}}
             {{/if}}
         </div>
-        <div class="flex-2 faction-{{game.teams.[1].faction}}">
+        <div class="flex-3 faction-{{game.teams.[1].faction}}">
             <div class="header horizontal layout">
                 <div class="captain flex vertical layout center-justified">
                     <span>{{game.teams.[1].captain.alias}}</span>
