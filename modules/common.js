@@ -33,10 +33,10 @@ module.exports = function(app, database, io, self) {
     };
 
     hbs.registerHelper('toJSON', function(object) {
-        return new hbs.handlebars.SafeString(JSON.stringify(object));
+        return JSON.stringify(object);
     });
     hbs.registerHelper('momentFromNow', function(date) {
-        return new hbs.handlebars.SafeString(moment(date).fromNow());
+        return moment(date).fromNow();
     });
     hbs.registerHelper('round', function(number, decimals) {
         if (!decimals) {

@@ -63,7 +63,7 @@
 
     <h3>History</h3>
 
-    <vaadin-grid id="restrictions">
+    <vaadin-grid items="{{toJSON restrictions}}" id="restrictions">
         <table>
             <colgroup>
                 <col name="active" sortable sort-direction="desc">
@@ -95,7 +95,6 @@
     <script src="/components/moment/moment.js"></script>
     <script>
         var grid = document.getElementById('restrictions');
-        grid.items = {{toJSON restrictions}};
 
         grid.addEventListener('sort-order-changed', function() {
             grid.items = _.sortByOrder(grid.items, _.map(grid.sortOrder, function(sort) {
