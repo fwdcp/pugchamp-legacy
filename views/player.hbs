@@ -5,61 +5,24 @@
     {{#> head title=user.alias }}
     <link rel="import" href="/components/google-chart/google-chart.html">
     <link rel="import" href="/components/paper-button/paper-button.html">
+    <link rel="import" href="/components/paper-styles/color.html">
+
+    <link rel="import" href="/elements/pugchamp-game-summary/pugchamp-game-summary.html">
 
     <style is="custom-style">
-        .match {
-            margin: 5px;
+        .button {
+            color: inherit;
+            text-decoration: none;
         }
 
-        .match > div {
-            padding: 10px;
-        }
-
-        .status {
-            text-align: center;
-        }
-
-        .details {
-            text-align: center;
-        }
-
-        .team .captain {
-            font-size: 21px;
-            font-weight: 500;
-        }
-
-        .team .score {
-            font-size: 28px;
-            font-weight: 600;
-            margin: 0 10px;
-            text-align: center;
-        }
-
-        .team.team-0 .captain {
-            margin-right: 10px;
-            text-align: right;
-        }
-
-        .team.team-1 .captain {
-            margin-left: 10px;
-            text-align: left;
-        }
-
-        .team.faction-BLU {
-            background: var(--paper-red-500);
-            color: var(--paper-grey-300);
-            opacity: var(--light-primary-opacity);
-        }
-
-        .team.faction-RED {
-            background: var(--paper-blue-500);
-            color: var(--paper-grey-300);
-            opacity: var(--light-primary-opacity);
+        .link {
+            background: var(--accent-color);
+            color: var(--light-theme-text-color);
         }
 
         #steam {
-            background: var(--accent-color);
-            color: var(--light-theme-text-color);
+            background: var(--paper-grey-900);
+            color: var(--dark-theme-text-color);
         }
 
         #ratingHistory {
@@ -71,8 +34,8 @@
     {{#> body}}
     <h1>{{user.alias}}</h1>
 
-    <a href="https://steamcommunity.com/profiles/{{user.steamID}}"><paper-button>Steam Profile</paper-button></a>
-	<a href="http://logs.tf/profile/{{user.steamID}}"><paper-button>Logs.tf Profile</paper-button></a>
+    <a class="button" href="https://steamcommunity.com/profiles/{{user.steamID}}"><paper-button class="link" id="steam" raised>Steam Profile</paper-button></a>
+	<a class="button" href="http://logs.tf/profile/{{user.steamID}}"><paper-button class="link" raised>Logs.tf Profile</paper-button></a>
 
     <p>
         <strong>Player Rating:</strong>
@@ -107,35 +70,7 @@
     <h2>Games</h2>
 
     {{#each games}}
-        <paper-material class="match horizontal layout">
-            <div class="status flex vertical layout center center-justified">
-                <a href="/game/{{id}}">{{momentFromNow date}}</a>
-                <span>{{status}}</span>
-            </div>
-            <div class="team team-0 {{#if teams.[0].faction}}faction-{{teams.[0].faction}}{{/if}} flex-3 horizontal layout">
-                <div class="captain flex vertical layout center-justified">
-                    <span>{{teams.[0].captain.alias}}</span>
-                </div>
-                {{#if score.[0]}}
-                    <div class="score vertical layout center-justified">
-                        <span>{{score.[0]}}</span>
-                    </div>
-                {{/if}}
-            </div>
-            <div class="details flex vertical layout center center-justified">
-                <span>{{map.name}}</span>
-            </div>
-            <div class="team team-1 {{#if teams.[1].faction}}faction-{{teams.[1].faction}}{{/if}} flex-3 horizontal layout">
-                {{#if score.[1]}}
-                    <div class="score vertical layout center-justified">
-                        <span>{{score.[1]}}</span>
-                    </div>
-                {{/if}}
-                <div class="captain flex vertical layout center-justified">
-                    <span>{{teams.[1].captain.alias}}</span>
-                </div>
-            </div>
-        </paper-material>
+        <paper-game-summary game="{{toJSON(this)}}"></paper-game-summary>
     {{/each}}
 
     <script>

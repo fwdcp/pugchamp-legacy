@@ -1,0 +1,100 @@
+<link rel="import" href="/components/polymer/polymer.html">
+
+<link rel="import" href="/components/iron-flex-layout/classes/iron-flex-layout.html">
+<link rel="import" href="/components/paper-material/paper-material.html">
+<link rel="import" href="/components/paper-styles/colors.html">
+<link rel="import" href="/components/paper-styles/typography.html">
+
+<link rel="import" href="/elements/pugchamp-utilities/pugchamp-polymer-helpers.html">
+
+<dom-module id="pugchamp-game-summary">
+    <template>
+        <style is="custom-style">
+            #match {
+                margin: 5px;
+            }
+
+            #match > div {
+                padding: 10px;
+            }
+
+            #status {
+                text-align: center;
+            }
+
+            #details {
+                text-align: center;
+            }
+
+            .team .captain {
+                font-size: 21px;
+                font-weight: 500;
+            }
+
+            .team .score {
+                font-size: 28px;
+                font-weight: 600;
+                margin: 0 10px;
+                text-align: center;
+            }
+
+            .team.team-0 .captain {
+                margin-right: 10px;
+                text-align: right;
+            }
+
+            .team.team-1 .captain {
+                margin-left: 10px;
+                text-align: left;
+            }
+
+            .team.faction-BLU {
+                background: var(--paper-red-500);
+                color: var(--paper-grey-300);
+                opacity: var(--light-primary-opacity);
+            }
+
+            .team.faction-RED {
+                background: var(--paper-blue-500);
+                color: var(--paper-grey-300);
+                opacity: var(--light-primary-opacity);
+            }
+        </style>
+
+        <paper-material id="match" class="horizontal layout">
+            <div id="status" class="flex vertical layout center center-justified">
+                <a href="/game/{{id}}">{{momentFromNow date}}</a>
+                <span>{{status}}</span>
+            </div>
+            <div class$="team team-0 flex-3 horizontal layout faction-{{_getProperty(game.teams, 0, 'faction')}}">
+                <div class="captain flex vertical layout center-justified">
+                    <span>{{_getProperty(game.teams, 0, 'captain', 'alias')}}</span>
+                </div>
+                <div class="score vertical layout center-justified">
+                    <span>{{_getProperty(game.score, 1)}}</span>
+                </div>
+            </div>
+            <div id="details" class="flex vertical layout center center-justified">
+                <span>{{map.name}}</span>
+            </div>
+            <div class$="team team-1 flex-3 horizontal layout faction-{{_getProperty(game.teams, 1, 'faction')}}">
+                <div class="score vertical layout center-justified">
+                    <span>{{_getProperty(game.score, 1)}}</span>
+                </div>
+                <div class="captain flex vertical layout center-justified">
+                    <span>{{_getProperty(game.teams, 1, 'captain', 'alias')}}</span>
+                </div>
+            </div>
+        </paper-material>
+	</template>
+
+	<script>
+        Polymer({
+            is: 'pugchamp-game-summary',
+            behaviors: [PugChampPolymerHelperBehaviors],
+            properties: {
+                game: Object
+            }
+        });
+    </script>
+</dom-module>
