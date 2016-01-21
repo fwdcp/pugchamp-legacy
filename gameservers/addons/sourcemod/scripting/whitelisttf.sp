@@ -38,6 +38,10 @@ void DownloadWhitelist() {
     char id[64];
     whitelistID.GetString(id, sizeof(id));
 
+    if (strlen(id) == 0) {
+        return;
+    }
+
     char url[2048];
     Format(url, sizeof(url), "http://whitelist.tf/%s.txt", id);
 
@@ -49,6 +53,10 @@ void DownloadWhitelist() {
 void DownloadCustomWhitelist() {
     char id[64];
     whitelistID.GetString(id, sizeof(id));
+
+    if (strlen(id) == 0) {
+        return;
+    }
 
     char url[2048];
     Format(url, sizeof(url), "http://whitelist.tf/custom_whitelist_%s.txt", id);
@@ -77,7 +85,7 @@ public int HTTPRequestReturned(HTTPRequestHandle HTTPRequest, bool requestSucces
 
         gameWhitelist.SetString(file);
 
-        CPrintToChatAll("{orange}[whitelist.tf]{default} Downloaded whitelist {olive}%s{default}. You must restart tournament mode for the new whitelist to come in effect.", id);
+        CPrintToChatAll("{orange}[whitelist.tf]{default} Downloaded whitelist {olive}%s{default}. You must restart tournament mode to activate the new whitelist.", id);
     }
     else if (contextData == 0) {
         // attempt to download custom whitelist
