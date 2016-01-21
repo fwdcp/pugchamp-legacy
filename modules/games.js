@@ -637,11 +637,13 @@ module.exports = function(app, database, io, self) {
 
                     let rating = ratings[self.getDocumentID(player.user)];
 
-                    player.rating = {
-                        rating: rating.after.rating,
-                        deviation: rating.after.deviation,
-                        change: rating.after.rating - rating.before.rating
-                    };
+                    if (rating) {
+                        player.rating = {
+                            rating: rating.after.rating,
+                            deviation: rating.after.deviation,
+                            change: rating.after.rating - rating.before.rating
+                        };
+                    }
                 });
             });
 
