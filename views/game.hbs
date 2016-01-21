@@ -4,7 +4,7 @@
 
     {{#> head title="Game Details" }}
     <link rel="import" href="/components/iron-flex-layout/classes/iron-flex-layout.html">
-    <link rel="import" href="/components/iron-icon/iron-icon.html">
+    <link rel="import" href="/components/iron-icons/iron-icons.html">
     <link rel="import" href="/components/paper-item/paper-item.html">
     <link rel="import" href="/components/paper-item/paper-icon-item.html">
 
@@ -106,15 +106,19 @@
             {{/each}}
         </div>
         <div class="flex" id="details">
-            <p>{{momentFromNow game.date}}</p>
-
-            <p>{{game.status}}</p>
-
             <p>
                 <img src="/assets/maps/{{game.map.image}}">
                 <br>
                 {{game.map.name}}
             </p>
+
+            <p>{{momentFromNow game.date}}</p>
+
+            <p>{{game.status}}</p>
+
+            {{#if game.duration includeZero=true}}
+                {{game.duration}}
+            {{/if}}
         </div>
         <div class="flex-2 faction-{{game.teams.[1].faction}}">
             <div class="header horizontal layout">
