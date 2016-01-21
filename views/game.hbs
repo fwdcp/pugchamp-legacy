@@ -5,8 +5,11 @@
     {{#> head title="Game Details" }}
     <link rel="import" href="/components/iron-flex-layout/classes/iron-flex-layout.html">
     <link rel="import" href="/components/iron-icons/iron-icons.html">
+    <link rel="import" href="/components/paper-button/paper-button.html">
     <link rel="import" href="/components/paper-item/paper-item.html">
     <link rel="import" href="/components/paper-item/paper-icon-item.html">
+    <link rel="import" href="/components/paper-styles/color.html">
+    <link rel="import" href="/components/paper-styles/default-theme.html">
 
     <link rel="import" href="/elements/pugchamp-icons/pugchamp-role-icons.html">
 
@@ -17,6 +20,11 @@
 
         #details img {
             max-width: 100%;
+        }
+
+        .link {
+            background: var(--accent-color);
+            color: var(--light-theme-text-color);
         }
 
         .header {
@@ -131,8 +139,12 @@
             <p>{{game.status}}</p>
 
             {{#if game.duration includeZero=true}}
-                {{gameDuration game.duration}}
+                <p>{{gameDuration game.duration}}</p>
             {{/if}}
+
+            {{#each game.links}}
+                <a href="{{url}}"><paper-button raised class="link">{{type}}</paper-button></a>
+            {{/each}}
         </div>
         <div class="flex-3 faction-{{game.teams.[1].faction}}">
             <div class="header horizontal layout">
