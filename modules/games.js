@@ -625,7 +625,7 @@ module.exports = function(app, database, io, self) {
 
         res.render('game', {
             game: game.toObject(),
-            ratings: _(ratings).keyBy(self.getDocumentID(rating.user)).mapValues(rating => ({
+            ratings: _(ratings).keyBy(rating => self.getDocumentID(rating.user)).mapValues(rating => ({
                 rating: rating.after.rating,
                 deviation: rating.after.deviation,
                 change: rating.after.rating - rating.before.rating
