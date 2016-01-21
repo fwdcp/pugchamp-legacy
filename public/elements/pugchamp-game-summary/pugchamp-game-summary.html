@@ -38,6 +38,10 @@
                 text-align: center;
             }
 
+            .team .score:empty {
+                display: none;
+            }
+
             .team.team-0 .captain {
                 margin-right: 10px;
                 text-align: right;
@@ -71,7 +75,7 @@
                     <span>{{_getProperty(game.teams, 0, 'captain', 'alias')}}</span>
                 </div>
                 <div class="score vertical layout center-justified">
-                    <span>{{_getProperty(game.score, 1)}}</span>
+                    <span>{{_getProperty(game.score, 0)}}</span>
                 </div>
             </div>
             <div id="details" class="flex vertical layout center center-justified">
