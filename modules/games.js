@@ -605,12 +605,23 @@ module.exports = function(app, database, io, self) {
             return;
         }
 
+        game = game.toObject();
+        ratings = _.keyBy(ratings, rating => self.getDocumentID(rating.user));
+
         _.each(game.teams, function(team) {
             team.captain = self.getCachedUser(self.getDocumentID(team.captain));
 
             _.each(team.composition, function(role) {
                 _.each(role.players, function(player) {
                     player.user = self.getCachedUser(self.getDocumentID(player.user));
+
+                    let rating = ratings[self.getDocumentID(player.user)];
+
+                    player.rating = {
+                        rating: rating.after.rating,
+                        deviation: rating.after.deviation,
+                        change: rating.after.rating - rating.before.rating
+                    };
                 });
             });
 
@@ -624,12 +635,7 @@ module.exports = function(app, database, io, self) {
         }).exec();
 
         res.render('game', {
-            game: game.toObject(),
-            ratings: _(ratings).keyBy(rating => self.getDocumentID(rating.user)).mapValues(rating => ({
-                rating: rating.after.rating,
-                deviation: rating.after.deviation,
-                change: rating.after.rating - rating.before.rating
-            })).value()
+            game: game
         });
     }));
 
