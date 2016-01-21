@@ -63,8 +63,8 @@
 
         <paper-material id="match" class="horizontal layout">
             <div id="status" class="flex vertical layout center center-justified">
-                <a href="/game/{{id}}">{{momentFromNow date}}</a>
-                <span>{{status}}</span>
+                <a href="/game/{{game.id}}">{{momentFromNow(game.date)}}</a>
+                <span>{{game.status}}</span>
             </div>
             <div class$="team team-0 flex-3 horizontal layout faction-{{_getProperty(game.teams, 0, 'faction')}}">
                 <div class="captain flex vertical layout center-justified">
@@ -75,7 +75,7 @@
                 </div>
             </div>
             <div id="details" class="flex vertical layout center center-justified">
-                <span>{{map.name}}</span>
+                <span>{{game.map.name}}</span>
             </div>
             <div class$="team team-1 flex-3 horizontal layout faction-{{_getProperty(game.teams, 1, 'faction')}}">
                 <div class="score vertical layout center-justified">
@@ -88,12 +88,16 @@
         </paper-material>
 	</template>
 
+    <script src="/components/moment/moment.js"></script>
 	<script>
         Polymer({
             is: 'pugchamp-game-summary',
             behaviors: [PugChampPolymerHelperBehaviors],
             properties: {
                 game: Object
+            },
+            momentFromNow: function(date) {
+                return moment(date).fromNow();
             }
         });
     </script>
