@@ -156,8 +156,7 @@
                             <div class="role-name flex">
                                 <h3>{{role.value.name}}</h3>
                             </div>
-                            <span>{{_getProperty(players, role.key, 'length')}}/{{double(role.value.min)}}</span>
-                            <paper-checkbox class="role-select" value="{{role.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability"></paper-checkbox>
+                            <paper-checkbox class="role-select" value="{{role.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability">{{_getProperty(players, role.key, 'length')}}/{{double(role.value.min)}}</paper-checkbox>
                         </paper-icon-item>
                         <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
                             <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" on-mouseover="addHighlight" on-mouseout="removeHighlight">
