@@ -246,7 +246,7 @@ module.exports = function(app, database, io, self) {
     function launchGameFromDraft() {
         return co(function*() {
             let game = new database.Game();
-            game.status = 'assigning';
+            game.status = 'initializing';
             game.date = new Date();
             game.map = pickedMap;
 

@@ -204,7 +204,7 @@ module.exports = function(app, database, io, self) {
     });
 
     self.initializeServer = co.wrap(function* initializeServer(game) {
-        game.status = 'assigning';
+        game.status = 'initializing';
         yield game.save();
 
         let rcon = yield connectToRCON(game.server);
@@ -229,7 +229,7 @@ module.exports = function(app, database, io, self) {
     });
 
     self.assignGameToServer = co.wrap(function* assignGameToServer(game, server) {
-        game.status = 'assigning';
+        game.status = 'initializing';
         yield game.save();
 
         if (!server) {

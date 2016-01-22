@@ -44,7 +44,7 @@ userSchema.set('toObject', {
 var gameSchema = new mongoose.Schema({
     status: {
         type: String,
-        enum: ['assigning', 'launching', 'live', 'aborted', 'completed']
+        enum: ['initializing', 'launching', 'live', 'aborted', 'completed']
     },
     date: Date,
     map: String,

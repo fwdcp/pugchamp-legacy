@@ -84,7 +84,7 @@ module.exports = function(app, database, io, self) {
                 'teams.composition.players.user': userID
             }],
             status: {
-                $in: ['assigning', 'launching', 'live']
+                $in: ['initializing', 'launching', 'live']
             }
         });
         if (currentGame) {

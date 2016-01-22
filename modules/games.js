@@ -104,7 +104,7 @@ module.exports = function(app, database, io, self) {
     }
 
     function processGameUpdate(game) {
-        if (game.status !== 'assigning') {
+        if (game.status !== 'initializing') {
             if (self.getDocumentID(game) === self.getCurrentDraftGame()) {
                 self.cleanUpDraft();
             }
@@ -404,7 +404,7 @@ module.exports = function(app, database, io, self) {
         let game = yield database.Game.findById(info.game);
 
         if (info.status === 'setup') {
-            if (game.status !== 'assigning' && game.status !== 'launching') {
+            if (game.status !== 'initializing' && game.status !== 'launching') {
                 self.postToLog({
                     description: 'game `' + game.id + '` was ' + game.status + ' but is being reported as set up'
                 });
