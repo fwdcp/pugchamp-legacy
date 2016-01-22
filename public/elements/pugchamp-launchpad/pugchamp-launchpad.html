@@ -123,13 +123,6 @@
                     <iron-icon icon="block" hidden$="{{!_includes(holds, 'readyPlayerRoles')}}"></iron-icon>
                     Roles
                 </span>
-                <template is="dom-repeat" items="{{rolesNeeded}}">
-                    <br>
-                    <template is="dom-repeat" items="{{item.roles}}">
-                        <iron-icon icon="pugchamp-role:{{item}}" item-icon></iron-icon>
-                    </template>
-                    ({{item.needed}})
-                </template>
             </div>
             <div class="hold flex">
                 <span class$="{{classForHold(holds, 'availableServers')}}">
@@ -161,7 +154,7 @@
                         <paper-icon-item>
                             <iron-icon icon="pugchamp-role:{{role.key}}" item-icon></iron-icon>
                             <div class="role-name flex">
-                                <h3>{{role.value.name}}</h3>
+                                <h3>{{role.value.name}} ({{_getProperty(players, role.key, 'length')}}/{{role.value.min}})</h3>
                             </div>
                             <paper-checkbox class="role-select" value="{{role.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability"></paper-checkbox>
                         </paper-icon-item>
