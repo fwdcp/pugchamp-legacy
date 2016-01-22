@@ -595,7 +595,11 @@ module.exports = function(app, database, io, self) {
             let chosenCaptains = new Set();
 
             while (chosenCaptains.size < 2) {
-                chosenCaptains.add(chance.weighted(fullCaptains, weights));
+                let newCaptain = chance.weighted(fullCaptains, weights);
+
+                if (newCaptain) {
+                    chosenCaptains.add();
+                }
             }
 
             draftCaptains = _([...chosenCaptains]).take(2).map(captain => captain.id).value();
