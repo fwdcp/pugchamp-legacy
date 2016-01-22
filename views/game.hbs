@@ -136,7 +136,7 @@
             <br>
             {{game.map.name}}
 
-            <p>{{momentFormat game.date}}</p>
+            <p id="date">{{momentFormat game.date}}</p>
 
             <p>{{game.status}}</p>
 
@@ -175,6 +175,13 @@
             {{/each}}
         </div>
     </div>
+
+    <script src="/components/moment/moment.js"></script>
+    <script>
+        var date = document.getElementById('date');
+
+        date.textContent = moment.utc(date.textContent).local().format('llll');
+    </script>
     {{/body}}
 
 </html>
