@@ -199,6 +199,8 @@ module.exports = function(app, database, io, self) {
                         description: 'encountered error while launching draft',
                         error: err
                     });
+
+                    self.cleanUpDraft();
                 }
             }
 

@@ -284,16 +284,22 @@ module.exports = function(app, database, io, self) {
                 };
             }).value();
 
-            yield game.save();
-
             try {
+                yield game.save();
+
                 yield self.assignGameToServer(game);
             }
             catch (err) {
                 self.postToLog({
-                    description: 'encountered error while trying to set up server',
+                    description: 'encountered error while trying to set up game',
                     error: err
                 });
+
+                self.sendMessage({
+                    action: 'failed to set up game'
+                });
+
+                self.cleanUpDraft();
             }
 
             return game.id;
