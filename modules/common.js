@@ -38,6 +38,9 @@ module.exports = function(app, database, io, self) {
     hbs.registerHelper('momentFromNow', function(date) {
         return moment(date).fromNow();
     });
+    hbs.registerHelper('momentFormat', function(date) {
+        return moment(date).format('llll');
+    });
     hbs.registerHelper('round', function(number, decimals) {
         if (!decimals) {
             decimals = 0;
