@@ -47,13 +47,25 @@
                 --paper-progress-height: 10px;
             }
 
+            .ready-status {
+                @apply(--paper-font-body2);
+            }
+
+            .ready-status.not-ready {
+                color: var(--paper-red-500);
+            }
+
+            .ready-status.ready {
+                color: var(--paper-green-500);
+            }
+
             #setReady {
-                background: var(--paper-red-500);
+                background: var(--paper-green-500);
                 color: var(--dark-theme-text-color);
             }
 
             #setNotReady {
-                background: var(--paper-green-500);
+                background: var(--paper-red-500);
                 color: var(--dark-theme-text-color);
             }
 
@@ -77,6 +89,10 @@
 
             <p>
                 <paper-progress id="readyTime" class="transiting" min="0"></paper-progress>
+            </p>
+            <p>
+                <span class="ready-status not-ready" hidden$="{{readyToPlay}}"><iron-icon icon="block"></iron-icon> Not Ready</span>
+                <span class="ready-status ready" hidden$="{{!readyToPlay}}"><iron-icon icon="check"></iron-icon> Ready</span>
             </p>
             <p>
                 <paper-button data-status="ready" hidden$="{{readyToPlay}}" disabled="{{isRestricted(restrictions, 'start')}}" id="setReady" on-tap="updateReadyStatus">Set Ready</paper-button>
