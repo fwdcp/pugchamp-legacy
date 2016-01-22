@@ -110,7 +110,7 @@
                     Players
                 </span>
                 <br>
-                {{playersAvailable.length}}/{{playersNeeded}}
+                {{allPlayers.length}}/{{double(teamSize)}}
             </div>
             <div class="hold flex">
                 <span class$="{{classForHold(holds, 'availablePlayerRoles')}}" hidden$="{{launchActive}}">
@@ -154,8 +154,9 @@
                         <paper-icon-item>
                             <iron-icon icon="pugchamp-role:{{role.key}}" item-icon></iron-icon>
                             <div class="role-name flex">
-                                <h3>{{role.value.name}} ({{_getProperty(players, role.key, 'length')}}/{{role.value.min}})</h3>
+                                <h3>{{role.value.name}}</h3>
                             </div>
+                            <span>{{_getProperty(players, role.key, 'length')}}/{{double(role.value.min)}}</span>
                             <paper-checkbox class="role-select" value="{{role.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability"></paper-checkbox>
                         </paper-icon-item>
                         <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
@@ -190,8 +191,8 @@
             onLaunchStatusUpdated: function(status) {
                 this.set('roles', status.roles);
                 this.set('players', status.playersAvailable);
-                this.set('playersAvailable', status.allPlayersAvailable);
-                this.set('playersNeeded', 2 * status.teamSize);
+                this.set('allPlayers', status.allPlayersAvailable);
+                this.set('teamSize', status.teamSize);
                 this.set('captains', status.captainsAvailable);
                 this.set('rolesNeeded', status.rolesNeeded);
                 this.set('holds', status.launchHolds);
@@ -299,6 +300,9 @@
                 else {
                     return 'hold-cleared';
                 }
+            },
+            double: function(number) {
+                return 2 * number;
             }
         });
     </script>
