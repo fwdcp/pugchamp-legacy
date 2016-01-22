@@ -598,7 +598,7 @@ module.exports = function(app, database, io, self) {
                 let newCaptain = chance.weighted(fullCaptains, weights);
 
                 if (newCaptain) {
-                    chosenCaptains.add();
+                    chosenCaptains.add(newCaptain);
                 }
             }
 
