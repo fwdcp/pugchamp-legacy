@@ -22,8 +22,30 @@ module.exports = function(app, database, io, self) {
         self.postToSlack = co.wrap(function* postToSlack(message) {
             yield Q.ninvoke(bot, 'sendWebhook', _.defaultsDeep(message, SLACK_MESSAGE_DEFAULTS));
         });
+
+        self.postToLog = co.wrap(function* postToLog(info) {
+            let message = {
+                channel: '#app-log',
+                attachments: []
+            };
+
+            if (info.description) {
+                message.text = info.description;
+            }
+
+            if (info.error) {
+                message.attachments.push({
+                    fallback: info.error,
+                    color: 'danger',
+                    text: '```' + _.hasIn(info.error, 'stack') ? info.error.stack : info.error + '```'
+                });
+            }
+
+            yield self.postToSlack(message);
+        });
     }
     else {
         self.postToSlack = function postToSlack() {};
+        self.postToLog = function postToLog() {};
     }
 };

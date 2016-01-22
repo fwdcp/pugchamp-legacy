@@ -347,27 +347,6 @@ module.exports = function(app, database, io, self) {
 
     app.use('/admin', router);
 
-    self.postToLog = co.wrap(function* postToLog(info) {
-        let message = {
-            channel: '#app-log',
-            attachments: []
-        };
-
-        if (info.description) {
-            message.text = info.description;
-        }
-
-        if (info.error) {
-            message.attachments.push({
-                fallback: info.error,
-                color: 'danger',
-                text: '```' + _.hasIn(info.error, 'stack') ? info.error.stack : info.error + '```'
-            });
-        }
-
-        yield self.postToSlack(message);
-    });
-
     self.requestAdmin = co.wrap(function* requestHelp(userID, message) {
         let user = self.getCachedUser(userID);
         let trimmedMessage = _.trim(message);
