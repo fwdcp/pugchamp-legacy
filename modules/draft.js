@@ -551,7 +551,7 @@ module.exports = function(app, database, io, self) {
             }
 
             overrideRoles = _.filter(teamState.underfilledRoles, function(role) {
-                return _(playerPool[role]).difference(unavailablePlayers).size() === 0;
+                return !ROLES[role].overrideImmune && _(playerPool[role]).difference(unavailablePlayers).size() === 0;
             });
         }
         else {
