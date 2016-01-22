@@ -47,8 +47,13 @@
                 --paper-progress-height: 10px;
             }
 
-            #ready paper-button {
-                background: var(--primary-color);
+            #setReady {
+                background: var(--paper-red-500);
+                color: var(--dark-theme-text-color);
+            }
+
+            #setNotReady {
+                background: var(--paper-green-500);
                 color: var(--dark-theme-text-color);
             }
 
@@ -74,8 +79,8 @@
                 <paper-progress id="readyTime" class="transiting" min="0"></paper-progress>
             </p>
             <p>
-                <paper-button data-status="ready" hidden$="{{readyToPlay}}" disabled="{{isRestricted(restrictions, 'start')}}" on-tap="updateReadyStatus">Set Ready</paper-button>
-                <paper-button data-status="notReady" hidden$="{{!readyToPlay}}" disabled="{{isRestricted(restrictions, 'start')}}" on-tap="updateReadyStatus">Set Not Ready</paper-button>
+                <paper-button data-status="ready" hidden$="{{readyToPlay}}" disabled="{{isRestricted(restrictions, 'start')}}" id="setReady" on-tap="updateReadyStatus">Set Ready</paper-button>
+                <paper-button data-status="notReady" hidden$="{{!readyToPlay}}" disabled="{{isRestricted(restrictions, 'start')}}" id="setNotReady" on-tap="updateReadyStatus">Set Not Ready</paper-button>
             </p>
         </paper-material>
         <div id="holds" class="horizontal layout">
