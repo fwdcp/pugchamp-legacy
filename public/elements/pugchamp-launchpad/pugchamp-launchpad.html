@@ -90,6 +90,8 @@
                     <iron-icon icon="block" hidden$="{{!_includes(holds, 'readyCaptains')}}"></iron-icon>
                     Captains
                 </span>
+                <br>
+                {{captains.length}}/2
             </div>
             <div class="hold flex">
                 <span class$="{{classForHold(holds, 'availablePlayers')}}" hidden$="{{launchActive}}">
@@ -102,6 +104,8 @@
                     <iron-icon icon="block" hidden$="{{!_includes(holds, 'readyPlayers')}}"></iron-icon>
                     Players
                 </span>
+                <br>
+                {{playersAvailable.length}}/{{playersNeeded}}
             </div>
             <div class="hold flex">
                 <span class$="{{classForHold(holds, 'availablePlayerRoles')}}" hidden$="{{launchActive}}">
@@ -114,6 +118,13 @@
                     <iron-icon icon="block" hidden$="{{!_includes(holds, 'readyPlayerRoles')}}"></iron-icon>
                     Roles
                 </span>
+                <template is="dom-repeat" items="{{rolesNeeded}}">
+                    <br>
+                    <template is="dom-repeat" items="{{item.roles}}">
+                        <iron-icon icon="pugchamp-role:{{item}}" item-icon></iron-icon>
+                    </template>
+                    ({{item.needed}})
+                </template>
             </div>
             <div class="hold flex">
                 <span class$="{{classForHold(holds, 'availableServers')}}">
@@ -181,6 +192,8 @@
             onLaunchStatusUpdated: function(status) {
                 this.set('roles', status.roles);
                 this.set('players', status.playersAvailable);
+                this.set('playersAvailable', status.allPlayersAvailable);
+                this.set('playersNeeded', 2 * status.teamSize);
                 this.set('captains', status.captainsAvailable);
                 this.set('rolesNeeded', status.rolesNeeded);
                 this.set('holds', status.launchHolds);

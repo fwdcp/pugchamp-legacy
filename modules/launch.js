@@ -141,10 +141,16 @@ module.exports = function(app, database, io, self) {
                     return self.getCachedUser(userID);
                 });
             }),
+            allPlayersAvailable: _.chain(playersAvailable).reduce(function(allPlayers, players) {
+                return _.union(allPlayers, [...players]);
+            }, []).map(function(userID) {
+                return self.getCachedUser(userID);
+            }).value(),
             captainsAvailable: _.map([...captainsAvailable], function(userID) {
                 return self.getCachedUser(userID);
             }),
             rolesNeeded: calculateRolesNeeded(playersAvailable),
+            teamSize: TEAM_SIZE,
             launchHolds: launchHolds
         };
     }
