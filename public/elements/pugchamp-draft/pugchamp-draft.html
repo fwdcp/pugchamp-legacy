@@ -4,7 +4,6 @@
 <link rel="import" href="/components/paper-material/paper-material.html">
 <link rel="import" href="/components/paper-progress/paper-progress.html">
 <link rel="import" href="/components/paper-styles/color.html">
-<link rel="import" href="/components/paper-styles/default-theme.html">
 <link rel="import" href="/components/paper-styles/typography.html">
 
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
@@ -12,6 +11,7 @@
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-user-behavior.html">
 <link rel="import" href="/elements/pugchamp-notification/pugchamp-notification.html">
 <link rel="import" href="/elements/pugchamp-theme/role-icons.html">
+<link rel="import" href="/elements/pugchamp-theme/theme.html">
 <link rel="import" href="/elements/pugchamp-utilities/pugchamp-polymer-helpers.html">
 
 <dom-module id="pugchamp-draft">
@@ -23,6 +23,7 @@
 
             .draft-turn {
                 @apply(--paper-font-caption);
+                background: rgba(0, 0, 0, 0.5);
                 min-width: 100px;
                 padding: 5px;
                 text-align: center;
@@ -34,12 +35,11 @@
             }
 
             .draft-turn[data-status=completed] {
-                background: var(--paper-grey-300);
                 opacity: 0.5;
             }
 
             .draft-turn[data-status=current] {
-                background: var(--paper-green-300);
+                background: var(--paper-green-500);
             }
 
             .team .captain {
@@ -72,6 +72,7 @@
             }
 
             .map {
+                background: rgba(0, 0, 0, 0.5);
                 margin: 5px;
                 text-align: center;
             }
@@ -110,7 +111,12 @@
                 color: var(--light-theme-text-color);
             }
 
+            #playerPool .role {
+                background: rgba(0, 0, 0, 0.5);
+            }
+
             #playerPool .player {
+                background: rgba(0, 0, 0, 0.5);
                 min-height: inherit;
                 height: 32px;
             }
@@ -178,7 +184,7 @@
                 <template is="dom-repeat" items="{{_convertObjectToRepeatable(roles)}}" as="role">
                     <div class="flex role-column">
                         <div class="vertical layout">
-                            <paper-icon-item disabled="{{!_includes(allowedRoles, role.key)}}">
+                            <paper-icon-item class="role" disabled="{{!_includes(allowedRoles, role.key)}}">
                                 <iron-icon icon="pugchamp-role:{{role.key}}" item-icon></iron-icon>
                                 <div class="role-name flex">
                                     <h3>{{role.value.name}}</h3>

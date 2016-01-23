@@ -19,10 +19,17 @@
     <link rel="import" href="/components/paper-styles/paper-styles.html">
     <link rel="import" href="/components/paper-toolbar/paper-toolbar.html">
 
+    <link rel="import" href="/elements/pugchamp-theme/theme.html">
+
     <style is="custom-style">
         body {
             @apply(--paper-font-body1);
-            color: var(--light-theme-text-color);
+            background: url(/assets/img/background.png);
+            color: var(--dark-theme-text-color);
+        }
+
+        a {
+            color: inherit;
         }
 
         h1 {
@@ -39,6 +46,55 @@
 
         pre {
             @apply(--paper-font-code1);
+        }
+
+        paper-button {
+            background: var(--primary-background-color);
+            color: var(--dark-theme-text-color);
+        }
+
+        paper-material {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        vaadin-grid {
+            color: var(--primary-text-color);
+        }
+
+        vaadin-grid::shadow tbody:not(.touch):not(.scrolling) .vaadin-grid-row:hover td {
+            background-color: var(--dark-theme-secondary-color);
+        }
+
+        vaadin-grid::shadow .vaadin-grid-row-selected td {
+            background-color: var(--dark-theme-secondary-color);
+        }
+
+        vaadin-grid::shadow .vaadin-grid-cell {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        vaadin-grid::shadow .vaadin-grid-header tr {
+            color: var(--dark-theme-secondary-color);
+        }
+
+        vaadin-grid::shadow .vaadin-grid-header [class*="sort-"] {
+            color: var(--dark-theme-text-color);
+        }
+
+        vaadin-grid::shadow .vaadin-grid-header [class*="sort-"]:after {
+            color: var(--dark-theme-text-color);
+        }
+
+        vaadin-grid::shadow .vaadin-grid-header .sort-asc:after {
+            content: url(/assets/img/arrow-up.svg) " " attr(sort-order);
+        }
+
+        vaadin-grid::shadow .vaadin-grid-header .sort-desc:after {
+            content: url(/assets/img/arrow-down.svg) " " attr(sort-order);
+        }
+
+        vaadin-grid::shadow .vaadin-grid-footer td {
+            color: var(--dark-theme-secondary-color);
         }
 
         #app-name {

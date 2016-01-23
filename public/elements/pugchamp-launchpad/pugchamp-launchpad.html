@@ -7,7 +7,6 @@
 <link rel="import" href="/components/paper-material/paper-material.html">
 <link rel="import" href="/components/paper-progress/paper-progress.html">
 <link rel="import" href="/components/paper-styles/color.html">
-<link rel="import" href="/components/paper-styles/default-theme.html">
 <link rel="import" href="/components/paper-styles/typography.html">
 <link rel="import" href="/components/paper-toggle-button/paper-toggle-button.html">
 
@@ -15,11 +14,16 @@
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
 <link rel="import" href="/elements/pugchamp-notification/pugchamp-notification.html">
 <link rel="import" href="/elements/pugchamp-theme/role-icons.html">
+<link rel="import" href="/elements/pugchamp-theme/theme.html">
 <link rel="import" href="/elements/pugchamp-utilities/pugchamp-polymer-helpers.html">
 
 <dom-module id="pugchamp-launchpad">
     <template>
         <style is="custom-style">
+            #holds {
+                background: rgba(0, 0, 0, 0.5);
+            }
+
             .hold {
                 @apply(--paper-font-body2);
                 padding: 5px;
@@ -34,11 +38,18 @@
                 color: var(--paper-red-500);
             }
 
+            #captains {
+                background: rgba(0, 0, 0, 0.5);
+                margin: 16px 0;
+                padding: 0 16px;
+            }
+
             #captains div {
                 padding: 5px;
             }
 
             #ready {
+                background: rgba(0, 0, 0, 0.5);
                 padding: 5px 25px;
                 margin: 20px;
             }
@@ -69,7 +80,12 @@
                 color: var(--dark-theme-text-color);
             }
 
+            .role {
+                background: rgba(0, 0, 0, 0.5);
+            }
+
             .player {
+                background: rgba(0, 0, 0, 0.5);
                 min-height: inherit;
                 height: 32px;
             }
@@ -99,7 +115,7 @@
                 <paper-button data-status="notReady" hidden$="{{!readyToPlay}}" disabled="{{isRestricted(restrictions, 'start')}}" id="setNotReady" on-tap="updateReadyStatus">Set Not Ready</paper-button>
             </p>
         </paper-material>
-        <div id="holds" class="horizontal layout">
+        <paper-material id="holds" class="horizontal layout">
             <div class="hold flex">
                 <span class$="{{classForHold(holds, 'availableCaptains')}}" hidden$="{{launchActive}}">
                     <iron-icon icon="check" hidden$="{{_includes(holds, 'availableCaptains')}}"></iron-icon>
@@ -154,20 +170,20 @@
                     Draft
                 </span>
             </div>
-        </div>
-        <div class="horizontal layout" id="captains">
+        </paper-material>
+        <paper-material class="horizontal layout" id="captains">
             <div>
                 <paper-checkbox id="captainSelect" disabled="{{isRestricted(restrictions, 'captain')}}" on-change="updateAvailability">Captain</paper-checkbox>
             </div>
             <div class="flex" id="captains-list">
                 {{playerAliasList(captains)}}
             </div>
-        </div>
+        </paper-material>
         <div class="horizontal layout wrap" id="roles">
             <template is="dom-repeat" items="{{_convertObjectToRepeatable(roles)}}" as="role">
                 <div class="flex role-column">
                     <div class="vertical layout">
-                        <paper-icon-item>
+                        <paper-icon-item class="role">
                             <iron-icon icon="pugchamp-role:{{role.key}}" item-icon></iron-icon>
                             <div class="role-name flex">
                                 <h3>{{role.value.name}}</h3>
