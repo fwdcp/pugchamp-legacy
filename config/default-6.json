@@ -145,12 +145,6 @@
                 "method": "random"
             }, {
                 "type": "mapBan",
-                "method": "random"
-            }, {
-                "type": "mapBan",
-                "method": "random"
-            }, {
-                "type": "mapBan",
                 "method": "captain",
                 "captain": 0
             }, {
