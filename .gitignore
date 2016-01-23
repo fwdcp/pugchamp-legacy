@@ -94,3 +94,4 @@ target/
 
 config/*
 !config/default*
+!config/example*
