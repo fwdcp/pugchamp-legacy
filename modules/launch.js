@@ -237,18 +237,39 @@ module.exports = function(app, chance, database, io, self) {
     function beginLaunchAttempt() {
         return co(function*() {
             if (!launchAttemptActive) {
-                launchAttemptActive = true;
-                launchAttemptStart = Date.now();
+                try {
+                    let timeout = setTimeout(attemptLaunch, READY_PERIOD);
 
-                readiesReceived = new Set();
+                    if (!timeout) {
+                        throw new Error('timeout failed');
+                    }
 
-                launchHolds = yield getLaunchHolds(false);
+                    launchAttemptActive = true;
+                    launchAttemptStart = Date.now();
 
-                updateStatusInfo();
+                    readiesReceived = new Set();
 
-                io.sockets.emit('launchStatusUpdated', getCurrentStatusMessage());
+                    launchHolds = yield getLaunchHolds(false);
 
-                setTimeout(attemptLaunch, READY_PERIOD);
+                    updateStatusInfo();
+
+                    io.sockets.emit('launchStatusUpdated', getCurrentStatusMessage());
+                }
+                catch (err) {
+                    self.postToLog({
+                        description: 'encountered error while beginning launch attempt',
+                        error: err
+                    });
+
+                    self.sendMessage({
+                        action: 'failed to begin launch attempt'
+                    });
+
+                    launchAttemptActive = false;
+                    launchAttemptStart = null;
+
+                    self.updateLaunchStatus();
+                }
             }
         });
     }
