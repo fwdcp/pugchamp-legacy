@@ -36,8 +36,8 @@ module.exports = function(app, chance, database, io, self) {
 
     self.emitToUser = function emitToUser(userID, name, args) {
         if (userSockets.has(userID)) {
-            for (let socket of userSockets.get(userID)) {
-                let socket = io.sockets.connected[socket];
+            for (let socketID of userSockets.get(userID)) {
+                let socket = io.sockets.connected[socketID];
 
                 if (socket) {
                     socket.emit(name, ...args);
