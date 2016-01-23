@@ -91,3 +91,6 @@ target/
 
 !gameservers/addons/sourcemod/extensions/*.dll
 !gameservers/addons/sourcemod/extensions/*.so
+
+config/*
+!config/default*
