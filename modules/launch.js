@@ -180,15 +180,20 @@ module.exports = function(app, chance, database, io, self) {
         return co(function*() {
             try {
                 launchHolds = yield getLaunchHolds(true);
+
+                playersAvailable = _.mapValues(playersAvailable, function(available) {
+                    return new Set(_.intersection([...available], [...readiesReceived]));
+                });
+                captainsAvailable = new Set(_.intersection([...captainsAvailable], [...readiesReceived]));
             }
             catch (err) {
                 self.postToLog({
-                    description: 'encountered error while getting launch holds',
+                    description: 'encountered error while updating status',
                     error: err
                 });
 
                 self.sendMessage({
-                    action: 'failed to check launch holds'
+                    action: 'failed to update status'
                 });
 
                 launchAttemptActive = false;
@@ -198,11 +203,6 @@ module.exports = function(app, chance, database, io, self) {
 
                 return;
             }
-
-            playersAvailable = _.mapValues(playersAvailable, function(available) {
-                return new Set(_.intersection([...available], [...readiesReceived]));
-            });
-            captainsAvailable = new Set(_.intersection([...captainsAvailable], [...readiesReceived]));
 
             if (_.size(launchHolds) === 0) {
                 try {
