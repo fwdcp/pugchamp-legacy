@@ -287,6 +287,8 @@ module.exports = function(app, database, io, self) {
             try {
                 yield game.save();
 
+                currentDraftGame = game.id;
+
                 yield self.assignGameToServer(game);
             }
             catch (err) {
@@ -301,8 +303,6 @@ module.exports = function(app, database, io, self) {
 
                 self.cleanUpDraft();
             }
-
-            return game.id;
         });
     }
 
@@ -333,7 +333,7 @@ module.exports = function(app, database, io, self) {
             updateStatusInfo();
             io.sockets.emit('draftStatusUpdated', getCurrentStatusMessage());
 
-            currentDraftGame = yield launchGameFromDraft();
+            yield launchGameFromDraft();
         });
     }
 
