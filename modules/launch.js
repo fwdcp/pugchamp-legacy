@@ -178,7 +178,26 @@ module.exports = function(app, chance, database, io, self) {
 
     function attemptLaunch() {
         return co(function*() {
-            launchHolds = yield getLaunchHolds(true);
+            try {
+                launchHolds = yield getLaunchHolds(true);
+            }
+            catch (err) {
+                self.postToLog({
+                    description: 'encountered error while getting launch holds',
+                    error: err
+                });
+
+                self.sendMessage({
+                    action: 'failed to check launch holds'
+                });
+
+                launchAttemptActive = false;
+                launchAttemptStart = null;
+
+                self.updateLaunchStatus();
+
+                return;
+            }
 
             playersAvailable = _.mapValues(playersAvailable, function(available) {
                 return new Set(_.intersection([...available], [...readiesReceived]));
@@ -198,6 +217,10 @@ module.exports = function(app, chance, database, io, self) {
                     self.postToLog({
                         description: 'encountered error while launching draft',
                         error: err
+                    });
+
+                    self.sendMessage({
+                        action: 'failed to launch draft'
                     });
 
                     self.cleanUpDraft();
