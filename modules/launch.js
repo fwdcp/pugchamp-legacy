@@ -5,9 +5,11 @@ const _ = require('lodash');
 const co = require('co');
 const Combinatorics = require('js-combinatorics');
 const config = require('config');
+const moment = require('moment');
 const ms = require('ms');
 
 module.exports = function(app, chance, database, io, self) {
+    const AUTO_READY_THRESHOLD = ms(config.get('app.launch.autoReadyThreshold'));
     const GET_AVAILABLE_SERVERS_THROTTLE_INTERVAL = 30000;
     const GET_LAUNCH_HOLD_DEBOUNCE_MAX_WAIT = 5000;
     const GET_LAUNCH_HOLD_DEBOUNCE_WAIT = 1000;
@@ -51,6 +53,8 @@ module.exports = function(app, chance, database, io, self) {
 
         return neededCombinations;
     }
+
+    var lastActivity = new Map();
 
     var captainsAvailable = new Set();
     var playersAvailable = _.mapValues(ROLES, function() {
@@ -239,68 +243,6 @@ module.exports = function(app, chance, database, io, self) {
         });
     }
 
-    function beginLaunchAttempt() {
-        return co(function*() {
-            if (!launchAttemptActive) {
-                try {
-                    let timeout = setTimeout(attemptLaunch, READY_PERIOD);
-
-                    if (!timeout) {
-                        throw new Error('timeout failed');
-                    }
-
-                    launchAttemptActive = true;
-                    launchAttemptStart = Date.now();
-
-                    readiesReceived = new Set();
-
-                    launchHolds = yield getLaunchHolds(false);
-
-                    updateStatusInfo();
-
-                    io.sockets.emit('launchStatusUpdated', getCurrentStatusMessage());
-                }
-                catch (err) {
-                    self.postToLog({
-                        description: 'encountered error while beginning launch attempt',
-                        error: err
-                    });
-
-                    self.sendMessage({
-                        action: 'failed to begin launch attempt'
-                    });
-
-                    launchAttemptActive = false;
-                    launchAttemptStart = null;
-
-                    self.updateLaunchStatus();
-                }
-            }
-        });
-    }
-
-    const checkLaunchHolds = _.debounce(co.wrap(function* checkLaunchHolds() {
-        launchHolds = yield getLaunchHolds(false);
-
-        updateStatusInfo();
-
-        io.sockets.emit('launchStatusUpdated', getCurrentStatusMessage());
-
-        if (!launchAttemptActive && _.size(launchHolds) === 0) {
-            yield beginLaunchAttempt();
-        }
-    }), GET_LAUNCH_HOLD_DEBOUNCE_WAIT, {maxWait: GET_LAUNCH_HOLD_DEBOUNCE_MAX_WAIT});
-
-    self.updateLaunchStatus = function updateLaunchStatus() {
-        updateStatusInfo();
-
-        io.sockets.emit('launchStatusUpdated', getCurrentStatusMessage());
-
-        checkLaunchHolds();
-    };
-
-    self.updateLaunchStatus();
-
     function syncUserAvailability(userID) {
         self.emitToUser(userID, 'userAvailabilityUpdated', [{
             roles: _.mapValues(playersAvailable, function(players) {
@@ -353,6 +295,82 @@ module.exports = function(app, chance, database, io, self) {
         self.updateLaunchStatus();
     }
 
+    function autoReadyRecentlyActiveUsers() {
+        lastActivity.forEach(function(lastActivity, userID) {
+            if (moment().diff(lastActivity) < AUTO_READY_THRESHOLD) {
+                updateUserReadyStatus(userID, true);
+            }
+        });
+    }
+
+    function beginLaunchAttempt() {
+        return co(function*() {
+            if (!launchAttemptActive) {
+                try {
+                    let timeout = setTimeout(attemptLaunch, READY_PERIOD);
+
+                    if (!timeout) {
+                        throw new Error('timeout failed');
+                    }
+
+                    launchAttemptActive = true;
+                    launchAttemptStart = Date.now();
+
+                    readiesReceived = new Set();
+
+                    launchHolds = yield getLaunchHolds(false);
+
+                    updateStatusInfo();
+
+                    io.sockets.emit('launchStatusUpdated', getCurrentStatusMessage());
+
+                    autoReadyRecentlyActiveUsers();
+                }
+                catch (err) {
+                    self.postToLog({
+                        description: 'encountered error while beginning launch attempt',
+                        error: err
+                    });
+
+                    self.sendMessage({
+                        action: 'failed to begin launch attempt'
+                    });
+
+                    launchAttemptActive = false;
+                    launchAttemptStart = null;
+
+                    self.updateLaunchStatus();
+                }
+            }
+        });
+    }
+
+    const checkLaunchHolds = _.debounce(co.wrap(function* checkLaunchHolds() {
+        launchHolds = yield getLaunchHolds(false);
+
+        updateStatusInfo();
+
+        io.sockets.emit('launchStatusUpdated', getCurrentStatusMessage());
+
+        if (!launchAttemptActive && _.size(launchHolds) === 0) {
+            yield beginLaunchAttempt();
+        }
+    }), GET_LAUNCH_HOLD_DEBOUNCE_WAIT, {maxWait: GET_LAUNCH_HOLD_DEBOUNCE_MAX_WAIT});
+
+    self.markUserActivity = function markUserActivity(userID) {
+        lastActivity.set(userID, new Date());
+    };
+
+    self.updateLaunchStatus = function updateLaunchStatus() {
+        updateStatusInfo();
+
+        io.sockets.emit('launchStatusUpdated', getCurrentStatusMessage());
+
+        checkLaunchHolds();
+    };
+
+    self.updateLaunchStatus();
+
     io.sockets.on('connection', function(socket) {
         socket.emit('launchStatusUpdated', getCurrentStatusMessage());
     });
@@ -361,10 +379,14 @@ module.exports = function(app, chance, database, io, self) {
         let userID = socket.decoded_token.user;
 
         socket.on('updateAvailability', function(availability) {
+            self.markUserActivity(userID);
+
             updateUserAvailability(userID, availability);
         });
 
         socket.on('updateReadyStatus', function(ready) {
+            self.markUserActivity(userID);
+
             updateUserReadyStatus(userID, ready);
         });
 

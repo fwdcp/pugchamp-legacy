@@ -98,6 +98,8 @@ module.exports = function(app, chance, database, io, self) {
         let userID = socket.decoded_token.user;
 
         socket.on('sendChatMessage', function(message) {
+            self.markUserActivity(userID);
+
             let userRestrictions = self.getUserRestrictions(userID);
 
             if (!_.includes(userRestrictions.aspects, 'chat')) {
