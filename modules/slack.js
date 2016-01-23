@@ -7,7 +7,7 @@ const co = require('co');
 const config = require('config');
 const Q = require('q');
 
-module.exports = function(app, database, io, self) {
+module.exports = function(app, chance, database, io, self) {
     if (config.has('server.slack')) {
         const SLACK_INCOMING_WEBHOOK_URL = config.get('server.slack.incomingWebhook');
         const SLACK_MESSAGE_DEFAULTS = config.get('server.slack.messageDefaults');

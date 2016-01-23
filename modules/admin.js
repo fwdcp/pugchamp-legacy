@@ -3,15 +3,12 @@
 
 const _ = require('lodash');
 const bodyParser = require('body-parser');
-const Chance = require('chance');
 const co = require('co');
 const config = require('config');
 const express = require('express');
 const moment = require('moment');
 
-var chance = new Chance();
-
-module.exports = function(app, database, io, self) {
+module.exports = function(app, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const GAME_SERVER_POOL = config.get('app.servers.pool');
 

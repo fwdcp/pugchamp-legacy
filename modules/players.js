@@ -5,7 +5,7 @@ const _ = require('lodash');
 const co = require('co');
 const config = require('config');
 
-module.exports = function(app, database, io, self) {
+module.exports = function(app, chance, database, io, self) {
     const ROLES = config.get('app.games.roles');
 
     function getPlayerDraftStats(player) {

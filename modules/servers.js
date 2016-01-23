@@ -2,16 +2,13 @@
 "use strict";
 
 const _ = require('lodash');
-const Chance = require('chance');
 const co = require('co');
 const config = require('config');
 const crypto = require('crypto');
 const ms = require('ms');
 const RCON = require('srcds-rcon');
 
-var chance = new Chance();
-
-module.exports = function(app, database, io, self) {
+module.exports = function(app, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const COMMAND_TIMEOUT = ms(config.get('app.servers.commandTimeout'));
     const GAME_SERVER_POOL = config.get('app.servers.pool');

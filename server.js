@@ -1,7 +1,9 @@
 /* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
 "use strict";
 
+const Chance = require('chance');
 const config = require('config');
+const crypto = require('crypto');
 const EventEmitter = require('events');
 const express = require('express');
 const hbs = require('hbs');
@@ -15,6 +17,7 @@ const socketIO = require('socket.io');
 const MongoStore = require('connect-mongo')(session);
 
 var app = express();
+var chance = new Chance(crypto.randomBytes(4).readInt32LE());
 var database = require('./database');
 var server = http.Server(app);
 var io = socketIO(server);
@@ -43,6 +46,6 @@ app.use(passport.session());
 app.use('/', serveStatic(path.resolve(__dirname, 'public')));
 app.use('/components', serveStatic(path.resolve(__dirname, 'bower_components')));
 
-require('./modules')(app, database, io, self);
+require('./modules')(app, chance, database, io, self);
 
 server.listen(config.get('server.listen'));

@@ -3,13 +3,10 @@
 
 const _ = require('lodash');
 const co = require('co');
-const Chance = require('chance');
 const config = require('config');
 const ms = require('ms');
 
-var chance = new Chance();
-
-module.exports = function(app, database, io, self) {
+module.exports = function(app, chance, database, io, self) {
     const CAPTAIN_SELECTION_WEIGHT = config.get('app.draft.captainSelectionWeight');
     const DRAFT_ORDER = config.get('app.draft.order');
     const MAP_POOL = config.get('app.games.maps');

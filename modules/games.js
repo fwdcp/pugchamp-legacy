@@ -2,7 +2,6 @@
 "use strict";
 
 const _ = require('lodash');
-const Chance = require('chance');
 const child_process = require('mz/child_process');
 const co = require('co');
 const config = require('config');
@@ -15,9 +14,7 @@ const wilson = require('wilson-interval');
 
 require("moment-duration-format");
 
-var chance = new Chance();
-
-module.exports = function(app, database, io, self) {
+module.exports = function(app, chance, database, io, self) {
     const ROLES = config.get('app.games.roles');
     const SUBSTITUTE_REQUEST_PERIOD = ms(config.get('app.games.substituteRequestPeriod'));
     const SUBSTITUTE_SELECTION_METHOD = config.get('app.games.substituteSelectionMethod');

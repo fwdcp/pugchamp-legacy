@@ -7,7 +7,7 @@ const hbs = require('hbs');
 const math = require('mathjs');
 const moment = require('moment');
 
-module.exports = function(app, database, io, self) {
+module.exports = function(app, chance, database, io, self) {
     const SITE_NAME = config.get('server.siteName');
 
     self.getDocumentID = function getDocumentID(info) {
