@@ -486,6 +486,10 @@
                 }
             },
             currentMapChoiceType: function(turn) {
+                if (turn >= this.turns.length) {
+                    return;
+                }
+
                 if (this.turns[turn].type === 'mapBan') {
                     return 'Ban';
                 }
