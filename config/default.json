@@ -11,7 +11,7 @@
         },
         "draft": {
             "captainSelectionWeight": "success",
-            "turnTimeLimit": "60s"
+            "turnTimeLimit": "90s"
         },
         "servers": {
             "commandTimeout": "5s",
