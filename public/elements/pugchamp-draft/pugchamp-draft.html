@@ -6,11 +6,12 @@
 <link rel="import" href="/components/paper-styles/color.html">
 <link rel="import" href="/components/paper-styles/default-theme.html">
 <link rel="import" href="/components/paper-styles/typography.html">
-<link rel="import" href="/elements/pugchamp-icons/pugchamp-role-icons.html">
+
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-user-behavior.html">
 <link rel="import" href="/elements/pugchamp-notification/pugchamp-notification.html">
+<link rel="import" href="/elements/pugchamp-theme/role-icons.html">
 <link rel="import" href="/elements/pugchamp-utilities/pugchamp-polymer-helpers.html">
 
 <dom-module id="pugchamp-draft">
@@ -164,7 +165,7 @@
                 <template is="dom-repeat" items="{{_convertObjectToRepeatable(maps)}}">
                     <paper-material class="map flex">
                         <div data-status$="{{mapStatus(item.key, pickedMap, remainingMaps)}}" class="map-overlay"></div>
-                        <img class="map-background" src$="/assets/maps/{{item.value.image}}">
+                        <img class="map-background" src$="/assets/img/maps/{{item.value.image}}">
                         <div class="map-info">
                             {{item.value.name}}
                             <br>
