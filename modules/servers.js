@@ -15,6 +15,7 @@ module.exports = function(app, chance, database, io, self) {
     const MAP_CHANGE_TIMEOUT = ms(config.get('app.servers.mapChangeTimeout'));
     const MAPS = config.get('app.games.maps');
     const ROLES = config.get('app.games.roles');
+    const SERVER_TIMEOUT = config.get('app.servers.serverTimeout');
 
     function connectToRCON(gameServer) {
         return co(function*() {
@@ -40,7 +41,7 @@ module.exports = function(app, chance, database, io, self) {
     }
 
     function getServerStatus(gameServer) {
-        return co(function*() {
+        return Promise.race([co(function*() {
             try {
                 let rcon = yield connectToRCON(gameServer);
 
@@ -81,7 +82,11 @@ module.exports = function(app, chance, database, io, self) {
                     status: 'unreachable'
                 };
             }
-        });
+        }), new Promise(function(resolve, reject) {
+            setTimeout(resolve, SERVER_TIMEOUT, {
+                status: 'unreachable'
+            });
+        })]);
     }
 
     self.getServerStatuses = co.wrap(function* getServerStatuses() {
