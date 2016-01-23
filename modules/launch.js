@@ -226,6 +226,11 @@ module.exports = function(app, chance, database, io, self) {
                     self.cleanUpDraft();
                 }
             }
+            else {
+                self.sendMessage({
+                    action: 'failed to launch due to holds'
+                });
+            }
 
             launchAttemptActive = false;
             launchAttemptStart = null;
