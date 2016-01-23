@@ -14,6 +14,10 @@
     <link rel="import" href="/elements/pugchamp-theme/role-icons.html">
 
     <style is="custom-style">
+        #game {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
         #details {
             text-align: center;
         }
@@ -44,34 +48,32 @@
             text-align: center;
         }
 
-        .faction-BLU .header {
+        .faction {
+            color: var(--light-theme-text-color);
+        }
+
+        #faction-BLU .header {
             background: var(--paper-blue-500);
-            opacity: var(--light-primary-opacity);
         }
 
-        .faction-BLU .role {
+        #faction-BLU .role {
             background: var(--paper-blue-100);
-            opacity: var(--light-primary-opacity);
         }
 
-        .faction-BLU .player {
+        #faction-BLU .player {
             background: var(--paper-blue-100);
-            opacity: var(--light-primary-opacity);
         }
 
-        .faction-RED .header {
+        #faction-RED .header {
             background: var(--paper-red-500);
-            opacity: var(--light-primary-opacity);
         }
 
-        .faction-RED .role {
+        #faction-RED .role {
             background: var(--paper-red-100);
-            opacity: var(--light-primary-opacity);
         }
 
-        .faction-RED .player {
+        #faction-RED .player {
             background: var(--paper-red-100);
-            opacity: var(--light-primary-opacity);
         }
 
         .player {
@@ -104,8 +106,8 @@
 
     {{#> body}}
 
-    <div class="horizontal layout">
-        <div class="flex-3 faction-{{game.teams.[0].faction}}">
+    <paper-material id="game" class="horizontal layout">
+        <div class="flex-3 faction" id="faction-{{game.teams.[0].faction}}">
             <div class="header horizontal layout">
                 <div class="captain flex vertical layout center-justified">
                     <span>{{game.teams.[0].captain.alias}}</span>
@@ -148,7 +150,7 @@
                 <a href="{{url}}"><paper-button raised class="link">{{type}}</paper-button></a>
             {{/each}}
         </div>
-        <div class="flex-3 faction-{{game.teams.[1].faction}}">
+        <div class="flex-3 faction" id="faction-{{game.teams.[1].faction}}">
             <div class="header horizontal layout">
                 <div class="captain flex vertical layout center-justified">
                     <span>{{game.teams.[1].captain.alias}}</span>
@@ -174,7 +176,7 @@
                 {{/each}}
             {{/each}}
         </div>
-    </div>
+    </paper-material>
 
     <script src="/components/moment/moment.js"></script>
     <script>
