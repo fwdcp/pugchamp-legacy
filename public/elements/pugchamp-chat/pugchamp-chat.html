@@ -24,19 +24,24 @@
             }
 
             .message {
+                line-height: 24px;
                 margin: 5px;
                 padding: 5px;
             }
 
             .message .message-time {
                 @apply(--paper-font-caption);
+                line-height: inherit;
+                margin-right: 5px;
             }
 
             .message .message-author {
                 @apply(--paper-font-body2);
+                line-height: inherit;
             }
 
             .message .message-body {
+                line-height: inherit;
                 overflow-wrap: break-word;
                 word-wrap: break-word;
             }
@@ -45,14 +50,12 @@
         <div id="messages" class="vertical layout">
             <template is="dom-repeat" items="{{messages}}" class="flex">
                 <paper-material class="message horizontal layout">
-                    <div>
-                        <span class="message-time">{{formatTime(item.time)}}</span>
-                    </div>
+                    <div class="message-time">{{formatTime(item.time)}}</div>
                     <div class="flex">
                         <template is="dom-if" if="{{item.user}}">
                             <span class="message-author"><iron-icon hidden$="{{!item.user.admin}}" icon="flag"></iron-icon> {{item.user.alias}}</span>
                         </template>
-                        <em>{{item.action}}</em>
+                        <em class="message-action">{{item.action}}</em>
                         <br>
                         <span class="message-body">{{item.body}}</span>
                     </div>
