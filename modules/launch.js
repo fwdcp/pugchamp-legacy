@@ -248,7 +248,7 @@ module.exports = function(app, chance, database, io, self) {
 
                 io.sockets.emit('launchStatusUpdated', getCurrentStatusMessage());
 
-                _.delay(attemptLaunch, READY_PERIOD);
+                setTimeout(attemptLaunch, READY_PERIOD);
             }
         });
     }
