@@ -24,24 +24,26 @@
             }
 
             .message {
-                line-height: 24px;
                 margin: 5px;
                 padding: 5px;
             }
 
             .message .message-time {
-                @apply(--paper-font-caption);
-                line-height: inherit;
+                @apply(--paper-font-common-base);
+                @apply(--paper-font-common-nowrap);
+                font-size: 12px;
+                font-weight: 400;
+                letter-spacing: 0.011em;
+                line-height: 24px;
                 margin-right: 5px;
             }
 
             .message .message-author {
                 @apply(--paper-font-body2);
-                line-height: inherit;
             }
 
             .message .message-body {
-                line-height: inherit;
+                @apply(--paper-font-common-base);
                 overflow-wrap: break-word;
                 word-wrap: break-word;
             }
