@@ -1,10 +1,7 @@
-<paper-toolbar class="medium-tall">
+<paper-toolbar>
     <paper-icon-button icon="menu" paper-drawer-toggle></paper-icon-button>
-
-    <div class="flex"></div>
+    <div class="flex" id="app-name">PugChamp</div>
     {{#if home}}
     <pugchamp-admin-request></pugchamp-admin-request>
     {{/if}}
-
-    <div class="bottom" id="app-name">PugChamp</div>
 </paper-toolbar>
