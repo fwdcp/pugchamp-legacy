@@ -15,7 +15,7 @@ module.exports = function(app, chance, database, io, self) {
     const MAP_CHANGE_TIMEOUT = ms(config.get('app.servers.mapChangeTimeout'));
     const MAPS = config.get('app.games.maps');
     const ROLES = config.get('app.games.roles');
-    const SERVER_TIMEOUT = config.get('app.servers.serverTimeout');
+    const SERVER_TIMEOUT = ms(config.get('app.servers.serverTimeout'));
 
     function connectToRCON(gameServer) {
         return co(function*() {
