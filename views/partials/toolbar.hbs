@@ -1,6 +1,106 @@
-<paper-toolbar>
-    <paper-icon-button icon="menu" paper-drawer-toggle></paper-icon-button>
-    <div class="flex" id="app-name">PugChamp</div>
+<paper-toolbar id="toolbar">
+    <div class="app-name" hidden$="\{{!narrow}}">PugChamp</div>
+    <div hidden$="\{{!narrow}}">
+        <div class="toolbar-link">
+            <a href="/" {{#if home}} target="_blank" {{/if}}>
+                <paper-icon-button icon="home" id="toolbar-home"></paper-icon-button>
+                <paper-tooltip for="toolbar-home">Home</paper-tooltip>
+            </a>
+        </div>
+
+        <div class="toolbar-link">
+            <a href="/players" {{#if home}} target="_blank" {{/if}}>
+                <paper-icon-button icon="social:people" id="toolbar-players"></paper-icon-button>
+                <paper-tooltip for="toolbar-players">Players</paper-tooltip>
+            </a>
+        </div>
+
+        <div class="toolbar-link">
+            <a href="/games" {{#if home}} target="_blank" {{/if}}>
+                <paper-icon-button icon="hardware:gamepad" id="toolbar-games"></paper-icon-button>
+                <paper-tooltip for="toolbar-games">Games</paper-tooltip>
+            </a>
+        </div>
+
+        {{#if pages}}
+        <paper-menu-button id="toolbar-links">
+            <paper-icon-button icon="link" class="dropdown-trigger"></paper-icon-button>
+
+            <paper-menu class="dropdown-content">
+                {{#each pages}}
+                <a href="{{url}}" {{#if ../home}} target="_blank" {{/if}}>
+                    <paper-icon-item>
+                        <iron-icon icon="{{icon}}" item-icon></iron-icon> {{title}}
+                    </paper-icon-item>
+                </a>
+                {{/each}}
+            </paper-menu>
+        </paper-menu-button>
+        <paper-tooltip for="toolbar-links">Links</paper-tooltip>
+        {{/if}}
+
+        {{#if user}}
+        {{#if user.admin}}
+        <paper-menu-button id="toolbar-admin">
+            <paper-icon-button icon="supervisor-account" class="dropdown-trigger"></paper-icon-button>
+
+            <paper-menu class="dropdown-content">
+                <a href="/admin/users" {{#if home}} target="_blank" {{/if}}>
+                    <paper-icon-item>
+                        <iron-icon icon="social:people" item-icon></iron-icon> Manage Users
+                    </paper-icon-item>
+                </a>
+
+                <a href="/admin/games" {{#if home}} target="_blank" {{/if}}>
+                    <paper-icon-item>
+                        <iron-icon icon="hardware:gamepad" item-icon></iron-icon> Manage Games
+                    </paper-icon-item>
+                </a>
+
+                <a href="/admin/servers" {{#if home}} target="_blank" {{/if}}>
+                    <paper-icon-item>
+                        <iron-icon icon="hardware:developer-board" item-icon></iron-icon> Manage Servers
+                    </paper-icon-item>
+                </a>
+            </paper-menu>
+        </paper-menu-button>
+        <paper-tooltip for="toolbar-admin">Admin</paper-tooltip>
+        {{/if}}
+
+        <paper-menu-button>
+            <paper-icon-button icon="social:person" class="dropdown-trigger" id="toolbar-user"></paper-icon-button>
+            <paper-tooltip for="toolbar-user">User</paper-tooltip>
+
+            <paper-menu class="dropdown-content">
+                <a href="/player/{{user.steamID}}" {{#if home}} target="_blank" {{/if}}>
+                    <paper-icon-item>
+                        <iron-icon icon="account-box" item-icon></iron-icon> Profile
+                    </paper-icon-item>
+                </a>
+
+                <a href="/user/settings" {{#if home}} target="_blank" {{/if}}>
+                    <paper-icon-item>
+                        <iron-icon icon="settings" item-icon></iron-icon> Settings
+                    </paper-icon-item>
+                </a>
+
+                <a href="/user/logout">
+                    <paper-icon-item>
+                        <iron-icon icon="lock" item-icon></iron-icon> Sign Out
+                    </paper-icon-item>
+                </a>
+            </paper-menu>
+        </paper-menu-button>
+        {{else}}
+        <a href="/user/login">
+            <paper-icon-button icon="lock-open" id="toolbar-login"></paper-icon-button>
+            <paper-tooltip for="toolbar-login">Login</paper-tooltip>
+        </a>
+        {{/if}}
+    </div>
+
+    <div class="flex"></div>
+
     {{#if home}}
     <pugchamp-admin-request></pugchamp-admin-request>
     {{/if}}

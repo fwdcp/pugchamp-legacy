@@ -1,5 +1,7 @@
-<paper-header-panel drawer>
-    <paper-toolbar></paper-toolbar>
+<paper-header-panel drawer id="drawer">
+    <paper-toolbar>
+        <div class="flex app-name" hidden$="\{{narrow}}">PugChamp</div>
+    </paper-toolbar>
 
     <paper-menu id="drawer-menu">
         <a href="/" {{#if home}} target="_blank" {{/if}}>
@@ -38,34 +40,32 @@
 
         {{#if user}}
             {{#if user.admin}}
-                <paper-submenu>
-                    <paper-icon-item class="menu-trigger">
-                        <iron-icon icon="supervisor-account" item-icon></iron-icon> Admin
+                <a href="/admin/users" {{#if home}} target="_blank" {{/if}}>
+                    <paper-icon-item>
+                        <iron-icon icon="social:people" item-icon></iron-icon> Manage Users
                     </paper-icon-item>
+                </a>
 
-                    <paper-menu class="menu-content">
-                        <a href="/admin/users" {{#if home}} target="_blank" {{/if}}>
-                            <paper-icon-item>
-                                <iron-icon icon="social:people" item-icon></iron-icon> Users
-                            </paper-icon-item>
-                        </a>
+                <a href="/admin/games" {{#if home}} target="_blank" {{/if}}>
+                    <paper-icon-item>
+                        <iron-icon icon="hardware:gamepad" item-icon></iron-icon> Manage Games
+                    </paper-icon-item>
+                </a>
 
-                        <a href="/admin/games" {{#if home}} target="_blank" {{/if}}>
-                            <paper-icon-item>
-                                <iron-icon icon="hardware:gamepad" item-icon></iron-icon> Games
-                            </paper-icon-item>
-                        </a>
-
-                        <a href="/admin/servers" {{#if home}} target="_blank" {{/if}}>
-                            <paper-icon-item>
-                                <iron-icon icon="hardware:developer-board" item-icon></iron-icon> Servers
-                            </paper-icon-item>
-                        </a>
-                    </paper-menu>
-                </paper-submenu>
+                <a href="/admin/servers" {{#if home}} target="_blank" {{/if}}>
+                    <paper-icon-item>
+                        <iron-icon icon="hardware:developer-board" item-icon></iron-icon> Manage Servers
+                    </paper-icon-item>
+                </a>
 
                 <hr>
             {{/if}}
+
+            <a href="/player/{{user.steamID}}" {{#if home}} target="_blank" {{/if}}>
+                <paper-icon-item>
+                    <iron-icon icon="account-box" item-icon></iron-icon> Profile
+                </paper-icon-item>
+            </a>
 
             <a href="/user/settings" {{#if home}} target="_blank" {{/if}}>
                 <paper-icon-item>
