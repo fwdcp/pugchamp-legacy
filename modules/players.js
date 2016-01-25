@@ -4,6 +4,7 @@
 const _ = require('lodash');
 const co = require('co');
 const config = require('config');
+const math = require('mathjs');
 
 module.exports = function(app, chance, database, io, self) {
     const ROLES = config.get('app.games.roles');
@@ -143,9 +144,9 @@ module.exports = function(app, chance, database, io, self) {
             id: user.id,
             steamID: user.steamID,
             alias: user.alias,
-            rating: user.currentRating ? user.currentRating.after.rating : null,
-            deviation: user.currentRating ? user.currentRating.after.deviation : null,
-            captainScore: _.has(user.captainScore, 'low') ? user.captainScore.low : null,
+            rating: user.currentRating ? math.round(user.currentRating.after.rating) : null,
+            deviation: user.currentRating ? math.round(user.currentRating.after.deviation) : null,
+            captainScore: _.has(user.captainScore, 'low') ? math.round(user.captainScore.low, 3) : null,
         })).value();
 
         res.render('playerList', {
