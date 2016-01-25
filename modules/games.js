@@ -5,12 +5,12 @@ const _ = require('lodash');
 const child_process = require('mz/child_process');
 const co = require('co');
 const config = require('config');
+const distributions = require('distributions');
 const hbs = require('hbs');
 const math = require('mathjs');
 const moment = require('moment');
 const ms = require('ms');
 const path = require('path');
-const wilson = require('wilson-interval');
 
 require("moment-duration-format");
 
@@ -20,6 +20,32 @@ module.exports = function(app, chance, database, io, self) {
     const SUBSTITUTE_SELECTION_METHOD = config.get('app.games.substituteSelectionMethod');
 
     var currentGameCache = new Map();
+
+    function calculatePredictionInterval(samples) {
+        let mean = math.mean(samples);
+        let deviation = math.std(samples);
+        let n = _.size(samples);
+
+        if (n > 1) {
+            let distribution = new distributions.Studentt(n - 1);
+
+            let low = mean + (distribution.inv(0.025) * deviation * math.sqrt(1 + (1 / n)));
+            let high = mean + (distribution.inv(0.975) * deviation * math.sqrt(1 + (1 / n)));
+
+            return {
+                low: low >= 0 ? low : 0,
+                center: mean,
+                high: high <= 1 ? high : 1
+            };
+        }
+        else {
+            return {
+                low: 0,
+                center: mean,
+                high: 1
+            };
+        }
+    }
 
     function rateGame(game) {
         return co(function*() {
@@ -32,43 +58,18 @@ module.exports = function(app, chance, database, io, self) {
             });
 
             _.each(captains, function(captain, index) {
-                let captainStats = _.reduce(captainGames[index], function(stats, game) {
-                    stats.total++;
-
+                let scores = _.map(captainGames[index], function(game) {
                     if (self.getDocumentID(game.teams[0].captain) === self.getDocumentID(captain)) {
-                        if (game.score[0] > game.score[1]) {
-                            stats.wins++;
-                        }
-                        else if (game.score[0] < game.score[1]) {
-                            stats.losses++;
-                        }
-                        else if (game.score[0] === game.score[1]) {
-                            stats.ties++;
-                        }
+                        return game.score[0] / (game.score[0] + game.score[1]);
                     }
                     else if (self.getDocumentID(game.teams[1].captain) === self.getDocumentID(captain)) {
-                        if (game.score[1] > game.score[0]) {
-                            stats.wins++;
-                        }
-                        else if (game.score[1] < game.score[0]) {
-                            stats.losses++;
-                        }
-                        else if (game.score[1] === game.score[0]) {
-                            stats.ties++;
-                        }
+                        return game.score[1] / (game.score[0] + game.score[1]);
                     }
 
-                    return stats;
-                }, {
-                    total: 0,
-                    wins: 0,
-                    losses: 0,
-                    ties: 0
+                    return 0;
                 });
 
-                if (captainStats.total > 0) {
-                    captain.captainScore = wilson(captainStats.wins + captainStats.ties, captainStats.total);
-                }
+                captain.captainScore = calculatePredictionInterval(scores);
             });
 
             yield _.map(captains, captain => captain.save());
