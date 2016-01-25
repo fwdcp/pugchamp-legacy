@@ -10,7 +10,6 @@ const ms = require('ms');
 
 module.exports = function(app, chance, database, io, self) {
     const AUTO_READY_THRESHOLD = ms(config.get('app.launch.autoReadyThreshold'));
-    const GET_AVAILABLE_SERVERS_THROTTLE_INTERVAL = 30000;
     const GET_LAUNCH_HOLD_DEBOUNCE_MAX_WAIT = 5000;
     const GET_LAUNCH_HOLD_DEBOUNCE_WAIT = 1000;
     const READY_PERIOD = ms(config.get('app.launch.readyPeriod'));
@@ -121,12 +120,10 @@ module.exports = function(app, chance, database, io, self) {
             let availableServers;
 
             if (forceUpdate) {
-                 availableServers = yield self.getAvailableServers();
+                availableServers = yield self.getAvailableServers();
             }
             else {
-                const throttledGetAvailableServers = _.throttle(self.getAvailableServers, GET_AVAILABLE_SERVERS_THROTTLE_INTERVAL);
-
-                availableServers = yield throttledGetAvailableServers();
+                availableServers = yield self.throttledGetAvailableServers();
             }
 
             if (_.size(availableServers) === 0) {

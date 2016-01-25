@@ -2,19 +2,27 @@
 
 <html>
 
-    {{#> head title="Manage Servers"}}
+    {{#> head title="Servers"}}
+    {{#if currentUser.admin}}
     <link rel="import" href="/elements/pugchamp-server-rcon/pugchamp-server-rcon.html">
+    {{/if}}
     {{/head}}
 
     {{#> body}}
-
     <h1>Servers</h1>
 
     {{#each servers}}
     <h2>{{@key}}</h2>
 
     <p><strong>Address:</strong> {{address}}</p>
-    <p><strong>Password:</strong> {{password}}</p>
+
+    {{#if stv}}
+    <p><strong>SourceTV Address:</strong> {{stv}}</p>
+    {{#if stvpassword}}
+    <p><strong>SourceTV Password:</strong> {{stvpassword}}</p>
+    {{/if}}
+    {{/if}}
+
     <p>
         <strong>Status:</strong> {{status}}
         {{#if game}}
@@ -22,14 +30,10 @@
         {{/if}}
     </p>
 
+    {{#if ../currentUser.admin}}
     <pugchamp-server-rcon server="{{@key}}"></pugchamp-server-rcon>
+    {{/if}}
     {{/each}}
-
-    <script>
-        function sendCommand(server) {
-            document.querySelector('.rcon[data-server=' + server + ']').submit();
-        }
-    </script>
     {{/body}}
 
 </html>

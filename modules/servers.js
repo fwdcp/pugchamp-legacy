@@ -12,6 +12,7 @@ module.exports = function(app, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const COMMAND_TIMEOUT = ms(config.get('app.servers.commandTimeout'));
     const GAME_SERVER_POOL = config.get('app.servers.pool');
+    const GET_SERVERS_THROTTLE_INTERVAL = 30000;
     const MAP_CHANGE_TIMEOUT = ms(config.get('app.servers.mapChangeTimeout'));
     const MAPS = config.get('app.games.maps');
     const ROLES = config.get('app.games.roles');
@@ -95,6 +96,8 @@ module.exports = function(app, chance, database, io, self) {
         return _.zipObject(_.keys(GAME_SERVER_POOL), statuses);
     });
 
+    self.throttledGetServerStatuses = _.throttle(self.getServerStatuses, GET_SERVERS_THROTTLE_INTERVAL);
+
     self.getAvailableServers = co.wrap(function* getAvailableServers() {
         let statuses = yield self.getServerStatuses();
 
@@ -112,6 +115,8 @@ module.exports = function(app, chance, database, io, self) {
             return false;
         }).keys().value();
     });
+
+    self.throttledGetAvailableServers = _.throttle(self.getAvailableServers, GET_SERVERS_THROTTLE_INTERVAL);
 
     self.sendRCONCommand = co.wrap(function* sendRCONCommand(server, command) {
         let rcon = yield connectToRCON(server);
@@ -249,6 +254,21 @@ module.exports = function(app, chance, database, io, self) {
 
         yield self.initializeServer(game);
     });
+
+    app.get('/servers', co.wrap(function*(req, res) {
+        let servers;
+
+        if (req.user && req.user.admin) {
+            servers = yield self.getServerStatuses();
+        }
+        else {
+            servers = yield self.throttledGetServerStatuses();
+        }
+
+        res.render('servers', {
+            servers: _(servers).mapValues((status, name) => _(status).assign(GAME_SERVER_POOL[name]).omit('rcon', 'salt').value()).value()
+        });
+    }));
 
     app.get('/api/servers/:key', co.wrap(function*(req, res) {
         if (!req.query.game) {

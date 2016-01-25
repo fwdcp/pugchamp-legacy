@@ -297,14 +297,6 @@ module.exports = function(app, chance, database, io, self) {
         res.redirect('/admin/games');
     }));
 
-    router.get('/servers', co.wrap(function*(req, res) {
-        let servers = yield self.getServerStatuses();
-
-        res.render('admin/servers', {
-            servers: _(servers).mapValues((status, name) => _(status).assign(GAME_SERVER_POOL[name]).omit('rcon', 'salt').value()).value()
-        });
-    }));
-
     router.post('/server/:id', bodyParser.urlencoded({
         extended: false
     }), co.wrap(function*(req, res) {
