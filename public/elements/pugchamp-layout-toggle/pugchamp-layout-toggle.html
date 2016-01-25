@@ -1,0 +1,42 @@
+<link rel="import" href="/components/polymer/polymer.html">
+
+<link rel="import" href="/components/paper-icon-button/paper-icon-button.html">
+
+<dom-module id="pugchamp-layout-toggle">
+    <template>
+        <style is="custom-style">
+            :host {
+                margin-right: 16px;
+            }
+        </style>
+
+    	<paper-icon-button on-tap="openMenu" icon="arrow-drop-down" hidden="{{menuOpen}}"></paper-icon-button>
+        <paper-icon-button on-tap="closeMenu" icon="arrow-drop-up" hidden={{!menuOpen}}></paper-icon-button>
+	</template>
+	<script>
+        Polymer({
+            is: 'pugchamp-layout-toggle',
+            properties: {
+                menuOpen: {
+                    type: Boolean,
+                    value: false,
+                    notify: true
+                }
+            },
+            ready: function() {
+                this.adjustMenu();
+
+                window.addEventListener('resize', this.adjustMenu.bind(this));
+            },
+            openMenu: function() {
+                this.set('menuOpen', true);
+            },
+            closeMenu: function() {
+                this.set('menuOpen', false);
+            },
+            adjustMenu: function() {
+                this.set('menuOpen', document.documentElement.clientWidth >= 1800);
+            }
+        });
+    </script>
+</dom-module>

@@ -1,6 +1,7 @@
 <paper-toolbar id="toolbar">
-    <div class="app-name" hidden$="\{{!narrow}}">PugChamp</div>
-    <div hidden$="\{{!narrow}}">
+    <pugchamp-layout-toggle menu-open="\{{open}}"></pugchamp-layout-toggle>
+    <div hidden$="\{{open}}" class="app-name">PugChamp</div>
+    <div hidden$="\{{open}}">
         <div class="toolbar-link">
             <a href="/" {{#if home}} target="_blank" {{/if}}>
                 <paper-icon-button icon="home" id="toolbar-home"></paper-icon-button>
