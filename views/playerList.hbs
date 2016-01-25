@@ -3,88 +3,26 @@
 <html>
 
     {{#> head title="Players"}}
-    <link rel="import" href="/components/vaadin-grid/vaadin-grid.html">
+    <link rel="import" href="/components/paper-datatable/paper-datatable.html">
     {{/head}}
 
     {{#> body}}
     <h1>Players</h1>
 
-    <vaadin-grid id="players">
-        <table>
-            <colgroup>
-                <col name="alias" sortable>
-                    <col name="currentRating.after.rating" sortable sort-direction="desc">
-                        <col name="currentRating.after.deviation" sortable sort-direction="asc">
-                            <col name="captainScore.low" sortable sort-direction="desc">
-            </colgroup>
-            <thead>
-                <tr>
-                    <th>Player</th>
-                    <th>Rating</th>
-                    <th>Rating Deviation</th>
-                    <th>Captain Score</th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
-    </vaadin-grid>
+    <paper-datatable data="{{toJSON players}}" id="players">
+        <paper-datatable-column header="Player" property="alias" sortable></paper-datatable-column>
+        <paper-datatable-column header="Steam ID" property="steamID"></paper-datatable-column>
+        <paper-datatable-column header="Rating" property="rating" sortable></paper-datatable-column>
+        <paper-datatable-column header="Deviation" property="deviation" sortable>
+            <template>&plusmn;\{{value}}</template>
+        </paper-datatable-column>
+        <paper-datatable-column header="Captain Score" property="captainScore" sortable></paper-datatable-column>
+    </paper-datatable>
 
-    <script src="/components/lodash/lodash.min.js"></script>
-    <script src="/components/mathjs/dist/math.min.js"></script>
     <script>
-        var grid = document.getElementById('players');
-        grid.items = {{{toJSON players}}};
-
-        grid.addEventListener('sort-order-changed', function() {
-            grid.items = _.sortByOrder(grid.items, _.map(grid.sortOrder, function(sort) {
-                if (sort.column === 0) {
-                    return function(item) {
-                        return item.alias;
-                    }
-                }
-                else if (sort.column === 1) {
-                    return function(item) {
-                        if (item.currentRating) {
-                            return item.currentRating.after.rating;
-                        }
-
-                        return Number.NEGATIVE_INFINITY;
-                    }
-                }
-                else if (sort.column === 2) {
-                    return function(item) {
-                        if (item.currentRating) {
-                            return item.currentRating.after.deviation;
-                        }
-
-                        return Number.POSITIVE_INFINITY;
-                    }
-                }
-                else if (sort.column === 3) {
-                    return function(item) {
-                        if (item.captainScore) {
-                            return item.captainScore.low;
-                        }
-
-                        return Number.NEGATIVE_INFINITY;
-                    }
-                }
-            }), _.map(grid.sortOrder, 'direction'));
+        document.getElementById('players').addEventListener('row-tap', function(event) {
+            window.location = '/player/' + event.detail.item.id;
         });
-
-        grid.columns[0].renderer = function(cell) {
-            cell.element.innerHTML = '<a href="/player/' + cell.row.data.steamID + '">' + cell.row.data.alias + '</a>';
-        };
-        grid.columns[1].renderer = function(cell) {
-            cell.element.innerHTML = cell.data !== null ? math.round(cell.data) : '';
-        };
-        grid.columns[2].renderer = function(cell) {
-            cell.element.innerHTML = cell.data !== null ? '&plusmn; ' + math.round(cell.data) : '';
-        };
-        grid.columns[3].renderer = function(cell) {
-            cell.element.innerHTML = cell.data !== null ? math.round(cell.data, 3) : '';
-        };
     </script>
     {{/body}}
 

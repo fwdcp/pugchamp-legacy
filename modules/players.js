@@ -122,7 +122,14 @@ module.exports = function(app, chance, database, io, self) {
             }
 
             return Number.NEGATIVE_INFINITY;
-        }], ['desc', 'asc', 'desc']).map(user => user.toObject()).value();
+        }], ['desc', 'asc', 'desc']).map(user => ({
+            id: user.id,
+            steamID: user.steamID,
+            alias: user.alias,
+            rating: user.currentRating ? user.currentRating.after.rating : null,
+            deviation: user.currentRating ? user.currentRating.after.deviation : null,
+            captainScore: _.has(user.captainScore, 'low') ? user.captainScore.low : null,
+        })).value();
 
         res.render('playerList', {
             players: players

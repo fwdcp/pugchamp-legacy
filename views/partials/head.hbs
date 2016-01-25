@@ -60,48 +60,25 @@
             color: var(--dark-theme-text-color);
         }
 
+        paper-datatable {
+            --paper-datatable-row-hover-color: var(--dark-theme-background-color);
+
+            --paper-datatable-column-header: {
+                color: var(--dark-theme-text-color);
+            };
+
+            --paper-datatable-cell: {
+                background: var(--box-background-color);
+                color: var(--dark-theme-text-color);
+            };
+
+            --paper-datatable-column-header-sorted: {
+                color: inherit;
+            };
+        }
+
         paper-material {
             background: var(--box-background-color);
-        }
-
-        vaadin-grid {
-            color: var(--primary-text-color);
-        }
-
-        vaadin-grid::shadow tbody:not(.touch):not(.scrolling) .vaadin-grid-row:hover td {
-            background-color: var(--dark-theme-secondary-color);
-        }
-
-        vaadin-grid::shadow .vaadin-grid-row-selected td {
-            background-color: var(--dark-theme-secondary-color);
-        }
-
-        vaadin-grid::shadow .vaadin-grid-cell {
-            background-color: var(--box-background-color);
-        }
-
-        vaadin-grid::shadow .vaadin-grid-header tr {
-            color: var(--dark-theme-secondary-color);
-        }
-
-        vaadin-grid::shadow .vaadin-grid-header [class*="sort-"] {
-            color: var(--dark-theme-text-color);
-        }
-
-        vaadin-grid::shadow .vaadin-grid-header [class*="sort-"]:after {
-            color: var(--dark-theme-text-color);
-        }
-
-        vaadin-grid::shadow .vaadin-grid-header .sort-asc:after {
-            content: url(/assets/img/arrow-up.svg) " " attr(sort-order);
-        }
-
-        vaadin-grid::shadow .vaadin-grid-header .sort-desc:after {
-            content: url(/assets/img/arrow-down.svg) " " attr(sort-order);
-        }
-
-        vaadin-grid::shadow .vaadin-grid-footer td {
-            color: var(--dark-theme-secondary-color);
         }
 
         .app-name {
