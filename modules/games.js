@@ -165,7 +165,7 @@ module.exports = function(app, chance, database, io, self) {
 
     updateSubstituteRequestsInfo();
 
-    function getGamePlayerInfo(game, playerID) {
+    self.getGamePlayerInfo = function getGamePlayerInfo(game, playerID) {
         let team;
         let role;
         let player;
@@ -200,7 +200,7 @@ module.exports = function(app, chance, database, io, self) {
         }
 
         return null;
-    }
+    };
 
     function attemptSubstitution(id) {
         return co(function*() {
@@ -219,7 +219,7 @@ module.exports = function(app, chance, database, io, self) {
                 return;
             }
 
-            let gamePlayerInfo = getGamePlayerInfo(game, request.player);
+            let gamePlayerInfo = self.getGamePlayerInfo(game, request.player);
 
             if (!gamePlayerInfo || gamePlayerInfo.player.replaced) {
                 self.removeSubstituteRequest(id);
@@ -312,7 +312,7 @@ module.exports = function(app, chance, database, io, self) {
             return;
         }
 
-        let gamePlayerInfo = getGamePlayerInfo(game, player);
+        let gamePlayerInfo = self.getGamePlayerInfo(game, player);
 
         if (!gamePlayerInfo || gamePlayerInfo.player.replaced) {
             return;
@@ -562,7 +562,7 @@ module.exports = function(app, chance, database, io, self) {
         socket.on('requestSubstitute', co.wrap(function*(info) {
             let game = yield database.Game.findById(info.game);
 
-            let playerInfo = getGamePlayerInfo(game, info.player);
+            let playerInfo = self.getGamePlayerInfo(game, info.player);
 
             if (userID !== self.getDocumentID(playerInfo.team.captain)) {
                 return;
@@ -583,7 +583,7 @@ module.exports = function(app, chance, database, io, self) {
             let request = currentSubstituteRequests.get(requestID);
             let game = yield database.Game.findById(request.game);
 
-            let playerInfo = getGamePlayerInfo(game, request.player);
+            let playerInfo = self.getGamePlayerInfo(game, request.player);
 
             if (userID !== self.getDocumentID(playerInfo.team.captain)) {
                 return;

@@ -79,7 +79,24 @@ module.exports = function(app, chance, database, io, self) {
 
         res.render('player', {
             user: user,
-            games: _(games).map(game => game.toObject()).value(),
+            games: _(games).map(function(game) {
+                let revisedGame = _.omit(game.toObject(), 'draft', 'server', 'links');
+
+                if (self.getDocumentID(user) === self.getDocumentID(game.teams[0].captain)) {
+                    revisedGame.reverseTeams = false;
+                }
+                else if (self.getDocumentID(user) === self.getDocumentID(game.teams[1].captain)) {
+                    revisedGame.reverseTeams = true;
+                }
+                else {
+                    let gamePlayerInfo = self.getGamePlayerInfo(game, user);
+                    let team = _.indexOf(game.teams, gamePlayerInfo.team);
+
+                    revisedGame.reverseTeams = team !== 0;
+                }
+
+                return revisedGame;
+            }).value(),
             ratings: _(ratings).map(rating => ({
                 game: rating.game.id,
                 date: rating.game.date,

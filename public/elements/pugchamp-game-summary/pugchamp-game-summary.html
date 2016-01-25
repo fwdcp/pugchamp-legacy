@@ -68,13 +68,13 @@
                 <a href="/game/{{game.id}}">{{momentFromNow(game.date)}}</a>
                 <span>{{game.status}}</span>
             </div>
-            <div class$="team team-0 flex-3 horizontal layout faction-{{_getProperty(game.teams, 0, 'faction')}}">
+            <div class$="team team-0 flex-3 horizontal layout faction-{{_getProperty(game.teams, team1, 'faction')}}">
                 <div class="captain flex vertical layout center-justified">
-                    <span>{{_getProperty(game.teams, 0, 'captain', 'alias')}}</span>
+                    <span>{{_getProperty(game.teams, team1, 'captain', 'alias')}}</span>
                 </div>
-                <template is="dom-if" if="{{_hasProperty(game.score, 0)}}">
+                <template is="dom-if" if="{{_hasProperty(game.score, team1)}}">
                     <div class="score vertical layout center-justified">
-                        <span>{{_getProperty(game.score, 0)}}</span>
+                        <span>{{_getProperty(game.score, team1)}}</span>
                     </div>
                 </template>
             </div>
@@ -84,14 +84,14 @@
                     <span>{{formatDuration(game.duration)}}</span>
                 </template>
             </div>
-            <div class$="team team-1 flex-3 horizontal layout faction-{{_getProperty(game.teams, 1, 'faction')}}">
-                <template is="dom-if" if="{{_hasProperty(game.score, 0)}}">
+            <div class$="team team-1 flex-3 horizontal layout faction-{{_getProperty(game.teams, team2, 'faction')}}">
+                <template is="dom-if" if="{{_hasProperty(game.score, team2)}}">
                     <div class="score vertical layout center-justified">
-                        <span>{{_getProperty(game.score, 1)}}</span>
+                        <span>{{_getProperty(game.score, team2)}}</span>
                     </div>
                 </template>
                 <div class="captain flex vertical layout center-justified">
-                    <span>{{_getProperty(game.teams, 1, 'captain', 'alias')}}</span>
+                    <span>{{_getProperty(game.teams, team2, 'captain', 'alias')}}</span>
                 </div>
             </div>
         </paper-material>
@@ -108,6 +108,17 @@
             },
             momentFromNow: function(date) {
                 return moment(date).fromNow();
+            },
+            ready: function() {
+                console.log(this.game);
+                if (this.game.reverseTeams) {
+                    this.set('team1', 1);
+                    this.set('team2', 0);
+                }
+                else {
+                    this.set('team1', 0);
+                    this.set('team2', 1);
+                }
             },
             formatDuration: function(duration) {
                 return moment.duration(duration, 'seconds').format();
