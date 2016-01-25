@@ -80,7 +80,7 @@ module.exports = function(app, chance, database, io, self) {
 
         let restrictions = yield database.Restriction.find({
             user: user.id
-        }).populate('actions.admin').exec();
+        }).exec();
 
         res.render('player', {
             user: user,
@@ -94,7 +94,7 @@ module.exports = function(app, chance, database, io, self) {
                     revisedGame.reverseTeams = true;
                 }
                 else {
-                    let gamePlayerInfo = self.getGamePlayerInfo(game, user);
+                    let gamePlayerInfo = self.getGamePlayerInfo(game, user.id);
                     let team = _.indexOf(game.teams, gamePlayerInfo.team);
 
                     revisedGame.reverseTeams = team !== 0;
@@ -151,7 +151,7 @@ module.exports = function(app, chance, database, io, self) {
             alias: user.alias,
             rating: user.currentRating ? math.round(user.currentRating.after.rating) : null,
             deviation: user.currentRating ? math.round(user.currentRating.after.deviation) : null,
-            captainScore: _.has(user.captainScore, 'low') ? math.round(user.captainScore.low, 3) : null,
+            captainScore: _.isNumber(user.captainScore.low) ? math.round(user.captainScore.low, 3) : null,
         })).value();
 
         res.render('playerList', {
