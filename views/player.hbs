@@ -4,7 +4,11 @@
 
     {{#> head title=user.alias }}
     <link rel="import" href="/components/google-chart/google-chart.html">
+    <link rel="import" href="/components/iron-form/iron-form.html">
     <link rel="import" href="/components/paper-button/paper-button.html">
+    <link rel="import" href="/components/paper-checkbox/paper-checkbox.html">
+    <link rel="import" href="/components/paper-datatable/paper-datatable.html">
+    <link rel="import" href="/components/paper-input/paper-input.html">
     <link rel="import" href="/components/paper-styles/color.html">
 
     <link rel="import" href="/elements/pugchamp-game-summary/pugchamp-game-summary.html">
@@ -13,6 +17,11 @@
         .button {
             color: inherit;
             text-decoration: none;
+        }
+
+        .action {
+            background: var(--accent-color);
+            color: var(--light-theme-text-color);
         }
 
         .link {
@@ -73,17 +82,107 @@
         <pugchamp-game-summary game="{{toJSON this}}"></pugchamp-game-summary>
     {{/each}}
 
+    {{#if currentUser.admin}}
+    <h2>User Settings</h2>
+
+    <form is="iron-form" method="post" action="/admin/user/{{user.id}}">
+        <input type="hidden" name="type" value="changeSettings">
+        <p><paper-input type="text" label="Alias" name="alias" placeholder="thesupremecommander" auto-validate error-message="up to fifteen alphanumeric characters only" pattern="^[A-Za-z0-9_]{1,15}$" value="{{user.alias}}" required></paper-input></p>
+
+        <paper-button raised onclick="submit(event)" class="action">Save</paper-button>
+    </form>
+
+    <h2>Restrictions</h2>
+
+    <form is="iron-form" method="post" action="/admin/user/{{user.id}}">
+        <input type="hidden" name="type" value="createRestriction">
+
+        <p>
+            <label>Restrictions:</label>
+            <paper-checkbox name="aspects" value="sub">sub</paper-checkbox>
+            <paper-checkbox name="aspects" value="start">start</paper-checkbox>
+            <paper-checkbox name="aspects" value="captain">captain</paper-checkbox>
+            <paper-checkbox name="aspects" value="chat">chat</paper-checkbox>
+            <paper-checkbox name="aspects" value="support">support</paper-checkbox>
+        </p>
+        <p><paper-input type="text" label="Reason" name="reason" placeholder="being the worst medic in TF2 history"></paper-input></p>
+        <p><label>Expires:</label> <input type="datetime-local" label="Expires" name="expires"></input></p>
+
+        <paper-button raised class="action" onclick="submit(event)">Create</paper-button>
+    </form>
+
+    <h3>History</h3>
+
+    <paper-datatable data="{{toJSON restrictions}}">
+        <paper-datatable-column header="Active" property="active" type="Boolean" sortable></paper-datatable-column>
+        <paper-datatable-column header="Aspects" property="aspects" type="Array">
+            <template>
+                <ul>
+                    <template is="dom-repeat" items="\{{value}}">
+                        <li>\{{item}}</li>
+                    </template>
+                </ul>
+            </template>
+        </paper-datatable-column>
+        <paper-datatable-column header="Reason" property="reason">
+            <template>
+                \{{value}}
+            </template>
+        </paper-datatable-column>
+        <paper-datatable-column header="Expiration" property="expires" type="Date" sortable>
+            <template>
+                <template is="dom-if" if="\{{value}}">
+                    \{{value}}
+                </template>
+                <template is="dom-if" if="\{{!value}}">
+                    never
+                </template>
+            </template>
+        </paper-datatable-column>
+        <paper-datatable-column header="Action">
+            <template>
+                <template is="dom-if" if="\{{item.active}}">
+                    <paper-button class="action" onclick$="revokeRestriction('\{{item.id}}')" raised>Revoke</paper-button>
+                </template>
+            </template>
+        </paper-datatable-column>
+    </paper-datatable>
+
+    <form is="iron-form" method="post" action="/admin/user/{{user.id}}" id="revoke-restriction">
+        <input type="hidden" name="type" value="revokeRestriction">
+        <input type="hidden" name="restriction" id="restriction-to-revoke">
+    </form>
+    {{/if}}
+
     <script>
+        function revokeRestriction(id) {
+            document.getElementById('restriction-to-revoke').value = id;
+            document.getElementById('revoke-restriction').submit();
+        }
+
+        function submit(e) {
+            Polymer.dom(e).rootTarget.parentElement.submit();
+        }
+
+        document.addEventListener('iron-form-response', function() {
+            document.location.reload();
+        });
+
+        document.addEventListener('iron-form-error', function() {
+            document.location.reload();
+        });
+
         {{#if user.options.showDraftStats}}
         var draftStats = document.getElementById('draftStats');
         draftStats.cols = [{type: 'string', label: 'Outcome'}, {type: 'number', label: 'Occurrences'}]
         draftStats.rows = {{{toJSON draftStats}}};
+        draftStats.options = {backgroundColor: 'rgba(0, 0, 0, 0.5)'};
         {{/if}}
 
         var ratingHistory = document.getElementById('ratingHistory');
         ratingHistory.cols = [{type: 'datetime', label: 'Date'}, {type: 'string', role: 'tooltip'}, {type: 'number', label: 'Rating'}, {type: 'number', role: 'interval'}, {type: 'number', role: 'interval'}]
         ratingHistory.rows = [{{#each ratings}}[new Date('{{date}}'), '<a href="/game/{{game}}">Game</a>', {{mean}}, {{lowerBound}}, {{upperBound}}],{{/each}}];
-        ratingHistory.options = {tooltip: {isHtml: true}};
+        ratingHistory.options = {backgroundColor: 'rgba(0, 0, 0, 0.5)', tooltip: {isHtml: true}};
     </script>
 
     {{/body}}

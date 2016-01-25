@@ -78,6 +78,10 @@ module.exports = function(app, chance, database, io, self) {
             draftStats = yield getPlayerDraftStats(user);
         }
 
+        let restrictions = yield database.Restriction.find({
+            user: user.id
+        }).populate('actions.admin').exec();
+
         res.render('player', {
             user: user,
             games: _(games).map(function(game) {
@@ -105,7 +109,8 @@ module.exports = function(app, chance, database, io, self) {
                 lowerBound: rating.after.rating - (3 * rating.after.deviation),
                 upperBound: rating.after.rating + (3 * rating.after.deviation)
             })).sortBy('date').value(),
-            draftStats: draftStats ? _.toPairs(draftStats) : null
+            draftStats: draftStats ? _.toPairs(draftStats) : null,
+            restrictions: _(restrictions).map(restriction => restriction.toObject()).orderBy(['active', 'expires'], ['desc', 'desc']).value()
         });
     }));
 
