@@ -41,33 +41,6 @@
         {{/if}}
 
         {{#if currentUser}}
-        {{#if currentUser.admin}}
-        <paper-menu-button id="toolbar-admin">
-            <paper-icon-button icon="supervisor-account" class="dropdown-trigger"></paper-icon-button>
-
-            <paper-menu class="dropdown-content">
-                <a href="/admin/users" {{#if home}} target="_blank" {{/if}}>
-                    <paper-icon-item>
-                        <iron-icon icon="social:people" item-icon></iron-icon> Manage Users
-                    </paper-icon-item>
-                </a>
-
-                <a href="/admin/games" {{#if home}} target="_blank" {{/if}}>
-                    <paper-icon-item>
-                        <iron-icon icon="hardware:gamepad" item-icon></iron-icon> Manage Games
-                    </paper-icon-item>
-                </a>
-
-                <a href="/admin/servers" {{#if home}} target="_blank" {{/if}}>
-                    <paper-icon-item>
-                        <iron-icon icon="hardware:developer-board" item-icon></iron-icon> Manage Servers
-                    </paper-icon-item>
-                </a>
-            </paper-menu>
-        </paper-menu-button>
-        <paper-tooltip for="toolbar-admin">Admin</paper-tooltip>
-        {{/if}}
-
         <paper-menu-button>
             <paper-icon-button icon="social:person" class="dropdown-trigger" id="toolbar-user"></paper-icon-button>
             <paper-tooltip for="toolbar-user">User</paper-tooltip>
