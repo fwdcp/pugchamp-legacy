@@ -14,23 +14,17 @@
         <paper-datatable-column header="Steam ID" property="steamID" type="String"></paper-datatable-column>
         <paper-datatable-column header="Rating" property="rating" type="Number" sortable>
             <template>
-                <template is="dom-if" if="\{{value}}">
-                    \{{value}}
-                </template>
+                \{{value}}
             </template>
         </paper-datatable-column>
         <paper-datatable-column header="Deviation" property="deviation" type="Number" sortable>
             <template>
-                <template is="dom-if" if="\{{value}}">
-                    &plusmn;\{{value}}
-                </template>
+                &plusmn;\{{value}}
             </template>
         </paper-datatable-column>
         <paper-datatable-column header="Captain Score" property="captainScore" type="Number" sortable>
             <template>
-                <template is="dom-if" if="\{{value}}">
-                    \{{value}}
-                </template>
+                \{{value}}
             </template>
         </paper-datatable-column>
     </paper-datatable>
