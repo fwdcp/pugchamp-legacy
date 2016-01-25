@@ -19,13 +19,13 @@
     <h2>User Settings</h2>
 
     <form id="user-settings" method="post">
-        {{#unless user.alias}}
+        {{#unless currentUser.alias}}
         <p>
             <paper-input type="text" label="Alias" name="alias" placeholder="thesupremecommander" auto-validate error-message="up to fifteen alphanumeric characters only" pattern="^[A-Za-z0-9_]{1,15}$" required></paper-input>
         </p>
         {{else}}
         <p>
-            <paper-input type="text" label="Alias" value="{{user.alias}}" readonly></paper-input>
+            <paper-input type="text" label="Alias" value="{{currentUser.alias}}" readonly></paper-input>
         </p>
         {{/unless}}
 
