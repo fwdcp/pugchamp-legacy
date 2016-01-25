@@ -9,19 +9,24 @@
             </a>
         </div>
 
-        <div class="toolbar-link">
-            <a href="/players" {{#if home}} target="_blank" {{/if}}>
-                <paper-icon-button icon="social:people" id="toolbar-players"></paper-icon-button>
-                <paper-tooltip for="toolbar-players">Players</paper-tooltip>
-            </a>
-        </div>
+        <paper-menu-button id="toolbar-info">
+            <paper-icon-button icon="dashboard" class="dropdown-trigger"></paper-icon-button>
 
-        <div class="toolbar-link">
-            <a href="/games" {{#if home}} target="_blank" {{/if}}>
-                <paper-icon-button icon="hardware:gamepad" id="toolbar-games"></paper-icon-button>
-                <paper-tooltip for="toolbar-games">Games</paper-tooltip>
-            </a>
-        </div>
+            <paper-menu class="dropdown-content">
+                <a href="/players" {{#if home}} target="_blank" {{/if}}>
+                    <paper-icon-item>
+                        <iron-icon icon="social:people" item-icon></iron-icon> Players
+                    </paper-icon-item>
+                </a>
+
+                <a href="/games" {{#if home}} target="_blank" {{/if}}>
+                    <paper-icon-item>
+                        <iron-icon icon="hardware:gamepad" item-icon></iron-icon> Games
+                    </paper-icon-item>
+                </a>
+            </paper-menu>
+        </paper-menu-button>
+        <paper-tooltip for="toolbar-info">Info</paper-tooltip>
 
         {{#if pages}}
         <paper-menu-button id="toolbar-links">
