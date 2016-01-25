@@ -1,0 +1,55 @@
+<link rel="import" href="/components/polymer/polymer.html">
+
+<link rel="import" href="/components/iron-form/iron-form.html">
+<link rel="import" href="/components/paper-button/paper-button.html">
+
+<dom-module id="pugchamp-admin-game-control">
+    <template>
+        <style is="custom-style">
+            .action {
+                background: var(--accent-color);
+                color: var(--light-theme-text-color);
+            }
+        </style>
+
+        <form is="iron-form" action="/admin/game/{{game}}" method="post" on-iron-form-response="reload" on-iron-form-error="reload">
+            <input type="hidden" name="type" value="reassignServer">
+            <paper-button class="action" hidden$="{{!isComplete(status)}}" onclick="submit(event)" raised>Reassign to New Server</paper-button>
+        </form>
+        <form is="iron-form" action="/admin/game/{{game}}" method="post" on-iron-form-response="reload" on-iron-form-error="reload">
+            <input type="hidden" name="type" value="reinitializeServer">
+            <paper-button class="action" hidden$="{{!isLive(status)}}" onclick="submit(event)" raised>Reinitialize Server</paper-button>
+        </form>
+        <form is="iron-form" action="/admin/game/{{game}}" method="post" on-iron-form-response="reload" on-iron-form-error="reload">
+            <input type="hidden" name="type" value="updateServerPlayers">
+            <paper-button class="action" hidden$="{{!isLive(status)}}" onclick="submit(event)" raised>Update Server Players</paper-button>
+        </form>
+        <form is="iron-form" action="/admin/game/{{game}}" method="post" on-iron-form-response="reload" on-iron-form-error="reload">
+            <input type="hidden" name="type" value="abortGame">
+            <paper-button class="action" hidden$="{{!isLive(status)}}" onclick="submit(event)" raised>Abort Game</paper-button>
+        </form>
+	</template>
+
+	<script>
+        Polymer({
+            is: 'pugchamp-admin-game-control',
+            properties: {
+                game: String,
+                status: String
+            },
+            reload: function() {
+                document.location.reload();
+            },
+            isComplete: function(status) {
+                return status !== 'completed';
+            },
+            isLive: function(status) {
+                return status !== 'aborted' && status !== 'completed';
+            }
+        });
+
+        function submit(e) {
+            Polymer.dom(e).localTarget.parentElement.submit();
+        }
+    </script>
+</dom-module>

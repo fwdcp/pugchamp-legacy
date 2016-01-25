@@ -11,6 +11,9 @@
     <link rel="import" href="/components/paper-styles/color.html">
     <link rel="import" href="/components/paper-styles/default-theme.html">
 
+    {{#if ../currentUser.admin}}
+    <link rel="import" href="/elements/pugchamp-admin-control/pugchamp-admin-game-control.html">
+    {{/if}}
     <link rel="import" href="/elements/pugchamp-theme/role-icons.html">
     <link rel="import" href="/elements/pugchamp-theme/theme.html">
 
@@ -150,6 +153,10 @@
             {{#each game.links}}
                 <a href="{{url}}"><paper-button raised class="link">{{type}}</paper-button></a>
             {{/each}}
+
+            {{#if currentUser.admin}}
+            <pugchamp-admin-game-control game="{{game.id}}" status="{{game.status}}"></pugchamp-admin-game-control>
+            {{/if}}
         </div>
         <div class="flex-3 faction" id="faction-{{game.teams.[1].faction}}">
             <div class="header horizontal layout">
@@ -181,9 +188,11 @@
 
     <script src="/components/moment/moment.js"></script>
     <script>
-        var date = document.getElementById('date');
+        document.addEventListener('load', function() {
+            var date = document.getElementById('date');
 
-        date.textContent = moment.utc(date.textContent).local().format('llll');
+            date.textContent = moment.utc(date.textContent).local().format('llll');
+        });
     </script>
     {{/body}}
 
