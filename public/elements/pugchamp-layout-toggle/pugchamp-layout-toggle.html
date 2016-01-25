@@ -1,17 +1,14 @@
 <link rel="import" href="/components/polymer/polymer.html">
 
 <link rel="import" href="/components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="/components/paper-tooltip/paper-tooltip.html">
 
 <dom-module id="pugchamp-layout-toggle">
     <template>
-        <style is="custom-style">
-            :host {
-                margin-right: 16px;
-            }
-        </style>
-
-    	<paper-icon-button on-tap="openMenu" icon="arrow-drop-down" hidden="{{menuOpen}}"></paper-icon-button>
-        <paper-icon-button on-tap="closeMenu" icon="arrow-drop-up" hidden={{!menuOpen}}></paper-icon-button>
+    	<paper-icon-button on-tap="openMenu" icon="menu" hidden="{{menuOpen}}" id="menu-open"></paper-icon-button>
+        <paper-tooltip for="menu-open">Show Menu</paper-tooltip>
+        <paper-icon-button on-tap="closeMenu" icon="more-horiz" hidden="{{!menuOpen}}" id="menu-close"></paper-icon-button>
+        <paper-tooltip for="menu-close">Hide Menu</paper-tooltip>
 	</template>
 	<script>
         Polymer({
