@@ -40,8 +40,8 @@
         <paper-tooltip for="toolbar-links">Links</paper-tooltip>
         {{/if}}
 
-        {{#if user}}
-        {{#if user.admin}}
+        {{#if currentUser}}
+        {{#if currentUser.admin}}
         <paper-menu-button id="toolbar-admin">
             <paper-icon-button icon="supervisor-account" class="dropdown-trigger"></paper-icon-button>
 
@@ -73,7 +73,7 @@
             <paper-tooltip for="toolbar-user">User</paper-tooltip>
 
             <paper-menu class="dropdown-content">
-                <a href="/player/{{user.steamID}}" {{#if home}} target="_blank" {{/if}}>
+                <a href="/player/{{currentUser.steamID}}" {{#if home}} target="_blank" {{/if}}>
                     <paper-icon-item>
                         <iron-icon icon="account-box" item-icon></iron-icon> Profile
                     </paper-icon-item>

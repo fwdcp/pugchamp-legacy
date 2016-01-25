@@ -56,7 +56,7 @@ module.exports = function(app, chance, database, io, self) {
     });
 
     app.use(function(req, res, next) {
-        res.locals.user = req.user ? req.user.toObject() : null;
+        res.locals.currentUser = req.user ? req.user.toObject() : null;
         next();
     });
 

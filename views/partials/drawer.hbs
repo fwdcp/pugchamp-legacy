@@ -38,8 +38,8 @@
             <hr>
         {{/if}}
 
-        {{#if user}}
-            {{#if user.admin}}
+        {{#if currentUser}}
+            {{#if currentUser.admin}}
                 <a href="/admin/users" {{#if home}} target="_blank" {{/if}}>
                     <paper-icon-item>
                         <iron-icon icon="social:people" item-icon></iron-icon> Manage Users
@@ -61,7 +61,7 @@
                 <hr>
             {{/if}}
 
-            <a href="/player/{{user.steamID}}" {{#if home}} target="_blank" {{/if}}>
+            <a href="/player/{{currentUser.steamID}}" {{#if home}} target="_blank" {{/if}}>
                 <paper-icon-item>
                     <iron-icon icon="account-box" item-icon></iron-icon> Profile
                 </paper-icon-item>
