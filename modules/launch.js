@@ -208,6 +208,9 @@ module.exports = function(app, chance, database, io, self) {
                 return;
             }
 
+            launchAttemptActive = false;
+            launchAttemptStart = null;
+
             if (_.size(launchHolds) === 0) {
                 try {
                     yield self.launchDraft({
@@ -235,9 +238,6 @@ module.exports = function(app, chance, database, io, self) {
                     action: 'failed to launch due to holds'
                 });
             }
-
-            launchAttemptActive = false;
-            launchAttemptStart = null;
 
             self.updateLaunchStatus();
         });
@@ -318,13 +318,15 @@ module.exports = function(app, chance, database, io, self) {
 
                     readiesReceived = new Set();
 
+                    io.sockets.emit('userReadyStatusUpdated', false);
+
+                    autoReadyRecentlyActiveUsers();
+
                     launchHolds = yield getLaunchHolds(false);
 
                     updateStatusInfo();
 
                     io.sockets.emit('launchStatusUpdated', getCurrentStatusMessage());
-
-                    autoReadyRecentlyActiveUsers();
                 }
                 catch (err) {
                     self.postToLog({
