@@ -47,24 +47,6 @@ module.exports = function(app, chance, database, io, self) {
         });
     }));
 
-    router.get('/user/:id', co.wrap(function*(req, res) {
-        let user = yield database.User.findById(req.params.id);
-
-        if (!user) {
-            res.sendStatus(404);
-            return;
-        }
-
-        let restrictions = yield database.Restriction.find({
-            user: user.id
-        }).populate('actions.admin').exec();
-
-        res.render('admin/user', {
-            user: user.toObject(),
-            restrictions: _(restrictions).map(restriction => restriction.toObject()).orderBy(['active', 'expires'], ['desc', 'desc']).value()
-        });
-    }));
-
     router.post('/user/:id', bodyParser.urlencoded({
         extended: false
     }), co.wrap(function*(req, res) {
@@ -172,14 +154,6 @@ module.exports = function(app, chance, database, io, self) {
         else {
             res.sendStatus(400);
         }
-    }));
-
-    router.get('/games', co.wrap(function*(req, res) {
-        let games = yield database.Game.find({}).exec();
-
-        res.render('admin/gameList', {
-            games: _(games).orderBy(['date'], ['desc']).value()
-        });
     }));
 
     router.post('/game/:id', bodyParser.urlencoded({
