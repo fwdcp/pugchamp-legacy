@@ -12,11 +12,27 @@
     <paper-datatable data="{{toJSON players}}" id="players">
         <paper-datatable-column header="Player" property="alias" type="String" sortable></paper-datatable-column>
         <paper-datatable-column header="Steam ID" property="steamID" type="String"></paper-datatable-column>
-        <paper-datatable-column header="Rating" property="rating" type="Number" sortable></paper-datatable-column>
-        <paper-datatable-column header="Deviation" property="deviation" type="Number" sortable>
-            <template>&plusmn;\{{value}}</template>
+        <paper-datatable-column header="Rating" property="rating" type="Number" sortable>
+            <template>
+                <template is="dom-if" if="\{{value}}">
+                    \{{value}}
+                </template>
+            </template>
         </paper-datatable-column>
-        <paper-datatable-column header="Captain Score" property="captainScore" type="Number" sortable></paper-datatable-column>
+        <paper-datatable-column header="Deviation" property="deviation" type="Number" sortable>
+            <template>
+                <template is="dom-if" if="\{{value}}">
+                    &plusmn;\{{value}}
+                </template>
+            </template>
+        </paper-datatable-column>
+        <paper-datatable-column header="Captain Score" property="captainScore" type="Number" sortable>
+            <template>
+                <template is="dom-if" if="\{{value}}">
+                    \{{value}}
+                </template>
+            </template>
+        </paper-datatable-column>
     </paper-datatable>
 
     <script>
