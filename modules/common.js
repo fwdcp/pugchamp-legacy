@@ -10,6 +10,17 @@ const moment = require('moment');
 module.exports = function(app, chance, database, io, self) {
     const SITE_NAME = config.get('server.siteName');
 
+    self.promiseDelay = function(delay, value, fail) {
+        return new Promise(function(resolve, reject) {
+            if (!fail) {
+                setTimeout(resolve, delay, value);
+            }
+            else {
+                setTimeout(reject, delay, value);
+            }
+        });
+    };
+
     self.getDocumentID = function getDocumentID(info) {
         if (_.hasIn(info, 'toHexString')) {
             return info.toHexString();

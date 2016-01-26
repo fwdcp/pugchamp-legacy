@@ -15,6 +15,7 @@ module.exports = function(app, chance, database, io, self) {
     const GET_SERVERS_THROTTLE_INTERVAL = 30000;
     const MAP_CHANGE_TIMEOUT = ms(config.get('app.servers.mapChangeTimeout'));
     const MAPS = config.get('app.games.maps');
+    const RETRY_DELAY = ms(config.get('app.servers.retryDelay'));
     const ROLES = config.get('app.games.roles');
     const SERVER_TIMEOUT = ms(config.get('app.servers.serverTimeout'));
 
@@ -83,11 +84,9 @@ module.exports = function(app, chance, database, io, self) {
                     status: 'unreachable'
                 };
             }
-        }), new Promise(function(resolve, reject) {
-            setTimeout(resolve, SERVER_TIMEOUT, {
-                status: 'unreachable'
-            });
-        })]);
+        }), self.promiseDelay(SERVER_TIMEOUT, {
+            status: 'unreachable'
+        }, false)]);
     }
 
     self.getServerStatuses = co.wrap(function* getServerStatuses() {
@@ -252,7 +251,16 @@ module.exports = function(app, chance, database, io, self) {
         game.server = server;
         yield game.save();
 
-        yield self.initializeServer(game);
+        try {
+            yield self.initializeServer(game);
+        }
+        catch (err) {
+            try {
+                yield self.promiseDelay(RETRY_DELAY, null, false);
+
+                self.initializeServer(game);
+            }
+        }
     });
 
     app.get('/servers', co.wrap(function*(req, res) {
