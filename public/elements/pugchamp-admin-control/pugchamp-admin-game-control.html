@@ -2,6 +2,9 @@
 
 <link rel="import" href="/components/iron-form/iron-form.html">
 <link rel="import" href="/components/paper-button/paper-button.html">
+<link rel="import" href="/components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="/components/paper-item/paper-item.html">
+<link rel="import" href="/components/paper-menu/paper-menu.html">
 
 <dom-module id="pugchamp-admin-game-control">
     <template>
@@ -12,21 +15,39 @@
             }
         </style>
 
-        <form is="iron-form" action="/admin/game/{{game}}" method="post" on-iron-form-response="reload" on-iron-form-error="reload">
+        <form is="iron-form" action="/admin/game/{{game.id}}" method="post" on-iron-form-response="reload" on-iron-form-error="reload">
             <input type="hidden" name="type" value="reassignServer">
-            <paper-button class="action" hidden$="{{!isComplete(status)}}" onclick="submit(event)" raised>Reassign to New Server</paper-button>
+            <paper-button class="action" hidden$="{{!isComplete(game.status)}}" onclick="submit(event)" raised>Reassign to New Server</paper-button>
         </form>
-        <form is="iron-form" action="/admin/game/{{game}}" method="post" on-iron-form-response="reload" on-iron-form-error="reload">
+        <form is="iron-form" action="/admin/game/{{game.id}}" method="post" on-iron-form-response="reload" on-iron-form-error="reload">
             <input type="hidden" name="type" value="reinitializeServer">
-            <paper-button class="action" hidden$="{{!isLive(status)}}" onclick="submit(event)" raised>Reinitialize Server</paper-button>
+            <paper-button class="action" hidden$="{{!isLive(game.status)}}" onclick="submit(event)" raised>Reinitialize Server</paper-button>
         </form>
-        <form is="iron-form" action="/admin/game/{{game}}" method="post" on-iron-form-response="reload" on-iron-form-error="reload">
+        <form is="iron-form" action="/admin/game/{{game.id}}" method="post" on-iron-form-response="reload" on-iron-form-error="reload">
             <input type="hidden" name="type" value="updateServerPlayers">
-            <paper-button class="action" hidden$="{{!isLive(status)}}" onclick="submit(event)" raised>Update Server Players</paper-button>
+            <paper-button class="action" hidden$="{{!isLive(game.status)}}" onclick="submit(event)" raised>Update Server Players</paper-button>
         </form>
-        <form is="iron-form" action="/admin/game/{{game}}" method="post" on-iron-form-response="reload" on-iron-form-error="reload">
+        <form is="iron-form" action="/admin/game/{{game.id}}" method="post" on-iron-form-response="reload" on-iron-form-error="reload">
+            <input type="hidden" name="type" value="requestSubstitute">
+            <input type="hidden" name="player" value="{{selectedPlayer}}">
+            <paper-dropdown-menu label="Player to Replace">
+                <paper-menu attr-for-selected="value" selected="{{selectedPlayer}}" class="dropdown-content">
+                    <template is="dom-repeat" items="{{game.teams}}">
+                        <template is="dom-repeat" items="{{item.composition}}">
+                            <template is="dom-repeat" items="{{item.players}}">
+                                <template is="dom-if" if="{{!item.replaced}}">
+                                    <paper-item value="{{item.user.id}}">{{item.user.alias}}</paper-item>
+                                </template>
+                            </template>
+                        </template>
+                    </template>
+                </paper-menu>
+            </paper-dropdown-menu>
+            <paper-button class="action" hidden$="{{!isLive(game.status)}}" onclick="submit(event)" raised>Request Substitute</paper-button>
+        </form>
+        <form is="iron-form" action="/admin/game/{{game.id}}" method="post" on-iron-form-response="reload" on-iron-form-error="reload">
             <input type="hidden" name="type" value="abortGame">
-            <paper-button class="action" hidden$="{{!isLive(status)}}" onclick="submit(event)" raised>Abort Game</paper-button>
+            <paper-button class="action" hidden$="{{!isLive(game.status)}}" onclick="submit(event)" raised>Abort Game</paper-button>
         </form>
 	</template>
 
@@ -34,8 +55,7 @@
         Polymer({
             is: 'pugchamp-admin-game-control',
             properties: {
-                game: String,
-                status: String
+                game: Object
             },
             reload: function() {
                 document.location.reload();

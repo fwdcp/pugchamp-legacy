@@ -234,6 +234,32 @@ module.exports = function(app, chance, database, io, self) {
                 res.sendStatus(500);
             }
         }
+        else if (req.body.type === 'requestSubstitute') {
+            if (game.status === 'aborted' || game.status === 'completed') {
+                res.sendStatus(400);
+                return;
+            }
+
+            let player = self.getCachedUser(req.body.player);
+
+            if (!player) {
+                res.sendStatus(404);
+                return;
+            }
+
+            let gamePlayerInfo = self.getGamePlayerInfo(game, player.id);
+
+            if (!gamePlayerInfo || gamePlayerInfo.player.replaced) {
+                res.sendStatus(400);
+                return;
+            }
+
+            postToAdminLog(req.user, 'requested substitute for player `<' + BASE_URL + '/player/' + player.steamID + '|' + player.alias + '>` for game `<' + BASE_URL + '/game/' + game.id + '|' + game.id + '>`');
+
+            self.requestSubstitute(game, player.id);
+
+            res.sendStatus(200);
+        }
         else if (req.body.type === 'abortGame') {
             if (game.status === 'aborted' || game.status === 'completed') {
                 res.sendStatus(400);

@@ -155,7 +155,7 @@
             {{/each}}
 
             {{#if currentUser.admin}}
-            <pugchamp-admin-game-control game="{{game.id}}" status="{{game.status}}"></pugchamp-admin-game-control>
+            <pugchamp-admin-game-control game="{{toJSON game}}"></pugchamp-admin-game-control>
             {{/if}}
         </div>
         <div class="flex-3 faction" id="faction-{{game.teams.[1].faction}}">
