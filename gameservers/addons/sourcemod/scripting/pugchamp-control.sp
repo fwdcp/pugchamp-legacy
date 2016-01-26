@@ -1,5 +1,6 @@
 #include <sourcemod>
 #include <connect>
+#include <logstf>
 #include <sdktools>
 #include <steamtools>
 #include <tf2>
@@ -347,19 +348,21 @@ public Action UserMessage_SayText2(UserMsg msg_id, BfRead msg, const int[] playe
 }
 
 public void LogUploaded(bool success, const char[] logid, const char[] logurl) {
-    char url[2048];
-    serverURL.GetString(url, sizeof(url));
-    HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
+    if (gameAssigned) {
+        char url[2048];
+        serverURL.GetString(url, sizeof(url));
+        HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
 
-    char id[32];
-    gameID.GetString(id, sizeof(id));
-    Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "game", id);
+        char id[32];
+        gameID.GetString(id, sizeof(id));
+        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "game", id);
 
-    Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "status", "logavailable");
+        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "status", "logavailable");
 
-    Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "url", logurl);
+        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "url", logurl);
 
-    Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned);
+        Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned);
+    }
 }
 
 public int HTTPRequestReturned(HTTPRequestHandle HTTPRequest, bool requestSuccessful, HTTPStatusCode statusCode) {
