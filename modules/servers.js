@@ -15,7 +15,7 @@ module.exports = function(app, chance, database, io, self) {
     const GET_SERVERS_THROTTLE_INTERVAL = 30000;
     const MAP_CHANGE_TIMEOUT = ms(config.get('app.servers.mapChangeTimeout'));
     const MAPS = config.get('app.games.maps');
-    const RETRY_DELAY = ms(config.get('app.servers.retryDelay'));
+    const RETRY_ATTEMPTS = _.map(config.get('app.servers.retryAttempts'), delay => ms(delay));
     const ROLES = config.get('app.games.roles');
     const SERVER_TIMEOUT = ms(config.get('app.servers.serverTimeout'));
 
@@ -255,10 +255,35 @@ module.exports = function(app, chance, database, io, self) {
             yield self.initializeServer(game);
         }
         catch (err) {
-            try {
-                yield self.promiseDelay(RETRY_DELAY, null, false);
+            self.postToLog({
+                description: 'encountered error while trying to initialize server `' + server + '` for game `' + game.id + '`',
+                error: err
+            });
 
-                self.initializeServer(game);
+            let success = false;
+
+            for (let delay of RETRY_ATTEMPTS) {
+                yield self.promiseDelay(delay, null, false);
+
+                try {
+                    self.initializeServer(game);
+
+                    success = true;
+                    break;
+                }
+                catch (err) {
+                    self.postToLog({
+                        description: 'encountered error while trying to initialize server `' + server + '` for game `' + game.id + '`',
+                        error: err
+                    });
+
+                    success = false;
+                    continue;
+                }
+            }
+
+            if (!success) {
+                throw new Error('failed to initialize server');
             }
         }
     });
