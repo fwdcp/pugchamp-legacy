@@ -186,6 +186,7 @@
         ratingHistory.rows = [{{#each ratings}}[new Date('{{date}}'), {{mean}}, {{lowerBound}}, {{upperBound}}],{{/each}}];
         ratingHistory.options = {
             backgroundColor: '#212121',
+            colors: ['#ffa000'],
             explorer: {
                 axis: 'horizontal',
                 keepInBounds: true
@@ -203,11 +204,7 @@
                     color: '#ffffff'
                 }
             },
-            legend: {
-                textStyle: {
-                    color: '#ffffff'
-                }
-            },
+            legend: 'none',
             title: 'Rating History',
             titleTextStyle: {
                 color: '#ffffff'
