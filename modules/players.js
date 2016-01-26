@@ -56,6 +56,11 @@ module.exports = function(app, chance, database, io, self) {
             steamID: req.params.steam
         }).populate('currentRating').exec();
 
+        if (!user) {
+            res.sendStatus(404);
+            return;
+        }
+
         let games = yield database.Game.find({
             $or: [{
                 'teams.captain': user.id
