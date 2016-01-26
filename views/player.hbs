@@ -182,8 +182,8 @@
         {{/if}}
 
         var ratingHistory = document.getElementById('rating-history');
-        ratingHistory.cols = [{type: 'datetime', label: 'Date'}, {type: 'string', role: 'tooltip'}, {type: 'number', label: 'Rating'}, {type: 'number', role: 'interval'}, {type: 'number', role: 'interval'}]
-        ratingHistory.rows = [{{#each ratings}}[new Date('{{date}}'), '<a href="/game/{{game}}">Game</a>', {{mean}}, {{lowerBound}}, {{upperBound}}],{{/each}}];
+        ratingHistory.cols = [{type: 'datetime', label: 'Date'}, {type: 'number', label: 'Rating'}, {type: 'number', role: 'interval'}, {type: 'number', role: 'interval'}, {type: 'string', role: 'tooltip', p: {html: true}}]
+        ratingHistory.rows = [{{#each ratings}}[new Date('{{date}}'), {{mean}}, {{lowerBound}}, {{upperBound}}, '<a href="/game/{{game}}">Game</a>'],{{/each}}];
         ratingHistory.options = {
             backgroundColor: '#212121',
             explorer: {
@@ -211,6 +211,9 @@
             title: 'Rating History',
             titleTextStyle: {
                 color: '#ffffff'
+            },
+            tooltip: {
+                isHtml: true
             },
             vAxis: {
                 baselineColor: '#bcbcbc',
