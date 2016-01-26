@@ -29,8 +29,8 @@ module.exports = function(app, chance, database, io, self) {
         if (n > 1) {
             let distribution = new distributions.Studentt(n - 1);
 
-            let low = mean + (distribution.inv(0.025) * deviation * math.sqrt(1 + (1 / n)));
-            let high = mean + (distribution.inv(0.975) * deviation * math.sqrt(1 + (1 / n)));
+            let low = mean + (distribution.inv(0.16) * deviation * math.sqrt(1 + (1 / n)));
+            let high = mean + (distribution.inv(0.84) * deviation * math.sqrt(1 + (1 / n)));
 
             return {
                 low: low >= 0 ? low : 0,
@@ -40,9 +40,9 @@ module.exports = function(app, chance, database, io, self) {
         }
         else {
             return {
-                low: 0,
+                low: null,
                 center: mean,
-                high: 1
+                high: null
             };
         }
     }

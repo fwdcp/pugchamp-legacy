@@ -579,13 +579,11 @@ module.exports = function(app, chance, database, io, self) {
             }
             else if (CAPTAIN_SELECTION_WEIGHT === 'success') {
                 weights = _.map(fullCaptains, function(captain) {
-                    let weight = 0.05;
-
-                    if (captain.captainScore && captain.captainScore.low > 0) {
-                        weight += captain.captainScore.low;
+                    if (captain.captainScore && _.isNumber(captain.captainScore.low)) {
+                        return 0.03 + captain.captainScore.low;
                     }
 
-                    return weight;
+                    return 0.06;
                 });
             }
 
