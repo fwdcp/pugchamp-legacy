@@ -45,6 +45,9 @@
         ratings.rows = [{{#each players}}{{#if deviation}}[{{deviation}}, {{rating}}, '{{alias}}'],{{/if}}{{/each}}];
         ratings.options = {
             backgroundColor: '#212121',
+            explorer: {
+                keepInBounds: true
+            },
             hAxis: {
                 baselineColor: '#bcbcbc',
                 direction: -1,
@@ -59,7 +62,8 @@
                 title: 'Deviation',
                 titleTextStyle: {
                     color: '#ffffff'
-                }
+                },
+                viewWindowMode: 'maximized'
             },
             legend: 'none',
             title: 'Rating Distribution',
@@ -79,7 +83,8 @@
                 title: 'Rating',
                 titleTextStyle: {
                     color: '#ffffff'
-                }
+                },
+                viewWindowMode: 'maximized'
             }
         };
 
