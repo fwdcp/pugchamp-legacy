@@ -45,9 +45,7 @@
         ratings.rows = [{{#each players}}{{#if deviation}}[{{deviation}}, {{rating}}, '{{alias}}'],{{/if}}{{/each}}];
         ratings.options = {
             backgroundColor: '#212121',
-            explorer: {
-                keepInBounds: true
-            },
+            explorer: {},
             hAxis: {
                 baselineColor: '#bcbcbc',
                 direction: -1,
