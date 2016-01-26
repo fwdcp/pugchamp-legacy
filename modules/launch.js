@@ -205,9 +205,6 @@ module.exports = function(app, chance, database, io, self) {
                 return;
             }
 
-            launchAttemptActive = false;
-            launchAttemptStart = null;
-
             if (_.size(launchHolds) === 0) {
                 try {
                     yield self.launchDraft({
@@ -235,6 +232,9 @@ module.exports = function(app, chance, database, io, self) {
                     action: 'failed to launch new draft due to holds'
                 });
             }
+
+            launchAttemptActive = false;
+            launchAttemptStart = null;
 
             self.updateLaunchStatus();
         });
