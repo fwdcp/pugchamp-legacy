@@ -3,11 +3,14 @@
 <html>
 
     {{#> head title="Players"}}
+    <link rel="import" href="/components/google-chart/google-chart.html">
     <link rel="import" href="/components/paper-datatable/paper-datatable.html">
     {{/head}}
 
     {{#> body}}
     <h1>Players</h1>
+
+    <google-chart id="ratings" type="scatter"></google-chart>
 
     <paper-datatable data="{{toJSON players}}" id="players">
         <paper-datatable-column header="Player" property="alias" type="String" sortable></paper-datatable-column>
@@ -30,6 +33,47 @@
     </paper-datatable>
 
     <script>
+        var ratings = document.getElementById('ratings');
+        ratings.cols = [{type: 'number', label: 'Deviation'}, {type: 'number', label: 'Rating'}, {type: 'string', role: 'tooltip', p: {html: true}}]
+        ratings.rows = [{{#each players}}{{#if deviation}}[{{deviation}},{{rating}},'<a href="/player/{{steamID}}">{{alias}}</a>'],{{/if}}{{/each}}];
+        ratings.options = {
+            backgroundColor: '#212121',
+            hAxis: {
+                baselineColor: '#bcbcbc',
+                direction: -1,
+                gridlines: {
+                    color: '#bcbcbc'
+                },
+                textStyle: {
+                    color: '#ffffff'
+                },
+                title: 'Deviation',
+                titleTextStyle: {
+                    color: '#ffffff'
+                }
+            },
+            title: 'Rating Distribution',
+            titleTextStyle: {
+                color: '#ffffff'
+            },
+            tooltip: {
+                isHtml: true
+            },
+            vAxis: {
+                baselineColor: '#bcbcbc',
+                gridlines: {
+                    color: '#bcbcbc'
+                },
+                textStyle: {
+                    color: '#ffffff'
+                },
+                title: 'Rating',
+                titleTextStyle: {
+                    color: '#ffffff'
+                }
+            }
+        };
+
         document.getElementById('players').addEventListener('row-tap', function(event) {
             window.location = '/player/' + event.detail.item.steamID;
         });
