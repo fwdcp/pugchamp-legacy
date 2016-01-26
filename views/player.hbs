@@ -34,7 +34,7 @@
             color: var(--dark-theme-text-color);
         }
 
-        #ratingHistory {
+        #rating-history {
             width: 100%;
         }
     </style>
@@ -69,12 +69,12 @@
     {{#if user.options.showDraftStats}}
     <h2>Draft Stats</h2>
 
-    <google-chart id="draftStats" type="pie"></google-chart>
+    <google-chart id="draft-stats" type="pie"></google-chart>
     {{/if}}
 
     <h2>Rating History</h2>
 
-    <google-chart id="ratingHistory" type="line"></google-chart>
+    <google-chart id="rating-history" type="line"></google-chart>
 
     <h2>Games</h2>
 
@@ -173,16 +173,59 @@
         });
 
         {{#if user.options.showDraftStats}}
-        var draftStats = document.getElementById('draftStats');
+        var draftStats = document.getElementById('draft-stats');
         draftStats.cols = [{type: 'string', label: 'Outcome'}, {type: 'number', label: 'Occurrences'}]
         draftStats.rows = {{{toJSON draftStats}}};
-        draftStats.options = {backgroundColor: '#212121'};
+        draftStats.options = {
+            backgroundColor: '#212121'
+        };
         {{/if}}
 
-        var ratingHistory = document.getElementById('ratingHistory');
+        var ratingHistory = document.getElementById('rating-history');
         ratingHistory.cols = [{type: 'datetime', label: 'Date'}, {type: 'string', role: 'tooltip'}, {type: 'number', label: 'Rating'}, {type: 'number', role: 'interval'}, {type: 'number', role: 'interval'}]
         ratingHistory.rows = [{{#each ratings}}[new Date('{{date}}'), '<a href="/game/{{game}}">Game</a>', {{mean}}, {{lowerBound}}, {{upperBound}}],{{/each}}];
-        ratingHistory.options = {backgroundColor: '#212121', explorer: {axis: 'horizontal', keepInBounds: true}, hAxis: {baselineColor: '#bcbcbc', gridlines: {color: '#bcbcbc'}, textStyle: {color: '#ffffff'}, title: 'Date', titleTextStyle: {color: '#ffffff'}}, legend: {textStyle: {color: '#ffffff'}}, title: 'Rating History', titleTextStyle: {color: '#ffffff'}, vAxis: {baselineColor: '#bcbcbc', gridlines: {color: '#bcbcbc'}, textStyle: {color: '#ffffff'}, title: 'Date', titleTextStyle: {color: '#ffffff'}}};
+        ratingHistory.options = {
+            backgroundColor: '#212121',
+            explorer: {
+                axis: 'horizontal',
+                keepInBounds: true
+            },
+            hAxis: {
+                baselineColor: '#bcbcbc',
+                gridlines: {
+                    color: '#bcbcbc'
+                },
+                textStyle: {
+                    color: '#ffffff'
+                },
+                title: 'Date',
+                titleTextStyle: {
+                    color: '#ffffff'
+                }
+            },
+            legend: {
+                textStyle: {
+                    color: '#ffffff'
+                }
+            },
+            title: 'Rating History',
+            titleTextStyle: {
+                color: '#ffffff'
+            },
+            vAxis: {
+                baselineColor: '#bcbcbc',
+                gridlines: {
+                    color: '#bcbcbc'
+                },
+                textStyle: {
+                    color: '#ffffff'
+                },
+                title: 'Rating',
+                titleTextStyle: {
+                    color: '#ffffff'
+                }
+            }
+        };
     </script>
 
     {{/body}}
