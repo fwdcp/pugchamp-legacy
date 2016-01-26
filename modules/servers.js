@@ -266,7 +266,7 @@ module.exports = function(app, chance, database, io, self) {
                 yield self.promiseDelay(delay, null, false);
 
                 try {
-                    self.initializeServer(game);
+                    yield self.initializeServer(game);
 
                     success = true;
                     break;
