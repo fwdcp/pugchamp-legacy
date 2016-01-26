@@ -34,8 +34,8 @@
 
     <script>
         var ratings = document.getElementById('ratings');
-        ratings.cols = [{type: 'number', label: 'Deviation'}, {type: 'number', label: 'Rating'}, {type: 'string', role: 'tooltip', p: {html: true}}]
-        ratings.rows = [{{#each players}}{{#if deviation}}[{{deviation}},{{rating}},'<a href="/player/{{steamID}}">{{alias}}</a>'],{{/if}}{{/each}}];
+        ratings.cols = [{type: 'number', label: 'Deviation'}, {type: 'number', label: 'Rating'}, {type: 'string', role: 'tooltip'}]
+        ratings.rows = [{{#each players}}{{#if deviation}}[{{deviation}}, {{rating}}, '{{alias}}'],{{/if}}{{/each}}];
         ratings.options = {
             backgroundColor: '#212121',
             hAxis: {
@@ -55,9 +55,6 @@
             title: 'Rating Distribution',
             titleTextStyle: {
                 color: '#ffffff'
-            },
-            tooltip: {
-                isHtml: true
             },
             vAxis: {
                 baselineColor: '#bcbcbc',
