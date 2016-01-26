@@ -30,7 +30,7 @@ module.exports = function(app, chance, database, io, self) {
                 attachments: [{
                     fallback: user.alias + ' ' + action,
                     author_name: user.alias,
-                    author_link: BASE_URL + '/admin/user/' + user.id,
+                    author_link: BASE_URL + '/player/' + user.steamID,
                     text: action
                 }]
             };
@@ -38,14 +38,6 @@ module.exports = function(app, chance, database, io, self) {
             yield self.postToSlack(message);
         });
     }
-
-    router.get('/users', co.wrap(function*(req, res) {
-        let users = yield database.User.find({}).exec();
-
-        res.render('admin/userList', {
-            users: _(users).map(user => user.toObject()).sortBy('alias').value()
-        });
-    }));
 
     router.post('/user/:id', bodyParser.urlencoded({
         extended: false
@@ -64,7 +56,7 @@ module.exports = function(app, chance, database, io, self) {
                 });
 
                 if (!existingUser) {
-                    postToAdminLog(req.user, 'changed the alias of `<' + BASE_URL + '/admin/user/' + user.id + '|' + req.body.alias + '>` from `' + user.alias + '`');
+                    postToAdminLog(req.user, 'changed the alias of `<' + BASE_URL + '/player/' + user.steamID + '|' + req.body.alias + '>` from `' + user.alias + '`');
 
                     user.alias = req.body.alias;
                 }
@@ -73,11 +65,11 @@ module.exports = function(app, chance, database, io, self) {
             try {
                 yield user.save();
 
-                res.redirect('/admin/user/' + user.id);
+                res.sendStatus(200);
             }
             catch (err) {
                 self.postToLog({
-                    description: 'failed to save settings for <' + BASE_URL + '/admin/user/' + user.id + '|' + user.alias + '>: ' + JSON.stringify(req.body),
+                    description: 'failed to save settings for <' + BASE_URL + '/player/' + user.steamID + '|' + user.alias + '>: ' + JSON.stringify(req.body),
                     error: err
                 });
 
@@ -102,17 +94,17 @@ module.exports = function(app, chance, database, io, self) {
                 expires: expires
             });
 
-            postToAdminLog(req.user, 'restricted `<' + BASE_URL + '/admin/user/' + user.id + '|' + user.alias + '>` (aspects: ' + restriction.aspects.join(', ') + ') (expires: ' + (restriction.expires ? moment(restriction.expires).format('llll') : 'never') + ') (reason: ' + restriction.reason + ')');
+            postToAdminLog(req.user, 'restricted `<' + BASE_URL + '/player/' + user.steamID + '|' + user.alias + '>` (aspects: ' + restriction.aspects.join(', ') + ') (expires: ' + (restriction.expires ? moment(restriction.expires).format('llll') : 'never') + ') (reason: ' + restriction.reason + ')');
 
             try {
                 yield restriction.save();
                 yield self.updateUserRestrictions(user.id);
 
-                res.redirect('/admin/user/' + user.id);
+                res.sendStatus(200);
             }
             catch (err) {
                 self.postToLog({
-                    description: 'failed to apply restriction to <' + BASE_URL + '/admin/user/' + user.id + '|' + user.alias + '>: ' + JSON.stringify(req.body),
+                    description: 'failed to apply restriction to <' + BASE_URL + '/player/' + user.steamID + '|' + user.alias + '>: ' + JSON.stringify(req.body),
                     error: err
                 });
 
@@ -128,7 +120,7 @@ module.exports = function(app, chance, database, io, self) {
             }
 
             if (user.id === self.getDocumentID(restriction.user) && restriction.active) {
-                postToAdminLog(req.user, 'revoked restriction for `<' + BASE_URL + '/admin/user/' + user.id + '|' + user.alias + '>` (aspects: ' + restriction.aspects.join(', ') + ') (expires: ' + (restriction.expires ? moment(restriction.expires).format('llll') : 'never') + ') (reason: ' + restriction.reason + ')');
+                postToAdminLog(req.user, 'revoked restriction for `<' + BASE_URL + '/player/' + user.steamID + '|' + user.alias + '>` (aspects: ' + restriction.aspects.join(', ') + ') (expires: ' + (restriction.expires ? moment(restriction.expires).format('llll') : 'never') + ') (reason: ' + restriction.reason + ')');
 
                 restriction.active = false;
 
@@ -136,11 +128,11 @@ module.exports = function(app, chance, database, io, self) {
                     yield restriction.save();
                     yield self.updateUserRestrictions(user.id);
 
-                    res.redirect('/admin/user/' + user.id);
+                    res.sendStatus(200);
                 }
                 catch (err) {
                     self.postToLog({
-                        description: 'failed to revoke restriction `' + restriction.id + '` for <' + BASE_URL + '/admin/user/' + user.id + '|' + user.alias + '>',
+                        description: 'failed to revoke restriction `' + restriction.id + '` for <' + BASE_URL + '/player/' + user.steamID + '|' + user.alias + '>',
                         error: err
                     });
 
@@ -267,8 +259,6 @@ module.exports = function(app, chance, database, io, self) {
         else {
             res.sendStatus(400);
         }
-
-        res.redirect('/admin/games');
     }));
 
     router.post('/server/:id', bodyParser.urlencoded({
@@ -320,7 +310,7 @@ module.exports = function(app, chance, database, io, self) {
                 fallback: trimmedMessage ? user.alias + ' requested help: ' + trimmedMessage : user.alias + ' requested help',
                 color: 'warning',
                 author_name: user.alias,
-                author_link: BASE_URL + '/admin/user/' + user.id,
+                author_link: BASE_URL + '/player/' + user.steamID,
                 text: trimmedMessage
             }]
         });
