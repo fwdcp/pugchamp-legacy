@@ -194,7 +194,7 @@ module.exports = function(app, chance, database, io, self) {
                 });
 
                 self.sendMessage({
-                    action: 'failed to update status'
+                    action: 'failed to update status of launch'
                 });
 
                 launchAttemptActive = false;
@@ -224,7 +224,7 @@ module.exports = function(app, chance, database, io, self) {
                     });
 
                     self.sendMessage({
-                        action: 'failed to launch draft'
+                        action: 'failed to launch draft due to internal error'
                     });
 
                     self.cleanUpDraft();
@@ -232,7 +232,7 @@ module.exports = function(app, chance, database, io, self) {
             }
             else {
                 self.sendMessage({
-                    action: 'failed to launch due to holds'
+                    action: 'failed to launch new draft due to holds'
                 });
             }
 
@@ -332,7 +332,7 @@ module.exports = function(app, chance, database, io, self) {
                     });
 
                     self.sendMessage({
-                        action: 'failed to begin launch attempt'
+                        action: 'failed to begin launch attempt due to internal error'
                     });
 
                     launchAttemptActive = false;

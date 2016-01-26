@@ -264,7 +264,7 @@ module.exports = function(app, chance, database, io, self) {
                 });
 
                 self.sendMessage({
-                    action: 'failed to complete substitution for game'
+                    action: 'failed to complete substitution for game due to internal error'
                 });
             }
 

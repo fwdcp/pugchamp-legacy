@@ -295,7 +295,7 @@ module.exports = function(app, chance, database, io, self) {
                 });
 
                 self.sendMessage({
-                    action: 'failed to set up game'
+                    action: 'failed to set up drafted game due to internal error'
                 });
 
                 self.cleanUpDraft();
