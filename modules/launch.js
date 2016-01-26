@@ -381,6 +381,10 @@ module.exports = function(app, chance, database, io, self) {
             self.markUserActivity(userID);
 
             updateUserAvailability(userID, availability);
+
+            if (launchAttemptActive) {
+                updateUserReadyStatus(userID, true);
+            }
         });
 
         socket.on('updateReadyStatus', function(ready) {
