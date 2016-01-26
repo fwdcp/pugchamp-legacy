@@ -5,6 +5,13 @@
     {{#> head title="Players"}}
     <link rel="import" href="/components/google-chart/google-chart.html">
     <link rel="import" href="/components/paper-datatable/paper-datatable.html">
+
+    <style is="custom-style">
+        #ratings {
+            height: 75vh;
+            width: 75vh;
+        }
+    </style>
     {{/head}}
 
     {{#> body}}
@@ -44,6 +51,8 @@
                 gridlines: {
                     color: '#bcbcbc'
                 },
+                maxValue: 500,
+                minValue: 0,
                 textStyle: {
                     color: '#ffffff'
                 },
@@ -52,6 +61,7 @@
                     color: '#ffffff'
                 }
             },
+            legend: 'none',
             title: 'Rating Distribution',
             titleTextStyle: {
                 color: '#ffffff'
@@ -61,6 +71,8 @@
                 gridlines: {
                     color: '#bcbcbc'
                 },
+                maxValue: 3000,
+                minValue: 0,
                 textStyle: {
                     color: '#ffffff'
                 },
