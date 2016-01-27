@@ -340,6 +340,9 @@
                         return this.maps[choice.map].name;
                     }
                 }
+                else if (choice.type === 'factionSelect') {
+                    return choice.faction;
+                }
             },
             fullPlayerInfo: function(player) {
                 if (player) {
