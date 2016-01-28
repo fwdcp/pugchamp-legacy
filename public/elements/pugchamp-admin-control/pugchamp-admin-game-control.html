@@ -30,7 +30,7 @@
         <form is="iron-form" action="/admin/game/{{game.id}}" method="post" on-iron-form-response="reload" on-iron-form-error="reload">
             <input type="hidden" name="type" value="requestSubstitute">
             <input type="hidden" name="player" value="{{selectedPlayer}}">
-            <paper-dropdown-menu label="Player to Replace">
+            <paper-dropdown-menu hidden$="{{!isLive(game.status)}}" label="Player to Replace">
                 <paper-menu attr-for-selected="value" selected="{{selectedPlayer}}" class="dropdown-content">
                     <template is="dom-repeat" items="{{game.teams}}">
                         <template is="dom-repeat" items="{{item.composition}}">
