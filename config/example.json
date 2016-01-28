@@ -17,12 +17,13 @@
         }, {
             "title": "Voice Server",
             "icon": "hardware:headset",
-            "url": "mumble://localhost:64738"
+            "url": "mumble://localhost:64738/?version=1.2.0"
         }],
         "servers": {
             "pool": {
                 "localhost-1": {
                     "address": "localhost:27015",
+                    "voice": "mumble://localhost:64738/Games/localhost-1/?version=1.2.0",
                     "rcon": "test",
                     "salt": "da server"
                 }
