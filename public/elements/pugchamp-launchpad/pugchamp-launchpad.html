@@ -338,7 +338,7 @@
                 }
             },
             isAvailable: function(availability) {
-                for (var role of Object.keys(availability)) {
+                for (var role of Object.keys(availability.roles)) {
                     if (availability[role]) {
                         return true;
                     }
