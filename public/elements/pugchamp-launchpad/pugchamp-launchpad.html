@@ -107,13 +107,14 @@
             <p>
                 <paper-progress id="readyTime" class="transiting" min="0"></paper-progress>
             </p>
+            <p class="ready-status" hidden$="{{isAvailable(available)}}"><iron-icon icon="block"></iron-icon> You are currently not marked as available for playing any roles or being a captain.</p>
             <p>
                 <span class="ready-status not-ready" hidden$="{{readyToPlay}}"><iron-icon icon="block"></iron-icon> Not Ready</span>
                 <span class="ready-status ready" hidden$="{{!readyToPlay}}"><iron-icon icon="check"></iron-icon> Ready</span>
             </p>
             <p>
-                <paper-button data-status="ready" hidden$="{{readyToPlay}}" disabled="{{isRestricted(restrictions, 'start')}}" id="setReady" on-tap="updateReadyStatus">Set Ready</paper-button>
-                <paper-button data-status="notReady" hidden$="{{!readyToPlay}}" disabled="{{isRestricted(restrictions, 'start')}}" id="setNotReady" on-tap="updateReadyStatus">Set Not Ready</paper-button>
+                <paper-button data-status="ready" hidden$="{{readyToPlay}}" disabled="{{!isAvailable(available)}}" id="setReady" on-tap="updateReadyStatus">Set Ready</paper-button>
+                <paper-button data-status="notReady" hidden$="{{!readyToPlay}}" id="setNotReady" on-tap="updateReadyStatus">Set Not Ready</paper-button>
             </p>
         </paper-material>
         <paper-material id="holds" class="horizontal layout">
@@ -215,6 +216,7 @@
             ready: function() {
                 this.set('launchActive', false);
                 this.set('readyToPlay', false);
+                this.set('availability', {roles: [], captain: false});
 
                 this._listenToEvent('launchStatusUpdated', 'onLaunchStatusUpdated');
                 this._listenToEvent('userAvailabilityUpdated', 'onUserAvailabilityUpdated');
@@ -253,6 +255,8 @@
                 });
             },
             onUserAvailabilityUpdated: function(availability) {
+                this.set('availability', availability);
+
                 Polymer.dom(this.$.roles).querySelectorAll('.role-select').forEach(function(button) {
                     button.checked = availability.roles[button.value];
                 });
@@ -332,6 +336,9 @@
                 else {
                     return 'hold-cleared';
                 }
+            },
+            isAvailable: function(availability) {
+                return availability.roles.length !== 0 || availability.captain;
             },
             double: function(number) {
                 return 2 * number;
