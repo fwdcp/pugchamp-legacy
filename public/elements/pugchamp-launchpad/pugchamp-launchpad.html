@@ -107,13 +107,13 @@
             <p>
                 <paper-progress id="readyTime" class="transiting" min="0"></paper-progress>
             </p>
-            <p class="ready-status" hidden$="{{isAvailable(available)}}"><iron-icon icon="block"></iron-icon> You are currently not marked as available for playing any roles or being a captain.</p>
+            <p class="ready-status" hidden$="{{isAvailable(availability)}}"><iron-icon icon="block"></iron-icon> You are currently not marked as available for playing any roles or being a captain.</p>
             <p>
                 <span class="ready-status not-ready" hidden$="{{readyToPlay}}"><iron-icon icon="block"></iron-icon> Not Ready</span>
                 <span class="ready-status ready" hidden$="{{!readyToPlay}}"><iron-icon icon="check"></iron-icon> Ready</span>
             </p>
             <p>
-                <paper-button data-status="ready" hidden$="{{readyToPlay}}" disabled="{{!isAvailable(available)}}" id="setReady" on-tap="updateReadyStatus">Set Ready</paper-button>
+                <paper-button data-status="ready" hidden$="{{readyToPlay}}" disabled="{{!isAvailable(availability)}}" id="setReady" on-tap="updateReadyStatus">Set Ready</paper-button>
                 <paper-button data-status="notReady" hidden$="{{!readyToPlay}}" id="setNotReady" on-tap="updateReadyStatus">Set Not Ready</paper-button>
             </p>
         </paper-material>
