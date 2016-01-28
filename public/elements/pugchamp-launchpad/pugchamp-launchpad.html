@@ -216,7 +216,7 @@
             ready: function() {
                 this.set('launchActive', false);
                 this.set('readyToPlay', false);
-                this.set('availability', {roles: [], captain: false});
+                this.set('availability', {roles: {}, captain: false});
 
                 this._listenToEvent('launchStatusUpdated', 'onLaunchStatusUpdated');
                 this._listenToEvent('userAvailabilityUpdated', 'onUserAvailabilityUpdated');
@@ -338,7 +338,13 @@
                 }
             },
             isAvailable: function(availability) {
-                return availability.roles.length !== 0 || availability.captain;
+                for (var role of Object.keys(availability)) {
+                    if (availability[role]) {
+                        return true;
+                    }
+                }
+
+                return availability.captain;
             },
             double: function(number) {
                 return 2 * number;
