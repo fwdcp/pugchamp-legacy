@@ -17,7 +17,7 @@
         <style is="custom-style">
             #messages {
                 height: calc(100vh - 175px);
-                overflow: auto;
+                overflow-y: auto;
             }
 
             .message {
@@ -51,8 +51,8 @@
             }
         </style>
 
-        <div id="messages" class="vertical layout">
-            <template is="dom-repeat" items="{{messages}}" class="flex">
+        <div id="messages">
+            <template is="dom-repeat" items="{{messages}}">
                 <paper-material class="message horizontal layout">
                     <div class="message-time">{{formatTime(item.time)}}</div>
                     <div class="flex">
