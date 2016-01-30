@@ -145,7 +145,7 @@ module.exports = function(app, chance, database, io, self) {
         }
     });
     hbs.registerHelper('ratingStatToRow', function(stat) {
-        return JSON.stringify([stat.date, stat.after.mean, stat.after.low, stat.after.high]);
+        return '[new Date("' + stat.date + '"),' + stat.after.mean + ',' + stat.after.low + ',' + stat.after.high + ']';
     });
     hbs.registerHelper('roleStatToRow', function(stat) {
         return JSON.stringify([ROLES[stat.role].name, stat.number]);
