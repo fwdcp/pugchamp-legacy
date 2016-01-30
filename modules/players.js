@@ -5,6 +5,7 @@ const _ = require('lodash');
 const co = require('co');
 const config = require('config');
 const distributions = require('distributions');
+const hbs = require('hbs');
 const math = require('mathjs');
 
 module.exports = function(app, chance, database, io, self) {
