@@ -116,7 +116,7 @@ module.exports = function(app, chance, database, io, self) {
         }
 
         player.stats.roles = yield _(ROLES).keys().map(role => database.Game.find({
-            'game.teams.composition': {
+            'teams.composition': {
                 $elemMatch: {
                     'role': role,
                     'players.user': player.id
