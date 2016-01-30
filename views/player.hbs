@@ -174,7 +174,11 @@
         draftStats.rows = [{{#each user.stats.draft}}{{{draftStatToRow this}}},{{/each}}];
         draftStats.options = {
             backgroundColor: '#212121',
-            legend: 'none',
+            legend: {
+                textStyle: {
+                    color: '#ffffff'
+                }
+            },
             title: 'Draft Stats',
             titleTextStyle: {
                 color: '#ffffff'
@@ -230,7 +234,11 @@
         roleStats.rows = [{{#each user.stats.roles}}{{{roleStatToRow this}}},{{/each}}];
         roleStats.options = {
             backgroundColor: '#212121',
-            legend: 'none',
+            legend: {
+                textStyle: {
+                    color: '#ffffff'
+                }
+            },
             title: 'Role Stats',
             titleTextStyle: {
                 color: '#ffffff'
