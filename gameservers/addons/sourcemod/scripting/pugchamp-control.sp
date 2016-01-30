@@ -1,6 +1,7 @@
 #include <sourcemod>
 #include <connect>
 #include <logstf>
+#include <morecolors>
 #include <sdktools>
 #include <steamtools>
 #include <tf2>
@@ -106,12 +107,20 @@ public bool OnClientPreConnectEx(const char[] name, char password[255], const ch
 public void OnClientPostAdminCheck(int client) {
     char steamID[32];
     if (!GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID))) {
+        char name[32];
+        GetClientName(client, name, sizeof(name));
+        CPrintToChatAll("{green}[PugChamp]{default} Unable to recognize {olive}%s{default}!", name, steamID);
+
         ThrowError("Steam ID not retrieved");
     }
 
     char name[32];
     if (playerNames.GetString(steamID, name, sizeof(name))) {
         SetClientName(client, name);
+    }
+    else {
+        GetClientName(client, name, sizeof(name));
+        CPrintToChatAll("{green}[PugChamp]{default} Unable to recognize {olive}%s{default} (Steam ID {olive}%s{default})!", name, steamID);
     }
 
     int team;
