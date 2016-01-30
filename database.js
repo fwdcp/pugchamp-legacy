@@ -67,13 +67,13 @@ userSchema.set('toObject', {
     getters: true,
     versionKey: false,
     transform: function(doc, ret) {
-        ret.stats.captainScore.low = math.round(ret.stats.captainScore.low, 3);
-        ret.stats.captainScore.center = math.round(ret.stats.captainScore.center, 3);
-        ret.stats.captainScore.high = math.round(ret.stats.captainScore.high, 3);
-        ret.stats.rating.mean = math.round(ret.stats.rating.mean, 0);
-        ret.stats.rating.deviation = math.round(ret.stats.rating.deviation, 0);
-        ret.stats.rating.low = math.round(ret.stats.rating.low, 0);
-        ret.stats.rating.high = math.round(ret.stats.rating.high, 0);
+        ret.stats.captainScore.low = _.isNumber(doc.stats.captainScore.low) ? math.round(doc.stats.captainScore.low, 3) : null;
+        ret.stats.captainScore.center = _.isNumber(doc.stats.captainScore.center) ? math.round(doc.stats.captainScore.center, 3) : null;
+        ret.stats.captainScore.high = _.isNumber(doc.stats.captainScore.high) ? math.round(doc.stats.captainScore.high, 3) : null;
+        ret.stats.rating.mean = math.round(doc.stats.rating.mean, 0);
+        ret.stats.rating.deviation = math.round(doc.stats.rating.deviation, 0);
+        ret.stats.rating.low = math.round(doc.stats.rating.low, 0);
+        ret.stats.rating.high = math.round(doc.stats.rating.high, 0);
 
         if (!doc.options.showDraftStats) {
             delete ret.stats.draft;

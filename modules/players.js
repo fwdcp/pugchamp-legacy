@@ -196,12 +196,17 @@ module.exports = function(app, chance, database, io, self) {
     app.get('/players', co.wrap(function*(req, res) {
         let users = yield database.User.find({
             $or: [{
-                'stats.rating.mean': {
-                    $exists: true
+                'stats.roles.number': {
+                    $gt: 0
                 }
             }, {
-                'stats.captainScore.low': {
-                    $exists: true
+                'stats.draft': {
+                    $elemMatch: {
+                        'type': 'captain',
+                        'number': {
+                            $gt: 0
+                        }
+                    }
                 }
             }]
         }).exec();
@@ -218,7 +223,7 @@ module.exports = function(app, chance, database, io, self) {
             ratingDeviation: math.round(user.stats.rating.deviation),
             ratingLowerBound: math.round(user.stats.rating.low),
             ratingUpperBound: math.round(user.stats.rating.high),
-            captainScore: math.round(user.stats.captainScore.low, 3)
+            captainScore: _.isNumber(user.stats.captainScore.low) ? math.round(user.stats.captainScore.low, 3) : null
         })).value();
 
         res.render('playerList', {
