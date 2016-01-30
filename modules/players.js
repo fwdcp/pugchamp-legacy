@@ -53,7 +53,9 @@ module.exports = function(app, chance, database, io, self) {
         let captainGames = yield database.Game.find({
             'teams.captain': player.id,
             'status': 'completed',
-            'score': {$exists: true}
+            'score': {
+                $exists: true
+            }
         });
 
         let scores = _.map(captainGames, function(game) {
@@ -182,7 +184,7 @@ module.exports = function(app, chance, database, io, self) {
         }).exec();
 
         res.render('player', {
-            user: user,
+            user: user.toObject(),
             games: _(games).map(function(game) {
                 let revisedGame = _.omit(game.toObject(), 'draft', 'server', 'links');
 
