@@ -99,8 +99,10 @@ module.exports = function(app, chance, database, io, self) {
             user: player.id
         }).sort('-date').exec();
 
-        player.stats.rating.mean = rating.after.mean;
-        player.stats.rating.deviation = rating.after.deviation;
+        if (rating) {
+            player.stats.rating.mean = rating.after.mean;
+            player.stats.rating.deviation = rating.after.deviation;
+        }
 
         player.stats.roles = yield _(ROLES).keys().map(role => database.Game.find({
             'game.teams.composition': {

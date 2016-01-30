@@ -33,7 +33,7 @@ var userSchema = new mongoose.Schema({
         draft: [{
             type: {
                 type: String,
-                enum: ['captain', 'selected', 'undrafted']
+                enum: ['captain', 'picked', 'undrafted']
             },
             role: String,
             number: Number
