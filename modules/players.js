@@ -41,27 +41,26 @@ module.exports = function(app, chance, database, io, self) {
 
         let captainGames = yield database.Game.find({
             'teams.captain': player.id,
-            'status': 'completed'
+            'status': 'completed',
+            'score': {$exists: true}
         });
 
-        if (_.size(captainGames) > 0) {
-            let scores = _.map(captainGames, function(game) {
-                let totalScore = math.sum(...game.score);
+        let scores = _.map(captainGames, function(game) {
+            let totalScore = math.sum(...game.score);
 
-                if (totalScore > 0) {
-                    let teamIndex = _.findIndex(game.teams, function(team) {
-                        return self.getDocumentID(team.captain) === player.id;
-                    });
+            if (totalScore > 0) {
+                let teamIndex = _.findIndex(game.teams, function(team) {
+                    return self.getDocumentID(team.captain) === player.id;
+                });
 
-                    return game.score[teamIndex] / totalScore;
-                }
-                else {
-                    return 0.5;
-                }
-            });
+                return game.score[teamIndex] / totalScore;
+            }
+            else {
+                return 0.5;
+            }
+        });
 
-            player.stats.captainScore = calculatePredictionInterval(scores);
-        }
+        player.stats.captainScore = calculatePredictionInterval(scores);
 
         player.stats.draft = yield _(ROLES).keys().map(role => database.Game.find({
             'draft.choices': {
