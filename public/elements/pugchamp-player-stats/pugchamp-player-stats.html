@@ -1,0 +1,37 @@
+<link rel="import" href="/components/polymer/polymer.html">
+
+<link rel="import" href="/components/google-chart/google-chart.html">
+
+<dom-module id="pugchamp-player-stats">
+    <template>
+        <strong>{{player.alias}}</strong>
+        <br>
+        <em>Rating</em>: {{player.stats.rating.mean}}&plusmn;{{player.stats.rating.deviation}} ({{player.stats.rating.low}}&ndash;{{player.stats.rating.high}}
+        <br>
+        <google-chart id="roles" type="pie"></google-chart>
+	</template>
+
+    <script src="/components/lodash/lodash.min.js"></script>
+	<script>
+        Polymer({
+            is: 'pugchamp-player-stats',
+            properties: {
+                roles: Object,
+                player: Object
+            },
+            ready: function() {
+                this.$.roles.cols = [{type: 'string', label: 'Role'}, {type: 'number', label: 'Games'}];
+                this.$.roles.rows = _.map(player.stats.roles, function(stat) {
+                    return [this.roles[stat.role].name, stat.number];
+                });
+                this.$.roles.options = {
+                    backgroundColor: 'transparent',
+                    legend: 'none',
+                    pieSliceText: 'label',
+                    height: 250,
+                    width: 250
+                };
+            }
+        });
+    </script>
+</dom-module>
