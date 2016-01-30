@@ -214,11 +214,11 @@ module.exports = function(app, chance, database, io, self) {
             id: user.id,
             alias: user.alias,
             steamID: user.steamID,
-            ratingMean: user.stats.rating.mean,
-            ratingDeviation: user.stats.rating.deviation,
-            ratingLowerBound: user.stats.rating.low,
-            ratingUpperBound: user.stats.rating.high,
-            captainScore: user.stats.captainScore.low
+            ratingMean: math.round(user.stats.rating.mean),
+            ratingDeviation: math.round(user.stats.rating.deviation),
+            ratingLowerBound: math.round(user.stats.rating.low),
+            ratingUpperBound: math.round(user.stats.rating.high),
+            captainScore: math.round(user.stats.captainScore.low, 3)
         })).value();
 
         res.render('playerList', {
