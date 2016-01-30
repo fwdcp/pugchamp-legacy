@@ -47,7 +47,7 @@ public void OnPluginStart() {
     gameCompleted = false;
     gameStartTime = -1.0;
 
-    gameID = CreateConVar("pugchamp_game_id", "", "the ID for the current game", FCVAR_PROTECTED|FCVAR_DONTRECORD|FCVAR_PLUGIN);
+    gameID = CreateConVar("pugchamp_game_id", "", "the ID for the current game", FCVAR_PLUGIN);
     gameMap = CreateConVar("pugchamp_game_map", "", "the map for the current game", FCVAR_PLUGIN);
     gameConfig = CreateConVar("pugchamp_game_config", "", "the config for the current game", FCVAR_PLUGIN);
 
