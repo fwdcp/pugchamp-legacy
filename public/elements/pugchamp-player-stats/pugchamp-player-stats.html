@@ -6,8 +6,8 @@
     <template>
         <style is="custom-style">
             #roles {
-                height: 250px;
-                width: 200px;
+                height: 275px;
+                width: 300px;
             }
         </style>
 
@@ -33,6 +33,13 @@
                 }, this));
                 this.$.roles.options = {
                     backgroundColor: 'transparent',
+                    chartArea: {
+                        left: 0,
+                        height: 250,
+                        top: 25,
+                        width: 250
+                    },
+                    height: 275,
                     legend: {
                         textStyle: {
                             color: '#ffffff'
@@ -42,7 +49,8 @@
                     title: 'Role Stats',
                     titleTextStyle: {
                         color: '#ffffff'
-                    }
+                    },
+                    width: 300
                 };
             }
         });
