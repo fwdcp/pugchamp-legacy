@@ -26,14 +26,16 @@
                 }, this));
                 this.$.roles.options = {
                     backgroundColor: 'transparent',
-                    chartArea: {
-                        height: '100%',
-                        width: '100%',
+                    legend: {
+                        textStyle: {
+                            color: '#ffffff'
+                        }
                     },
-                    legend: 'none',
-                    pieSliceText: 'label',
-                    height: 200,
-                    width: 200
+                    pieSliceText: 'value',
+                    title: 'Role Stats',
+                    titleTextStyle: {
+                        color: '#ffffff'
+                    }
                 };
             }
         });
