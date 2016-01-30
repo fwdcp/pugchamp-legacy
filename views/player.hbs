@@ -171,7 +171,7 @@
         {{#if user.stats.draft}}
         var draftStats = document.getElementById('draft-stats');
         draftStats.cols = [{type: 'string', label: 'Outcome'}, {type: 'number', label: 'Occurrences'}]
-        draftStats.rows = [{{#each user.stats.draft}}{{{draftStatToRow this}}}{{/each}}];
+        draftStats.rows = [{{#each user.stats.draft}}{{{draftStatToRow this}}},{{/each}}];
         draftStats.options = {
             backgroundColor: '#212121',
             title: 'Draft Stats',
@@ -226,7 +226,7 @@
 
         var roleStats = document.getElementById('role-stats');
         roleStats.cols = [{type: 'string', label: 'Role'}, {type: 'number', label: 'Games'}]
-        roleStats.rows = [{{#each user.stats.roles}}{{{roleStatToRow this}}}{{/each}}];
+        roleStats.rows = [{{#each user.stats.roles}}{{{roleStatToRow this}}},{{/each}}];
         roleStats.options = {
             backgroundColor: '#212121',
             title: 'Role Stats',
