@@ -144,7 +144,9 @@ module.exports = function(app, chance, database, io, self) {
             return JSON.stringify(['Undrafted', stat.number]);
         }
     });
-
+    hbs.registerHelper('ratingStatToRow', function(stat) {
+        return JSON.stringify([stat.date, stat.after.mean, stat.after.low, stat.after.high]);
+    });
     hbs.registerHelper('roleStatToRow', function(stat) {
         return JSON.stringify([ROLES[stat.role].name, stat.number]);
     });
@@ -199,13 +201,7 @@ module.exports = function(app, chance, database, io, self) {
 
                 return revisedGame;
             }).value(),
-            ratings: _(ratings).map(rating => ({
-                game: rating.game.id,
-                date: rating.game.date,
-                mean: rating.after.mean,
-                lowerBound: rating.after.mean - (3 * rating.after.deviation),
-                upperBound: rating.after.mean + (3 * rating.after.deviation)
-            })).sortBy('date').value(),
+            ratings: _(ratings).map(rating => rating.toObject()).sortBy('date').value(),
             restrictions: _(restrictions).map(restriction => restriction.toObject()).orderBy(['active', 'expires'], ['desc', 'desc']).value()
         });
     }));

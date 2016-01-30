@@ -183,9 +183,31 @@ var ratingSchema = new mongoose.Schema({
         deviation: Number
     }
 });
+ratingSchema.virtual('before.low').get(function() {
+    return this.before.mean - (3 * this.before.deviation);
+});
+ratingSchema.virtual('before.high').get(function() {
+    return this.before.mean + (3 * this.before.deviation);
+});
+ratingSchema.virtual('after.low').get(function() {
+    return this.after.mean - (3 * this.after.deviation);
+});
+ratingSchema.virtual('after.high').get(function() {
+    return this.after.mean + (3 * this.after.deviation);
+});
 ratingSchema.set('toObject', {
     getters: true,
-    versionKey: false
+    versionKey: false,
+    transform: function(doc, ret) {
+        ret.before.mean = math.round(doc.before.mean);
+        ret.before.deviation = math.round(doc.before.deviation);
+        ret.before.low = math.round(doc.before.low);
+        ret.before.high = math.round(doc.before.high);
+        ret.after.mean = math.round(doc.after.mean);
+        ret.after.deviation = math.round(doc.after.deviation);
+        ret.after.low = math.round(doc.after.low);
+        ret.after.high = math.round(doc.after.high);
+    }
 });
 
 var restrictionSchema = new mongoose.Schema({
