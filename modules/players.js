@@ -9,11 +9,12 @@ const math = require('mathjs');
 
 module.exports = function(app, chance, database, io, self) {
     function calculatePredictionInterval(samples) {
-        let mean = math.mean(samples);
-        let deviation = math.std(samples);
         let n = _.size(samples);
 
         if (n > 1) {
+            let mean = math.mean(samples);
+            let deviation = math.std(samples);
+
             let distribution = new distributions.Studentt(n - 1);
 
             let low = mean + (distribution.inv(0.16) * deviation * math.sqrt(1 + (1 / n)));
@@ -25,10 +26,19 @@ module.exports = function(app, chance, database, io, self) {
                 high: high <= 1 ? high : 1
             };
         }
-        else {
+        else if (n === 1) {
+            let mean = math.mean(samples);
+
             return {
                 low: null,
                 center: mean,
+                high: null
+            };
+        }
+        else {
+            return {
+                low: null,
+                center: null,
                 high: null
             };
         }
