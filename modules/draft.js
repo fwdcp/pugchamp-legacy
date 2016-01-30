@@ -569,7 +569,11 @@ module.exports = function(app, chance, database, io, self) {
 
     function selectCaptains(captains) {
         return co(function*() {
-            let fullCaptains = yield database.User.find({_id: {$in: captains}}).exec();
+            let fullCaptains = yield database.User.find({
+                _id: {
+                    $in: captains
+                }
+            }).exec();
 
             let weights;
 
@@ -579,8 +583,8 @@ module.exports = function(app, chance, database, io, self) {
             }
             else if (CAPTAIN_SELECTION_WEIGHT === 'success') {
                 weights = _.map(fullCaptains, function(captain) {
-                    if (captain.captainScore && _.isNumber(captain.captainScore.low)) {
-                        return 0.03 + captain.captainScore.low;
+                    if (_.isNumber(captain.stats.captainScore.low)) {
+                        return 0.03 + captain.stats.captainScore.low;
                     }
 
                     return 0.06;

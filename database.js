@@ -3,6 +3,7 @@
 
 const _ = require('lodash');
 const config = require('config');
+const math = require('mathjs');
 const mongoose = require('mongoose');
 
 mongoose.connect(config.get('server.mongodb'));
@@ -23,22 +24,63 @@ var userSchema = new mongoose.Schema({
             default: false
         }
     },
-    currentRating: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Rating'
-    },
-    captainScore: {
-        low: Number,
-        center: Number,
-        high: Number
+    stats: {
+        captainScore: {
+            low: Number,
+            center: Number,
+            high: Number
+        },
+        draft: [{
+            type: {
+                type: String,
+                enum: ['captain', 'selected', 'undrafted']
+            },
+            role: String,
+            number: Number
+        }],
+        rating: {
+            mean: {
+                type: Number,
+                default: 1500
+            },
+            deviation: {
+                type: Number,
+                default: 500
+            }
+        },
+        roles: [{
+            role: String,
+            number: Number
+        }]
     }
 });
 userSchema.virtual('admin').get(function() {
     return _.includes(config.get('app.admins'), this.steamID);
 });
+userSchema.virtual('stats.rating.low').get(function() {
+    return this.stats.rating.mean - (3 * this.stats.rating.deviation);
+});
+userSchema.virtual('stats.rating.high').get(function() {
+    return this.stats.rating.mean + (3 * this.stats.rating.deviation);
+});
 userSchema.set('toObject', {
     getters: true,
-    versionKey: false
+    versionKey: false,
+    transform: function(doc, ret) {
+        ret.stats.captainScore.low = math.round(ret.stats.captainScore.low, 3);
+        ret.stats.captainScore.center = math.round(ret.stats.captainScore.center, 3);
+        ret.stats.captainScore.high = math.round(ret.stats.captainScore.high, 3);
+        ret.stats.rating.mean = math.round(ret.stats.rating.mean, 0);
+        ret.stats.rating.deviation = math.round(ret.stats.rating.deviation, 0);
+        ret.stats.rating.low = math.round(ret.stats.rating.low, 0);
+        ret.stats.rating.high = math.round(ret.stats.rating.high, 0);
+
+        if (!doc.options.showDraftStats) {
+            delete ret.stats.draft;
+        }
+
+        delete ret.options;
+    }
 });
 
 var gameSchema = new mongoose.Schema({
@@ -128,11 +170,11 @@ var ratingSchema = new mongoose.Schema({
         ref: 'Game'
     },
     before: {
-        rating: Number,
+        mean: Number,
         deviation: Number
     },
     after: {
-        rating: Number,
+        mean: Number,
         deviation: Number
     }
 });

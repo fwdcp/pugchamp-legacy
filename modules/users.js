@@ -27,7 +27,7 @@ module.exports = function(app, chance, database, io, self) {
     self.updateCachedUser = co.wrap(function*(userID) {
         let user = yield database.User.findById(userID);
 
-        userCache.set(userID, _.pick(user.toObject(), 'id', 'alias', 'steamID', 'admin', 'setUp'));
+        userCache.set(userID, user.toObject());
     });
 
     self.getOnlineUsers = function getOnlineUsers() {

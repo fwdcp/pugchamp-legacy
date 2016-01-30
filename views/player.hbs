@@ -46,27 +46,19 @@
     <a class="button" href="https://steamcommunity.com/profiles/{{user.steamID}}"><paper-button class="link" id="steam" raised>Steam Profile</paper-button></a>
 	<a class="button" href="http://logs.tf/profile/{{user.steamID}}"><paper-button class="link" raised>Logs.tf Profile</paper-button></a>
 
-    <p>
-        <strong>Player Rating:</strong>
-
-        {{#if user.currentRating}}
-            {{round user.currentRating.after.rating 0}} &plusmn;{{round user.currentRating.after.deviation 0}}
-        {{else}}
-            N/A
-        {{/if}}
-    </p>
+    <p><strong>Player Rating:</strong> {{user.stats.rating.mean}}&plusmn;{{user.stats.rating.deviation}} ({{user.stats.rating.low}}-{{user.stats.rating.high}})</p>
 
     <p>
         <strong>Captain Score:</strong>
 
-        {{#if user.captainScore.low}}
-            {{round user.captainScore.low 3}}
+        {{#if user.stats.captainScore.low}}
+            {{user.stats.captainScore.low}}
         {{else}}
             N/A
         {{/if}}
     </p>
 
-    {{#if user.options.showDraftStats}}
+    {{#if user.stats.draft}}
     <h2>Draft Stats</h2>
 
     <google-chart id="draft-stats" type="pie"></google-chart>
@@ -172,10 +164,10 @@
             document.location.reload();
         });
 
-        {{#if user.options.showDraftStats}}
+        {{#if user.stats.draft}}
         var draftStats = document.getElementById('draft-stats');
         draftStats.cols = [{type: 'string', label: 'Outcome'}, {type: 'number', label: 'Occurrences'}]
-        draftStats.rows = {{{toJSON draftStats}}};
+        draftStats.rows = []; // TODO: fix draft stats
         draftStats.options = {
             backgroundColor: '#212121'
         };

@@ -22,14 +22,9 @@
     <paper-datatable data="{{toJSON players}}" id="players">
         <paper-datatable-column header="Player" property="alias" type="String" sortable></paper-datatable-column>
         <paper-datatable-column header="Steam ID" property="steamID" type="String"></paper-datatable-column>
-        <paper-datatable-column header="Rating" property="rating" type="Number" sortable>
+        <paper-datatable-column header="Rating" property="ratingMean" type="Number" sortable>
             <template>
-                \{{value}}
-            </template>
-        </paper-datatable-column>
-        <paper-datatable-column header="Deviation" property="deviation" type="Number" sortable>
-            <template>
-                &plusmn;\{{value}}
+                \{{item.ratingMean}}&plusmn;\{{item.ratingDeviation}} (\{{item.ratingLowerBound}}-\{{item.ratingUpperBound}})
             </template>
         </paper-datatable-column>
         <paper-datatable-column header="Captain Score" property="captainScore" type="Number" sortable>
@@ -42,7 +37,7 @@
     <script>
         var ratings = document.getElementById('ratings');
         ratings.cols = [{type: 'number', label: 'Deviation'}, {type: 'number', label: 'Rating'}, {type: 'string', role: 'tooltip'}]
-        ratings.rows = [{{#each players}}{{#if deviation}}[{{deviation}}, {{rating}}, '{{alias}}'],{{/if}}{{/each}}];
+        ratings.rows = [{{#each players}}[{{ratingDeviation}}, {{ratingMean}}, '{{alias}}'],{{/each}}];
         ratings.options = {
             backgroundColor: '#212121',
             colors: ['#ffa000'],

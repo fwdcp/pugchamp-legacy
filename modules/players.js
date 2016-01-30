@@ -4,57 +4,125 @@
 const _ = require('lodash');
 const co = require('co');
 const config = require('config');
+const distributions = require('distributions');
 const math = require('mathjs');
 
 module.exports = function(app, chance, database, io, self) {
+    function calculatePredictionInterval(samples) {
+        let mean = math.mean(samples);
+        let deviation = math.std(samples);
+        let n = _.size(samples);
+
+        if (n > 1) {
+            let distribution = new distributions.Studentt(n - 1);
+
+            let low = mean + (distribution.inv(0.16) * deviation * math.sqrt(1 + (1 / n)));
+            let high = mean + (distribution.inv(0.84) * deviation * math.sqrt(1 + (1 / n)));
+
+            return {
+                low: low >= 0 ? low : 0,
+                center: mean,
+                high: high <= 1 ? high : 1
+            };
+        }
+        else {
+            return {
+                low: null,
+                center: mean,
+                high: null
+            };
+        }
+    }
+
     const ROLES = config.get('app.games.roles');
 
-    function getPlayerDraftStats(player) {
-        return co(function*() {
-            if (!player) {
-                return null;
-            }
+    self.updatePlayerStats = co.wrap(function*(playerID) {
+        let player = yield database.User.findById(playerID);
 
-            let stats = {};
-
-            stats.Captain = yield database.Game.count({
-                'teams.captain': player.id
-            }).count().exec();
-
-            for (let role of _.toPairs(ROLES)) {
-                stats['Picked ' + role[1].name] = yield database.Game.find({
-                    'draft.choices': {
-                        $elemMatch: {
-                            'type': 'playerPick',
-                            'role': role[0],
-                            'player': player.id
-                        }
-                    }
-                }).count().exec();
-            }
-
-            stats.Undrafted = yield database.Game.find({
-                $nor: [{
-                    'draft.choices': {
-                        $elemMatch: {
-                            'type': 'playerPick',
-                            'player': player.id
-                        }
-                    }
-                }, {
-                    'teams.captain': player.id
-                }],
-                'draft.pool.players.user': player.id
-            }).count().exec();
-
-            return stats;
+        let captainGames = yield database.Game.find({
+            'teams.captain': player.id,
+            'status': 'completed'
         });
-    }
+
+        let scores = _.map(captainGames, function(game) {
+            let totalScore = math.sum(...game.score);
+
+            if (totalScore > 0) {
+                let teamIndex = _.findIndex(game.teams, function(team) {
+                    return self.getDocumentID(team.captain) === player.id;
+                });
+
+                return game.score[teamIndex] / totalScore;
+            }
+            else {
+                return 0.5;
+            }
+        });
+
+        player.stats.captainScore = calculatePredictionInterval(scores);
+
+        player.stats.draft = yield _(ROLES).keys().map(role => database.Game.find({
+            'draft.choices': {
+                $elemMatch: {
+                    'type': 'playerPick',
+                    'role': role,
+                    'player': player.id
+                }
+            }
+        }).count().exec().then(count => ({
+            type: 'picked',
+            role: role,
+            number: count
+        }))).concat(database.Game.count({
+            'teams.captain': player.id
+        }).count().exec().then(count => ({
+            type: 'captain',
+            number: count
+        })), database.Game.find({
+            $nor: [{
+                'draft.choices': {
+                    $elemMatch: {
+                        'type': 'playerPick',
+                        'player': player.id
+                    }
+                }
+            }, {
+                'teams.captain': player.id
+            }],
+            'draft.pool.players.user': player.id
+        }).count().exec().then(count => ({
+            type: 'undrafted',
+            number: count
+        }))).value();
+
+        let rating = yield database.Rating.findOne({
+            user: player.id
+        }).sort('-date').exec();
+
+        player.stats.rating.mean = rating.after.mean;
+        player.stats.rating.deviation = rating.after.deviation;
+
+        player.stats.roles = yield _(ROLES).keys().map(role => database.Game.find({
+            'game.teams.composition': {
+                $elemMatch: {
+                    'role': role,
+                    'players.user': player.id
+                }
+            }
+        }).count().exec().then(count => ({
+            role: role,
+            number: count
+        }))).value();
+
+        yield player.save();
+
+        yield self.updateCachedUser(player.id);
+    });
 
     app.get('/player/:steam', co.wrap(function*(req, res) {
         let user = yield database.User.findOne({
             steamID: req.params.steam
-        }).populate('currentRating').exec();
+        }).exec();
 
         if (!user) {
             res.sendStatus(404);
@@ -76,12 +144,6 @@ module.exports = function(app, chance, database, io, self) {
         let ratings = yield database.Rating.find({
             'user': user.id
         }).populate('game', 'date').exec();
-
-        let draftStats;
-
-        if (user.options.showDraftStats) {
-            draftStats = yield getPlayerDraftStats(user);
-        }
 
         let restrictions = yield database.Restriction.find({
             user: user.id
@@ -110,11 +172,10 @@ module.exports = function(app, chance, database, io, self) {
             ratings: _(ratings).map(rating => ({
                 game: rating.game.id,
                 date: rating.game.date,
-                mean: rating.after.rating,
-                lowerBound: rating.after.rating - (3 * rating.after.deviation),
-                upperBound: rating.after.rating + (3 * rating.after.deviation)
+                mean: rating.after.mean,
+                lowerBound: rating.after.mean - (3 * rating.after.deviation),
+                upperBound: rating.after.mean + (3 * rating.after.deviation)
             })).sortBy('date').value(),
-            draftStats: draftStats ? _.toPairs(draftStats) : null,
             restrictions: _(restrictions).map(restriction => restriction.toObject()).orderBy(['active', 'expires'], ['desc', 'desc']).value()
         });
     }));
@@ -122,41 +183,29 @@ module.exports = function(app, chance, database, io, self) {
     app.get('/players', co.wrap(function*(req, res) {
         let users = yield database.User.find({
             $or: [{
-                'currentRating': {
+                'stats.rating.mean': {
                     $exists: true
                 }
             }, {
-                'captainScore.low': {
+                'stats.captainScore.low': {
                     $exists: true
                 }
             }]
-        }).populate('currentRating').exec();
+        }).exec();
 
         let players = _(users).orderBy([function(user) {
-            if (user.currentRating) {
-                return user.currentRating.after.rating;
-            }
-
-            return Number.NEGATIVE_INFINITY;
+            return user.stats.rating.low;
         }, function(user) {
-            if (user.currentRating) {
-                return user.currentRating.after.deviation;
-            }
-
-            return Number.POSITIVE_INFINITY;
-        }, function(user) {
-            if (_.has(user.captainScore, 'low')) {
-                return user.captainScore.low;
-            }
-
-            return Number.NEGATIVE_INFINITY;
-        }], ['desc', 'asc', 'desc']).map(user => ({
+            return user.stats.captainScore.low;
+        }], ['desc', 'desc']).map(user => ({
             id: user.id,
-            steamID: user.steamID,
             alias: user.alias,
-            rating: user.currentRating ? math.round(user.currentRating.after.rating) : null,
-            deviation: user.currentRating ? math.round(user.currentRating.after.deviation) : null,
-            captainScore: _.isNumber(user.captainScore.low) ? math.round(user.captainScore.low, 3) : null,
+            steamID: user.steamID,
+            ratingMean: user.stats.rating.mean,
+            ratingDeviation: user.stats.rating.deviation,
+            ratingLowerBound: user.stats.rating.low,
+            ratingUpperBound: user.stats.rating.high,
+            captainScore: user.stats.captainScore.low
         })).value();
 
         res.render('playerList', {

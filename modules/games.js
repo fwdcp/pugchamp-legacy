@@ -5,7 +5,6 @@ const _ = require('lodash');
 const child_process = require('mz/child_process');
 const co = require('co');
 const config = require('config');
-const distributions = require('distributions');
 const hbs = require('hbs');
 const math = require('mathjs');
 const moment = require('moment');
@@ -21,59 +20,8 @@ module.exports = function(app, chance, database, io, self) {
 
     var currentGameCache = new Map();
 
-    function calculatePredictionInterval(samples) {
-        let mean = math.mean(samples);
-        let deviation = math.std(samples);
-        let n = _.size(samples);
-
-        if (n > 1) {
-            let distribution = new distributions.Studentt(n - 1);
-
-            let low = mean + (distribution.inv(0.16) * deviation * math.sqrt(1 + (1 / n)));
-            let high = mean + (distribution.inv(0.84) * deviation * math.sqrt(1 + (1 / n)));
-
-            return {
-                low: low >= 0 ? low : 0,
-                center: mean,
-                high: high <= 1 ? high : 1
-            };
-        }
-        else {
-            return {
-                low: null,
-                center: mean,
-                high: null
-            };
-        }
-    }
-
     function rateGame(game) {
         return co(function*() {
-            let captains = yield _.map(game.teams, team => database.User.findById(self.getDocumentID(team.captain)));
-            let captainGames = yield _.map(captains, function(captain) {
-                return database.Game.find({
-                    'teams.captain': self.getDocumentID(captain),
-                    'status': 'completed'
-                });
-            });
-
-            _.each(captains, function(captain, index) {
-                let scores = _.map(captainGames[index], function(game) {
-                    if (self.getDocumentID(game.teams[0].captain) === self.getDocumentID(captain)) {
-                        return game.score[0] / (game.score[0] + game.score[1]);
-                    }
-                    else if (self.getDocumentID(game.teams[1].captain) === self.getDocumentID(captain)) {
-                        return game.score[1] / (game.score[0] + game.score[1]);
-                    }
-
-                    return 0;
-                });
-
-                captain.captainScore = calculatePredictionInterval(scores);
-            });
-
-            yield _.map(captains, captain => captain.save());
-
             yield child_process.exec('python rate_game.py ' + game.id, {
                 cwd: path.resolve(__dirname, '../ratings')
             });
@@ -237,17 +185,15 @@ module.exports = function(app, chance, database, io, self) {
                 selectedCandidate = _.head(candidates);
             }
             else if (SUBSTITUTE_SELECTION_METHOD === 'closest') {
-                let playerWithRating = yield database.User.findById(request.player).populate('currentRating').exec();
-                let playerRating = playerWithRating.currentRating ? playerWithRating.currentRating.rating - (3 * playerWithRating.currentRating.deviation) : 0;
-
-                selectedCandidate = _(yield database.User.find({
+                let player = yield database.User.findById(request.player).exec();
+                let candidatePlayers = yield database.User.find({
                     _id: {
                         $in: [...request.candidates]
                     }
-                }).populate('currentRating').exec()).sortBy(function(candidate) {
-                    let candidateRating = candidate.currentRating ? candidate.currentRating.rating - (3 * candidate.currentRating.deviation) : 0;
+                }).exec();
 
-                    return Math.abs(candidateRating - playerRating);
+                selectedCandidate = _(candidatePlayers).sortBy(function(candidate) {
+                    return Math.abs(candidate.stats.rating.low - player.stats.rating.low);
                 }).map(candidate => self.getDocumentID(candidate)).head();
             }
             else if (SUBSTITUTE_SELECTION_METHOD === 'random') {
@@ -499,10 +445,16 @@ module.exports = function(app, chance, database, io, self) {
 
             try {
                 yield rateGame(game);
+
+                yield _(game.teams).map(function(team) {
+                    return _.map(team.composition, function(role) {
+                        return _.map(role.players, player => player.user);
+                    });
+                }).flattenDeep().map(user => self.updatePlayerStats(self.getDocumentID(user))).value();
             }
             catch (err) {
                 self.postToLog({
-                    description: 'game `' + game.id + '` failed to rate',
+                    description: 'failed to update stats for game `' + game.id + '`',
                     error: err
                 });
             }
@@ -644,7 +596,9 @@ module.exports = function(app, chance, database, io, self) {
             });
 
             _.each(team.composition, function(role) {
-                role.role = _.assign({id: role.role}, ROLES[role.role]);
+                role.role = _.assign({
+                    id: role.role
+                }, ROLES[role.role]);
 
                 _.each(role.players, function(player) {
                     player.user = self.getCachedUser(self.getDocumentID(player.user));
@@ -653,9 +607,9 @@ module.exports = function(app, chance, database, io, self) {
 
                     if (rating) {
                         player.rating = {
-                            rating: rating.after.rating,
+                            rating: rating.after.mean,
                             deviation: rating.after.deviation,
-                            change: rating.after.rating - rating.before.rating
+                            change: rating.after.mean - rating.before.mean
                         };
                     }
                 });

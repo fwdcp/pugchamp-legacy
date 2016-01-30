@@ -33,10 +33,9 @@ def rate_game(game_id):
             for player in role['players']:
                 user = db.users.find_one(player['user'])
 
-                if 'currentRating' in user:
-                    rating_info = db.ratings.find_one(user['currentRating'])
-                    rating = trueskill.Rating(mu=rating_info['after'][
-                                              'rating'], sigma=rating_info['after']['deviation'])
+                if 'stats' in user and 'rating' in user['stats'] and 'mean' in user['stats']['rating']:
+                    rating = trueskill.Rating(mu=user['stats']['rating']['mean'], sigma=user[
+                                              'stats']['rating']['deviation'])
                 else:
                     rating = trueskill.Rating()
 
@@ -58,10 +57,8 @@ def rate_game(game_id):
                 old_rating = old_ratings[index][player['user']]
                 new_rating = new_ratings[index][player['user']]
 
-                result = db.ratings.insert_one({'user': player['user'], 'date': game['date'], 'game': game['_id'], 'before': {
-                                               'rating': old_rating.mu, 'deviation': old_rating.sigma}, 'after': {'rating': new_rating.mu, 'deviation': new_rating.sigma}})
-                db.users.find_one_and_update({'_id': player['user']}, {
-                                             '$set': {'currentRating': result.inserted_id}})
+                db.ratings.insert_one({'user': player['user'], 'date': game['date'], 'game': game['_id'], 'before': {
+                                      'mean': old_rating.mu, 'deviation': old_rating.sigma}, 'after': {'mean': new_rating.mu, 'deviation': new_rating.sigma}})
 
 if __name__ == '__main__':
     rate_game()
