@@ -132,6 +132,22 @@ module.exports = function(app, chance, database, io, self) {
         yield self.updateCachedUser(player.id);
     });
 
+    hbs.registerHelper('draftStatToRow', function(stat) {
+        if (stat.type === 'captain') {
+            return JSON.stringify(['Captain', stat.number]);
+        }
+        else if (stat.type === 'picked') {
+            return JSON.stringify(['Picked ' + ROLES[stat.role].name, stat.number]);
+        }
+        else if (stat.type === 'undrafted') {
+            return JSON.stringify(['Undrafted', stat.number]);
+        }
+    });
+
+    hbs.registerHelper('roleStatToRow', function(stat) {
+        return JSON.stringify([ROLES[stat.role].name, stat.number]);
+    });
+
     app.get('/player/:steam', co.wrap(function*(req, res) {
         let user = yield database.User.findOne({
             steamID: req.params.steam

@@ -64,6 +64,10 @@
     <google-chart id="draft-stats" type="pie"></google-chart>
     {{/if}}
 
+    <h2>Role Stats</h2>
+
+    <google-chart id="role-stats" type="pie"></google-chart>
+
     <h2>Rating History</h2>
 
     <google-chart id="rating-history" type="line"></google-chart>
@@ -167,9 +171,13 @@
         {{#if user.stats.draft}}
         var draftStats = document.getElementById('draft-stats');
         draftStats.cols = [{type: 'string', label: 'Outcome'}, {type: 'number', label: 'Occurrences'}]
-        draftStats.rows = []; // TODO: fix draft stats
+        draftStats.rows = [{{#each user.stats.draft}}{{{draftStatToRow this}}}{{/each}}];
         draftStats.options = {
-            backgroundColor: '#212121'
+            backgroundColor: '#212121',
+            title: 'Draft Stats',
+            titleTextStyle: {
+                color: '#ffffff'
+            }
         };
         {{/if}}
 
@@ -213,6 +221,17 @@
                 titleTextStyle: {
                     color: '#ffffff'
                 }
+            }
+        };
+
+        var roleStats = document.getElementById('role-stats');
+        roleStats.cols = [{type: 'string', label: 'Role'}, {type: 'number', label: 'Games'}]
+        roleStats.rows = [{{#each user.stats.roles}}{{{roleStatToRow this}}}{{/each}}];
+        roleStats.options = {
+            backgroundColor: '#212121',
+            title: 'Role Stats',
+            titleTextStyle: {
+                color: '#ffffff'
             }
         };
     </script>
