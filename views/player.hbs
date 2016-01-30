@@ -188,7 +188,7 @@
 
         var ratingHistory = document.getElementById('rating-history');
         ratingHistory.cols = [{type: 'datetime', label: 'Date'}, {type: 'number', label: 'Rating'}, {type: 'number', role: 'interval'}, {type: 'number', role: 'interval'}]
-        ratingHistory.rows = [{{#each ratings}}{{ratingStatToRow this}},{{/each}}];
+        ratingHistory.rows = [{{#each ratings}}{{{ratingStatToRow this}}},{{/each}}];
         ratingHistory.options = {
             backgroundColor: '#212121',
             colors: ['#ffa000'],
