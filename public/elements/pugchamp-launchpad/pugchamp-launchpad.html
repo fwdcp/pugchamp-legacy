@@ -198,7 +198,7 @@
                             <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" on-mouseover="addHighlight" on-mouseout="removeHighlight">
                                 <div class="flex">
                                     <a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a>
-                                    <paper-tooltip position="left"><pugchamp-player-stats roles="{{roles}}" player="{{item}}"></pugchamp-player-stats></paper-tooltip>
+                                    <paper-tooltip position="top"><pugchamp-player-stats roles="{{roles}}" player="{{item}}"></pugchamp-player-stats></paper-tooltip>
                                 </div>
                             </paper-icon-item>
                         </template>
