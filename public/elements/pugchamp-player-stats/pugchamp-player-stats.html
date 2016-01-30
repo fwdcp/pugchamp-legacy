@@ -6,7 +6,7 @@
     <template>
         <strong>{{player.alias}}</strong>
         <br>
-        <em>Rating</em>: {{player.stats.rating.mean}}&plusmn;{{player.stats.rating.deviation}} ({{player.stats.rating.low}}&ndash;{{player.stats.rating.high}}
+        <em>Rating</em>: {{player.stats.rating.mean}}&plusmn;{{player.stats.rating.deviation}} ({{player.stats.rating.low}}&ndash;{{player.stats.rating.high}})
         <br>
         <google-chart id="roles" type="pie"></google-chart>
 	</template>
@@ -26,10 +26,14 @@
                 }, this));
                 this.$.roles.options = {
                     backgroundColor: 'transparent',
+                    chartArea: {
+                        height: '100%',
+                        width: '100%',
+                    },
                     legend: 'none',
                     pieSliceText: 'label',
-                    height: 250,
-                    width: 250
+                    height: 200,
+                    width: 200
                 };
             }
         });
