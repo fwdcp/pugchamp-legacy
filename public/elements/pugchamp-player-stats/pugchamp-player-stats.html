@@ -4,6 +4,13 @@
 
 <dom-module id="pugchamp-player-stats">
     <template>
+        <style is="custom-style">
+            #roles {
+                height: 250px;
+                width: 200px;
+            }
+        </style>
+
         <strong>{{player.alias}}</strong>
         <br>
         <em>Rating</em>: {{player.stats.rating.mean}}&plusmn;{{player.stats.rating.deviation}} ({{player.stats.rating.low}}&ndash;{{player.stats.rating.high}})
