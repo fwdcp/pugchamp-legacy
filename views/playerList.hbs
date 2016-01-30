@@ -24,7 +24,7 @@
         <paper-datatable-column header="Steam ID" property="steamID" type="String"></paper-datatable-column>
         <paper-datatable-column header="Rating" property="ratingMean" type="Number" sortable>
             <template>
-                \{{item.ratingMean}}&plusmn;\{{item.ratingDeviation}} (\{{item.ratingLowerBound}}-\{{item.ratingUpperBound}})
+                \{{item.ratingMean}}&plusmn;\{{item.ratingDeviation}} (\{{item.ratingLowerBound}}&ndash;\{{item.ratingUpperBound}})
             </template>
         </paper-datatable-column>
         <paper-datatable-column header="Captain Score" property="captainScore" type="Number" sortable>
