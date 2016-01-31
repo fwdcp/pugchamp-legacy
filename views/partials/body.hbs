@@ -3,13 +3,13 @@
 		<paper-drawer-panel disable-edge-swipe disable-swipe force-narrow="\{{!open}}" responsive-width="0">
 			{{> drawer}}
 
-			<paper-header-panel main>
+			<paper-scroll-header-panel main>
 				{{> toolbar}}
 
 				<div id="main">
 					{{> @partial-block }}
 				</div>
-			</paper-header-panel>
+			</paper-scroll-header-panel>
 		</paper-drawer-panel>
 	</template>
 </body>
