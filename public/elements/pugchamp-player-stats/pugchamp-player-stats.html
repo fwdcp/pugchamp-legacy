@@ -15,7 +15,7 @@
         <br>
         <em>Rating</em>: {{player.stats.rating.mean}}&plusmn;{{player.stats.rating.deviation}} ({{player.stats.rating.low}}&ndash;{{player.stats.rating.high}})
         <br>
-        <google-chart id="roles" rows="{{roleStatsToRows(player.stats.roles)}}" options="{{optionsForChart(player)}}" type="pie"></google-chart>
+        <google-chart id="roles" rows="{{roleStatsToRows(player.stats.roles, roles)}}" options="{{optionsForChart(player)}}" type="pie"></google-chart>
 	</template>
 
     <script src="/components/lodash/lodash.min.js"></script>
@@ -52,9 +52,9 @@
                     width: 250
                 };
             },
-            roleStatsToRows: function(stats) {
+            roleStatsToRows: function(stats, roles) {
                 return _.map(stats, _.bind(function(stat) {
-                    return [this.roles[stat.role].name, stat.number];
+                    return [roles[stat.role].name, stat.number];
                 }, this));
             }
         });
