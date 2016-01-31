@@ -284,6 +284,16 @@ module.exports = function(app, chance, database, io, self) {
             try {
                 yield game.save();
 
+                _.each(game.teams, function(team) {
+                    self.updateUserRestrictions(self.getDocumentID(team.captain));
+
+                    _.each(team.composition, function(role) {
+                        _.each(role.players, function(player) {
+                            self.updateUserRestrictions(self.getDocumentID(player.user));
+                        });
+                    });
+                });
+
                 currentDraftGame = game.id;
 
                 yield self.assignGameToServer(game);
