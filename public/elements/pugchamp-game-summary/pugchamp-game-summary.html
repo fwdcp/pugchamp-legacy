@@ -110,7 +110,7 @@
                 return moment(date).fromNow();
             },
             ready: function() {
-                if (this.game.reverseTeams) {
+                if (this.game && this.game.reverseTeams) {
                     this.set('team1', 1);
                     this.set('team2', 0);
                 }

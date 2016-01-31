@@ -11,11 +11,17 @@
     {{#> body}}
     <h1>Games</h1>
 
-    <iron-list items="{{toJSON games}}" as="game" id="games">
+    <iron-list as="game" id="games">
         <template>
             <pugchamp-game-summary game="\{{game}}"></pugchamp-game-summary>
         </template>
     </iron-list>
+
+    <script>
+        var gamesList = document.getElementById('games');
+
+        gamesList.items = {{{toJSON games}}};
+    </script>
     {{/body}}
 
 </html>
