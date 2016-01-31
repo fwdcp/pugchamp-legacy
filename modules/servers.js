@@ -210,6 +210,10 @@ module.exports = function(app, chance, database, io, self) {
     });
 
     self.initializeServer = co.wrap(function* initializeServer(game) {
+        if (!game.server) {
+            throw new Error('no server is currently assigned to this game');
+        }
+
         game.status = 'initializing';
         yield game.save();
 
