@@ -19,6 +19,16 @@ module.exports = function(app, chance, database, io, self) {
     const SUBSTITUTE_REQUEST_PERIOD = ms(config.get('app.games.substituteRequestPeriod'));
     const SUBSTITUTE_SELECTION_METHOD = config.get('app.games.substituteSelectionMethod');
 
+    var gameListCache;
+
+    self.updateGameCache = co.wrap(function*() {
+        let games = yield database.Game.find({}).sort('-date').populate('teams.captain').exec();
+
+        gameListCache = _.map(games, game => game.toObject());
+    });
+
+    self.updateGameCache();
+
     var currentGameCache = new Map();
 
     function rateGame(game) {
@@ -51,6 +61,8 @@ module.exports = function(app, chance, database, io, self) {
     }
 
     function processGameUpdate(game) {
+        self.updateGameCache();
+
         if (game.status !== 'initializing') {
             if (self.getDocumentID(game) === self.getCurrentDraftGame()) {
                 self.cleanUpDraft();
@@ -622,11 +634,9 @@ module.exports = function(app, chance, database, io, self) {
         });
     }));
 
-    app.get('/games', co.wrap(function*(req, res) {
-        let games = yield database.Game.find({}).sort('-date').populate('teams.captain').exec();
-
+    app.get('/games', function(req, res) {
         res.render('gameList', {
-            games: _.map(games, game => game.toObject())
+            games: gameListCache
         });
-    }));
+    });
 };
