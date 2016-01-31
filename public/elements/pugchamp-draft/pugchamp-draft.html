@@ -200,7 +200,7 @@
                                         <div class="flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></div>
                                         <paper-button class="draft-choice" data-role$="{{role.key}}" data-player$="{{item.id}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers)}}"
                                         on-tap="pickPlayer" raised>Select</paper-button>
-                                        <paper-tooltip position="top"><pugchamp-player-stats roles="{{roles}}" player="{{item}}"></pugchamp-player-stats></paper-tooltip>
+                                        <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item}}"></pugchamp-player-stats></paper-tooltip>
                                     </paper-icon-item>
                                 </template>
                             </template>
@@ -210,7 +210,7 @@
                                         <div class="flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></div>
                                         <paper-button class="draft-choice override" data-role$="{{role.key}}" data-player$="{{item.id}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers)}}"
                                         on-tap="pickPlayerOverride" raised>Override</paper-button>
-                                        <paper-tooltip position="top"><pugchamp-player-stats roles="{{roles}}" player="{{item}}"></pugchamp-player-stats></paper-tooltip>
+                                        <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item}}"></pugchamp-player-stats></paper-tooltip>
                                     </paper-icon-item>
                                 </template>
                             </template>
