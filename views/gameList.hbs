@@ -3,15 +3,17 @@
 <html>
 
     {{#> head title="Games"}}
+    <link rel="import" href="/components/iron-list/iron-list.html">
+
     <link rel="import" href="/elements/pugchamp-game-summary/pugchamp-game-summary.html">
     {{/head}}
 
     {{#> body}}
     <h1>Games</h1>
 
-    {{#each games}}
-    <pugchamp-game-summary game="{{toJSON this}}"></pugchamp-game-summary>
-    {{/each}}
+    <iron-list items="{{toJSON games}}" as="game" id="games">
+        <pugchamp-game-summary game="\{{game}}"></pugchamp-game-summary>
+    </iron-list>
     {{/body}}
 
 </html>
