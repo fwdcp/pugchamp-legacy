@@ -23,6 +23,7 @@
             behaviors: [PugChampClientBehaviors.BaseBehavior],
             ready: function() {
                 this._listenToEvent('connect', 'onConnect');
+                this._listenToEvent('reconnect', 'onReconnect');
                 this._listenToEvent('disconnect', 'onDisconnect');
                 this._listenToEvent('reconnect_failed', 'onReconnectFailed');
 
@@ -31,6 +32,10 @@
                 }
             },
             onConnect: function() {
+                this.$.token.generateRequest();
+                this.$.connectAlert.show();
+            },
+            onReconnect: function() {
                 this.$.token.generateRequest();
                 this.$.connectAlert.show();
             },
