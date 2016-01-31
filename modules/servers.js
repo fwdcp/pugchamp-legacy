@@ -246,7 +246,19 @@ module.exports = function(app, chance, database, io, self) {
             let availableServers = yield self.getAvailableServers();
 
             if (_.size(availableServers) === 0) {
-                throw new Error('no servers available');
+                for (let delay of RETRY_ATTEMPTS) {
+                    yield self.promiseDelay(delay, null, false);
+
+                    availableServers = yield self.getAvailableServers();
+
+                    if (_.size(availableServers) !== 0) {
+                        break;
+                    }
+                }
+
+                if (_.size(availableServers) === 0) {
+                    throw new Error('no servers available');
+                }
             }
 
             server = chance.pick(availableServers);
