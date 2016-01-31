@@ -524,6 +524,7 @@ module.exports = function(app, chance, database, io, self) {
 
         socket.emit('currentGameUpdated', yield getUserCurrentGame(userID));
 
+        socket.removeAllListeners('requestSubstitute');
         socket.on('requestSubstitute', co.wrap(function*(info) {
             let game = yield database.Game.findById(info.game);
 
@@ -536,10 +537,12 @@ module.exports = function(app, chance, database, io, self) {
             self.requestSubstitute(game, info.player);
         }));
 
+        socket.removeAllListeners('updateSubstituteApplication');
         socket.on('updateSubstituteApplication', function(info) {
             updateSubstituteApplication(info.request, userID, info.status);
         });
 
+        socket.removeAllListeners('retractSubstituteRequest');
         socket.on('retractSubstituteRequest', co.wrap(function*(requestID) {
             if (!currentSubstituteRequests.has(requestID)) {
                 return;

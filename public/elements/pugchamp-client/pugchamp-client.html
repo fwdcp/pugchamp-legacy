@@ -22,10 +22,13 @@
             is: 'pugchamp-client',
             behaviors: [PugChampClientBehaviors.BaseBehavior],
             ready: function() {
+                this.authenticated = false;
+
                 this._listenToEvent('connect', 'onConnect');
                 this._listenToEvent('reconnect', 'onReconnect');
                 this._listenToEvent('disconnect', 'onDisconnect');
                 this._listenToEvent('reconnect_failed', 'onReconnectFailed');
+                this._listenToEvent('authenticated', 'onAuthenticated');
 
                 if (this.socket.connected) {
                     this.onConnect();
@@ -40,6 +43,8 @@
                 this.$.connectAlert.show();
             },
             onDisconnect: function() {
+                this.authenticated = false;
+
                 this.$.disconnectAlert.show();
 
                 this.$.disconnectSound.currentTime = 0;
@@ -51,10 +56,15 @@
                 this.$.disconnectSound.currentTime = 0;
                 this.$.disconnectSound.play();
             },
+            onAuthenticated: function() {
+                this.authenticated = true;
+            },
             infoReceived: function(event) {
-                this.socket.emit('authenticate', {
-                    token: event.detail.response.token
-                });
+                if (!this.authenticated) {
+                    this.socket.emit('authenticate', {
+                        token: event.detail.response.token
+                    });
+                }
             }
         });
     </script>

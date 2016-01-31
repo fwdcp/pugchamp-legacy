@@ -260,13 +260,18 @@ module.exports = function(app, chance, database, io, self) {
             socket.emit('restrictionsUpdated', self.getUserRestrictions(userID));
         }
 
+        socket.removeAllListeners('disconnect');
         socket.on('disconnect', function() {
-            userSockets.get(userID).delete(socket.id);
+            if (userSockets.has(userID)) {
+                let socketList = userSockets.get(userID);
 
-            if (userSockets.get(userID).size === 0) {
-                self.emit('userDisconnected', userID);
+                socketList.delete(socket.id);
 
-                userSockets.delete(userID);
+                if (socketList.size === 0) {
+                    self.emit('userDisconnected', userID);
+
+                    userSockets.delete(userID);
+                }
             }
         });
     }));

@@ -377,6 +377,7 @@ module.exports = function(app, chance, database, io, self) {
     io.sockets.on('authenticated', function(socket) {
         let userID = socket.decoded_token.user;
 
+        socket.removeAllListeners('updateAvailability');
         socket.on('updateAvailability', function(availability) {
             self.markUserActivity(userID);
 
@@ -387,6 +388,7 @@ module.exports = function(app, chance, database, io, self) {
             }
         });
 
+        socket.removeAllListeners('updateReadyStatus');
         socket.on('updateReadyStatus', function(ready) {
             self.markUserActivity(userID);
 

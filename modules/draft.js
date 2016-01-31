@@ -660,6 +660,7 @@ module.exports = function(app, chance, database, io, self) {
     io.sockets.on('authenticated', function(socket) {
         let userID = socket.decoded_token.user;
 
+        socket.removeAllListeners('makeDraftChoice');
         socket.on('makeDraftChoice', function(choice) {
             choice.captain = userID;
 

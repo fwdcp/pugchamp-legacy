@@ -345,6 +345,7 @@ module.exports = function(app, chance, database, io, self) {
     io.sockets.on('authenticated', function(socket) {
         let userID = socket.decoded_token.user;
 
+        socket.removeAllListeners('requestAdmin');
         socket.on('requestAdmin', co.wrap(function*(message) {
             let userRestrictions = self.getUserRestrictions(userID);
 

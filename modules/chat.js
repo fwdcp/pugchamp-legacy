@@ -97,6 +97,7 @@ module.exports = function(app, chance, database, io, self) {
     io.sockets.on('authenticated', function(socket) {
         let userID = socket.decoded_token.user;
 
+        socket.removeAllListeners('sendChatMessage');
         socket.on('sendChatMessage', function(message) {
             self.markUserActivity(userID);
 
