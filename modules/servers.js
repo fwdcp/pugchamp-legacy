@@ -125,15 +125,27 @@ module.exports = function(app, chance, database, io, self) {
     });
 
     self.shutdownGame = co.wrap(function* shutdownGame(game) {
-        let statuses = yield self.getServerStatuses();
+        yield _.map(GAME_SERVER_POOL, function(serverInfo, server) {
+            return co(function*() {
+                let serverStatus = yield getServerStatus(server);
 
-        for (let server of _.keys(GAME_SERVER_POOL)) {
-            let serverStatus = statuses[server];
+                if (serverStatus.status === 'unreachable' || serverStatus.status === 'unknown') {
+                    for (let delay of RETRY_ATTEMPTS) {
+                        yield self.promiseDelay(delay, null, false);
 
-            if (serverStatus.status === 'assigned' && self.getDocumentID(serverStatus.game) === self.getDocumentID(game)) {
-                yield self.sendRCONCommand(server, 'pugchamp_game_reset');
-            }
-        }
+                        serverStatus = yield getServerStatus(server);
+
+                        if (serverStatus.status !== 'unreachable' && serverStatus.status !== 'unknown') {
+                            break;
+                        }
+                    }
+                }
+
+                if (serverStatus.status === 'assigned' && self.getDocumentID(serverStatus.game) === self.getDocumentID(game)) {
+                    yield self.sendRCONCommand(server, 'pugchamp_game_reset');
+                }
+            });
+        });
     });
 
     self.updateServerPlayers = co.wrap(function* updateServerPlayers(game) {
