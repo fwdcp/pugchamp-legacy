@@ -51,10 +51,14 @@
     <p>
         <strong>Captain Score:</strong>
 
+        {{#if user.stats.captainScore}}
         {{#if user.stats.captainScore.low}}
-            {{user.stats.captainScore.low}}
+        {{user.stats.captainScore.low}}
         {{else}}
-            N/A
+        N/A
+        {{/if}}
+        {{else}}
+        N/A
         {{/if}}
     </p>
 
