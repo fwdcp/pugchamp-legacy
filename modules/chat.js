@@ -103,7 +103,9 @@ module.exports = function(app, chance, database, io, self) {
             let userRestrictions = self.getUserRestrictions(userID);
 
             if (!_.includes(userRestrictions.aspects, 'chat')) {
-                let trimmedMessage = _.trim(message);
+                let trimmedMessage = _.chain(message).trim().deburr().truncate({
+                    length: 140
+                }).value();
 
                 if (trimmedMessage.length > 0) {
                     self.sendMessage({
