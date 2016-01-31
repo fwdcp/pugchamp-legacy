@@ -15,7 +15,7 @@
         <br>
         <em>Rating</em>: {{player.stats.rating.mean}}&plusmn;{{player.stats.rating.deviation}} ({{player.stats.rating.low}}&ndash;{{player.stats.rating.high}})
         <br>
-        <google-chart id="roles" type="pie"></google-chart>
+        <google-chart id="roles" rows="{{roleStatsToRows(player.stats.roles)}}" options="{{optionsForChart(player)}}" type="pie"></google-chart>
 	</template>
 
     <script src="/components/lodash/lodash.min.js"></script>
@@ -28,10 +28,9 @@
             },
             ready: function() {
                 this.$.roles.cols = [{type: 'string', label: 'Role'}, {type: 'number', label: 'Games'}];
-                this.$.roles.rows = _.map(this.player.stats.roles, _.bind(function(stat) {
-                    return [this.roles[stat.role].name, stat.number];
-                }, this));
-                this.$.roles.options = {
+            },
+            optionsForChart: function(player) {
+                return {
                     backgroundColor: 'transparent',
                     chartArea: {
                         left: 0,
@@ -46,12 +45,17 @@
                         }
                     },
                     pieSliceText: 'value',
-                    title: 'Role Stats for ' + this.player.alias,
+                    title: 'Role Stats for ' + player.alias,
                     titleTextStyle: {
                         color: '#ffffff'
                     },
                     width: 250
                 };
+            },
+            roleStatsToRows: function(stats) {
+                return _.map(stats, _.bind(function(stat) {
+                    return [this.roles[stat.role].name, stat.number];
+                }, this));
             }
         });
     </script>

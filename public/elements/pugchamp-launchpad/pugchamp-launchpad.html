@@ -1,6 +1,7 @@
 <link rel="import" href="/components/polymer/polymer.html">
 
 <link rel="import" href="/components/iron-flex-layout/classes/iron-flex-layout.html">
+<link rel="import" href="/components/iron-list/iron-list.html">
 <link rel="import" href="/components/paper-checkbox/paper-checkbox.html">
 <link rel="import" href="/components/paper-item/paper-item.html">
 <link rel="import" href="/components/paper-item/paper-icon-item.html">
@@ -194,12 +195,14 @@
                             </div>
                             <paper-checkbox class="role-select" value="{{role.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability">{{_getProperty(players, role.key, 'length')}}/{{double(role.value.min)}}</paper-checkbox>
                         </paper-icon-item>
-                        <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
-                            <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" on-mouseover="addHighlight" on-mouseout="removeHighlight">
-                                <div class="flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></div>
-                                <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item}}"></pugchamp-player-stats></paper-tooltip>
-                            </paper-icon-item>
-                        </template>
+                        <iron-list items="{{_getProperty(players, role.key)}}">
+                            <template>
+                                <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" on-mouseover="addHighlight" on-mouseout="removeHighlight">
+                                    <div class="flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></div>
+                                    <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item}}"></pugchamp-player-stats></paper-tooltip>
+                                </paper-icon-item>
+                            </template>
+                        </iron-list>
                     </div>
                 </div>
             </template>
