@@ -12,7 +12,9 @@
     <h1>Games</h1>
 
     <iron-list items="{{toJSON games}}" as="game" id="games">
-        <pugchamp-game-summary game="\{{game}}"></pugchamp-game-summary>
+        <template>
+            <pugchamp-game-summary game="\{{game}}"></pugchamp-game-summary>
+        </template>
     </iron-list>
     {{/body}}
 
