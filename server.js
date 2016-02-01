@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const EventEmitter = require('events');
 const express = require('express');
 const hbs = require('hbs');
+const heapdump = require('heapdump');
 const http = require('http');
 const ms = require('ms');
 const passport = require('passport');
