@@ -2,7 +2,7 @@
     "app": {
         "games": {
             "postGameResetDelay": "1m",
-            "substituteRequestPeriod": "2m",
+            "substituteRequestPeriod": "1m",
             "substituteSelectionMethod": "closest"
         },
         "launch": {
