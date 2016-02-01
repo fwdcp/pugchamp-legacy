@@ -1,5 +1,8 @@
 {
     "app": {
+        "users": {
+            "admins": ["76561198043850090"]
+        },
         "pages": [{
             "title": "About",
             "icon": "info",
@@ -28,8 +31,7 @@
                     "salt": "da server"
                 }
             }
-        },
-        "admins": ["76561198043850090"]
+        }
     },
     "server": {
         "baseURL": "http://localhost:16217",
