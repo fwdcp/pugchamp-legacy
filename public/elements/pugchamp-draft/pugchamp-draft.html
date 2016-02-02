@@ -196,7 +196,7 @@
                             </paper-icon-item>
                             <template is="dom-if" if="{{!_includes(overrideRoles, role.key)}}">
                                 <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
-                                    <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" disabled="{{_includes(unavailablePlayers, item.id)}}" on-mouseover="addHighlight" on-mouseout="removeHighlight">
+                                    <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" disabled="{{_includes(unavailablePlayers, item.id)}}" on-mouseover="onPlayer" on-mouseout="offPlayer">
                                         <div class="flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></div>
                                         <paper-button class="draft-choice" data-role$="{{role.key}}" data-player$="{{item.id}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers)}}"
                                         on-tap="pickPlayer" raised>Select</paper-button>
@@ -206,7 +206,7 @@
                             </template>
                             <template is="dom-if" if="{{_includes(overrideRoles, role.key)}}">
                                 <template is="dom-repeat" items="{{allPlayers}}">
-                                    <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" disabled="{{_includes(unavailablePlayers, item.id)}}" on-mouseover="addHighlight" on-mouseout="removeHighlight">
+                                    <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" disabled="{{_includes(unavailablePlayers, item.id)}}" on-mouseover="onPlayer" on-mouseout="offPlayer">
                                         <div class="flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></div>
                                         <paper-button class="draft-choice override" data-role$="{{role.key}}" data-player$="{{item.id}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers)}}"
                                         on-tap="pickPlayerOverride" raised>Override</paper-button>
@@ -492,10 +492,12 @@
                     return 'highlight';
                 }
             },
-            addHighlight: function(event) {
+            onPlayer: function(event) {
                 this.set('highlightedPlayer', event.model.item.id);
+
+                Polymer.dom(event).querySelector('pugchamp-player-stats').renderCharts();
             },
-            removeHighlight: function(event) {
+            offPlayer: function(event) {
                 if (this.highlightedPlayer === event.model.item.id) {
                     this.set('highlightedPlayer', null);
                 }

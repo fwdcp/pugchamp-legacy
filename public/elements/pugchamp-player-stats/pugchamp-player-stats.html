@@ -15,7 +15,7 @@
         <br>
         <em>Rating</em>: {{player.stats.rating.mean}}&plusmn;{{player.stats.rating.deviation}} ({{player.stats.rating.low}}&ndash;{{player.stats.rating.high}})
         <br>
-        <google-chart id="roles" rows="{{roleStatsToRows(player.stats.roles, roles)}}" options="{{optionsForChart(player)}}" type="pie"></google-chart>
+        <google-chart id="roles" type="pie"></google-chart>
 	</template>
 
     <script src="/components/lodash/lodash.min.js"></script>
@@ -23,14 +23,28 @@
         Polymer({
             is: 'pugchamp-player-stats',
             properties: {
-                roles: Object,
-                player: Object
+                roles: {
+                    type: Object,
+                    observer: '_infoChanged'
+                },
+                player: {
+                    type: Object,
+                    observer: '_infoChanged'
+                }
             },
             ready: function() {
-                this.$.roles.cols = [{type: 'string', label: 'Role'}, {type: 'number', label: 'Games'}];
+                this._rendered = false;
             },
-            optionsForChart: function(player) {
-                return {
+            renderCharts: function() {
+                if (this._rendered) {
+                    return;
+                }
+
+                this.$.roles.cols = [{type: 'string', label: 'Role'}, {type: 'number', label: 'Games'}];
+                this.$.roles.rows = _.map(this.stats, _.bind(function(stat) {
+                    return [this.roles[stat.role].name, stat.number];
+                }, this));
+                this.$.roles.options = {
                     backgroundColor: 'transparent',
                     chartArea: {
                         left: 0,
@@ -45,17 +59,17 @@
                         }
                     },
                     pieSliceText: 'value',
-                    title: 'Role Stats for ' + player.alias,
+                    title: 'Role Stats for ' + this.player.alias,
                     titleTextStyle: {
                         color: '#ffffff'
                     },
                     width: 250
                 };
+
+                this._rendered = true;
             },
-            roleStatsToRows: function(stats, roles) {
-                return _.map(stats, _.bind(function(stat) {
-                    return [roles[stat.role].name, stat.number];
-                }, this));
+            _infoChanged: function() {
+                this._rendered = false;
             }
         });
     </script>
