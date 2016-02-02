@@ -1,5 +1,4 @@
 #include <sourcemod>
-#include <connect>
 #include <logstf>
 #include <morecolors>
 #include <sdktools>
@@ -91,17 +90,11 @@ public void OnMapStart() {
     }
 }
 
-public bool OnClientPreConnectEx(const char[] name, char password[255], const char[] ip, const char[] steamID, char rejectReason[255]) {
-    char steamID64[32];
-    Connect_GetAuthId(AuthId_SteamID64, steamID64, sizeof(steamID64));
-
-    if (allowedPlayers.FindString(steamID64) == -1) {
-        strcopy(rejectReason, sizeof(rejectReason), "You are not authorized to join this server.");
-
-        return false;
+public void OnClientAuthorized(int client) {
+    char steamID[32];
+    if (!GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID)) || allowedPlayers.FindString(steamID) == -1) {
+        KickClient(client, "you are not authorized to join this server");
     }
-
-    return true;
 }
 
 public void OnClientPostAdminCheck(int client) {
