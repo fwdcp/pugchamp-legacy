@@ -195,7 +195,7 @@
                             <paper-checkbox class="role-select" value="{{role.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability">{{_getProperty(players, role.key, 'length')}}/{{double(role.value.min)}}</paper-checkbox>
                         </paper-icon-item>
                         <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
-                            <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" on-mouseover="onPlayer" on-mouseout="offPlayer">
+                            <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" on-mouseenter="onPlayer" on-mouseleave="offPlayer">
                                 <div class="flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></div>
                                 <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item}}"></pugchamp-player-stats></paper-tooltip>
                             </paper-icon-item>
