@@ -33,10 +33,10 @@
                 }
             },
             ready: function() {
-                this._rendered = false;
+                this._chartsRendered = false;
             },
             renderCharts: function() {
-                if (this._rendered) {
+                if (this._chartsRendered) {
                     return;
                 }
 
@@ -66,10 +66,10 @@
                     width: 250
                 };
 
-                this._rendered = true;
+                this._chartsRendered = true;
             },
             _infoChanged: function() {
-                this._rendered = false;
+                this._chartsRendered = false;
             }
         });
     </script>
