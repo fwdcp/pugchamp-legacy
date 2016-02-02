@@ -495,7 +495,7 @@
             onPlayer: function(event) {
                 this.set('highlightedPlayer', event.model.item.id);
 
-                Polymer.dom(event).querySelector('pugchamp-player-stats').renderCharts();
+                Polymer.dom(event.target).querySelector('pugchamp-player-stats').renderCharts();
             },
             offPlayer: function(event) {
                 if (this.highlightedPlayer === event.model.item.id) {
