@@ -41,7 +41,7 @@
                 }
 
                 this.$.roles.cols = [{type: 'string', label: 'Role'}, {type: 'number', label: 'Games'}];
-                this.$.roles.rows = _.map(this.stats, _.bind(function(stat) {
+                this.$.roles.rows = _.map(this.player.stats.roles, _.bind(function(stat) {
                     return [this.roles[stat.role].name, stat.number];
                 }, this));
                 this.$.roles.options = {
@@ -65,6 +65,8 @@
                     },
                     width: 250
                 };
+
+                this.$.roles.drawChart();
 
                 this._chartsRendered = true;
             },
