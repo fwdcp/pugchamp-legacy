@@ -1,7 +1,12 @@
 {
     "app": {
         "users": {
-            "admins": ["76561198043850090"]
+            "admins": ["76561198043850090"],
+            "authorizations": [{
+                "user": "76561198043850090",
+                "authorized": false
+            }],
+            "authorizationAPIs": ["http://localhost:8080/checkUser"]
         },
         "pages": [{
             "title": "About",

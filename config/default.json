@@ -1,5 +1,8 @@
 {
     "app": {
+        "users": {
+            "authorizationDefault": true
+        },
         "games": {
             "postGameResetDelay": "1m",
             "substituteRequestPeriod": "2m",

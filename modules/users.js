@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
 const moment = require('moment');
 const OpenIDStrategy = require('passport-openid').Strategy;
 const passport = require('passport');
+const rp = require('request-promise');
 const socketioJwt = require('socketio-jwt');
 const url = require('url');
 
@@ -17,13 +18,59 @@ module.exports = function(app, chance, database, io, self) {
         aspects: ['sub', 'start', 'captain', 'chat', 'support'],
         reasons: ['You are currently not logged on.']
     };
+    const USER_AUTHORIZATIONS = config.has('app.users.authorizations') ? config.get('app.users.authorizations') : [];
+    const USER_AUTHORIZATION_DEFAULT = config.has('app.users.authorizationDefault') ? config.get('app.users.authorizationDefault') : true;
+    const USER_AUTHORIZATION_APIS = config.has('app.users.authorizationAPIs') ? config.get('app.users.authorizationAPIs') : [];
     var userCache = new Map();
     var userRestrictions = new Map();
     var userSockets = new Map();
 
+    function checkUserAuthorization(user) {
+        return co(function*() {
+            for (let authorization of USER_AUTHORIZATIONS) {
+                if (authorization.user === user.steamID) {
+                    return authorization.authorized;
+                }
+            }
+
+            for (let authorizationAPI of USER_AUTHORIZATION_APIS) {
+                try {
+                    let response = yield rp({
+                        resolveWithFullResponse: true,
+                        simple: true,
+                        qs: {
+                            user: user.steamID
+                        },
+                        uri: authorizationAPI
+                    });
+
+                    if (response.statusCode === 200) {
+                        return true;
+                    }
+                    else if (response.statusCode === 403) {
+                        return false;
+                    }
+                    else {
+                        continue;
+                    }
+                }
+                catch (err) {
+                    continue;
+                }
+            }
+
+            return USER_AUTHORIZATION_DEFAULT;
+        });
+    }
+
+    self.getCachedUsers = function getCachedUsers() {
+        return [...userCache.values()];
+    };
+
     self.getCachedUser = function getCachedUser(userID) {
         return userCache.get(userID);
     };
+
     self.updateCachedUser = co.wrap(function*(userID) {
         let user = yield database.User.findById(userID);
 
@@ -75,6 +122,14 @@ module.exports = function(app, chance, database, io, self) {
         };
         if (!user.setUp) {
             restrictions.push(NOT_READY_RESTRICTIONS);
+        }
+
+        const UNAUTHORIZED_RESTRICTIONS = {
+            aspects: ['sub', 'start', 'captain', 'chat', 'support'],
+            reasons: ['You are not authorized to use this system.']
+        };
+        if (!user.authorized) {
+            restrictions.push(UNAUTHORIZED_RESTRICTIONS);
         }
 
         const CURRENT_GAME_RESTRICTIONS = {
@@ -160,28 +215,30 @@ module.exports = function(app, chance, database, io, self) {
             });
         },
         stateless: true
-    }, function(identifier, done) {
+    }, co.wrap(function*(identifier, done) {
         let id = identifier.replace('http://steamcommunity.com/openid/id/', '');
 
-        database.User.findOne({
-            steamID: id
-        }, function(err, user) {
-            if (err) {
-                done(err);
-            }
-            else if (!user) {
+        try {
+            let user = yield database.User.findOne({
+                steamID: id
+            });
+
+            if (!user) {
                 user = new database.User({
                     steamID: id
                 });
-                user.save(function(err) {
-                    done(err, user);
-                });
             }
-            else {
-                done(null, user);
-            }
-        });
-    }));
+
+            user.authorized = yield checkUserAuthorization(user);
+
+            yield user.save();
+
+            done(null, user);
+        }
+        catch (err) {
+            done(err);
+        }
+    })));
     passport.serializeUser(function(user, done) {
         done(null, user._id);
     });
@@ -338,6 +395,10 @@ module.exports = function(app, chance, database, io, self) {
         let users = yield database.User.find({}, '_id').exec();
 
         for (let user of users) {
+            user.authorized = yield checkUserAuthorization(user);
+
+            yield user.save();
+
             yield self.updateCachedUser(user.id);
         }
     });
