@@ -65,7 +65,7 @@ module.exports = function(app, chance, database, io, self) {
 
         let user = self.getCachedUser(userID);
 
-        if (user.setUp) {
+        if (user.setUp && (user.authorized || user.admin)) {
             self.sendMessage({
                 user: userID,
                 action: 'connected'
@@ -78,7 +78,7 @@ module.exports = function(app, chance, database, io, self) {
     self.on('userDisconnected', function(userID) {
         let user = self.getCachedUser(userID);
 
-        if (user.setUp) {
+        if (user.setUp && (user.authorized || user.admin)) {
             self.sendMessage({
                 user: userID,
                 action: 'disconnected'
