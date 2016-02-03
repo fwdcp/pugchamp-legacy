@@ -208,41 +208,46 @@ module.exports = function(app, chance, database, io, self) {
         });
     }));
 
-    app.get('/players', co.wrap(function*(req, res) {
-        let users = yield database.User.find({
-            $or: [{
-                'stats.roles.number': {
-                    $gt: 0
+    app.get('/players', function(req, res) {
+        let users = self.getCachedUsers();
+
+        if (!req.user || !req.user.admin) {
+            users = _.filter(users, function(user) {
+                if (!user.authorized) {
+                    return false;
                 }
-            }, {
-                'stats.draft': {
-                    $elemMatch: {
-                        'type': 'captain',
-                        'number': {
-                            $gt: 0
-                        }
+
+                for (let stat of user.stats.roles) {
+                    if (stat.number > 0) {
+                        return true;
                     }
                 }
-            }]
-        }).exec();
 
-        let players = _(users).orderBy([function(user) {
-            return user.stats.rating.low;
-        }, function(user) {
-            return user.stats.captainScore.low;
-        }], ['desc', 'desc']).map(user => ({
-            id: user.id,
-            alias: user.alias,
-            steamID: user.steamID,
-            ratingMean: math.round(user.stats.rating.mean),
-            ratingDeviation: math.round(user.stats.rating.deviation),
-            ratingLowerBound: math.round(user.stats.rating.low),
-            ratingUpperBound: math.round(user.stats.rating.high),
-            captainScore: _.isNumber(user.stats.captainScore.low) ? math.round(user.stats.captainScore.low, 3) : null
-        })).value();
+                for (let stat of user.stats.draft) {
+                    if (stat.type === 'captain' && stat.number > 0) {
+                        return true;
+                    }
+                }
+
+                return false;
+            });
+        }
 
         res.render('playerList', {
-            players: players
+            players: _(users).orderBy([function(user) {
+                return user.stats.rating.low;
+            }, function(user) {
+                return user.stats.captainScore ? user.stats.captainScore.low : null;
+            }], ['desc', 'desc']).map(user => ({
+                id: user.id,
+                alias: user.alias,
+                steamID: user.steamID,
+                ratingMean: math.round(user.stats.rating.mean),
+                ratingDeviation: math.round(user.stats.rating.deviation),
+                ratingLowerBound: math.round(user.stats.rating.low),
+                ratingUpperBound: math.round(user.stats.rating.high),
+                captainScore: user.stats.captainScore && _.isNumber(user.stats.captainScore.low) ? math.round(user.stats.captainScore.low, 3) : null
+            })).value()
         });
-    }));
+    });
 };
