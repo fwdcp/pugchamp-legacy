@@ -124,12 +124,21 @@ module.exports = function(app, chance, database, io, self) {
             restrictions.push(NOT_READY_RESTRICTIONS);
         }
 
-        const UNAUTHORIZED_RESTRICTIONS = {
+        const UNAUTHORIZED_USER_RESTRICTIONS = {
             aspects: ['sub', 'start', 'captain', 'chat', 'support'],
             reasons: ['You are not authorized to use this system.']
         };
+        const UNAUTHORIZED_ADMIN_RESTRICTIONS = {
+            aspects: ['sub', 'start', 'captain'],
+            reasons: ['You are not authorized to play in this system.']
+        };
         if (!user.authorized) {
-            restrictions.push(UNAUTHORIZED_RESTRICTIONS);
+            if (!user.admin) {
+                restrictions.push(UNAUTHORIZED_USER_RESTRICTIONS);
+            }
+            else {
+                restrictions.push(UNAUTHORIZED_ADMIN_RESTRICTIONS);
+            }
         }
 
         const CURRENT_GAME_RESTRICTIONS = {
