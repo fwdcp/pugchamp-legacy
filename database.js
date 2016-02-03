@@ -14,6 +14,10 @@ var userSchema = new mongoose.Schema({
         match: /^[A-Za-z0-9_]{1,15}$/
     },
     steamID: String,
+    authorized: {
+        type: Boolean,
+        default: config.has('app.users.authorizationDefault') ? config.get('app.users.authorizationDefault') : true,
+    },
     setUp: {
         type: Boolean,
         default: false
