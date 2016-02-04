@@ -217,17 +217,21 @@ module.exports = function(app, chance, database, io, self) {
                     return false;
                 }
 
-                for (let stat of user.stats.roles) {
-                    if (stat.number > 0) {
-                        return true;
+                if (user.stats.roles) {
+                    for (let stat of user.stats.roles) {
+                        if (stat.number > 0) {
+                            return true;
+                        }
                     }
                 }
 
-                for (let stat of user.stats.draft) {
-                    if (stat.type === 'captain' && stat.number > 0) {
-                        return true;
+                if (user.stats.draft) {
+                    for (let stat of user.stats.draft) {
+                        if (stat.type === 'captain' && stat.number > 0) {
+                            return true;
+                        }
                     }
-                }
+                }                
 
                 return false;
             });
