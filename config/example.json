@@ -9,16 +9,6 @@
             "authorizationAPIs": ["http://localhost:8080/checkUser"]
         },
         "pages": [{
-            "title": "About",
-            "icon": "info",
-            "url": "/about",
-            "view": "static/about"
-        }, {
-            "title": "Rules",
-            "icon": "announcement",
-            "url": "/rules",
-            "view": "static/rules"
-        }, {
             "title": "Source Repository",
             "icon": "code",
             "url": "https://github.com/fwdcp/pugchamp"
