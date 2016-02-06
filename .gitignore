@@ -89,9 +89,11 @@ docs/_build/
 # PyBuilder
 target/
 
+# SourceMod extensions
 !gameservers/addons/sourcemod/extensions/*.dll
 !gameservers/addons/sourcemod/extensions/*.so
 
+# config files
 config/*
 !config/default*
 !config/example*
