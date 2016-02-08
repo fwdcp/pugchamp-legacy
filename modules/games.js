@@ -14,7 +14,7 @@ const path = require('path');
 require("moment-duration-format");
 
 module.exports = function(app, chance, database, io, self) {
-    const POST_GAME_RESET_DELAY = config.get('app.games.postGameResetDelay');
+    const POST_GAME_RESET_DELAY = ms(config.get('app.games.postGameResetDelay'));
     const ROLES = config.get('app.games.roles');
     const SUBSTITUTE_REQUEST_PERIOD = ms(config.get('app.games.substituteRequestPeriod'));
     const SUBSTITUTE_SELECTION_METHOD = config.get('app.games.substituteSelectionMethod');
