@@ -42,41 +42,52 @@ module.exports = function(app, chance, database, io, self) {
         });
     }
 
+    function disconnectFromRCON(rcon) {
+        return co(function*() {
+            yield rcon.disconnect();
+        });
+    }
+
     function getServerStatus(gameServer) {
         return Promise.race([co(function*() {
             try {
                 let rcon = yield connectToRCON(gameServer);
 
-                let response = yield sendCommandToServer(rcon, 'pugchamp_game_info');
+                try {
+                    let response = yield sendCommandToServer(rcon, 'pugchamp_game_info');
 
-                let gameID = _.trim(response);
+                    let gameID = _.trim(response);
 
-                if (gameID) {
-                    try {
-                        let game = yield database.Game.findById(gameID);
+                    if (gameID) {
+                        try {
+                            let game = yield database.Game.findById(gameID);
 
-                        if (game) {
-                            return {
-                                status: 'assigned',
-                                game: game
-                            };
+                            if (game) {
+                                return {
+                                    status: 'assigned',
+                                    game: game
+                                };
+                            }
+                            else {
+                                return {
+                                    status: 'unknown'
+                                };
+                            }
                         }
-                        else {
+                        catch (err) {
                             return {
                                 status: 'unknown'
                             };
                         }
                     }
-                    catch (err) {
+                    else {
                         return {
-                            status: 'unknown'
+                            status: 'free'
                         };
                     }
                 }
-                else {
-                    return {
-                        status: 'free'
-                    };
+                finally {
+                    disconnectFromRCON(rcon);
                 }
             }
             catch (err) {
@@ -119,9 +130,15 @@ module.exports = function(app, chance, database, io, self) {
 
     self.sendRCONCommand = co.wrap(function* sendRCONCommand(server, command) {
         let rcon = yield connectToRCON(server);
-        let result = yield sendCommandToServer(rcon, command);
 
-        return result;
+        try {
+            let result = yield sendCommandToServer(rcon, command);
+
+            return result;
+        }
+        finally {
+            disconnectFromRCON(rcon);
+        }
     });
 
     self.shutdownGame = co.wrap(function* shutdownGame(game) {
@@ -157,67 +174,72 @@ module.exports = function(app, chance, database, io, self) {
 
         let rcon = yield connectToRCON(game.server);
 
-        let populatedGame = yield game.populate('teams.composition.players.user').execPopulate();
+        try {
+            let populatedGame = yield game.populate('teams.composition.players.user').execPopulate();
 
-        let players = _(populatedGame.teams).map(function(team) {
-            return _.map(team.composition, function(role) {
-                return _.map(role.players, function(player) {
-                    return {
-                        id: player.user.steamID,
-                        alias: player.user.alias,
-                        faction: team.faction,
-                        class: ROLES[role.role].class,
-                        replaced: player.replaced
-                    };
+            let players = _(populatedGame.teams).map(function(team) {
+                return _.map(team.composition, function(role) {
+                    return _.map(role.players, function(player) {
+                        return {
+                            id: player.user.steamID,
+                            alias: player.user.alias,
+                            faction: team.faction,
+                            class: ROLES[role.role].class,
+                            replaced: player.replaced
+                        };
+                    });
                 });
-            });
-        }).flattenDeep().compact().value();
+            }).flattenDeep().compact().value();
 
-        for (let player of players) {
-            if (!player.replaced) {
-                let gameTeam = 1;
-                let gameClass = 0;
+            for (let player of players) {
+                if (!player.replaced) {
+                    let gameTeam = 1;
+                    let gameClass = 0;
 
-                if (player.faction === 'RED') {
-                    gameTeam = 2;
-                }
-                else if (player.faction === 'BLU') {
-                    gameTeam = 3;
-                }
+                    if (player.faction === 'RED') {
+                        gameTeam = 2;
+                    }
+                    else if (player.faction === 'BLU') {
+                        gameTeam = 3;
+                    }
 
-                if (player.class === 'scout') {
-                    gameClass = 1;
-                }
-                else if (player.class === 'soldier') {
-                    gameClass = 3;
-                }
-                else if (player.class === 'pyro') {
-                    gameClass = 7;
-                }
-                else if (player.class === 'demoman') {
-                    gameClass = 4;
-                }
-                else if (player.class === 'heavy') {
-                    gameClass = 6;
-                }
-                else if (player.class === 'engineer') {
-                    gameClass = 9;
-                }
-                else if (player.class === 'medic') {
-                    gameClass = 5;
-                }
-                else if (player.class === 'sniper') {
-                    gameClass = 2;
-                }
-                else if (player.class === 'spy') {
-                    gameClass = 8;
-                }
+                    if (player.class === 'scout') {
+                        gameClass = 1;
+                    }
+                    else if (player.class === 'soldier') {
+                        gameClass = 3;
+                    }
+                    else if (player.class === 'pyro') {
+                        gameClass = 7;
+                    }
+                    else if (player.class === 'demoman') {
+                        gameClass = 4;
+                    }
+                    else if (player.class === 'heavy') {
+                        gameClass = 6;
+                    }
+                    else if (player.class === 'engineer') {
+                        gameClass = 9;
+                    }
+                    else if (player.class === 'medic') {
+                        gameClass = 5;
+                    }
+                    else if (player.class === 'sniper') {
+                        gameClass = 2;
+                    }
+                    else if (player.class === 'spy') {
+                        gameClass = 8;
+                    }
 
-                yield sendCommandToServer(rcon, 'pugchamp_game_player_add "' + player.id + '" "' + player.alias + '" ' + gameTeam + ' ' + gameClass);
+                    yield sendCommandToServer(rcon, 'pugchamp_game_player_add "' + player.id + '" "' + player.alias + '" ' + gameTeam + ' ' + gameClass);
+                }
+                else {
+                    yield sendCommandToServer(rcon, 'pugchamp_game_player_remove "' + player.id + '"');
+                }
             }
-            else {
-                yield sendCommandToServer(rcon, 'pugchamp_game_player_remove "' + player.id + '"');
-            }
+        }
+        finally {
+            disconnectFromRCON(rcon);
         }
     });
 
@@ -231,23 +253,28 @@ module.exports = function(app, chance, database, io, self) {
 
         let rcon = yield connectToRCON(game.server);
 
-        yield sendCommandToServer(rcon, 'pugchamp_game_reset');
+        try {
+            yield sendCommandToServer(rcon, 'pugchamp_game_reset');
 
-        let gameServerInfo = GAME_SERVER_POOL[game.server];
-        let hash = crypto.createHash('sha256');
-        hash.update(game.id + '|' + gameServerInfo.salt);
-        let key = hash.digest('hex');
-        yield sendCommandToServer(rcon, 'pugchamp_server_url "' + BASE_URL + '/api/servers/' + key + '"');
+            let gameServerInfo = GAME_SERVER_POOL[game.server];
+            let hash = crypto.createHash('sha256');
+            hash.update(game.id + '|' + gameServerInfo.salt);
+            let key = hash.digest('hex');
+            yield sendCommandToServer(rcon, 'pugchamp_server_url "' + BASE_URL + '/api/servers/' + key + '"');
 
-        yield sendCommandToServer(rcon, 'pugchamp_game_id "' + game.id + '"');
+            yield sendCommandToServer(rcon, 'pugchamp_game_id "' + game.id + '"');
 
-        let map = MAPS[game.map];
-        yield sendCommandToServer(rcon, 'pugchamp_game_map "' + map.file + '"');
-        yield sendCommandToServer(rcon, 'pugchamp_game_config "' + map.config + '"');
+            let map = MAPS[game.map];
+            yield sendCommandToServer(rcon, 'pugchamp_game_map "' + map.file + '"');
+            yield sendCommandToServer(rcon, 'pugchamp_game_config "' + map.config + '"');
 
-        yield self.updateServerPlayers(game);
+            yield self.updateServerPlayers(game);
 
-        yield sendCommandToServer(rcon, 'pugchamp_game_start', MAP_CHANGE_TIMEOUT);
+            yield sendCommandToServer(rcon, 'pugchamp_game_start', MAP_CHANGE_TIMEOUT);
+        }
+        finally {
+            yield disconnectFromRCON(rcon);
+        }
     });
 
     self.assignGameToServer = co.wrap(function* assignGameToServer(game, server) {
