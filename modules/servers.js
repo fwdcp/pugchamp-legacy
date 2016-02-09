@@ -87,7 +87,7 @@ module.exports = function(app, chance, database, io, self) {
                     }
                 }
                 finally {
-                    disconnectFromRCON(rcon);
+                    yield disconnectFromRCON(rcon);
                 }
             }
             catch (err) {
@@ -137,7 +137,7 @@ module.exports = function(app, chance, database, io, self) {
             return result;
         }
         finally {
-            disconnectFromRCON(rcon);
+            yield disconnectFromRCON(rcon);
         }
     });
 
@@ -239,7 +239,7 @@ module.exports = function(app, chance, database, io, self) {
             }
         }
         finally {
-            disconnectFromRCON(rcon);
+            yield disconnectFromRCON(rcon);
         }
     });
 
