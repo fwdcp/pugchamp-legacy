@@ -596,10 +596,10 @@ module.exports = function(app, chance, database, io, self) {
             else if (CAPTAIN_SELECTION_WEIGHT === 'success') {
                 weights = _.map(fullCaptains, function(captain) {
                     if (_.isNumber(captain.stats.captainScore.low)) {
-                        return 0.03 + captain.stats.captainScore.low;
+                        return Math.sqrt(Number.EPSILON) + captain.stats.captainScore.low;
                     }
 
-                    return 0.06;
+                    return Math.sqrt(Number.EPSILON);
                 });
             }
 
