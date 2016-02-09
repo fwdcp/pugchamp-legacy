@@ -14,6 +14,7 @@ const socketioJwt = require('socketio-jwt');
 const url = require('url');
 
 module.exports = function(app, chance, database, io, self) {
+    const CAPTAIN_GAME_REQUIREMENT = config.get('app.users.captainGameRequirement');
     const UNAUTHENTICATED_RESTRICTIONS = {
         aspects: ['sub', 'start', 'captain', 'chat', 'support'],
         reasons: ['You are currently not logged on.']
@@ -157,6 +158,22 @@ module.exports = function(app, chance, database, io, self) {
         });
         if (currentGame) {
             restrictions.push(CURRENT_GAME_RESTRICTIONS);
+        }
+
+        const MIN_GAME_RESTRICTIONS = {
+            aspects: ['captain'],
+            reasons: ['You cannot captain because you do not meet the requirement for games played.']
+        };
+
+        if (user.stats.roles) {
+            let gamesPlayed = _.reduce(user.stats.roles, (sum, stat) => sum + stat.number, 0);
+
+            if (gamesPlayed < CAPTAIN_GAME_REQUIREMENT) {
+                restrictions.push(MIN_GAME_RESTRICTIONS);
+            }
+        }
+        else {
+            restrictions.push(MIN_GAME_RESTRICTIONS);
         }
 
         let activeRestrictions = yield database.Restriction.find({

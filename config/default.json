@@ -1,7 +1,8 @@
 {
     "app": {
         "users": {
-            "authorizationDefault": true
+            "authorizationDefault": true,
+            "captainGameRequirement": 5
         },
         "games": {
             "postGameResetDelay": "1m",
