@@ -6,6 +6,7 @@ const config = require('config');
 const crypto = require('crypto');
 const EventEmitter = require('events');
 const express = require('express');
+const fs = require('fs');
 const hbs = require('hbs');
 const heapdump = require('heapdump');
 const http = require('http');
