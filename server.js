@@ -55,3 +55,10 @@ app.use(function(err, req, res, next) {
 });
 
 server.listen(config.get('server.listen'));
+
+try {
+    fs.chmodSync(config.get('server.listen'), '775');
+}
+catch (err) {
+    // ignore
+}
