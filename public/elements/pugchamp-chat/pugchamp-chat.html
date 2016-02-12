@@ -36,6 +36,10 @@
                 margin-right: 5px;
             }
 
+            .message .message-contents {
+                overflow: hidden;
+            }
+
             .message .message-author {
                 @apply(--paper-font-body2);
             }
@@ -55,7 +59,7 @@
             <template is="dom-repeat" items="{{messages}}">
                 <paper-material class="message horizontal layout">
                     <div class="message-time">{{formatTime(item.time)}}</div>
-                    <div class="flex">
+                    <div class="flex message-contents">
                         <template is="dom-if" if="{{item.user}}">
                             <span class="message-author"><iron-icon hidden$="{{!item.user.admin}}" icon="flag"></iron-icon> {{item.user.alias}}</span>
                         </template>
