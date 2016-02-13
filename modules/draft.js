@@ -191,18 +191,16 @@ module.exports = function(app, chance, database, io, self) {
     }
 
     function getCurrentStatusMessage() {
-        if (currentStatusInfo) {
-            if (draftActive && !draftComplete) {
-                currentStatusInfo.timeElapsed = Date.now() - currentDraftTurnStartTime;
-                currentStatusInfo.timeTotal = TURN_TIME_LIMIT;
-            }
-            else {
-                delete currentStatusInfo.timeElapsed;
-                delete currentStatusInfo.timeTotal;
-            }
-
-            return currentStatusInfo;
+        if (draftActive && !draftComplete) {
+            currentStatusInfo.timeElapsed = Date.now() - currentDraftTurnStartTime;
+            currentStatusInfo.timeTotal = TURN_TIME_LIMIT;
         }
+        else {
+            delete currentStatusInfo.timeElapsed;
+            delete currentStatusInfo.timeTotal;
+        }
+
+        return currentStatusInfo;
     }
 
     self.cleanUpDraft = function cleanUpDraft() {
@@ -668,4 +666,6 @@ module.exports = function(app, chance, database, io, self) {
             commitDraftChoice(choice);
         });
     });
+
+    updateStatusInfo();
 };
