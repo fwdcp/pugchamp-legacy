@@ -152,29 +152,22 @@ module.exports = function(app, chance, database, io, self) {
             }),
             rolesNeeded: calculateRolesNeeded(playersAvailable),
             teamSize: TEAM_SIZE,
-            launchHolds: launchHolds
+            launchHolds: launchHolds,
+            active: launchAttemptActive
         };
     }
 
     function getCurrentStatusMessage() {
-        let statusMessage;
-
         if (launchAttemptActive) {
-            statusMessage = {
-                active: true,
-                timeElapsed: Date.now() - launchAttemptStart,
-                timeTotal: READY_PERIOD
-            };
+            currentStatusInfo.timeElapsed = Date.now() - launchAttemptStart;
+            currentStatusInfo.timeTotal = READY_PERIOD;
         }
         else {
-            statusMessage = {
-                active: false
-            };
+            delete currentStatusInfo.timeElapsed;
+            delete currentStatusInfo.timeTotal;
         }
 
-        _.assign(statusMessage, currentStatusInfo);
-
-        return statusMessage;
+        return currentStatusInfo;
     }
 
     function attemptLaunch() {

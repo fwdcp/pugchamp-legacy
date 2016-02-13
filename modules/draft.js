@@ -184,24 +184,23 @@ module.exports = function(app, chance, database, io, self) {
             pickedMap: pickedMap,
             remainingMaps: remainingMaps,
             allowedRoles: allowedRoles,
-            overrideRoles: overrideRoles
+            overrideRoles: overrideRoles,
+            active: draftActive,
+            complete: draftComplete
         };
     }
 
     function getCurrentStatusMessage() {
-        let statusMessage = {
-            active: draftActive,
-            complete: draftComplete
-        };
-
         if (draftActive && !draftComplete) {
-            statusMessage.timeElapsed = Date.now() - currentDraftTurnStartTime;
-            statusMessage.timeTotal = TURN_TIME_LIMIT;
+            currentStatusInfo.timeElapsed = Date.now() - currentDraftTurnStartTime;
+            currentStatusInfo.timeTotal = TURN_TIME_LIMIT;
+        }
+        else {
+            delete currentStatusInfo.timeElapsed;
+            delete currentStatusInfo.timeTotal;
         }
 
-        _.assign(statusMessage, currentStatusInfo);
-
-        return statusMessage;
+        return currentStatusInfo;
     }
 
     self.cleanUpDraft = function cleanUpDraft() {
