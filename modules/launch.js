@@ -158,16 +158,18 @@ module.exports = function(app, chance, database, io, self) {
     }
 
     function getCurrentStatusMessage() {
-        if (launchAttemptActive) {
-            currentStatusInfo.timeElapsed = Date.now() - launchAttemptStart;
-            currentStatusInfo.timeTotal = READY_PERIOD;
-        }
-        else {
-            delete currentStatusInfo.timeElapsed;
-            delete currentStatusInfo.timeTotal;
-        }
+        if (currentStatusInfo) {
+            if (launchAttemptActive) {
+                currentStatusInfo.timeElapsed = Date.now() - launchAttemptStart;
+                currentStatusInfo.timeTotal = READY_PERIOD;
+            }
+            else {
+                delete currentStatusInfo.timeElapsed;
+                delete currentStatusInfo.timeTotal;
+            }
 
-        return currentStatusInfo;
+            return currentStatusInfo;
+        }
     }
 
     function attemptLaunch() {

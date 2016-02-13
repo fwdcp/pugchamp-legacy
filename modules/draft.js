@@ -191,16 +191,18 @@ module.exports = function(app, chance, database, io, self) {
     }
 
     function getCurrentStatusMessage() {
-        if (draftActive && !draftComplete) {
-            currentStatusInfo.timeElapsed = Date.now() - currentDraftTurnStartTime;
-            currentStatusInfo.timeTotal = TURN_TIME_LIMIT;
-        }
-        else {
-            delete currentStatusInfo.timeElapsed;
-            delete currentStatusInfo.timeTotal;
-        }
+        if (currentStatusInfo) {
+            if (draftActive && !draftComplete) {
+                currentStatusInfo.timeElapsed = Date.now() - currentDraftTurnStartTime;
+                currentStatusInfo.timeTotal = TURN_TIME_LIMIT;
+            }
+            else {
+                delete currentStatusInfo.timeElapsed;
+                delete currentStatusInfo.timeTotal;
+            }
 
-        return currentStatusInfo;
+            return currentStatusInfo;
+        }
     }
 
     self.cleanUpDraft = function cleanUpDraft() {
