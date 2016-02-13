@@ -94,27 +94,30 @@ module.exports = function(app, chance, database, io, self) {
         socket.emit('onlineUserListUpdated', self.getOnlineUserList());
     });
 
-    io.sockets.on('authenticated', function(socket) {
-        let userID = socket.decoded_token.user;
+    function onUserSendChatMessage(message) {
+        /*jshint validthis: true */
+        let userID = this.decoded_token.user;
 
-        socket.removeAllListeners('sendChatMessage');
-        socket.on('sendChatMessage', function(message) {
-            self.markUserActivity(userID);
+        self.markUserActivity(userID);
 
-            let userRestrictions = self.getUserRestrictions(userID);
+        let userRestrictions = self.getUserRestrictions(userID);
 
-            if (!_.includes(userRestrictions.aspects, 'chat')) {
-                let trimmedMessage = _.chain(message).trim().truncate({
-                    length: 140
-                }).deburr().value();
+        if (!_.includes(userRestrictions.aspects, 'chat')) {
+            let trimmedMessage = _.chain(message).trim().truncate({
+                length: 140
+            }).deburr().value();
 
-                if (trimmedMessage.length > 0) {
-                    self.sendMessage({
-                        user: userID,
-                        body: trimmedMessage
-                    });
-                }
+            if (trimmedMessage.length > 0) {
+                self.sendMessage({
+                    user: userID,
+                    body: trimmedMessage
+                });
             }
-        });
+        }
+    }
+
+    io.sockets.on('authenticated', function(socket) {
+        socket.removeAllListeners('sendChatMessage');
+        socket.on('sendChatMessage', onUserSendChatMessage);
     });
 };

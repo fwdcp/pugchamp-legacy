@@ -367,26 +367,36 @@ module.exports = function(app, chance, database, io, self) {
         socket.emit('launchStatusUpdated', getCurrentStatusMessage());
     });
 
+    function onUserUpdateAvailability(availability) {
+        /*jshint validthis: true */
+        let userID = this.decoded_token.user;
+
+        self.markUserActivity(userID);
+
+        updateUserAvailability(userID, availability);
+
+        if (launchAttemptActive) {
+            updateUserReadyStatus(userID, true);
+        }
+    }
+
+    function onUserUpdateReadyStatus(ready) {
+        /*jshint validthis: true */
+        let userID = this.decoded_token.user;
+
+        self.markUserActivity(userID);
+
+        updateUserReadyStatus(userID, ready);
+    }
+
     io.sockets.on('authenticated', function(socket) {
         let userID = socket.decoded_token.user;
 
         socket.removeAllListeners('updateAvailability');
-        socket.on('updateAvailability', function(availability) {
-            self.markUserActivity(userID);
-
-            updateUserAvailability(userID, availability);
-
-            if (launchAttemptActive) {
-                updateUserReadyStatus(userID, true);
-            }
-        });
+        socket.on('updateAvailability', onUserUpdateAvailability);
 
         socket.removeAllListeners('updateReadyStatus');
-        socket.on('updateReadyStatus', function(ready) {
-            self.markUserActivity(userID);
-
-            updateUserReadyStatus(userID, ready);
-        });
+        socket.on('updateReadyStatus', onUserUpdateReadyStatus);
 
         socket.emit('userAvailabilityUpdated', {
             roles: _.mapValues(playersAvailable, function(players) {

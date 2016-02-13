@@ -656,15 +656,18 @@ module.exports = function(app, chance, database, io, self) {
         socket.emit('draftStatusUpdated', getCurrentStatusMessage());
     });
 
+    function onUserMakeDraftChoice(choice) {
+        /*jshint validthis: true */
+        let userID = this.decoded_token.user;
+
+        choice.captain = userID;
+
+        commitDraftChoice(choice);
+    }
+
     io.sockets.on('authenticated', function(socket) {
-        let userID = socket.decoded_token.user;
-
         socket.removeAllListeners('makeDraftChoice');
-        socket.on('makeDraftChoice', function(choice) {
-            choice.captain = userID;
-
-            commitDraftChoice(choice);
-        });
+        socket.on('makeDraftChoice', onUserMakeDraftChoice);
     });
 
     updateStatusInfo();

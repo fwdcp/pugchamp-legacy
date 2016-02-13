@@ -324,6 +324,24 @@ module.exports = function(app, chance, database, io, self) {
         socket.emit('restrictionsUpdated', UNAUTHENTICATED_RESTRICTIONS);
         socket.emit('userInfoUpdated', null);
     });
+
+    function onUserDisconnect() {
+        /*jshint validthis: true */
+        let userID = this.decoded_token.user;
+
+        if (userSockets.has(userID)) {
+            let socketList = userSockets.get(userID);
+
+            socketList.delete(this.id);
+
+            if (socketList.size === 0) {
+                self.emit('userDisconnected', userID);
+
+                userSockets.delete(userID);
+            }
+        }
+    }
+
     io.sockets.on('authenticated', co.wrap(function*(socket) {
         let userID = socket.decoded_token.user;
         yield self.updateCachedUser(userID);
@@ -344,19 +362,7 @@ module.exports = function(app, chance, database, io, self) {
         }
 
         socket.removeAllListeners('disconnect');
-        socket.on('disconnect', function() {
-            if (userSockets.has(userID)) {
-                let socketList = userSockets.get(userID);
-
-                socketList.delete(socket.id);
-
-                if (socketList.size === 0) {
-                    self.emit('userDisconnected', userID);
-
-                    userSockets.delete(userID);
-                }
-            }
-        });
+        socket.on('disconnect', onUserDisconnect);
     }));
 
     app.get('/user/settings', function(req, res) {

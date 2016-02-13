@@ -342,11 +342,11 @@ module.exports = function(app, chance, database, io, self) {
         });
     });
 
-    io.sockets.on('authenticated', function(socket) {
-        let userID = socket.decoded_token.user;
+    function onRequestAdmin(message) {
+        /*jshint validthis: true */
+        let userID = this.decoded_token.user;
 
-        socket.removeAllListeners('requestAdmin');
-        socket.on('requestAdmin', co.wrap(function*(message) {
+        return co(function*() {
             let userRestrictions = self.getUserRestrictions(userID);
 
             if (!_.includes(userRestrictions, 'support')) {
@@ -359,6 +359,11 @@ module.exports = function(app, chance, database, io, self) {
                     });
                 }
             }
-        }));
+        });
+    }
+
+    io.sockets.on('authenticated', function(socket) {
+        socket.removeAllListeners('requestAdmin');
+        socket.on('requestAdmin', onRequestAdmin);
     });
 };

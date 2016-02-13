@@ -519,13 +519,11 @@ module.exports = function(app, chance, database, io, self) {
         socket.emit('substituteRequestsUpdated', getCurrentSubstituteRequestsMessage());
     });
 
-    io.sockets.on('authenticated', co.wrap(function*(socket) {
-        let userID = socket.decoded_token.user;
+    function onUserRequestSubstitute(info) {
+        /*jshint validthis: true */
+        let userID = this.decoded_token.user;
 
-        socket.emit('currentGameUpdated', yield getUserCurrentGame(userID));
-
-        socket.removeAllListeners('requestSubstitute');
-        socket.on('requestSubstitute', co.wrap(function*(info) {
+        return co(function*() {
             let game = yield database.Game.findById(info.game);
 
             let playerInfo = self.getGamePlayerInfo(game, info.player);
@@ -535,15 +533,21 @@ module.exports = function(app, chance, database, io, self) {
             }
 
             self.requestSubstitute(game, info.player);
-        }));
-
-        socket.removeAllListeners('updateSubstituteApplication');
-        socket.on('updateSubstituteApplication', function(info) {
-            updateSubstituteApplication(info.request, userID, info.status);
         });
+    }
 
-        socket.removeAllListeners('retractSubstituteRequest');
-        socket.on('retractSubstituteRequest', co.wrap(function*(requestID) {
+    function onUserUpdateSubstituteApplication(info) {
+        /*jshint validthis: true */
+        let userID = this.decoded_token.user;
+
+        updateSubstituteApplication(info.request, userID, info.status);
+    }
+
+    function onUserRetractSubstituteRequest(requestID) {
+        /*jshint validthis: true */
+        let userID = this.decoded_token.user;
+
+        return co(function*() {
             if (!currentSubstituteRequests.has(requestID)) {
                 return;
             }
@@ -558,7 +562,22 @@ module.exports = function(app, chance, database, io, self) {
             }
 
             self.removeSubstituteRequest(requestID);
-        }));
+        });
+    }
+
+    io.sockets.on('authenticated', co.wrap(function*(socket) {
+        let userID = socket.decoded_token.user;
+
+        socket.emit('currentGameUpdated', yield getUserCurrentGame(userID));
+
+        socket.removeAllListeners('requestSubstitute');
+        socket.on('requestSubstitute', onUserRequestSubstitute);
+
+        socket.removeAllListeners('updateSubstituteApplication');
+        socket.on('updateSubstituteApplication', onUserUpdateSubstituteApplication);
+
+        socket.removeAllListeners('retractSubstituteRequest');
+        socket.on('retractSubstituteRequest', onUserRetractSubstituteRequest);
     }));
 
     self.on('userRestrictionsUpdated', function(userID) {
