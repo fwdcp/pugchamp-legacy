@@ -7,6 +7,7 @@ const config = require('config');
 const ms = require('ms');
 
 module.exports = function(app, chance, database, io, self) {
+    const CAPTAIN_DRAFT_EXPIRE_COOLDOWN = ms(config.get('app.draft.captainDraftExpireCooldown'));
     const CAPTAIN_SELECTION_WEIGHT = config.get('app.draft.captainSelectionWeight');
     const DRAFT_ORDER = config.get('app.draft.order');
     const MAP_POOL = config.get('app.games.maps');
@@ -52,6 +53,18 @@ module.exports = function(app, chance, database, io, self) {
         currentState.remaining = TEAM_SIZE - currentState.players;
 
         return currentState;
+    }
+
+    var currentDraftExpireCooldowns = new Set();
+
+    self.isOnDraftExpireCooldown = function isOnDraftExpireCooldown(userID) {
+        return currentDraftExpireCooldowns.has(userID);
+    };
+
+    function removeDraftExpireCooldown(userID) {
+        currentDraftExpireCooldowns.remove(userID);
+
+        self.updateUserRestrictions(userID);
     }
 
     var draftActive = false;
@@ -536,6 +549,18 @@ module.exports = function(app, chance, database, io, self) {
     }
 
     function expireTime() {
+        let turnDefinition = DRAFT_ORDER[currentDraftTurn];
+
+        if (turnDefinition.method === 'captain') {
+            let captain = draftCaptains[turnDefinition.captain];
+
+            currentDraftExpireCooldowns.add(captain);
+
+            self.updateUserRestrictions(captain);
+
+            setTimeout(removeDraftExpireCooldown, CAPTAIN_DRAFT_EXPIRE_COOLDOWN, captain);
+        }
+
         self.sendMessage({
             action: 'game draft aborted due to turn expiration'
         });

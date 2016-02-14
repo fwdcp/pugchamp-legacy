@@ -164,7 +164,6 @@ module.exports = function(app, chance, database, io, self) {
             aspects: ['captain'],
             reasons: ['You cannot captain because you do not meet the requirement for games played.']
         };
-
         if (user.stats.roles) {
             let gamesPlayed = _.reduce(user.stats.roles, (sum, stat) => sum + stat.number, 0);
 
@@ -174,6 +173,14 @@ module.exports = function(app, chance, database, io, self) {
         }
         else {
             restrictions.push(MIN_GAME_RESTRICTIONS);
+        }
+
+        const DRAFT_EXPIRE_COOLDOWN_RESTRICTIONS = {
+            aspects: ['captain'],
+            reasons: ['You are currently on a captain cooldown for allowing a draft to expire.']
+        };
+        if (self.isOnDraftExpireCooldown(userID)) {
+            restrictions.push(DRAFT_EXPIRE_COOLDOWN_RESTRICTIONS);
         }
 
         let activeRestrictions = yield database.Restriction.find({
