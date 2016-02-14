@@ -204,6 +204,11 @@ module.exports = function(app, chance, database, io, self) {
     }
 
     self.cleanUpDraft = function cleanUpDraft() {
+        // NOTE: this is somewhat of a hack to keep players active after a draft ends
+        _.each(fullPlayerList, function(userID) {
+            self.markUserActivity(userID);
+        });
+
         draftActive = false;
         draftComplete = false;
 
