@@ -28,7 +28,7 @@ app.set('view engine', 'hbs');
 
 app.set('trust proxy', 'loopback');
 
-hbs.registerPartials(path.resolve(_dirname, 'views', 'partials'));
+hbs.registerPartials(path.resolve(__dirname, 'views', 'partials'));
 
 app.use(session({
     cookie: {
