@@ -77,7 +77,7 @@ userSchema.set('toObject', {
                 ret.stats.captainScore.high = _.isNumber(doc.stats.captainScore.high) ? math.round(doc.stats.captainScore.high, 3) : null;
             }
 
-            if (ret.stats.rating) {
+            if (ret.stats.rating && _.isNumber(doc.stats.rating.mean) && _.isNumber(doc.stats.rating.deviation)) {
                 ret.stats.rating.mean = math.round(doc.stats.rating.mean, 0);
                 ret.stats.rating.deviation = math.round(doc.stats.rating.deviation, 0);
                 ret.stats.rating.low = math.round(doc.stats.rating.low, 0);
