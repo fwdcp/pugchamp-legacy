@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const Chance = require('chance');
 const config = require('config');
@@ -28,7 +28,7 @@ app.set('view engine', 'hbs');
 
 app.set('trust proxy', 'loopback');
 
-hbs.registerPartials(__dirname + '/views/partials');
+hbs.registerPartials(path.resolve(_dirname, 'views', 'partials'));
 
 app.use(session({
     cookie: {
@@ -49,7 +49,7 @@ app.use('/components', serveStatic(path.resolve(__dirname, 'bower_components')))
 
 require('./modules')(app, chance, database, io, self);
 
-app.use(function(err, req, res, next) {
+app.use(function(err, req, res) {
     console.error(err.stack);
     res.render('error');
 });

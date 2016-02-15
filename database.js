@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const _ = require('lodash');
 const config = require('config');
@@ -15,7 +15,7 @@ var userSchema = new mongoose.Schema({
     steamID: String,
     authorized: {
         type: Boolean,
-        default: config.has('app.users.authorizationDefault') ? config.get('app.users.authorizationDefault') : true,
+        default: config.has('app.users.authorizationDefault') ? config.get('app.users.authorizationDefault') : true
     },
     setUp: {
         type: Boolean,
@@ -69,7 +69,7 @@ userSchema.virtual('stats.rating.high').get(function() {
 userSchema.set('toObject', {
     getters: true,
     versionKey: false,
-    transform: function(doc, ret) {
+    transform(doc, ret) {
         if (ret.stats.captainScore) {
             ret.stats.captainScore.low = _.isNumber(doc.stats.captainScore.low) ? math.round(doc.stats.captainScore.low, 3) : null;
             ret.stats.captainScore.center = _.isNumber(doc.stats.captainScore.center) ? math.round(doc.stats.captainScore.center, 3) : null;
@@ -161,7 +161,7 @@ var gameSchema = new mongoose.Schema({
 gameSchema.set('toObject', {
     getters: true,
     versionKey: false,
-    transform: function(doc, ret) {
+    transform(doc, ret) {
         ret.map = config.get('app.games.maps')[doc.map];
         ret.server = _.omit(config.get('app.servers.pool')[doc.server], 'rcon', 'salt');
     }
@@ -201,7 +201,7 @@ ratingSchema.virtual('after.high').get(function() {
 ratingSchema.set('toObject', {
     getters: true,
     versionKey: false,
-    transform: function(doc, ret) {
+    transform(doc, ret) {
         ret.before.mean = math.round(doc.before.mean);
         ret.before.deviation = math.round(doc.before.deviation);
         ret.before.low = math.round(doc.before.low);
@@ -236,5 +236,5 @@ module.exports = {
     Game: mongoose.model('Game', gameSchema),
     Rating: mongoose.model('Rating', ratingSchema),
     Restriction: mongoose.model('Restriction', restrictionSchema),
-    mongoose: mongoose
+    mongoose
 };
