@@ -56,11 +56,21 @@ module.exports = function(app, chance, database, io, self) {
                 try {
                     let response = yield sendCommandToServer(rcon, 'pugchamp_game_info');
 
-                    let gameID = _.trim(response);
+                    let gameStatus = _.trim(response);
 
-                    if (gameID) {
+                    if (gameStatus === 'UNAVAILABLE') {
+                        return {
+                            status: 'unavailable'
+                        };
+                    }
+                    else if (gameStatus === 'FREE') {
+                        return {
+                            status: 'free'
+                        };
+                    }
+                    else {
                         try {
-                            let game = yield database.Game.findById(gameID);
+                            let game = yield database.Game.findById(gameStatus);
 
                             if (game) {
                                 return {
@@ -79,11 +89,6 @@ module.exports = function(app, chance, database, io, self) {
                                 status: 'unknown'
                             };
                         }
-                    }
-                    else {
-                        return {
-                            status: 'free'
-                        };
                     }
                 }
                 finally {
@@ -260,7 +265,7 @@ module.exports = function(app, chance, database, io, self) {
             let hash = crypto.createHash('sha256');
             hash.update(`${game.id}|${gameServerInfo.salt}`);
             let key = hash.digest('hex');
-            yield sendCommandToServer(rcon, `pugchamp_server_url "${BASE_URL}/api/servers/${key}"`);
+            yield sendCommandToServer(rcon, `pugchamp_api_url "${BASE_URL}/api/servers/${key}"`);
 
             yield sendCommandToServer(rcon, `pugchamp_game_id "${game.id}"`);
 

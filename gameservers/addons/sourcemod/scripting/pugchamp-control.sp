@@ -16,7 +16,9 @@ public Plugin myinfo = {
     url = "http://pug.champ.gg"
 };
 
-ConVar serverURL;
+ConVar apiURL;
+
+ConVar serverDelegated;
 
 bool gameAssigned;
 bool gameLive;
@@ -35,7 +37,10 @@ StringMap playerStartTimes;
 StringMap playerPlaytimes;
 
 public void OnPluginStart() {
-    serverURL = CreateConVar("pugchamp_server_url", "", "the server URL to which game info is sent", FCVAR_PROTECTED|FCVAR_DONTRECORD|FCVAR_PLUGIN);
+    apiURL = CreateConVar("pugchamp_api_url", "", "the API URL to which game info is sent", FCVAR_PROTECTED|FCVAR_DONTRECORD|FCVAR_PLUGIN);
+
+    serverDelegated = CreateConVar("pugchamp_server_delegated", "1", "whether the server is currently delegated to the PugChamp service", FCVAR_PLUGIN, true, 0.0, true, 1.0);
+    serverDelegated.AddChangeHook(Hook_DelegationStatusChanged);
 
     RegServerCmd("pugchamp_game_info", Command_GameInfo, "replies with current game info");
 
@@ -77,7 +82,7 @@ public void OnMapStart() {
         ServerCommand("exec %s", config);
 
         char url[2048];
-        serverURL.GetString(url, sizeof(url));
+        apiURL.GetString(url, sizeof(url));
         HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
 
         char id[32];
@@ -137,11 +142,27 @@ public void OnClientDisconnect(int client) {
     }
 }
 
-public Action Command_GameInfo(int args) {
-    char id[32];
-    gameID.GetString(id, sizeof(id));
+public void Hook_DelegationStatusChanged(ConVar convar, const char[] oldValue, const char[] newValue) {
+    if (gameAssigned && !serverDelegated.BoolValue) {
+        PrintToServer("Warning: the server is currently assigned to a game and will not be free until reset.");
+    }
+}
 
-    ReplyToCommand(0, "%s", id);
+public Action Command_GameInfo(int args) {
+    if (gameAssigned) {
+        char id[32];
+        gameID.GetString(id, sizeof(id));
+
+        ReplyToCommand(0, "%s", id);
+    }
+    else {
+        if (serverDelegated.BoolValue) {
+            ReplyToCommand(0, "UNAVAILABLE");
+        }
+        else {
+            ReplyToCommand(0, "FREE");
+        }
+    }
 
     return Plugin_Handled;
 }
@@ -247,7 +268,7 @@ public void Event_GameStart(Event event, const char[] name, bool dontBroadcast) 
         }
 
         char url[2048];
-        serverURL.GetString(url, sizeof(url));
+        apiURL.GetString(url, sizeof(url));
         HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
 
         char id[32];
@@ -272,7 +293,7 @@ public void Event_GameOver(Event event, const char[] name, bool dontBroadcast) {
         }
 
         char url[2048];
-        serverURL.GetString(url, sizeof(url));
+        apiURL.GetString(url, sizeof(url));
         HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
 
         char id[32];
@@ -352,7 +373,7 @@ public Action UserMessage_SayText2(UserMsg msg_id, BfRead msg, const int[] playe
 public void LogUploaded(bool success, const char[] logid, const char[] logurl) {
     if (gameAssigned) {
         char url[2048];
-        serverURL.GetString(url, sizeof(url));
+        apiURL.GetString(url, sizeof(url));
         HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
 
         char id[32];
