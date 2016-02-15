@@ -25,7 +25,7 @@ module.exports = function(app, chance, database, io, self) {
     var gameListFilteredCache;
 
     var updateGameCache = _.debounce(co.wrap(function* updateGameCache() {
-        let games = yield database.Game.find({}).sort('-date').select('date status teams.faction teams.captain score map duration').populate('teams.captain').exec();
+        let games = yield database.Game.find({}).sort('-date').select('date status teams.faction teams.captain score map duration').populate('teams.captain', 'alias').exec();
 
         gameListCache = _.map(games, game => game.toObject());
         gameListFilteredCache = _.filter(gameListCache, game => game.status !== 'initializing' && game.status !== 'aborted');
