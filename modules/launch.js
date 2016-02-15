@@ -58,7 +58,7 @@ module.exports = function(app, chance, database, io, self) {
     var playersAvailable = _.mapValues(ROLES, function() {
         return new Set();
     });
-    var launchHolds = [];
+    var currentLaunchHolds = [];
 
     var launchAttemptActive = false;
     var launchAttemptStart = null;
@@ -151,7 +151,7 @@ module.exports = function(app, chance, database, io, self) {
             }),
             rolesNeeded: calculateRolesNeeded(playersAvailable),
             teamSize: TEAM_SIZE,
-            launchHolds: launchHolds,
+            launchHolds: currentLaunchHolds,
             active: launchAttemptActive
         };
     }
@@ -172,7 +172,7 @@ module.exports = function(app, chance, database, io, self) {
     function attemptLaunch() {
         return co(function*() {
             try {
-                launchHolds = yield getLaunchHolds(true);
+                currentLaunchHolds = yield getLaunchHolds(true);
 
                 playersAvailable = _.mapValues(playersAvailable, function(available) {
                     return new Set(_.intersection([...available], [...readiesReceived]));
@@ -197,7 +197,7 @@ module.exports = function(app, chance, database, io, self) {
                 return;
             }
 
-            if (_.size(launchHolds) === 0) {
+            if (_.size(currentLaunchHolds) === 0) {
                 try {
                     yield self.launchDraft({
                         players: _.mapValues(playersAvailable, function(available) {
@@ -285,8 +285,8 @@ module.exports = function(app, chance, database, io, self) {
     }
 
     function autoReadyRecentlyActiveUsers() {
-        lastActivity.forEach(function(lastActivity, userID) {
-            if (moment().diff(lastActivity) < AUTO_READY_THRESHOLD) {
+        lastActivity.forEach(function(time, userID) {
+            if (moment().diff(time) < AUTO_READY_THRESHOLD) {
                 updateUserReadyStatus(userID, true);
             }
         });
@@ -311,7 +311,7 @@ module.exports = function(app, chance, database, io, self) {
 
                     autoReadyRecentlyActiveUsers();
 
-                    launchHolds = yield getLaunchHolds(false);
+                    currentLaunchHolds = yield getLaunchHolds(false);
 
                     updateStatusInfo();
 
@@ -337,13 +337,13 @@ module.exports = function(app, chance, database, io, self) {
     }
 
     const checkLaunchHolds = _.debounce(co.wrap(function* checkLaunchHolds() {
-        launchHolds = yield getLaunchHolds(false);
+        currentLaunchHolds = yield getLaunchHolds(false);
 
         updateStatusInfo();
 
         io.sockets.emit('launchStatusUpdated', getCurrentStatusMessage());
 
-        if (!launchAttemptActive && _.size(launchHolds) === 0) {
+        if (!launchAttemptActive && _.size(currentLaunchHolds) === 0) {
             yield beginLaunchAttempt();
         }
     }), GET_LAUNCH_HOLD_DEBOUNCE_WAIT, {

@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const co = require('co');
 const config = require('config');
 const jwt = require('jsonwebtoken');
+const HttpStatus = require('http-status-codes');
 const moment = require('moment');
 const OpenIDStrategy = require('passport-openid').Strategy;
 const passport = require('passport');
@@ -44,10 +45,10 @@ module.exports = function(app, chance, database, io, self) {
                         uri: authorizationAPI
                     });
 
-                    if (response.statusCode === 200) {
+                    if (response.statusCode === HttpStatus.OK) {
                         return true;
                     }
-                    else if (response.statusCode === 403) {
+                    else if (response.statusCode === HttpStatus.FORBIDDEN) {
                         return false;
                     }
                     else {
@@ -191,10 +192,10 @@ module.exports = function(app, chance, database, io, self) {
 
         for (let restriction of activeRestrictions) {
             if (!restriction.expires || moment().isBefore(restriction.expires)) {
-                let reason = 'You are currently restricted (aspects: ' + restriction.aspects.join(', ') + ') (expires: ' + (restriction.expires ? moment(restriction.expires).fromNow() : 'never') + ')';
+                let reason = 'You are currently restricted (aspects: ${restriction.aspects.join(\', \')}) (expires: ${restriction.expires ? moment(restriction.expires).fromNow() : \'never\'})';
 
                 if (restriction.reason) {
-                    reason += ' for the reason: ' + restriction.reason + '.';
+                    reason += ' for the reason: ${restriction.reason}.';
                 }
                 else {
                     reason += '.';
@@ -212,10 +213,10 @@ module.exports = function(app, chance, database, io, self) {
             }
         }
 
-        let combinedRestrictions = _.reduce(restrictions, function(combinedRestrictions, restriction) {
+        let combinedRestrictions = _.reduce(restrictions, function(combined, restriction) {
             return {
-                aspects: _.union(combinedRestrictions.aspects, restriction.aspects),
-                reasons: [...combinedRestrictions.reasons, ...restriction.reasons]
+                aspects: _.union(combined.aspects, restriction.aspects),
+                reasons: [...combined.reasons, ...restriction.reasons]
             };
         }, {
             aspects: [],
@@ -235,14 +236,14 @@ module.exports = function(app, chance, database, io, self) {
 
     passport.use(new OpenIDStrategy({
         providerURL: 'http://steamcommunity.com/openid',
-        returnURL: function(req) {
+        returnURL(req) {
             return url.format({
                 protocol: req.protocol,
                 host: req.get('host'),
                 pathname: '/user/login/return'
             });
         },
-        realm: function(req) {
+        realm(req) {
             return url.format({
                 protocol: req.protocol,
                 host: req.get('host')
@@ -295,7 +296,7 @@ module.exports = function(app, chance, database, io, self) {
     });
     app.get('/user/token', function(req, res) {
         if (!req.user) {
-            res.sendStatus(401);
+            res.sendStatus(HttpStatus.FORBIDDEN);
             return;
         }
 
@@ -305,15 +306,15 @@ module.exports = function(app, chance, database, io, self) {
             expiresIn: config.get('server.tokenExpiration')
         });
 
-        res.status(200).json({
-            token: token
+        res.status(HttpStatus.OK).json({
+            token
         });
     });
 
     io.sockets.on('connection', socketioJwt.authorize({
         required: false,
         secret: config.get('server.tokenSecret'),
-        additionalAuth: function(token, successCallback, errorCallback) {
+        additionalAuth(token, successCallback, errorCallback) {
             database.User.findById(token, function(err, user) {
                 if (err) {
                     errorCallback(err);
@@ -381,7 +382,7 @@ module.exports = function(app, chance, database, io, self) {
             }
 
             res.render('userSettings', {
-                errors: errors
+                errors
             });
         }
         else {
@@ -408,7 +409,7 @@ module.exports = function(app, chance, database, io, self) {
                     }
                 }
                 else {
-                    errors.push('The alias you selected is not in the proper format');
+                    errors.push('The alias you selected is not in the proper format.');
                 }
             }
 
@@ -422,7 +423,7 @@ module.exports = function(app, chance, database, io, self) {
             yield req.user.save();
 
             res.render('userSettings', {
-                errors: errors
+                errors
             });
         }
         else {

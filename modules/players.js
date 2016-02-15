@@ -5,9 +5,13 @@ const co = require('co');
 const config = require('config');
 const distributions = require('distributions');
 const hbs = require('hbs');
+const HttpStatus = require('http-status-codes');
 const math = require('mathjs');
 
 module.exports = function(app, chance, database, io, self) {
+    const ONE_DEVIATION_LOWER_BOUND = 0.16;
+    const ONE_DEVIATION_UPPER_BOUND = 0.84;
+
     function calculatePredictionInterval(samples) {
         let n = _.size(samples);
 
@@ -17,8 +21,8 @@ module.exports = function(app, chance, database, io, self) {
 
             let distribution = new distributions.Studentt(n - 1);
 
-            let low = mean + (distribution.inv(0.16) * deviation * math.sqrt(1 + (1 / n)));
-            let high = mean + (distribution.inv(0.84) * deviation * math.sqrt(1 + (1 / n)));
+            let low = mean + (distribution.inv(ONE_DEVIATION_LOWER_BOUND) * deviation * math.sqrt(1 + (1 / n)));
+            let high = mean + (distribution.inv(ONE_DEVIATION_UPPER_BOUND) * deviation * math.sqrt(1 + (1 / n)));
 
             return {
                 low: low >= 0 ? low : 0,
@@ -147,7 +151,7 @@ module.exports = function(app, chance, database, io, self) {
             }
         }).count().exec().then(count => ({
             type: 'picked',
-            role: role,
+            role,
             number: count
         }))).concat(database.Game.count({
             'teams.captain': player.id
@@ -188,7 +192,7 @@ module.exports = function(app, chance, database, io, self) {
                 }
             }
         }).count().exec().then(count => ({
-            role: role,
+            role,
             number: count
         }))).value();
 
@@ -202,14 +206,14 @@ module.exports = function(app, chance, database, io, self) {
             return JSON.stringify(['Captain', stat.number]);
         }
         else if (stat.type === 'picked') {
-            return JSON.stringify(['Picked ' + ROLES[stat.role].name, stat.number]);
+            return JSON.stringify(['Picked ${ROLES[stat.role].name}', stat.number]);
         }
         else if (stat.type === 'undrafted') {
             return JSON.stringify(['Undrafted', stat.number]);
         }
     });
     hbs.registerHelper('ratingStatToRow', function(stat) {
-        return '[new Date("' + stat.date + '"),' + stat.after.mean + ',' + stat.after.low + ',' + stat.after.high + ']';
+        return '[new Date("${stat.date}"),${stat.after.mean},${stat.after.low},${stat.after.high}]';
     });
     hbs.registerHelper('roleStatToRow', function(stat) {
         return JSON.stringify([ROLES[stat.role].name, stat.number]);
@@ -221,7 +225,7 @@ module.exports = function(app, chance, database, io, self) {
         }).exec();
 
         if (!user) {
-            res.sendStatus(404);
+            res.sendStatus(HttpStatus.NOT_FOUND);
             return;
         }
 

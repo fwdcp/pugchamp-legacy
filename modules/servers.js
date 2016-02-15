@@ -4,6 +4,7 @@ const _ = require('lodash');
 const co = require('co');
 const config = require('config');
 const crypto = require('crypto');
+const HttpStatus = require('http-status-codes');
 const ms = require('ms');
 const RCON = require('srcds-rcon');
 
@@ -64,7 +65,7 @@ module.exports = function(app, chance, database, io, self) {
                             if (game) {
                                 return {
                                     status: 'assigned',
-                                    game: game
+                                    game
                                 };
                             }
                             else {
@@ -230,10 +231,10 @@ module.exports = function(app, chance, database, io, self) {
                         gameClass = 8;
                     }
 
-                    yield sendCommandToServer(rcon, 'pugchamp_game_player_add "' + player.id + '" "' + player.alias + '" ' + gameTeam + ' ' + gameClass);
+                    yield sendCommandToServer(rcon, 'pugchamp_game_player_add "${player.id}" "${player.alias}" ${gameTeam} ${gameClass}');
                 }
                 else {
-                    yield sendCommandToServer(rcon, 'pugchamp_game_player_remove "' + player.id + '"');
+                    yield sendCommandToServer(rcon, 'pugchamp_game_player_remove "${player.id}"');
                 }
             }
         }
@@ -257,15 +258,15 @@ module.exports = function(app, chance, database, io, self) {
 
             let gameServerInfo = GAME_SERVER_POOL[game.server];
             let hash = crypto.createHash('sha256');
-            hash.update(game.id + '|' + gameServerInfo.salt);
+            hash.update('${game.id}|${gameServerInfo.salt}');
             let key = hash.digest('hex');
-            yield sendCommandToServer(rcon, 'pugchamp_server_url "' + BASE_URL + '/api/servers/' + key + '"');
+            yield sendCommandToServer(rcon, 'pugchamp_server_url "${BASE_URL}/api/servers/${key}"');
 
-            yield sendCommandToServer(rcon, 'pugchamp_game_id "' + game.id + '"');
+            yield sendCommandToServer(rcon, 'pugchamp_game_id "${game.id}"');
 
             let map = MAPS[game.map];
-            yield sendCommandToServer(rcon, 'pugchamp_game_map "' + map.file + '"');
-            yield sendCommandToServer(rcon, 'pugchamp_game_config "' + map.config + '"');
+            yield sendCommandToServer(rcon, 'pugchamp_game_map "${map.file}"');
+            yield sendCommandToServer(rcon, 'pugchamp_game_config "${map.config}"');
 
             yield self.updateServerPlayers(game);
 
@@ -319,7 +320,7 @@ module.exports = function(app, chance, database, io, self) {
         }
         catch (err) {
             self.postToLog({
-                description: 'encountered error while trying to initialize server `' + server + '` for game `' + game.id + '`',
+                description: 'encountered error while trying to initialize server `${server}` for game `${game.id}`',
                 error: err
             });
 
@@ -336,7 +337,7 @@ module.exports = function(app, chance, database, io, self) {
                 }
                 catch (err) {
                     self.postToLog({
-                        description: 'encountered error while trying to initialize server `' + server + '` for game `' + game.id + '`',
+                        description: 'encountered error while trying to initialize server `${server}` for game `${game.id}`',
                         error: err
                     });
 
@@ -368,35 +369,35 @@ module.exports = function(app, chance, database, io, self) {
 
     app.get('/api/servers/:key', co.wrap(function*(req, res) {
         if (!req.query.game) {
-            res.sendStatus(400);
+            res.sendStatus(HttpStatus.BAD_REQUEST);
             return;
         }
 
         let game = yield database.Game.findById(req.query.game);
 
         if (!game) {
-            res.sendStatus(404);
+            res.sendStatus(HttpStatus.NOT_FOUND);
             return;
         }
 
         let gameServer = GAME_SERVER_POOL[game.server];
 
         let hash = crypto.createHash('sha256');
-        hash.update(game.id + '|' + gameServer.salt);
+        hash.update('${game.id}|${gameServerInfo.salt}');
         let key = hash.digest('hex');
 
         if (req.params.key !== key) {
-            res.sendStatus(403);
+            res.sendStatus(HttpStatus.FORBIDDEN);
             return;
         }
 
         try {
             yield self.handleGameServerUpdate(req.query);
 
-            res.sendStatus(200);
+            res.sendStatus(HttpStatus.OK);
         }
         catch (err) {
-            res.sendStatus(500);
+            res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }));
 };

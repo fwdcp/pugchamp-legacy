@@ -181,8 +181,8 @@ module.exports = function(app, chance, database, io, self) {
             draftCaptains: _.map(draftCaptains, function(userID) {
                 return self.getCachedUser(userID);
             }),
-            currentDraftTurn: currentDraftTurn,
-            teamFactions: teamFactions,
+            currentDraftTurn,
+            teamFactions,
             pickedTeams: _.map(pickedTeams, function(team) {
                 return _.map(team, function(player) {
                     let filteredPlayer = _.clone(player);
@@ -192,11 +192,11 @@ module.exports = function(app, chance, database, io, self) {
                     return filteredPlayer;
                 });
             }),
-            unavailablePlayers: unavailablePlayers,
-            pickedMap: pickedMap,
-            remainingMaps: remainingMaps,
-            allowedRoles: allowedRoles,
-            overrideRoles: overrideRoles,
+            unavailablePlayers,
+            pickedMap,
+            remainingMaps,
+            allowedRoles,
+            overrideRoles,
             active: draftActive,
             complete: draftComplete
         };
@@ -293,7 +293,7 @@ module.exports = function(app, chance, database, io, self) {
             }).map(function(roles, player) {
                 return {
                     user: player,
-                    roles: roles
+                    roles
                 };
             }).value();
 
@@ -488,7 +488,7 @@ module.exports = function(app, chance, database, io, self) {
         }
         catch (err) {
             self.postToLog({
-                description: 'error in committing draft choice: `' + JSON.stringify(choice) + '`',
+                description: 'error in committing draft choice: `${JSON.stringify(choice)}`',
                 error: err
             });
 
@@ -535,7 +535,7 @@ module.exports = function(app, chance, database, io, self) {
         }
         catch (err) {
             self.postToLog({
-                description: 'error in making random choice: `' + JSON.stringify(turnDefinition) + '`',
+                description: 'error in making random choice: `${JSON.stringify(turnDefinition)}`',
                 error: err
             });
 

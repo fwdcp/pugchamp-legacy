@@ -5,6 +5,7 @@ const child_process = require('mz/child_process');
 const co = require('co');
 const config = require('config');
 const hbs = require('hbs');
+const HttpStatus = require('http-status-codes');
 const math = require('mathjs');
 const moment = require('moment');
 const ms = require('ms');
@@ -40,7 +41,7 @@ module.exports = function(app, chance, database, io, self) {
 
     function rateGame(game) {
         return co(function*() {
-            yield child_process.exec('python rate_game.py ' + game.id, {
+            yield child_process.exec('python rate_game.py ${game.id}', {
                 cwd: path.resolve(__dirname, '../ratings')
             });
         });
@@ -104,7 +105,7 @@ module.exports = function(app, chance, database, io, self) {
         currentSubstituteRequestsInfo = {
             roles: ROLES,
             requests: _([...currentSubstituteRequests.entries()]).fromPairs().map((request, id) => ({
-                id: id,
+                id,
                 game: request.game,
                 role: request.role,
                 captain: request.captain,
@@ -138,10 +139,10 @@ module.exports = function(app, chance, database, io, self) {
         let role;
         let player;
 
-        team = _.find(game.teams, function(team) {
-            role = _.find(team.composition, function(role) {
-                player = _.find(role.players, function(player) {
-                    return playerID === self.getDocumentID(player.user);
+        team = _.find(game.teams, function(currentTeam) {
+            role = _.find(currentTeam.composition, function(currentRole) {
+                player = _.find(currentRole.players, function(currentPlayer) {
+                    return playerID === self.getDocumentID(currentPlayer.user);
                 });
 
                 if (player) {
@@ -160,10 +161,10 @@ module.exports = function(app, chance, database, io, self) {
 
         if (player) {
             return {
-                game: game,
-                team: team,
-                role: role,
-                player: player
+                game,
+                team,
+                role,
+                player
             };
         }
 
@@ -225,7 +226,7 @@ module.exports = function(app, chance, database, io, self) {
             }
             catch (err) {
                 self.postToLog({
-                    description: 'error in making substitution for game `' + game.id + '`',
+                    description: 'error in making substitution for game `${game.id}`',
                     error: err
                 });
 
@@ -292,7 +293,7 @@ module.exports = function(app, chance, database, io, self) {
             game: game.id,
             role: gamePlayerInfo.role.role,
             captain: self.getDocumentID(gamePlayerInfo.team.captain),
-            player: player,
+            player,
             opened: Date.now(),
             candidates: new Set(),
             timeout: setTimeout(attemptSubstitution, SUBSTITUTE_REQUEST_PERIOD, gamePlayerInfo.player.id)
@@ -308,8 +309,8 @@ module.exports = function(app, chance, database, io, self) {
         }
 
         _(game.teams).map(team => team.composition).flatten().forEach(function(role) {
-            let player = _.find(role.players, function(player) {
-                return !player.replaced && oldPlayer === self.getDocumentID(player.user);
+            let player = _.find(role.players, function(currentPlayer) {
+                return !currentPlayer.replaced && oldPlayer === self.getDocumentID(player.user);
             });
 
             if (player) {
@@ -370,7 +371,7 @@ module.exports = function(app, chance, database, io, self) {
         if (info.status === 'setup') {
             if (game.status !== 'initializing' && game.status !== 'launching') {
                 self.postToLog({
-                    description: 'game `' + game.id + '` was ' + game.status + ' but is being reported as set up'
+                    description: 'game `${game.id}` was ${game.status} but is being reported as set up'
                 });
 
                 return;
@@ -385,7 +386,7 @@ module.exports = function(app, chance, database, io, self) {
         else if (info.status === 'live') {
             if (game.status === 'aborted' || game.status === 'completed') {
                 self.postToLog({
-                    description: 'game `' + game.id + '` was ' + game.status + ' but is being reported as live'
+                    description: 'game `${game.id}` was ${game.status} but is being reported as live'
                 });
 
                 return;
@@ -424,7 +425,7 @@ module.exports = function(app, chance, database, io, self) {
         else if (info.status === 'completed') {
             if (game.status === 'aborted' || game.status === 'completed') {
                 self.postToLog({
-                    description: 'game `' + game.id + '` was ' + game.status + ' but is being reported as completed'
+                    description: 'game `${game.id}` was ${game.status} but is being reported as completed'
                 });
 
                 return;
@@ -474,7 +475,7 @@ module.exports = function(app, chance, database, io, self) {
             }
             catch (err) {
                 self.postToLog({
-                    description: 'failed to update stats for game `' + game.id + '`',
+                    description: 'failed to update stats for game `${game.id}`',
                     error: err
                 });
             }
@@ -599,10 +600,10 @@ module.exports = function(app, chance, database, io, self) {
 
     hbs.registerHelper('ratingChange', function(change) {
         if (change > 0) {
-            return new hbs.handlebars.SafeString('<span class="rating-increase"><iron-icon icon="arrow-upward"></iron-icon> ' + math.round(+change) + '</span>');
+            return new hbs.handlebars.SafeString('<span class="rating-increase"><iron-icon icon="arrow-upward"></iron-icon> ${math.round(+change)}</span>');
         }
         else if (change < 0) {
-            return new hbs.handlebars.SafeString('<span class="rating-decrease"><iron-icon icon="arrow-downward"></iron-icon> ' + math.round(-change) + '</span>');
+            return new hbs.handlebars.SafeString('<span class="rating-decrease"><iron-icon icon="arrow-downward"></iron-icon> ${math.round(-change)}</span>');
         }
         else if (change === 0) {
             return new hbs.handlebars.SafeString('<span class="rating-no-change"><iron-icon icon="compare-arrows"></iron-icon> 0</span>');
@@ -616,7 +617,7 @@ module.exports = function(app, chance, database, io, self) {
         let game = yield database.Game.findById(req.params.id).exec();
 
         if (!game) {
-            res.sendStatus(404);
+            res.sendStatus(HttpStatus.NOT_FOUND);
             return;
         }
 
@@ -656,7 +657,7 @@ module.exports = function(app, chance, database, io, self) {
         });
 
         res.render('game', {
-            game: game
+            game
         });
     }));
 
