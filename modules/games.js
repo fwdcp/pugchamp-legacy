@@ -43,7 +43,7 @@ module.exports = function(app, chance, database, io, self) {
 
     function rateGame(game) {
         return co(function*() {
-            yield child_process.exec('python rate_game.py ${game.id}', {
+            yield child_process.exec(`python rate_game.py ${game.id}`, {
                 cwd: path.resolve(__dirname, '../ratings')
             });
         });
@@ -228,7 +228,7 @@ module.exports = function(app, chance, database, io, self) {
             }
             catch (err) {
                 self.postToLog({
-                    description: 'error in making substitution for game `${game.id}`',
+                    description: `error in making substitution for game \`${game.id}\``,
                     error: err
                 });
 
@@ -373,7 +373,7 @@ module.exports = function(app, chance, database, io, self) {
         if (info.status === 'setup') {
             if (game.status !== 'initializing' && game.status !== 'launching') {
                 self.postToLog({
-                    description: 'game `${game.id}` was ${game.status} but is being reported as set up'
+                    description: `game \`${game.id}\` was ${game.status} but is being reported as set up`
                 });
 
                 return;
@@ -388,7 +388,7 @@ module.exports = function(app, chance, database, io, self) {
         else if (info.status === 'live') {
             if (game.status === 'aborted' || game.status === 'completed') {
                 self.postToLog({
-                    description: 'game `${game.id}` was ${game.status} but is being reported as live'
+                    description: `game \`${game.id}\` was ${game.status} but is being reported as live`
                 });
 
                 return;
@@ -427,7 +427,7 @@ module.exports = function(app, chance, database, io, self) {
         else if (info.status === 'completed') {
             if (game.status === 'aborted' || game.status === 'completed') {
                 self.postToLog({
-                    description: 'game `${game.id}` was ${game.status} but is being reported as completed'
+                    description: `game \`${game.id}\` was ${game.status} but is being reported as completed`
                 });
 
                 return;
@@ -477,7 +477,7 @@ module.exports = function(app, chance, database, io, self) {
             }
             catch (err) {
                 self.postToLog({
-                    description: 'failed to update stats for game `${game.id}`',
+                    description: `failed to update stats for game \`${game.id}\``,
                     error: err
                 });
             }
@@ -602,10 +602,10 @@ module.exports = function(app, chance, database, io, self) {
 
     hbs.registerHelper('ratingChange', function(change) {
         if (change > 0) {
-            return new hbs.handlebars.SafeString('<span class="rating-increase"><iron-icon icon="arrow-upward"></iron-icon> ${math.round(+change)}</span>');
+            return new hbs.handlebars.SafeString(`<span class="rating-increase"><iron-icon icon="arrow-upward"></iron-icon> ${math.round(+change)}</span>`);
         }
         else if (change < 0) {
-            return new hbs.handlebars.SafeString('<span class="rating-decrease"><iron-icon icon="arrow-downward"></iron-icon> ${math.round(-change)}</span>');
+            return new hbs.handlebars.SafeString(`<span class="rating-decrease"><iron-icon icon="arrow-downward"></iron-icon> ${math.round(-change)}</span>`);
         }
         else if (change === 0) {
             return new hbs.handlebars.SafeString('<span class="rating-no-change"><iron-icon icon="compare-arrows"></iron-icon> 0</span>');

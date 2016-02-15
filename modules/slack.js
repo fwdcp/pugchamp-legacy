@@ -33,10 +33,12 @@ module.exports = function(app, chance, database, io, self) {
             }
 
             if (info.error) {
+                let errorText = _.hasIn(info.error, 'stack') ? info.error.stack : info.error;
+
                 message.attachments.push({
                     fallback: info.error,
                     color: 'danger',
-                    text: '```${_.hasIn(info.error, \'stack\') ? info.error.stack : info.error}```'
+                    text: `\`\`\`${errorText}\`\`\``
                 });
             }
 

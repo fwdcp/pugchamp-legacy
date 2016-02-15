@@ -231,10 +231,10 @@ module.exports = function(app, chance, database, io, self) {
                         gameClass = 8;
                     }
 
-                    yield sendCommandToServer(rcon, 'pugchamp_game_player_add "${player.id}" "${player.alias}" ${gameTeam} ${gameClass}');
+                    yield sendCommandToServer(rcon, `pugchamp_game_player_add "${player.id}" "${player.alias}" ${gameTeam} ${gameClass}`);
                 }
                 else {
-                    yield sendCommandToServer(rcon, 'pugchamp_game_player_remove "${player.id}"');
+                    yield sendCommandToServer(rcon, `pugchamp_game_player_remove "${player.id}"`);
                 }
             }
         }
@@ -258,15 +258,15 @@ module.exports = function(app, chance, database, io, self) {
 
             let gameServerInfo = GAME_SERVER_POOL[game.server];
             let hash = crypto.createHash('sha256');
-            hash.update('${game.id}|${gameServerInfo.salt}');
+            hash.update(`${game.id}|${gameServerInfo.salt}`);
             let key = hash.digest('hex');
-            yield sendCommandToServer(rcon, 'pugchamp_server_url "${BASE_URL}/api/servers/${key}"');
+            yield sendCommandToServer(rcon, `pugchamp_server_url "${BASE_URL}/api/servers/${key}"`);
 
-            yield sendCommandToServer(rcon, 'pugchamp_game_id "${game.id}"');
+            yield sendCommandToServer(rcon, `pugchamp_game_id "${game.id}"`);
 
             let map = MAPS[game.map];
-            yield sendCommandToServer(rcon, 'pugchamp_game_map "${map.file}"');
-            yield sendCommandToServer(rcon, 'pugchamp_game_config "${map.config}"');
+            yield sendCommandToServer(rcon, `pugchamp_game_map "${map.file}"`);
+            yield sendCommandToServer(rcon, `pugchamp_game_config "${map.config}"`);
 
             yield self.updateServerPlayers(game);
 
@@ -320,7 +320,7 @@ module.exports = function(app, chance, database, io, self) {
         }
         catch (err) {
             self.postToLog({
-                description: 'encountered error while trying to initialize server `${server}` for game `${game.id}`',
+                description: `encountered error while trying to initialize server \`${server}\` for game \`${game.id}\``,
                 error: err
             });
 
@@ -337,7 +337,7 @@ module.exports = function(app, chance, database, io, self) {
                 }
                 catch (err) {
                     self.postToLog({
-                        description: 'encountered error while trying to initialize server `${server}` for game `${game.id}`',
+                        description: `encountered error while trying to initialize server \`${server}\` for game \`${game.id}\``,
                         error: err
                     });
 
@@ -383,7 +383,7 @@ module.exports = function(app, chance, database, io, self) {
         let gameServer = GAME_SERVER_POOL[game.server];
 
         let hash = crypto.createHash('sha256');
-        hash.update('${game.id}|${gameServerInfo.salt}');
+        hash.update(`${game.id}|${gameServer.salt}`);
         let key = hash.digest('hex');
 
         if (req.params.key !== key) {

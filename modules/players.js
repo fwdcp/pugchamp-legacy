@@ -206,14 +206,14 @@ module.exports = function(app, chance, database, io, self) {
             return JSON.stringify(['Captain', stat.number]);
         }
         else if (stat.type === 'picked') {
-            return JSON.stringify(['Picked ${ROLES[stat.role].name}', stat.number]);
+            return JSON.stringify([`Picked ${ROLES[stat.role].name}`, stat.number]);
         }
         else if (stat.type === 'undrafted') {
             return JSON.stringify(['Undrafted', stat.number]);
         }
     });
     hbs.registerHelper('ratingStatToRow', function(stat) {
-        return '[new Date("${stat.date}"),${stat.after.mean},${stat.after.low},${stat.after.high}]';
+        return `[new Date("${stat.date}"),${stat.after.mean},${stat.after.low},${stat.after.high}]`;
     });
     hbs.registerHelper('roleStatToRow', function(stat) {
         return JSON.stringify([ROLES[stat.role].name, stat.number]);

@@ -19,9 +19,9 @@ module.exports = function(app, chance, database, io, self) {
 
             if (message.user) {
                 attachment = {
-                    fallback: '${message.user.alias}: ${message.body}',
+                    fallback: `${message.user.alias}: ${message.body}`,
                     author_name: message.user.alias,
-                    author_link: '${BASE_URL}/user/${message.user.id}',
+                    author_link: `${BASE_URL}/user/${message.user.id}`,
                     text: message.body
                 };
             }

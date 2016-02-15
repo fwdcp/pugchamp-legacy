@@ -488,7 +488,7 @@ module.exports = function(app, chance, database, io, self) {
         }
         catch (err) {
             self.postToLog({
-                description: 'error in committing draft choice: `${JSON.stringify(choice)}`',
+                description: `error in committing draft choice: \`${JSON.stringify(choice)}\``,
                 error: err
             });
 
@@ -535,7 +535,7 @@ module.exports = function(app, chance, database, io, self) {
         }
         catch (err) {
             self.postToLog({
-                description: 'error in making random choice: `${JSON.stringify(turnDefinition)}`',
+                description: `error in making random choice: \`${JSON.stringify(turnDefinition)}\``,
                 error: err
             });
 
