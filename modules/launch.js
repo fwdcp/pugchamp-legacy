@@ -1,5 +1,4 @@
-/* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
-"use strict";
+'use strict';
 
 const _ = require('lodash');
 const co = require('co');
@@ -347,7 +346,9 @@ module.exports = function(app, chance, database, io, self) {
         if (!launchAttemptActive && _.size(launchHolds) === 0) {
             yield beginLaunchAttempt();
         }
-    }), GET_LAUNCH_HOLD_DEBOUNCE_WAIT, {maxWait: GET_LAUNCH_HOLD_DEBOUNCE_MAX_WAIT});
+    }), GET_LAUNCH_HOLD_DEBOUNCE_WAIT, {
+        maxWait: GET_LAUNCH_HOLD_DEBOUNCE_MAX_WAIT
+    });
 
     self.markUserActivity = function markUserActivity(userID) {
         lastActivity.set(userID, new Date());
@@ -368,7 +369,6 @@ module.exports = function(app, chance, database, io, self) {
     });
 
     function onUserUpdateAvailability(availability) {
-        /*jshint validthis: true */
         let userID = this.decoded_token.user;
 
         self.markUserActivity(userID);
@@ -381,7 +381,6 @@ module.exports = function(app, chance, database, io, self) {
     }
 
     function onUserUpdateReadyStatus(ready) {
-        /*jshint validthis: true */
         let userID = this.decoded_token.user;
 
         self.markUserActivity(userID);

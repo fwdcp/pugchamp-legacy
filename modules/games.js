@@ -1,5 +1,4 @@
-/* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
-"use strict";
+'use strict';
 
 const _ = require('lodash');
 const child_process = require('mz/child_process');
@@ -11,7 +10,7 @@ const moment = require('moment');
 const ms = require('ms');
 const path = require('path');
 
-require("moment-duration-format");
+require('moment-duration-format');
 
 module.exports = function(app, chance, database, io, self) {
     const POST_GAME_RESET_DELAY = ms(config.get('app.games.postGameResetDelay'));
@@ -520,7 +519,6 @@ module.exports = function(app, chance, database, io, self) {
     });
 
     function onUserRequestSubstitute(info) {
-        /*jshint validthis: true */
         let userID = this.decoded_token.user;
 
         return co(function*() {
@@ -537,14 +535,12 @@ module.exports = function(app, chance, database, io, self) {
     }
 
     function onUserUpdateSubstituteApplication(info) {
-        /*jshint validthis: true */
         let userID = this.decoded_token.user;
 
         updateSubstituteApplication(info.request, userID, info.status);
     }
 
     function onUserRetractSubstituteRequest(requestID) {
-        /*jshint validthis: true */
         let userID = this.decoded_token.user;
 
         return co(function*() {

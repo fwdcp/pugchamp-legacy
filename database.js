@@ -1,4 +1,3 @@
-/* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
 "use strict";
 
 const _ = require('lodash');

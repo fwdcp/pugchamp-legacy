@@ -1,7 +1,7 @@
-/* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
-"use strict";
+'use strict';
 
 module.exports = function(app, chance, database, io, self) {
+    /* eslint global-require: 0 */
     require('./common')(app, chance, database, io, self);
     require('./slack')(app, chance, database, io, self);
     require('./users')(app, chance, database, io, self);

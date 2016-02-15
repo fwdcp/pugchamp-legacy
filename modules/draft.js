@@ -1,5 +1,4 @@
-/* jshint node: true, esversion: 6, eqeqeq: true, latedef: true, undef: true, unused: true */
-"use strict";
+'use strict';
 
 const _ = require('lodash');
 const co = require('co');
@@ -687,7 +686,6 @@ module.exports = function(app, chance, database, io, self) {
     });
 
     function onUserMakeDraftChoice(choice) {
-        /*jshint validthis: true */
         let userID = this.decoded_token.user;
 
         choice.captain = userID;
