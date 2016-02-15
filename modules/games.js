@@ -28,7 +28,7 @@ module.exports = function(app, chance, database, io, self) {
         let games = yield database.Game.find({}).sort('-date').select('date status teams.faction teams.captain score map duration').populate('teams.captain').exec();
 
         gameListCache = _.map(games, game => game.toObject());
-        gameListFilteredCache = _.filter(gameListCache, game => game.status !== 'initializing' && game.stats !== 'aborted');
+        gameListFilteredCache = _.filter(gameListCache, game => game.status !== 'initializing' && game.status !== 'aborted');
     }), UPDATE_GAME_CACHE_DEBOUNCE_WAIT, {
         maxWait: UPDATE_GAME_CACHE_DEBOUNCE_MAX_WAIT
     });
