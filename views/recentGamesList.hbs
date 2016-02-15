@@ -26,7 +26,7 @@
 	<p><a class="button" href="/games/all"><paper-button raised>View All Games</paper-button></a></p>
 
     {{#each games}}
-    <pugchamp-game-summary game="{{toJSON game}}"></pugchamp-game-summary>
+    <pugchamp-game-summary game="{{toJSON this}}"></pugchamp-game-summary>
     {{/each}}
 
     {{/body}}
