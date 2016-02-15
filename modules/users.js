@@ -75,6 +75,8 @@ module.exports = function(app, chance, database, io, self) {
         let user = yield database.User.findById(userID);
 
         userCache.set(userID, user.toObject());
+
+        self.emit('cachedUserUpdated', userID);
     });
 
     self.getOnlineUsers = function getOnlineUsers() {

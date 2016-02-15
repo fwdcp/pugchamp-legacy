@@ -300,7 +300,7 @@ module.exports = function(app, chance, database, io, self) {
             try {
                 yield game.save();
 
-                self.updateGameCache();
+                self.emit('gameUpdated', game.id);
 
                 _.each(game.teams, function(team) {
                     self.updateUserRestrictions(self.getDocumentID(team.captain));

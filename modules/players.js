@@ -45,6 +45,69 @@ module.exports = function(app, chance, database, io, self) {
     }
 
     const ROLES = config.get('app.games.roles');
+    const UPDATE_PLAYER_CACHE_DEBOUNCE_MAX_WAIT = 5000;
+    const UPDATE_PLAYER_CACHE_DEBOUNCE_WAIT = 1000;
+
+    var playerListCache;
+    var playerListFilteredCache;
+
+    var updatePlayerCache = _.debounce(function updatePlayerCache() {
+        let players = _.orderBy(self.getCachedUsers(), [function(player) {
+            return player.stats.rating.low;
+        }, function(player) {
+            return player.stats.captainScore ? player.stats.captainScore.low : null;
+        }], ['desc', 'desc']);
+
+        playerListCache = _.map(players, player => ({
+            id: player.id,
+            alias: player.alias,
+            steamID: player.steamID,
+            ratingMean: math.round(player.stats.rating.mean),
+            ratingDeviation: math.round(player.stats.rating.deviation),
+            ratingLowerBound: math.round(player.stats.rating.low),
+            ratingUpperBound: math.round(player.stats.rating.high),
+            captainScore: player.stats.captainScore && _.isNumber(player.stats.captainScore.low) ? math.round(player.stats.captainScore.low, 3) : null
+        }));
+
+        playerListFilteredCache = _(players).filter(function(player) {
+            if (!player.authorized) {
+                return false;
+            }
+
+            if (player.stats.roles) {
+                for (let stat of player.stats.roles) {
+                    if (stat.number > 0) {
+                        return true;
+                    }
+                }
+            }
+
+            if (player.stats.draft) {
+                for (let stat of player.stats.draft) {
+                    if (stat.type === 'captain' && stat.number > 0) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }).map(player => ({
+            id: player.id,
+            alias: player.alias,
+            steamID: player.steamID,
+            ratingMean: math.round(player.stats.rating.mean),
+            ratingDeviation: math.round(player.stats.rating.deviation),
+            ratingLowerBound: math.round(player.stats.rating.low),
+            ratingUpperBound: math.round(player.stats.rating.high),
+            captainScore: player.stats.captainScore && _.isNumber(player.stats.captainScore.low) ? math.round(player.stats.captainScore.low, 3) : null
+        })).value();
+    }, UPDATE_PLAYER_CACHE_DEBOUNCE_WAIT, {
+        maxWait: UPDATE_PLAYER_CACHE_DEBOUNCE_MAX_WAIT
+    });
+
+    self.on('cachedUserUpdated', function() {
+        updatePlayerCache();
+    });
 
     self.updatePlayerStats = co.wrap(function*(playerID) {
         let player = yield database.User.findById(playerID);
@@ -208,49 +271,8 @@ module.exports = function(app, chance, database, io, self) {
     }));
 
     app.get('/players', function(req, res) {
-        let users = self.getCachedUsers();
-
-        if (!req.user || !req.user.admin) {
-            users = _.filter(users, function(user) {
-                if (!user.authorized) {
-                    return false;
-                }
-
-                if (user.stats.roles) {
-                    for (let stat of user.stats.roles) {
-                        if (stat.number > 0) {
-                            return true;
-                        }
-                    }
-                }
-
-                if (user.stats.draft) {
-                    for (let stat of user.stats.draft) {
-                        if (stat.type === 'captain' && stat.number > 0) {
-                            return true;
-                        }
-                    }
-                }                
-
-                return false;
-            });
-        }
-
         res.render('playerList', {
-            players: _(users).orderBy([function(user) {
-                return user.stats.rating.low;
-            }, function(user) {
-                return user.stats.captainScore ? user.stats.captainScore.low : null;
-            }], ['desc', 'desc']).map(user => ({
-                id: user.id,
-                alias: user.alias,
-                steamID: user.steamID,
-                ratingMean: math.round(user.stats.rating.mean),
-                ratingDeviation: math.round(user.stats.rating.deviation),
-                ratingLowerBound: math.round(user.stats.rating.low),
-                ratingUpperBound: math.round(user.stats.rating.high),
-                captainScore: user.stats.captainScore && _.isNumber(user.stats.captainScore.low) ? math.round(user.stats.captainScore.low, 3) : null
-            })).value()
+            players: !req.user || !req.user.admin ? playerListFilteredCache : playerListCache
         });
     });
 };

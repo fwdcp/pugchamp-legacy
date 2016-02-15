@@ -17,16 +17,24 @@ module.exports = function(app, chance, database, io, self) {
     const ROLES = config.get('app.games.roles');
     const SUBSTITUTE_REQUEST_PERIOD = ms(config.get('app.games.substituteRequestPeriod'));
     const SUBSTITUTE_SELECTION_METHOD = config.get('app.games.substituteSelectionMethod');
+    const UPDATE_GAME_CACHE_DEBOUNCE_MAX_WAIT = 5000;
+    const UPDATE_GAME_CACHE_DEBOUNCE_WAIT = 1000;
 
     var gameListCache;
+    var gameListFilteredCache;
 
-    self.updateGameCache = co.wrap(function*() {
+    var updateGameCache = _.debounce(co.wrap(function* updateGameCache() {
         let games = yield database.Game.find({}).sort('-date').populate('teams.captain').exec();
 
         gameListCache = _.map(games, game => game.toObject());
+        gameListFilteredCache = _.filter(gameListCache, game => game.status !== 'initializing' && game.stats !== 'aborted');
+    }), UPDATE_GAME_CACHE_DEBOUNCE_WAIT, {
+        maxWait: UPDATE_GAME_CACHE_DEBOUNCE_MAX_WAIT
     });
 
-    self.updateGameCache();
+    self.on('gameUpdated', function() {
+        updateGameCache();
+    });
 
     var currentGameCache = new Map();
 
@@ -60,7 +68,7 @@ module.exports = function(app, chance, database, io, self) {
     }
 
     function processGameUpdate(game) {
-        self.updateGameCache();
+        self.emit('gameUpdated', game.id);
 
         if (game.status !== 'initializing') {
             if (self.getDocumentID(game) === self.getCurrentDraftGame()) {
@@ -654,7 +662,7 @@ module.exports = function(app, chance, database, io, self) {
 
     app.get('/games', function(req, res) {
         res.render('gameList', {
-            games: gameListCache
+            games: !req.user || !req.user.admin ? gameListFilteredCache : gameListCache
         });
     });
 };
