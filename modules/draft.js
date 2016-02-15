@@ -61,7 +61,7 @@ module.exports = function(app, chance, database, io, self) {
     };
 
     function removeDraftExpireCooldown(userID) {
-        currentDraftExpireCooldowns.remove(userID);
+        currentDraftExpireCooldowns.delete(userID);
 
         self.updateUserRestrictions(userID);
     }
