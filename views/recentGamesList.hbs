@@ -1,0 +1,32 @@
+<!doctype html>
+
+<html>
+
+    {{#> head title="Games"}}
+    <link rel="import" href="/elements/pugchamp-game-summary/pugchamp-game-summary.html">
+    <h1>Recent Games</h1>
+
+    <style is="custom-style">
+        .button {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .button paper-button {
+            background: var(--accent-color);
+            color: var(--light-theme-text-color);
+        }
+    </style>
+    {{/head}}
+
+    {{#> body}}
+    <h1>Recent Games</h1>
+	<p><a class="button" href="/games/all"><paper-button raised>View All Games</paper-button></a></p>
+
+    {{#each games}}
+    <pugchamp-game-summary game="\{{game}}"></pugchamp-game-summary>
+    {{/each}}
+
+    {{/body}}
+
+</html>

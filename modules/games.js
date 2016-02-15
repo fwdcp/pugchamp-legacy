@@ -21,14 +21,18 @@ module.exports = function(app, chance, database, io, self) {
     const UPDATE_GAME_CACHE_DEBOUNCE_MAX_WAIT = 5000;
     const UPDATE_GAME_CACHE_DEBOUNCE_WAIT = 1000;
 
-    var gameListCache;
-    var gameListFilteredCache;
+    var fullGameListCache;
+    var fullFilteredGameListCache;
+    var recentGameListCache;
+    var recentFilteredGameListCache;
 
     var updateGameCache = _.debounce(co.wrap(function* updateGameCache() {
         let games = yield database.Game.find({}).sort('-date').select('date status teams.faction teams.captain score map duration').populate('teams.captain', 'alias steamID').exec();
 
-        gameListCache = _.map(games, game => game.toObject());
-        gameListFilteredCache = _.filter(gameListCache, game => game.status !== 'initializing' && game.status !== 'aborted');
+        fullGameListCache = _.map(games, game => game.toObject());
+        fullFilteredGameListCache = _.filter(fullGameListCache, game => game.status !== 'initializing' && game.status !== 'aborted');
+        recentGameListCache = _.takeWhile(fullGameListCache, game => moment().diff(game.date, 'days') < 1);
+        recentFilteredGameListCache = _.takeWhile(fullFilteredGameListCache, game => moment().diff(game.date, 'days') < 1);
     }), UPDATE_GAME_CACHE_DEBOUNCE_WAIT, {
         maxWait: UPDATE_GAME_CACHE_DEBOUNCE_MAX_WAIT
     });
@@ -663,9 +667,15 @@ module.exports = function(app, chance, database, io, self) {
         });
     }));
 
+    app.get('/games/all', function(req, res) {
+        res.render('fullGamesList', {
+            games: !req.user || !req.user.admin ? fullFilteredGameListCache : fullGameListCache
+        });
+    });
+
     app.get('/games', function(req, res) {
-        res.render('gameList', {
-            games: !req.user || !req.user.admin ? gameListFilteredCache : gameListCache
+        res.render('recentGamesList', {
+            games: !req.user || !req.user.admin ? recentFilteredGameListCache : recentGameListCache
         });
     });
 };

@@ -1,0 +1,17 @@
+<!doctype html>
+
+<html>
+
+    {{#> head title="Games"}}
+    <link rel="import" href="/elements/pugchamp-game-summary/pugchamp-game-summary.html">
+    {{/head}}
+
+    {{#> body}}
+    <h1>Games</h1>
+
+    {{#each games}}
+    <pugchamp-game-summary game="\{{game}}"></pugchamp-game-summary>
+    {{/each}}
+    {{/body}}
+
+</html>
