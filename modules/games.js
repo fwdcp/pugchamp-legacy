@@ -37,6 +37,8 @@ module.exports = function(app, chance, database, io, self) {
         updateGameCache();
     });
 
+    updateGameCache();
+
     var currentGameCache = new Map();
 
     function rateGame(game) {
