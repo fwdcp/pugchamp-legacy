@@ -49,7 +49,7 @@ app.use('/components', serveStatic(path.resolve(__dirname, 'bower_components')))
 
 require('./modules')(app, chance, database, io, self);
 
-app.use(function(err, req, res) {
+app.use(function(err, req, res, next) {
     console.error(err.stack);
     res.render('error');
 });
