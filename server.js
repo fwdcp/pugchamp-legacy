@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const EventEmitter = require('events');
 const express = require('express');
 const fs = require('fs');
+const g = require('idle-gc');
 const hbs = require('hbs');
 const heapdump = require('heapdump');
 const http = require('http');
@@ -62,6 +63,8 @@ try {
 catch (err) {
     // ignore
 }
+
+g.start();
 
 process.on('exit', function() {
     server.close();
