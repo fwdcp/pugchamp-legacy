@@ -33,6 +33,10 @@
                 font-weight: 500;
             }
 
+            .team .captain a {
+                text-decoration: none;
+            }
+
             .team .score {
                 font-size: 28px;
                 font-weight: 600;
@@ -70,7 +74,7 @@
             </div>
             <div class$="team team-0 flex-3 horizontal layout faction-{{_getProperty(game.teams, team1, 'faction')}}">
                 <div class="captain flex vertical layout center-justified">
-                    <span>{{_getProperty(game.teams, team1, 'captain', 'alias')}}</span>
+                    <a href="/player/{{_getProperty(game.teams, team1, 'captain', 'steamID')}}">{{_getProperty(game.teams, team1, 'captain', 'alias')}}</a>
                 </div>
                 <template is="dom-if" if="{{_hasProperty(game.score, team1)}}">
                     <div class="score vertical layout center-justified">
@@ -91,7 +95,7 @@
                     </div>
                 </template>
                 <div class="captain flex vertical layout center-justified">
-                    <span>{{_getProperty(game.teams, team2, 'captain', 'alias')}}</span>
+                    <a href="/player/{{_getProperty(game.teams, team2, 'captain', 'steamID')}}">{{_getProperty(game.teams, team2, 'captain', 'alias')}}</a>
                 </div>
             </div>
         </paper-material>

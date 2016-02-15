@@ -45,6 +45,11 @@
             font-weight: 500;
         }
 
+        .header .captain a {
+            color: inherit;
+            text-decoration: none;
+        }
+
         .header .score {
             font-size: 54px;
             font-weight: 600;
@@ -114,7 +119,7 @@
         <div class="flex-3 faction" id="faction-{{game.teams.[0].faction}}">
             <div class="header horizontal layout">
                 <div class="captain flex vertical layout center-justified">
-                    <span>{{game.teams.[0].captain.alias}}</span>
+                    <a href="/player/{{game.teams.[0].captain.steamID}}">{{game.teams.[0].captain.alias}}</a>
                 </div>
                 {{#if game.score.[0] includeZero=true}}
                 <div class="score vertical layout center-justified">
@@ -161,7 +166,7 @@
         <div class="flex-3 faction" id="faction-{{game.teams.[1].faction}}">
             <div class="header horizontal layout">
                 <div class="captain flex vertical layout center-justified">
-                    <span>{{game.teams.[1].captain.alias}}</span>
+                    <a href="/player/{{game.teams.[1].captain.steamID}}">{{game.teams.[1].captain.alias}}</a>
                 </div>
                 {{#if game.score.[1] includeZero=true}}
                 <div class="score vertical layout center-justified">
