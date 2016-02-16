@@ -316,7 +316,7 @@ module.exports = function(app, chance, database, io, self) {
 
         _(game.teams).map(team => team.composition).flatten().forEach(function(role) {
             let player = _.find(role.players, function(currentPlayer) {
-                return !currentPlayer.replaced && oldPlayer === self.getDocumentID(player.user);
+                return !currentPlayer.replaced && oldPlayer === self.getDocumentID(currentPlayer.user);
             });
 
             if (player) {
