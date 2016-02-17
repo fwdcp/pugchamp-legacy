@@ -1,13 +1,38 @@
 <link rel="import" href="/components/polymer/polymer.html">
 
 <link rel="import" href="/components/iron-ajax/iron-ajax.html">
+<link rel="import" href="/components/paper-material/paper-material.html">
+<link rel="import" href="/components/paper-styles/color.html">
 <link rel="import" href="/components/paper-toast/paper-toast.html">
 
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 
 <dom-module id="pugchamp-client">
     <template>
+        <style is="custom-style">
+            .warning {
+                background: var(--paper-red-500);
+                color: var(--light-theme-text-color);
+                margin: 10px 0;
+                padding: 10px;
+            }
+
+            .warning.connected {
+                display: none;
+            }
+
+            .client.disconnected {
+                opacity: 0.5;
+            }
+        </style>
+
+        <paper-material class$="warning {{connectionStatus(socket)}}">You are currently disconnected from the server.</paper-material>
+        <div class$="client {{connectionStatus(socket)}}">
+            <content></content>
+        </div>
+
         <iron-ajax id="token" url="/user/token" on-response="infoReceived"></iron-ajax>
+
         <paper-toast text="Connected to the server." id="connectAlert"></paper-toast>
         <paper-toast text="Disconnected from the server." id="disconnectAlert"></paper-toast>
         <paper-toast text="Failed to reconnect to the server." id="reconnectFailedAlert"></paper-toast>
@@ -77,6 +102,14 @@
                 }
 
                 this.async(this.pingServer, 5000);
+            },
+            connectionStatus: function(socket) {
+                if (socket.connected) {
+                    return 'connected';
+                }
+                else {
+                    return 'disconnected';
+                }
             }
         });
     </script>
