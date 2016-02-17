@@ -207,8 +207,11 @@
 
         <pugchamp-notification id="launchNotification" body="A new game is launching!" tag="launchAttempt"></pugchamp-notification>
 
-        <audio preload id="notifySound">
-            <source src="/assets/snd/alert.mp3" type="audio/mpeg">
+        <audio preload id="launchStartSound">
+            <source src="/assets/snd/launch_start.mp3" type="audio/mpeg">
+        </audio>
+        <audio preload id="launchAlertSound">
+            <source src="/assets/snd/launch_alert.mp3" type="audio/mpeg">
         </audio>
     </template>
 
@@ -269,6 +272,8 @@
             incrementReadyTimer: function() {
                 this.$.readyTime.value++;
 
+                this.playLaunchAlert();
+
                 if (this.$.readyTime.ratio < 100) {
                     this.async(this.incrementReadyTimer, 1000);
                 }
@@ -283,11 +288,13 @@
                 this.set('launchActive', true);
 
                 this.$.launchNotification.notify();
-                this.$.notifySound.currentTime = 0;
-                this.$.notifySound.play();
+                this.$.launchStartSound.currentTime = 0;
+                this.$.launchStartSound.play();
 
                 this.$.readyTime.value = time.elapsed / 1000;
                 this.$.readyTime.max = time.total / 1000;
+
+                this.playLaunchAlert();
 
                 this.async(this.incrementReadyTimer, 1000);
             },
@@ -304,6 +311,14 @@
                 }
 
                 this.set('readyToPlay', false);
+            },
+            playLaunchAlert: function() {
+                if (Math.round(this.$.readyTime.max - this.$.readyTime.value) === 10) {
+                    if (!this.readyToPlay || !this.isAvailable(this.availability)) {
+                        this.$.launchAlertSound.currentTime = 0;
+                        this.$.launchAlertSound.play();
+                    }
+                }
             },
             playerAliasList: function(players) {
                 return players.map(function(player) {
