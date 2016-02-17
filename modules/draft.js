@@ -638,6 +638,12 @@ module.exports = function(app, chance, database, io, self) {
 
                 if (newCaptain) {
                     chosenCaptains.add(newCaptain);
+
+                    let index = _.findIndex(fullCaptains, newCaptain);
+
+                    if (index !== -1) {
+                        weights[index] = 0;
+                    }
                 }
             }
 
