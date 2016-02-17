@@ -10,26 +10,41 @@
 <dom-module id="pugchamp-client">
     <template>
         <style is="custom-style">
-            .warning {
-                background: var(--paper-red-500);
-                color: var(--light-theme-text-color);
-                margin: 10px 0;
-                padding: 10px;
+            #client {
+                position: relative;
             }
 
-            .warning.connected {
+            #client.disconnected {
+                opacity: 0.5;
+            }
+
+            #disconnectedOverlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 10;
+                background-color: rgba(0, 0, 0, 0.5);
+            }
+
+            #disconnectedOverlay.connected {
                 display: none;
             }
 
-            .client.disconnected {
-                opacity: 0.5;
+            #disconnectedMessage {
+                --paper-dialog-background-color: var(--paper-red-500);
+                --paper-dialog-color: var(--light-theme-text-color);
             }
         </style>
 
-        <paper-material class$="warning {{connectionStatus(socket)}}">You are currently disconnected from the server.</paper-material>
-        <div class$="client {{connectionStatus(socket)}}">
+        <div id="client" class$="{{connectionStatus(connected)}}">
             <content></content>
+            <div id="disconnectedOverlay" class$="{{connectionStatus(connected)}}"></div>
         </div>
+        <paper-dialog id="disconnectedMessage" no-cancel-on-esc-key no-cancel-on-outside-click>
+            <p>You are currently disconnected from the server.</p>
+        </paper-dialog>
 
         <iron-ajax id="token" url="/user/token" on-response="infoReceived"></iron-ajax>
 
@@ -61,28 +76,41 @@
                 this.authenticate();
 
                 this.async(this.pingServer, 5000);
+
+                this.async(function() {
+                    this.$.disconnectedMessage.fitInto = this.$.client;
+                    this.$.disconnectedMessage.refit();
+                });
             },
             onConnect: function() {
                 this.$.connectAlert.show();
 
                 this.authenticate();
+
+                this.toggleDisconnectDisplay();
             },
             onReconnect: function() {
                 this.$.connectAlert.show();
 
                 this.authenticate();
+
+                this.toggleDisconnectDisplay();
             },
             onDisconnect: function() {
                 this.$.disconnectAlert.show();
 
                 this.$.disconnectSound.currentTime = 0;
                 this.$.disconnectSound.play();
+
+                this.toggleDisconnectDisplay();
             },
             onReconnectFailed: function() {
                 this.$.reconnectFailedAlert.show();
 
                 this.$.disconnectSound.currentTime = 0;
                 this.$.disconnectSound.play();
+
+                this.toggleDisconnectDisplay();
             },
             infoReceived: function(event) {
                 this.token = event.detail.response.token;
@@ -103,13 +131,18 @@
 
                 this.async(this.pingServer, 5000);
             },
-            connectionStatus: function(socket) {
-                if (socket.connected) {
-                    return 'connected';
+            toggleDisconnectDisplay: function() {
+                this.set('connected', this.socket.connected);
+
+                if (this.socket.connected) {
+                    this.$.disconnectedMessage.close();
                 }
                 else {
-                    return 'disconnected';
+                    this.$.disconnectedMessage.open();
                 }
+            },
+            connectionStatus: function(connected) {
+                return connected ? 'connected' : 'disconnected';
             }
         });
     </script>
