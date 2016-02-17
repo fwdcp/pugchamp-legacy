@@ -4,7 +4,7 @@
 
 <dom-module id="pugchamp-sound">
     <template>
-        <audio id="sound" src$="{{src}}" volume$="{{volume}}"></audio>
+        <audio id="sound" src$="{{file}}" volume$="{{volume}}"></audio>
 
         <iron-localstorage name="pugchamp-volume" value="{{volume}}" on-iron-localstorage-load-empty="setDefaultVolume"></iron-localstorage>
     </template>
