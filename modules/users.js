@@ -358,7 +358,7 @@ module.exports = function(app, chance, database, io, self) {
     io.sockets.on('authenticated', co.wrap(function*(socket) {
         let userID = socket.decoded_token.user;
 
-        socketDebug(`user ${userID} connected and authenticated`);
+        socketDebug(`user ${userID} connected and authenticated (${socket.conn.transport.name})`);
 
         yield self.updateCachedUser(userID);
 
@@ -381,15 +381,11 @@ module.exports = function(app, chance, database, io, self) {
         socket.on('disconnect', onUserDisconnect);
 
         function onUserSocketPacket() {
-            let userID = socket.decoded_token.user;
-
-            socketDebug(`user ${userID} sent packet`);
+            socketDebug(`user ${userID} sent packet (${this.transport.name})`);
         }
 
         function onUserSocketClose(reason) {
-            let userID = socket.decoded_token.user;
-
-            socketDebug(`user ${userID} connection closed: ${reason}`);
+            socketDebug(`user ${userID} connection closed: ${reason} (${this.transport.name})`);
         }
 
         socket.conn.removeListener('packet', onUserSocketPacket);
