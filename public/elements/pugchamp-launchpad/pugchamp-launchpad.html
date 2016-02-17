@@ -312,7 +312,7 @@
             },
             playLaunchAlert: function() {
                 if (Math.round(this.$.readyTime.max - this.$.readyTime.value) === 10) {
-                    if (!this.readyToPlay || !this.isAvailable(this.availability)) {
+                    if ((!this.isRestricted(this.restrictions, 'start') || !this.isRestricted(this.restrictions, 'captain')) && (!this.readyToPlay || !this.isAvailable(this.availability))) {
                         this.$.launchAlertSound.currentTime = 0;
                         this.$.launchAlertSound.play();
                     }
