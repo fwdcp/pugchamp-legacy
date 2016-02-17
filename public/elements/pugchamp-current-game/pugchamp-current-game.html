@@ -12,6 +12,7 @@
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-user-behavior.html">
 <link rel="import" href="/elements/pugchamp-notification/pugchamp-notification.html">
+<link rel="import" href="/elements/pugchamp-sound/pugchamp-sound.html">
 <link rel="import" href="/elements/pugchamp-theme/theme.html">
 <link rel="import" href="/elements/pugchamp-utilities/pugchamp-polymer-helpers.html">
 
@@ -91,10 +92,7 @@
         </paper-material>
 
         <pugchamp-notification id="gameNotification" body="Game details are now available!" tag="gameDetails"></pugchamp-notification>
-
-        <audio preload id="gameDetailsAvailableSound">
-            <source src="/assets/snd/game/details_available.wav" type="audio/wav">
-        </audio>
+        <pugchamp-sound id="gameDetailsAvailableSound" src="/assets/snd/game/details_available.wav"></pugchamp-sound>
     </template>
     <script>
         Polymer({
@@ -112,7 +110,6 @@
                 if (!this.game && info) {
                     this.$.gameNotification.notify();
 
-                    this.$.gameDetailsAvailableSound.currentTime = 0;
                     this.$.gameDetailsAvailableSound.play();
                 }
 

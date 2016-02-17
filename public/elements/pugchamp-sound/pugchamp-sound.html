@@ -1,0 +1,27 @@
+<link rel="import" href="/components/polymer/polymer.html">
+
+<link rel="import" href="/components/iron-localstorage/iron-localstorage.html">
+
+<dom-module id="pugchamp-sound">
+    <template>
+        <pugchamp-sound id="sound" src="{{src}}" volume="{{volume}}"></pugchamp-sound>
+
+        <iron-localstorage name="pugchamp-volume" value="{{volume}}" on-iron-localstorage-load-empty="setDefaultVolume"></iron-localstorage>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'pugchamp-sound',
+            properties: {
+                src: String
+            },
+            setDefaultVolume: function() {
+                this.set('volume', 0.5);
+            },
+            play: function() {
+                this.$.sound.currentTime = 0;
+                this.$.sound.play();
+            }
+        });
+    </script>
+</dom-module>

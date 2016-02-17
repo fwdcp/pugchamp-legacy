@@ -51,10 +51,6 @@
         <paper-toast text="Connected to the server." id="connectAlert"></paper-toast>
         <paper-toast text="Disconnected from the server." id="disconnectAlert"></paper-toast>
         <paper-toast text="Failed to reconnect to the server." id="reconnectFailedAlert"></paper-toast>
-
-        <audio preload id="disconnectSound">
-            <source src="/assets/snd/alert.mp3" type="audio/mpeg">
-        </audio>
     </template>
 
     <script>
@@ -97,16 +93,10 @@
             onDisconnect: function() {
                 this.$.disconnectAlert.show();
 
-                this.$.disconnectSound.currentTime = 0;
-                this.$.disconnectSound.play();
-
                 this.toggleDisconnectDisplay();
             },
             onReconnectFailed: function() {
                 this.$.reconnectFailedAlert.show();
-
-                this.$.disconnectSound.currentTime = 0;
-                this.$.disconnectSound.play();
 
                 this.toggleDisconnectDisplay();
             },
