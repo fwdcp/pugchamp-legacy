@@ -352,10 +352,6 @@ module.exports = function(app, chance, database, io, self) {
         }
     }
 
-    function onUserPing() {
-        this.emit('pong');
-    }
-
     io.sockets.on('authenticated', co.wrap(function*(socket) {
         let userID = socket.decoded_token.user;
         yield self.updateCachedUser(userID);
@@ -377,8 +373,6 @@ module.exports = function(app, chance, database, io, self) {
 
         socket.removeAllListeners('disconnect');
         socket.on('disconnect', onUserDisconnect);
-
-        socket.on('ping', onUserPing);
     }));
 
     app.get('/user/settings', function(req, res) {

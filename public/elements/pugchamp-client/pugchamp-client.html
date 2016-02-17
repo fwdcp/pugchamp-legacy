@@ -75,8 +75,6 @@
 
                 this.authenticate();
 
-                this.async(this.pingServer, 5000);
-
                 this.async(function() {
                     this.$.disconnectedMessage.fitInto = this.$.client;
                     this.$.disconnectedMessage.refit();
@@ -123,13 +121,6 @@
                         token: this.token
                     });
                 }
-            },
-            pingServer: function() {
-                if (this.authenticated) {
-                    this.socket.emit('ping');
-                }
-
-                this.async(this.pingServer, 5000);
             },
             toggleDisconnectDisplay: function() {
                 this.set('connected', this.socket.connected);
