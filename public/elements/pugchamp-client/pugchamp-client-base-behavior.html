@@ -6,7 +6,9 @@
     PugChampClientBehaviors.BaseBehavior = {
         created: function() {
             if (!window.socket) {
-                window.socket = io();
+                window.socket = io('/', {
+                    transports: ['websocket']
+                });
             }
 
             this.socket = window.socket;
