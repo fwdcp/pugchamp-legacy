@@ -208,10 +208,10 @@
         <pugchamp-notification id="launchNotification" body="A new game is launching!" tag="launchAttempt"></pugchamp-notification>
 
         <audio preload id="launchStartSound">
-            <source src="/assets/snd/launch_start.mp3" type="audio/mpeg">
+            <source src="/assets/snd/launch_start.wav" type="audio/wav">
         </audio>
         <audio preload id="launchAlertSound">
-            <source src="/assets/snd/launch_alert.mp3" type="audio/mpeg">
+            <source src="/assets/snd/launch_alert.wav" type="audio/wav">
         </audio>
     </template>
 
@@ -293,8 +293,6 @@
 
                 this.$.readyTime.value = time.elapsed / 1000;
                 this.$.readyTime.max = time.total / 1000;
-
-                this.playLaunchAlert();
 
                 this.async(this.incrementReadyTimer, 1000);
             },
