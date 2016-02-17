@@ -22,7 +22,10 @@ var app = express();
 var chance = new Chance(crypto.randomBytes(4).readInt32LE());
 var database = require('./database');
 var server = http.Server(app);
-var io = socketIO(server);
+var io = socketIO(server, {
+    pingTimeout: 600000,
+    pingInterval: 10000
+});
 var self = new EventEmitter();
 
 app.set('view engine', 'hbs');
