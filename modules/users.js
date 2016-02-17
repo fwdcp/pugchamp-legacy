@@ -355,18 +355,6 @@ module.exports = function(app, chance, database, io, self) {
         }
     }
 
-    function onUserSocketPacket() {
-        let userID = socket.decoded_token.user;
-
-        socketDebug(`user ${userID} sent packet`);
-    }
-
-    function onUserSocketClose(reason) {
-        let userID = socket.decoded_token.user;
-
-        socketDebug(`user ${userID} connection closed: ${reason}`);
-    }
-
     io.sockets.on('authenticated', co.wrap(function*(socket) {
         let userID = socket.decoded_token.user;
 
@@ -391,6 +379,18 @@ module.exports = function(app, chance, database, io, self) {
 
         socket.removeAllListeners('disconnect');
         socket.on('disconnect', onUserDisconnect);
+
+        function onUserSocketPacket() {
+            let userID = socket.decoded_token.user;
+
+            socketDebug(`user ${userID} sent packet`);
+        }
+
+        function onUserSocketClose(reason) {
+            let userID = socket.decoded_token.user;
+
+            socketDebug(`user ${userID} connection closed: ${reason}`);
+        }
 
         socket.conn.removeListener('packet', onUserSocketPacket);
         socket.conn.on('packet', onUserSocketPacket)
