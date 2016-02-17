@@ -10,6 +10,7 @@
     "co": "^4.6.0",
     "config": "^1.17.1",
     "connect-mongo": "^1.1.0",
+    "debug": "^2.2.0",
     "distributions": "^0.2.1",
     "express": "^4.13.3",
     "express-session": "^1.12.1",

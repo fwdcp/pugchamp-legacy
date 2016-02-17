@@ -4,6 +4,7 @@ const _ = require('lodash');
 const bodyParser = require('body-parser');
 const co = require('co');
 const config = require('config');
+const debug = require('debug');
 const jwt = require('jsonwebtoken');
 const HttpStatus = require('http-status-codes');
 const moment = require('moment');
@@ -12,6 +13,8 @@ const passport = require('passport');
 const rp = require('request-promise');
 const socketioJwt = require('socketio-jwt');
 const url = require('url');
+
+var socketDebug = debug('pugchamp:sockets');
 
 module.exports = function(app, chance, database, io, self) {
     const CAPTAIN_GAME_REQUIREMENT = config.get('app.users.captainGameRequirement');
@@ -352,8 +355,23 @@ module.exports = function(app, chance, database, io, self) {
         }
     }
 
+    function onUserSocketPacket() {
+        let userID = socket.decoded_token.user;
+
+        socketDebug(`user ${userID} sent packet`);
+    }
+
+    function onUserSocketClose(reason) {
+        let userID = socket.decoded_token.user;
+
+        socketDebug(`user ${userID} connection closed: ${reason}`);
+    }
+
     io.sockets.on('authenticated', co.wrap(function*(socket) {
         let userID = socket.decoded_token.user;
+
+        socketDebug(`user ${userID} connected and authenticated`);
+
         yield self.updateCachedUser(userID);
 
         socket.emit('userInfoUpdated', self.getCachedUser(userID));
@@ -373,6 +391,11 @@ module.exports = function(app, chance, database, io, self) {
 
         socket.removeAllListeners('disconnect');
         socket.on('disconnect', onUserDisconnect);
+
+        socket.conn.removeListener('packet', onUserSocketPacket);
+        socket.conn.on('packet', onUserSocketPacket)
+        socket.conn.removeListener('close', onUserSocketClose);
+        socket.conn.on('close', onUserSocketClose);
     }));
 
     app.get('/user/settings', function(req, res) {
