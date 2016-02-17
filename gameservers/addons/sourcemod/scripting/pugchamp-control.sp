@@ -157,10 +157,10 @@ public Action Command_GameInfo(int args) {
     }
     else {
         if (serverDelegated.BoolValue) {
-            ReplyToCommand(0, "UNAVAILABLE");
+            ReplyToCommand(0, "FREE");
         }
         else {
-            ReplyToCommand(0, "FREE");
+            ReplyToCommand(0, "UNAVAILABLE");
         }
     }
 
