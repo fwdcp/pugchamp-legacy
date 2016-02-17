@@ -28,7 +28,6 @@
                 this._listenToEvent('reconnect', 'onReconnect');
                 this._listenToEvent('disconnect', 'onDisconnect');
                 this._listenToEvent('reconnect_failed', 'onReconnectFailed');
-                this._listenToEvent('authenticated', 'onAuthenticated');
 
                 if (this.socket.connected) {
                     this.$.connectAlert.show();
