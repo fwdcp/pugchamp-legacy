@@ -149,10 +149,10 @@ public void Hook_DelegationStatusChanged(ConVar convar, const char[] oldValue, c
 }
 
 public Action Command_GameInfo(int args) {
-    if (gameAssigned) {
-        char id[32];
-        gameID.GetString(id, sizeof(id));
+    char id[32];
+    gameID.GetString(id, sizeof(id));
 
+    if (!StrEqual(id, "")) {
         ReplyToCommand(0, "%s", id);
     }
     else {
