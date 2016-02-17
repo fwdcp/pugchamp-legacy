@@ -222,8 +222,17 @@
 
         <pugchamp-notification id="turnNotification" body="It is your turn to choose in the draft!" tag="draftTurn"></pugchamp-notification>
 
-        <audio preload id="notifySound">
-            <source src="/assets/snd/pop.mp3" type="audio/mpeg">
+        <audio preload id="draftYourPickSound">
+            <source src="/assets/snd/draft/your_pick.mp3" type="audio/mpeg">
+        </audio>
+        <audio preload id="draftYourBanSound">
+            <source src="/assets/snd/draft/your_ban.mp3" type="audio/mpeg">
+        </audio>
+        <audio preload id="draftTenSecondsSound">
+            <source src="/assets/snd/draft/10_seconds.mp3" type="audio/mpeg">
+        </audio>
+        <audio preload id="draftFiveSecondsSound">
+            <source src="/assets/snd/draft/5_seconds.mp3" type="audio/mpeg">
         </audio>
     </template>
 
@@ -276,12 +285,20 @@
             startDraftTurn: function() {
                 this.$.turnNotification.notify();
 
-                this.$.notifySound.currentTime = 0;
-                this.$.notifySound.play();
+                if (this.turns[this.currentTurn].type === 'mapBan') {
+                    this.$.draftYourBanSound.currentTime = 0;
+                    this.$.draftYourBanSound.play();
+                }
+                else {
+                    this.$.draftYourPickSound.currentTime = 0;
+                    this.$.draftYourPickSound.play();
+                }
             },
             incrementTurnTimer: function() {
                 var progress = Polymer.dom(this.$.draftTurns).querySelector('.draft-turn[data-status=current] .turn-time');
                 progress.value++;
+
+                this.playExpireWarning();
 
                 if (progress.ratio < 100) {
                     this.currentTimer = this.async(this.incrementTurnTimer, 1000);
@@ -486,6 +503,20 @@
                     player: event.target.dataset.player,
                     override: true
                 });
+            },
+            playExpireWarning: function() {
+                if (this._isCurrentUser(this.user, this.captains[this.turns[turn].captain].id)) {
+                    var progress = Polymer.dom(this.$.draftTurns).querySelector('.draft-turn[data-status=current] .turn-time');
+
+                    if (Math.round(progress.max - progress.value) === 10) {
+                        this.$.draftTenSecondsSound.currentTime = 0;
+                        this.$.draftTenSecondsSound.play();
+                    }
+                    else if (Math.round(progress.max - progress.value) === 5) {
+                        this.$.draftFiveSecondsSound.currentTime = 0;
+                        this.$.draftFiveSecondsSound.play();
+                    }
+                }
             },
             isHighlighted: function(player, highlighted) {
                 if (player === highlighted) {
