@@ -66,8 +66,8 @@
 
         <pugchamp-notification id="substituteNotification" body="A substitute has been requested!" tag="substituteRequest"></pugchamp-notification>
 
-        <audio preload id="notifySound">
-            <source src="/assets/snd/pop.mp3" type="audio/mpeg">
+        <audio preload id="substituteRequestedSound">
+            <source src="/assets/snd/subreqs/requested.wav" type="audio/wav">
         </audio>
     </template>
 
@@ -78,16 +78,13 @@
             ready: function() {
                 this._listenToEvent('substituteRequestsUpdated', 'onSubstituteRequestsUpdated');
 
-                this.set('roles', []);
+                this.set('requests', []);
 
                 this.async(this.updateTimers, 1000);
             },
             onSubstituteRequestsUpdated: function(info) {
-                if (this.roles.length < info.roles.length) {
-                    this.$.substituteNotification.notify();
-
-                    this.$.notifySound.currentTime = 0;
-                    this.$.notifySound.play();
+                if (this.requests.length < info.requests.length) {
+                    this.playRequestSound();
                 }
 
                 this.set('roles', info.roles);
@@ -108,6 +105,14 @@
             },
             retractSubstituteRequest: function(event) {
                 socket.emit('retractSubstituteRequest', event.target.dataset.request);
+            },
+            playRequestSound: function() {
+                if (!this.isRestricted(this.restrictions, 'sub')) {
+                    this.$.substituteNotification.notify();
+
+                    this.$.substituteRequestedSound.currentTime = 0;
+                    this.$.substituteRequestedSound.play();
+                }
             }
         });
     </script>
