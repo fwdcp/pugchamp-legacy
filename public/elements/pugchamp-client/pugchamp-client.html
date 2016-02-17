@@ -22,7 +22,7 @@
             is: 'pugchamp-client',
             behaviors: [PugChampClientBehaviors.BaseBehavior],
             ready: function() {
-                this.authenticated = false;
+                this.$.token.generateRequest();
 
                 this._listenToEvent('connect', 'onConnect');
                 this._listenToEvent('reconnect', 'onReconnect');
@@ -31,22 +31,24 @@
                 this._listenToEvent('authenticated', 'onAuthenticated');
 
                 if (this.socket.connected) {
-                    this.onConnect();
+                    this.$.connectAlert.show();
                 }
+
+                this.authenticate();
 
                 this.async(this.pingServer, 5000);
             },
             onConnect: function() {
-                this.$.token.generateRequest();
                 this.$.connectAlert.show();
+
+                this.authenticate();
             },
             onReconnect: function() {
-                this.$.token.generateRequest();
                 this.$.connectAlert.show();
+
+                this.authenticate();
             },
             onDisconnect: function() {
-                this.authenticated = false;
-
                 this.$.disconnectAlert.show();
 
                 this.$.disconnectSound.currentTime = 0;
@@ -58,13 +60,15 @@
                 this.$.disconnectSound.currentTime = 0;
                 this.$.disconnectSound.play();
             },
-            onAuthenticated: function() {
-                this.authenticated = true;
-            },
             infoReceived: function(event) {
-                if (!this.authenticated) {
+                this.token = event.detail.response.token;
+
+                this.authenticate();
+            },
+            authenticate: function() {
+                if (this.socket.connected && this.token) {
                     this.socket.emit('authenticate', {
-                        token: event.detail.response.token
+                        token: this.token
                     });
                 }
             },
