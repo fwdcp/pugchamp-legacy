@@ -488,7 +488,7 @@
                 });
             },
             playExpireWarning: function() {
-                if (this.user && this._isCurrentUser(this.user, this.captains[this.turns[turn].captain].id)) {
+                if (this.user && this._isCurrentUser(this.user, this.captains[this.turns[this.currentTurn].captain].id)) {
                     var progress = Polymer.dom(this.$.draftTurns).querySelector('.draft-turn[data-status=current] .turn-time');
 
                     if (Math.round(progress.max - progress.value) === 10) {
