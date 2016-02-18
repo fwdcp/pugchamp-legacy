@@ -15,12 +15,18 @@
             properties: {
                 src: String
             },
+            ready: function() {
+                document.addEventListener('pugchamp-volume-changed', this.volumeChanged.bind(this));
+            },
             setDefaultVolume: function() {
                 this.set('volume', 0.5);
             },
             play: function() {
                 this.$.sound.currentTime = 0;
                 this.$.sound.play();
+            },
+            volumeChanged: function(event) {
+                this.set('volume', event.detail);
             }
         });
     </script>

@@ -1,0 +1,41 @@
+<link rel="import" href="/components/polymer/polymer.html">
+
+<link rel="import" href="/components/iron-localstorage/iron-localstorage.html">
+<link rel="import" href="/components/iron-icons/av-icons.html">
+<link rel="import" href="/components/paper-dialog/paper-dialog.html">
+<link rel="import" href="/components/paper-slider/paper-slider.html">
+
+<dom-module id="pugchamp-volume-control">
+    <template>
+        <style is="custom-style">
+            #controls {
+                position: fixed;
+                right: 0;
+                top: 64px;
+            }
+        </style>
+
+        <paper-icon-button on-tap="openDialog" icon="av:volume-up"></paper-icon-button>
+
+        <paper-dialog id="controls">
+            <paper-slider min="0" max="1" step="0.01" value="{{volume}}" on-change="notifyVolumeChanged"></paper-slider>
+        </paper-dialog>
+
+        <iron-localstorage name="pugchamp-volume" value="{{volume}}" on-iron-localstorage-load-empty="setDefaultVolume"></iron-localstorage>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'pugchamp-volume-control',
+            setDefaultVolume: function() {
+                this.set('volume', 0.5);
+            },
+            openDialog: function() {
+                this.$.controls.toggle();
+            },
+            notifyVolumeChanged: function() {
+                this.fire('pugchamp-volume-changed', this.volume);
+            }
+        });
+    </script>
+</dom-module>
