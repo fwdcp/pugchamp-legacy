@@ -283,8 +283,10 @@
             startReady: function(time) {
                 this.set('launchActive', true);
 
-                this.$.launchNotification.notify();
-                this.$.launchStartSound.play();
+                if (!this.user || (!this.isRestricted(this.restrictions, 'start') || !this.isRestricted(this.restrictions, 'captain'))) {
+                    this.$.launchNotification.notify();
+                    this.$.launchStartSound.play();
+                }
 
                 this.$.readyTime.value = time.elapsed / 1000;
                 this.$.readyTime.max = time.total / 1000;
