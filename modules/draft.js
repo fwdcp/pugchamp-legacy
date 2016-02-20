@@ -102,6 +102,15 @@ module.exports = function(app, chance, database, io, self) {
         return currentDraftGame;
     };
 
+    self.getDraftPlayers = function getDraftPlayers() {
+        if (draftActive && !draftComplete) {
+            return _.set(draftCaptains, fullPlayerList);
+        }
+        else {
+            return [];
+        }
+    };
+
     function checkIfLegalState(teams, maps, factions, final) {
         let teamsValid = _.every(teams, function(team) {
             let teamState = calculateCurrentTeamState(team);
@@ -302,14 +311,12 @@ module.exports = function(app, chance, database, io, self) {
 
                 self.emit('gameUpdated', game.id);
 
-                _.each(game.teams, function(team) {
-                    self.updateUserRestrictions(self.getDocumentID(team.captain));
+                _.each(draftCaptains, function(captain)) {
+                    self.updateUserRestrictions(captain);
+                });
 
-                    _.each(team.composition, function(role) {
-                        _.each(role.players, function(player) {
-                            self.updateUserRestrictions(self.getDocumentID(player.user));
-                        });
-                    });
+                _.each(fullPlayerList, function(player)) {
+                    self.updateUserRestrictions(player);
                 });
 
                 currentDraftGame = game.id;
@@ -683,6 +690,14 @@ module.exports = function(app, chance, database, io, self) {
         if (!legalState) {
             throw new Error('Invalid state before draft start!');
         }
+
+        _.each(draftCaptains, function(captain)) {
+            self.updateUserRestrictions(captain));
+        });
+
+        _.each(fullPlayerList, function(player)) {
+            self.updateUserRestrictions(player));
+        });
 
         beginDraftTurn(0);
     });

@@ -165,6 +165,15 @@ module.exports = function(app, chance, database, io, self) {
             restrictions.push(CURRENT_GAME_RESTRICTIONS);
         }
 
+        const CURRENT_DRAFT_RESTRICTIONS = {
+            aspects: ['sub'],
+            reasons: ['You are involved in a currently occurring draft.']
+        };
+        let draftPlayers = self.getDraftPlayers();
+        if (_.includes(draftPlayers, user.id)) {
+            restrictions.push(CURRENT_DRAFT_RESTRICTIONS);
+        }
+
         const MIN_GAME_RESTRICTIONS = {
             aspects: ['captain'],
             reasons: ['You cannot captain because you do not meet the requirement for games played.']
