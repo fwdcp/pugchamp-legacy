@@ -34,7 +34,7 @@
                 color: inherit;
             }
 
-            #connect {
+            .connect {
                 background: var(--primary-color);
             }
         </style>
@@ -60,13 +60,8 @@
                 </p>
 
                 <p>
-                    <a class="button" href="steam://connect/{{game.server.address}}/{{game.server.password}}" target="_blank">
-                        <paper-button id="connect" raised>Connect to Game</paper-button>
-                    </a>
-
-                    <a class="button" href="{{game.server.voice}}" hidden$="{{!game.server.voice}}" target="_blank">
-                        <paper-button id="connect" raised>Connect to Voice</paper-button>
-                    </a>
+                    <paper-button class="connect" on-tap="connectToGameServer" raised>Connect to Game</paper-button>
+                    <paper-button class="connect" on-tap="connectToVoiceServer" hidden$="{{!game.server.voice}}" raised>Connect to Voice</paper-button>
                 </p>
             </div>
 
@@ -141,6 +136,16 @@
                     game: this.game.id,
                     player: this.$.replacedPlayer.selectedItem.dataset.player
                 });
+            },
+            connectToGameServer: function() {
+                if (this.game) {
+                    window.open('steam://connect/' + this.game.server.address + '/' + this.game.server.password, 'pugchamp-game');
+                }
+            },
+            connectToVoiceServer: function() {
+                if (this.game && this.game.server.voice) {
+                    window.open(this.game.server.voice, 'pugchamp-game');
+                }
             }
         });
     </script>
