@@ -311,11 +311,11 @@ module.exports = function(app, chance, database, io, self) {
 
                 self.emit('gameUpdated', game.id);
 
-                _.each(draftCaptains, function(captain)) {
+                _.each(draftCaptains, function(captain) {
                     self.updateUserRestrictions(captain);
                 });
 
-                _.each(fullPlayerList, function(player)) {
+                _.each(fullPlayerList, function(player) {
                     self.updateUserRestrictions(player);
                 });
 
@@ -691,12 +691,12 @@ module.exports = function(app, chance, database, io, self) {
             throw new Error('Invalid state before draft start!');
         }
 
-        _.each(draftCaptains, function(captain)) {
-            self.updateUserRestrictions(captain));
+        _.each(draftCaptains, function(captain) {
+            self.updateUserRestrictions(captain);
         });
 
-        _.each(fullPlayerList, function(player)) {
-            self.updateUserRestrictions(player));
+        _.each(fullPlayerList, function(player) {
+            self.updateUserRestrictions(player);
         });
 
         beginDraftTurn(0);
