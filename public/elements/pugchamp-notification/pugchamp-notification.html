@@ -6,8 +6,7 @@
             is: 'pugchamp-notification',
             properties: {
                 title: {
-                    type: String,
-                    value: 'PugChamp'
+                    type: String
                 },
                 direction: {
                     type: String,
@@ -46,6 +45,15 @@
                 }
             },
             ready: function() {
+                if (this.title === '') {
+                    if (window.PugChampSettings) {
+                        this.title = window.PugChampSettings.siteName;
+                    }
+                    else {
+                        this.title = 'PugChamp';
+                    }
+                }
+
                 if (window.Notification && Notification.permission === 'default') {
                     Notification.requestPermission();
                 }

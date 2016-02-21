@@ -5,6 +5,12 @@
         <title>{{siteName}}</title>
     {{/if}}
 
+    <script>
+        window.PugChampSettings = {
+            siteName: {{{toJSON siteName}}}
+        };
+    </script>
+
     <script src="/components/webcomponentsjs/webcomponents-lite.js"></script>
     <link rel="import" href="/components/iron-icons/hardware-icons.html">
     <link rel="import" href="/components/iron-icons/iron-icons.html">
