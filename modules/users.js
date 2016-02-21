@@ -214,15 +214,17 @@ module.exports = function(app, chance, database, io, self) {
 
         for (let restriction of activeRestrictions) {
             if (!restriction.expires || moment().isBefore(restriction.expires)) {
-                let formattedAspects = restriction.aspects.join(', ');
-                let formattedExpiration = restriction.expires ? moment(restriction.expires).fromNow() : 'never';
-                let reason = `You are currently restricted (aspects: ${formattedAspects}) (expires: ${formattedExpiration})`;
+                let reason;
 
-                if (restriction.reason) {
-                    reason += ` for the reason: ${restriction.reason}.`;
+                if (_.size(restriction.aspects) !== 0) {
+                    let formattedAspects = restriction.aspects.join(', ');
+                    let formattedExpiration = restriction.expires ? moment(restriction.expires).fromNow() : 'never';
+                    let formattedReason = restriction.reason ? ` for the reason: ${restriction.reason}` : '.';
+                    reason = `You are currently restricted (aspects: ${formattedAspects}) (expires: ${formattedExpiration})${formattedReason}`;
                 }
                 else {
-                    reason += '.';
+                    let formattedReason = restriction.reason ? ` for the reason: ${restriction.reason}` : '.';
+                    reason = `You have received a warning${formattedReason}`;
                 }
 
                 restrictions.push({

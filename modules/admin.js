@@ -82,11 +82,6 @@ module.exports = function(app, chance, database, io, self) {
             let expires = req.body.expires ? req.body.expires : null;
             let reason = req.body.reason ? req.body.reason : null;
 
-            if (_.size(aspects) === 0) {
-                res.sendStatus(HttpStatus.BAD_REQUEST);
-                return;
-            }
-
             let restriction = new database.Restriction({
                 user: user.id,
                 active: true,
