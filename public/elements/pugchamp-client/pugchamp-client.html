@@ -76,7 +76,7 @@
                 this._listenToEvent('error', 'onError');
                 this._listenToEvent('authenticated', 'onAuthenticated');
 
-                this.socket.io.connect();
+                this.socket.connect();
 
                 this.authenticate();
 
