@@ -107,6 +107,10 @@ module.exports = function(app, chance, database, io, self) {
     var currentSubstituteRequests = new Map();
     var currentSubstituteRequestsInfo;
 
+    self.getCurrentSubstituteRequests = function getCurrentSubstituteRequests() {
+        return [...currentSubstituteRequests.values()];
+    };
+
     function updateSubstituteRequestsInfo() {
         currentSubstituteRequestsInfo = {
             roles: ROLES,
@@ -261,6 +265,8 @@ module.exports = function(app, chance, database, io, self) {
                 request.candidates.delete(player);
             }
         }
+
+        self.updateUserRestrictions(player);
 
         updateSubstituteRequestsInfo();
         io.sockets.emit('substituteRequestsUpdated', getCurrentSubstituteRequestsMessage());

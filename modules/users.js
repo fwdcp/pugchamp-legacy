@@ -174,6 +174,17 @@ module.exports = function(app, chance, database, io, self) {
             restrictions.push(CURRENT_DRAFT_RESTRICTIONS);
         }
 
+        const CURRENT_SUBSTITUTE_REQUEST_RESTRICTIONS = {
+            aspects: ['sub', 'start', 'captain'],
+            reasons: ['You are currently applying to a substitute request.']
+        };
+        let appliedToSubstitute = _.some(self.getCurrentSubstituteRequests(), function(request) {
+            return request.candidates.has(userID);
+        });
+        if (appliedToSubstitute) {
+            restrictions.push(CURRENT_SUBSTITUTE_REQUEST_RESTRICTIONS);
+        }
+
         const MIN_GAME_RESTRICTIONS = {
             aspects: ['captain'],
             reasons: ['You cannot captain because you do not meet the requirement for games played.']
