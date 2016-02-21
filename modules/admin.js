@@ -78,7 +78,7 @@ module.exports = function(app, chance, database, io, self) {
             }
         }
         else if (req.body.type === 'createRestriction') {
-            let aspects = _.split(req.body.aspects, ',');
+            let aspects = req.body.aspects ? _.split(req.body.aspects, ',') : [];
             let expires = req.body.expires ? req.body.expires : null;
             let reason = req.body.reason ? req.body.reason : null;
 
@@ -90,9 +90,10 @@ module.exports = function(app, chance, database, io, self) {
                 expires
             });
 
-            let formattedAspects = restriction.aspects.join(', ');
-            let formattedExpiration = restriction.expires ? moment(restriction.expires).format('llll') : 'never';
-            postToAdminLog(req.user, `restricted \`<${BASE_URL}/player/${user.steamID}|${user.alias}>\` (aspects: ${formattedAspects}) (expires: ${formattedExpiration}) (reason: ${restriction.reason})`);
+            let formattedAspects = _.size(restriction.aspects) > 0 ? ` (aspects: ${restriction.aspects.join(', ')})` : '';
+            let formattedExpiration = restriction.expires ? ` (expires: ${moment(restriction.expires).format('llll')})` : ' (expires: never)';
+            let formattedReason = restriction.reason ? ` (reason: ${restriction.reason})` : '';
+            postToAdminLog(req.user, `restricted \`<${BASE_URL}/player/${user.steamID}|${user.alias}>\`${formattedAspects}${formattedExpiration}${formattedReason}`);
 
             try {
                 yield restriction.save();
@@ -118,9 +119,10 @@ module.exports = function(app, chance, database, io, self) {
             }
 
             if (user.id === self.getDocumentID(restriction.user) && restriction.active) {
-                let formattedAspects = restriction.aspects.join(', ');
-                let formattedExpiration = restriction.expires ? moment(restriction.expires).format('llll') : 'never';
-                postToAdminLog(req.user, `revoked restriction for \`<${BASE_URL}/player/${user.steamID}|${user.alias}>\` (aspects: ${formattedAspects}) (expires: ${formattedExpiration}) (reason: ${restriction.reason})`);
+                let formattedAspects = _.size(restriction.aspects) > 0 ? ` (aspects: ${restriction.aspects.join(', ')})` : '';
+                let formattedExpiration = restriction.expires ? ` (expires: ${moment(restriction.expires).format('llll')})` : ' (expires: never)';
+                let formattedReason = restriction.reason ? ` (reason: ${restriction.reason})` : '';
+                postToAdminLog(req.user, `revoked restriction for \`<${BASE_URL}/player/${user.steamID}|${user.alias}>\`${formattedAspects}${formattedExpiration}${formattedReason}`);
 
                 restriction.active = false;
 
