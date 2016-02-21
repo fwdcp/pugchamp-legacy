@@ -59,6 +59,7 @@
         <paper-toast text="Connected to the server." id="connectAlert"></paper-toast>
         <paper-toast text="Disconnected from the server." id="disconnectAlert"></paper-toast>
         <paper-toast text="Failed to reconnect to the server." id="reconnectFailedAlert"></paper-toast>
+        <paper-toast text="Logged in with the server." id="authenticatedAlert"></paper-toast>
     </template>
 
     <script>
@@ -73,6 +74,7 @@
                 this._listenToEvent('disconnect', 'onDisconnect');
                 this._listenToEvent('reconnect_failed', 'onReconnectFailed');
                 this._listenToEvent('error', 'onError');
+                this._listenToEvent('authenticated', 'onAuthenticated');
 
                 this.socket.io.connect();
 
@@ -113,6 +115,9 @@
                 if (error.type == "UnauthorizedError" || error.code == "invalid_token") {
                     this.$.token.generateRequest();
                 }
+            },
+            onAuthenticated: function() {
+                this.$.authenticatedAlert.show();
             },
             infoReceived: function(event) {
                 this.token = event.detail.response.token;
