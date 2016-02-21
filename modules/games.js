@@ -497,12 +497,12 @@ module.exports = function(app, chance, database, io, self) {
                 let link = _.find(game.links, 'type', 'logs.tf');
 
                 if (link) {
-                    link.link = info.url;
+                    link.url = info.url;
                 }
                 else {
                     game.links.push({
                         type: 'logs.tf',
-                        link: info.url
+                        url: info.url
                     });
                 }
 
