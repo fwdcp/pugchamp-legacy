@@ -139,12 +139,12 @@
             },
             connectToGameServer: function() {
                 if (this.game) {
-                    window.open('steam://connect/' + this.game.server.address + '/' + this.game.server.password, 'pugchamp-game');
+                    window.open('steam://connect/' + this.game.server.address + '/' + this.game.server.password, 'pugchamp-game', 'width=640,height=360');
                 }
             },
             connectToVoiceServer: function() {
                 if (this.game && this.game.server.voice) {
-                    window.open(this.game.server.voice, 'pugchamp-game');
+                    window.open(this.game.server.voice, 'pugchamp-game', 'width=640,height=360');
                 }
             }
         });
