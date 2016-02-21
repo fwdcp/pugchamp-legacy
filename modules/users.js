@@ -335,19 +335,21 @@ module.exports = function(app, chance, database, io, self) {
     io.sockets.on('connection', socketioJwt.authorize({
         required: false,
         secret: config.get('server.tokenSecret'),
-        additionalAuth(token, successCallback, errorCallback) {
-            database.User.findById(token, function(err, user) {
-                if (err) {
-                    errorCallback(err);
-                }
-                else if (!user) {
-                    errorCallback('user was not found');
+        additionalAuth: co.wrap(function*(token, successCallback, errorCallback) {
+            try {
+                let user = yield database.User.findById(token.user).exec();
+
+                if (!user) {
+                    errorCallback('user does not exist', 'invalid_user');
                 }
                 else {
                     successCallback();
                 }
-            });
-        }
+            }
+            catch (err) {
+                errorCallback(err);
+            }
+        })
     }));
 
     io.sockets.on('connection', function(socket) {
