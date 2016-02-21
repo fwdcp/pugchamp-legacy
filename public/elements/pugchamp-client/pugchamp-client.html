@@ -112,7 +112,7 @@
                 this.toggleDisconnectDisplay();
             },
             onUnauthorized: function(error) {
-                if (error.type === 'UnauthorizedError' && error.code === 'invalid_token') {
+                if (error.data && error.data.type === 'UnauthorizedError' && error.data.code === 'invalid_token') {
                     this.$.token.generateRequest();
                 }
             },
