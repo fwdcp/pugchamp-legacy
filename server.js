@@ -24,8 +24,7 @@ var database = require('./database');
 var server = http.Server(app);
 var io = socketIO(server, {
     pingTimeout: 60000,
-    pingInterval: 5000,
-    transports: ['websocket']
+    pingInterval: 5000
 });
 var self = new EventEmitter();
 

@@ -7,7 +7,7 @@
         created: function() {
             if (!window.socket) {
                 window.socket = io('/', {
-                    transports: ['websocket']
+                    reconnection: false
                 });
             }
 
