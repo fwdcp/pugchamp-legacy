@@ -493,19 +493,21 @@ module.exports = function(app, chance, database, io, self) {
             }
         }
         else if (info.status === 'logavailable') {
-            let link = _.find(game.links, 'type', 'logs.tf');
+            if (info.url) {
+                let link = _.find(game.links, 'type', 'logs.tf');
 
-            if (link) {
-                link.link = info.url;
-            }
-            else {
-                game.links.push({
-                    type: 'logs.tf',
-                    link: info.url
-                });
-            }
+                if (link) {
+                    link.link = info.url;
+                }
+                else {
+                    game.links.push({
+                        type: 'logs.tf',
+                        link: info.url
+                    });
+                }
 
-            yield game.save();
+                yield game.save();
+            }
         }
     });
 
