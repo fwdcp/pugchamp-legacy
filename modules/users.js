@@ -138,6 +138,8 @@ module.exports = function(app, chance, database, io, self) {
             aspects: ['sub', 'start', 'captain'],
             reasons: ['You are not authorized to play in this system.']
         };
+        user.authorized = yield checkUserAuthorization(user);
+        yield user.save();
         if (!user.authorized) {
             if (!user.admin) {
                 restrictions.push(UNAUTHORIZED_USER_RESTRICTIONS);
@@ -289,8 +291,6 @@ module.exports = function(app, chance, database, io, self) {
                     steamID: id
                 });
             }
-
-            user.authorized = yield checkUserAuthorization(user);
 
             yield user.save();
 
