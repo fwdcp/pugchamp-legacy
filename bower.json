@@ -10,17 +10,17 @@
     "tests"
   ],
   "dependencies": {
-    "polymer": "Polymer/polymer#~1.2.3",
-    "lodash": "~3.10.1",
-    "iron-elements": "PolymerElements/iron-elements#~1.0.7",
-    "paper-elements": "PolymerElements/paper-elements#~1.0.7",
-    "moment": "~2.11.1",
-    "mathjs": "~2.6.0",
-    "google-chart": "GoogleWebComponents/google-chart#~1.0.4",
-    "moment-duration-format": "~1.3.0",
-    "iron-icons": "PolymerElements/iron-icons#~1.1.2",
-    "paper-datatable": "David-Mulder/paper-datatable#~0.9.8",
-    "whenever.js": "David-Mulder/whenever.js#master"
+    "polymer": "Polymer/polymer#^1.2.4",
+    "lodash": "^4.5.0",
+    "iron-elements": "PolymerElements/iron-elements#^1.0.8",
+    "paper-elements": "PolymerElements/paper-elements#^1.0.7",
+    "moment": "^2.11.2",
+    "mathjs": "^2.7.0",
+    "google-web-components": "GoogleWebComponents/google-web-components#^1.0.1",
+    "moment-duration-format": "^1.3.0",
+    "paper-datatable": "David-Mulder/paper-datatable#^0.9.8",
+    "whenever.js": "David-Mulder/whenever.js#master",
+    "molecules": "PolymerElements/molecules#~1.0.0"
   },
   "resolutions": {
     "whenever.js": "master"
