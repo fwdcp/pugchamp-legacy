@@ -57,7 +57,7 @@
                         <a class="button" href="/game/{{item.game}}" target="_blank"><paper-button class="view" raised>View Game Info</paper-button></a>
 
                         <paper-button class="respond" data-status="apply" data-request$="{{item.id}}" hidden$="{{_includes(item.candidates, user.id)}}" disabled="{{isRestricted(restrictions, 'sub')}}" on-tap="updateSubstituteApplication">Apply to Substitute</paper-button>
-                        <paper-button class="respond" data-status="retract" data-request$="{{item.id}}" hidden$="{{!_includes(item.candidates, user.id)}}" disabled="{{isRestricted(restrictions, 'sub')}}" on-tap="updateSubstituteApplication">Retract Substitute Application</paper-button>
+                        <paper-button class="respond" data-status="retract" data-request$="{{item.id}}" hidden$="{{!_includes(item.candidates, user.id)}}" on-tap="updateSubstituteApplication">Retract Substitute Application</paper-button>
 
                         <paper-button class="remove" data-request$="{{item.id}}" hidden$="{{!_isCurrentUser(user, item.captain)}}" disabled="{{!_isCurrentUser(user, item.captain)}}" on-tap="retractSubstituteRequest" raised>Retract Substitute Request</paper-button>
                     </p>
