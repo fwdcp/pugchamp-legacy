@@ -169,8 +169,7 @@ module.exports = function(app, chance, database, io, self) {
             aspects: ['sub'],
             reasons: ['You are involved in a currently occurring draft.']
         };
-        let draftPlayers = self.getDraftPlayers();
-        if (_.includes(draftPlayers, user.id)) {
+        if (_.includes(self.getDraftPlayers(), userID)) {
             restrictions.push(CURRENT_DRAFT_RESTRICTIONS);
         }
 
