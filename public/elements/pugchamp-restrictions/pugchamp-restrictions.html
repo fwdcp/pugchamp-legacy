@@ -1,5 +1,6 @@
 <link rel="import" href="/components/polymer/polymer.html">
 
+<link rel="import" href="/components/marked-element/marked-element.html">
 <link rel="import" href="/components/paper-material/paper-material.html">
 <link rel="import" href="/components/paper-styles/color.html">
 
@@ -14,10 +15,16 @@
                 margin: 10px 0;
                 padding: 10px;
             }
+
+            .restriction p {
+                margin: initial;
+            }
         </style>
 
         <template is="dom-repeat" items="{{restrictions.reasons}}">
-            <paper-material class="restriction">{{item}}</paper-material>
+            <marked-element markdown="{{item}}">
+                <paper-material class="restriction markdown-html"></paper-material>
+            </marked-element>
         </template>
     </template>
 

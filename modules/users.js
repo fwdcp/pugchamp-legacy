@@ -20,7 +20,7 @@ module.exports = function(app, chance, database, io, self) {
     const CAPTAIN_GAME_REQUIREMENT = config.get('app.users.captainGameRequirement');
     const UNAUTHENTICATED_RESTRICTIONS = {
         aspects: ['sub', 'start', 'captain', 'chat', 'support'],
-        reasons: ['You are currently not logged on.']
+        reasons: ['You are currently not [logged on](/user/login).']
     };
     const USER_AUTHORIZATIONS = config.has('app.users.authorizations') ? config.get('app.users.authorizations') : [];
     const USER_AUTHORIZATION_DEFAULT = config.has('app.users.authorizationDefault') ? config.get('app.users.authorizationDefault') : true;
@@ -124,7 +124,7 @@ module.exports = function(app, chance, database, io, self) {
 
         const NOT_READY_RESTRICTIONS = {
             aspects: ['sub', 'start', 'captain', 'chat', 'support'],
-            reasons: ['Your account is not set up properly.']
+            reasons: ['Your account is not [set up](/user/settings) properly.']
         };
         if (!user.setUp) {
             restrictions.push(NOT_READY_RESTRICTIONS);
