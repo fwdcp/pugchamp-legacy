@@ -74,9 +74,7 @@
                 this._listenToEvent('reconnect_failed', 'onReconnectFailed');
                 this._listenToEvent('error', 'onError');
 
-                if (this.socket.connected) {
-                    this.$.connectAlert.show();
-                }
+                this.socket.io.connect();
 
                 this.authenticate();
 
