@@ -64,6 +64,7 @@
                 this._listenToEvent('reconnect', 'onReconnect');
                 this._listenToEvent('disconnect', 'onDisconnect');
                 this._listenToEvent('reconnect_failed', 'onReconnectFailed');
+                this._listenToEvent('error', 'onError');
 
                 if (this.socket.connected) {
                     this.$.connectAlert.show();
@@ -99,6 +100,11 @@
                 this.$.reconnectFailedAlert.show();
 
                 this.toggleDisconnectDisplay();
+            },
+            onError: function(error) {
+                if (error.type == "UnauthorizedError" || error.code == "invalid_token") {
+                    this.$.token.generateRequest();
+                }
             },
             infoReceived: function(event) {
                 this.token = event.detail.response.token;
