@@ -44,10 +44,16 @@
         </div>
         <paper-dialog id="disconnectedMessage" no-cancel-on-esc-key no-cancel-on-outside-click>
             <p>You are currently disconnected from the server.</p>
+
+            <div class="buttons">
+                <paper-button on-tap="reconnect" dialog-confirm>Reconnect</paper-button>
+            </div>
         </paper-dialog>
 
         <iron-ajax id="token" url="/user/token" on-response="infoReceived"></iron-ajax>
 
+        <pugchamp-notification id="disconnectNotification" body="You have lost connection to the server." tag="disconnect"></pugchamp-notification>
+        <pugchamp-sound id="disconnectSound" src="/assets/snd/client/disconnected.wav"></pugchamp-sound>
         <paper-toast text="Connected to the server." id="connectAlert"></paper-toast>
         <paper-toast text="Disconnected from the server." id="disconnectAlert"></paper-toast>
         <paper-toast text="Failed to reconnect to the server." id="reconnectFailedAlert"></paper-toast>
@@ -93,6 +99,8 @@
             },
             onDisconnect: function() {
                 this.$.disconnectAlert.show();
+                this.$.disconnectNotification.notify();
+                this.$.disconnectSound.play();
 
                 this.toggleDisconnectDisplay();
             },
@@ -127,6 +135,9 @@
                 else {
                     this.$.disconnectedMessage.open();
                 }
+            },
+            reconnect: function() {
+                this.socket.io.reconnect();
             },
             connectionStatus: function(connected) {
                 return connected ? 'connected' : 'disconnected';
