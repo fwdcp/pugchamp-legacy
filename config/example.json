@@ -150,10 +150,10 @@
                 "captain": 0
             }, {
                 "type": "mapBan",
-                "method": "random"
+                "method": "fresh"
             }, {
                 "type": "mapBan",
-                "method": "random"
+                "method": "fresh"
             }, {
                 "type": "mapBan",
                 "method": "captain",

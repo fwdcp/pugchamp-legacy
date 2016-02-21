@@ -507,6 +507,60 @@ module.exports = function(app, chance, database, io, self) {
         }
     }
 
+    function makeFreshChoice() {
+        return co(function*() {
+            let turnDefinition = DRAFT_ORDER[currentDraftTurn];
+
+            try {
+                let choice = {
+                    type: turnDefinition.type
+                };
+
+                if (turnDefinition.type === 'mapBan') {
+                    let recentGames = yield _(pickedTeams).flatten().map(player => database.Game.findOne({'teams.composition.players.user': player.player}).sort({date: -1}).exec()).value();
+
+                    let recentlyPlayedMap = _.chain(recentGames).reduce(function(maps, game) {
+                        if (!game || !_.includes(remainingMaps, game.map)) {
+                            return maps;
+                        }
+
+                        if (!maps[game.map]) {
+                            maps[game.map] = 0;
+                        }
+
+                        maps[game.map]++;
+
+                        return maps;
+                    }, {}).toPairs().maxBy(pair => pair[1]).value();
+
+                    if (recentlyPlayedMap) {
+                        choice.map = recentlyPlayedMap[0];
+                    }
+                    else {
+                        choice.map = chance.pick(remainingMaps);
+                    }
+                }
+                else {
+                    throw new Error('unsupported turn type');
+                }
+
+                commitDraftChoice(choice);
+            }
+            catch (err) {
+                self.postToLog({
+                    description: `error in making fresh choice: \`${JSON.stringify(turnDefinition)}\``,
+                    error: err
+                });
+
+                self.sendMessage({
+                    action: 'game draft aborted due to internal error'
+                });
+
+                self.cleanUpDraft();
+            }
+        });
+    }
+
     function makeRandomChoice() {
         let turnDefinition = DRAFT_ORDER[currentDraftTurn];
 
@@ -533,9 +587,10 @@ module.exports = function(app, chance, database, io, self) {
                 choice.role = chance.pick(allowedRoles);
             }
             else if (turnDefinition.type === 'mapBan' || turnDefinition.type === 'mapPick') {
-                choice.type = turnDefinition.type;
-
                 choice.map = chance.pick(remainingMaps);
+            }
+            else {
+                throw new Error('unsupported turn type');
             }
 
             commitDraftChoice(choice);
@@ -611,6 +666,9 @@ module.exports = function(app, chance, database, io, self) {
 
         if (turnDefinition.method === 'random') {
             makeRandomChoice();
+        }
+        else if (turnDefinition.method === 'fresh') {
+            makeFreshChoice();
         }
     }
 
