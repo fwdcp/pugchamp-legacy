@@ -335,7 +335,7 @@ module.exports = function(app, chance, database, io, self) {
     io.sockets.on('connection', socketioJwt.authorize({
         required: false,
         secret: config.get('server.tokenSecret'),
-        additionalAuth: co.wrap(function*(token, successCallback, errorCallback) {
+        additional_auth: co.wrap(function*(token, successCallback, errorCallback) {
             try {
                 let user = yield database.User.findById(token.user).exec();
 
