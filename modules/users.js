@@ -307,12 +307,7 @@ module.exports = function(app, chance, database, io, self) {
 
     app.get('/user/login', passport.authenticate('openid'));
     app.get('/user/login/return', passport.authenticate('openid'), function(req, res) {
-        if (req.user && !req.user.setUp) {
-            res.redirect('/user/settings');
-        }
-        else {
-            res.redirect('/');
-        }
+        res.redirect('/');
     });
     app.get('/user/logout', function(req, res) {
         req.logout();
