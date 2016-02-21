@@ -7,7 +7,7 @@ const math = require('mathjs');
 const moment = require('moment');
 
 module.exports = function(app, chance, database, io, self) {
-    const SITE_NAME = config.get('server.siteName');
+    const SITE_NAME = config.get('app.common.siteName');
 
     self.promiseDelay = function(delay, value, fail) {
         return new Promise(function(resolve, reject) {

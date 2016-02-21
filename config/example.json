@@ -1,5 +1,8 @@
 {
     "app": {
+        "common": {
+            "siteName": "PugChamp"
+        },
         "users": {
             "admins": ["76561198043850090"],
             "authorizations": [{
@@ -7,6 +10,162 @@
                 "authorized": false
             }],
             "authorizationAPIs": ["http://localhost:8080/checkUser"]
+        },
+        "games": {
+            "maps": {
+                "badlands": {
+                    "name": "Badlands",
+                    "file": "cp_badlands",
+                    "image": "badlands.png",
+                    "config": "pugchamp-6v6-standard"
+                },
+                "granary": {
+                    "name": "Granary",
+                    "file": "cp_granary_pro_b10",
+                    "image": "granary.png",
+                    "config": "pugchamp-6v6-standard"
+                },
+                "gullywash": {
+                    "name": "Gullywash",
+                    "file": "cp_gullywash_final1",
+                    "image": "gullywash.png",
+                    "config": "pugchamp-6v6-standard"
+                },
+                "metalworks": {
+                    "name": "Metalworks",
+                    "file": "cp_metalworks_rc7",
+                    "image": "metalworks.png",
+                    "config": "pugchamp-6v6-standard"
+                },
+                "process": {
+                    "name": "Process",
+                    "file": "cp_process_final",
+                    "image": "process.png",
+                    "config": "pugchamp-6v6-standard"
+                },
+                "snakewater": {
+                    "name": "Snakewater",
+                    "file": "cp_snakewater_final1",
+                    "image": "snakewater.png",
+                    "config": "pugchamp-6v6-standard"
+                },
+                "sunshine": {
+                    "name": "Sunshine",
+                    "file": "cp_sunshine_rc9",
+                    "image": "sunshine.png",
+                    "config": "pugchamp-6v6-standard"
+                }
+            },
+            "roles": {
+                "scout": {
+                    "name": "Scout",
+                    "class": "scout",
+                    "min": 2,
+                    "max": 2,
+                    "overrideImmune": false
+                },
+                "roamer": {
+                    "name": "Roamer",
+                    "class": "soldier",
+                    "min": 1,
+                    "max": 1,
+                    "overrideImmune": false
+                },
+                "pocket": {
+                    "name": "Pocket",
+                    "class": "soldier",
+                    "min": 1,
+                    "max": 1,
+                    "overrideImmune": false
+                },
+                "demoman": {
+                    "name": "Demoman",
+                    "class": "demoman",
+                    "min": 1,
+                    "max": 1,
+                    "overrideImmune": false
+                },
+                "medic": {
+                    "name": "Medic",
+                    "class": "medic",
+                    "min": 1,
+                    "max": 1,
+                    "overrideImmune": true
+                }
+            },
+            "teamSize": 6
+        },
+        "draft": {
+            "order": [{
+                "type": "factionSelect",
+                "method": "random",
+                "captain": 1
+            }, {
+                "type": "playerPick",
+                "method": "captain",
+                "captain": 0
+            }, {
+                "type": "playerPick",
+                "method": "captain",
+                "captain": 1
+            }, {
+                "type": "playerPick",
+                "method": "captain",
+                "captain": 1
+            }, {
+                "type": "playerPick",
+                "method": "captain",
+                "captain": 0
+            }, {
+                "type": "playerPick",
+                "method": "captain",
+                "captain": 0
+            }, {
+                "type": "playerPick",
+                "method": "captain",
+                "captain": 1
+            }, {
+                "type": "playerPick",
+                "method": "captain",
+                "captain": 1
+            }, {
+                "type": "playerPick",
+                "method": "captain",
+                "captain": 0
+            }, {
+                "type": "playerPick",
+                "method": "captain",
+                "captain": 0
+            }, {
+                "type": "playerPick",
+                "method": "captain",
+                "captain": 1
+            }, {
+                "type": "captainRole",
+                "method": "random",
+                "captain": 1
+            }, {
+                "type": "captainRole",
+                "method": "random",
+                "captain": 0
+            }, {
+                "type": "mapBan",
+                "method": "random"
+            }, {
+                "type": "mapBan",
+                "method": "random"
+            }, {
+                "type": "mapBan",
+                "method": "captain",
+                "captain": 0
+            }, {
+                "type": "mapBan",
+                "method": "captain",
+                "captain": 1
+            }, {
+                "type": "mapPick",
+                "method": "random"
+            }]
         },
         "pages": [{
             "title": "Source Repository",
@@ -33,7 +192,6 @@
         "listen": 16217,
         "mongodb": "mongodb://localhost/pugchamp",
         "sessionSecret": "pickup winner",
-        "siteName": "PugChamp",
         "slack": {
             "incomingWebhook": "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX",
             "messageDefaults": {
