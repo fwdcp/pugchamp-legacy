@@ -69,6 +69,7 @@ public void OnPluginStart() {
     HookEvent("teamplay_restart_round", Event_GameStart, EventHookMode_PostNoCopy);
     HookEvent("teamplay_game_over", Event_GameOver, EventHookMode_PostNoCopy);
     HookEvent("tf_game_over", Event_GameOver, EventHookMode_PostNoCopy);
+    HookEvent("teamplay_round_active", Event_RoundStart, EventHookMode_PostNoCopy);
 
     HookEvent("player_changename", Event_NameChange, EventHookMode_Post);
     HookUserMessage(GetUserMessageId("SayText2"), UserMessage_SayText2, true);
@@ -328,6 +329,63 @@ public void Event_GameOver(Event event, const char[] name, bool dontBroadcast) {
                 FloatToString(playtime, value, sizeof(value));
 
                 Steam_SetHTTPRequestGetOrPostParameter(httpRequest, key, value);
+            }
+        }
+
+        Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned);
+    }
+}
+
+public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast) {
+    if (gameAssigned && gameLive && !gameCompleted) {
+        char url[2048];
+        apiURL.GetString(url, sizeof(url));
+        HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
+
+        char id[32];
+        gameID.GetString(id, sizeof(id));
+        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "game", id);
+
+        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "status", "live");
+
+        char score[4];
+        IntToString(GetTeamScore(2), score, sizeof(score));
+        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "score[RED]", score);
+        IntToString(GetTeamScore(3), score, sizeof(score));
+        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "score[BLU]", score);
+
+        if (gameStartTime != -1.0) {
+            char duration[128];
+            FloatToString(GetGameTime() - gameStartTime, duration, sizeof(duration));
+            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "duration", duration);
+        }
+
+        for (int i = 1; i <= MaxClients; i++) {
+            if (IsClientConnected(i) && IsClientAuthorized(i)) {
+                EndPlayerTimer(i);
+            }
+        }
+
+        StringMapSnapshot players = playerPlaytimes.Snapshot();
+        for (int i = 0; i < players.Length; i++) {
+            char steamID[32];
+            players.GetKey(i, steamID, sizeof(steamID));
+
+            float playtime;
+            if (playerPlaytimes.GetValue(steamID, playtime)) {
+                char key[64];
+                Format(key, sizeof(key), "time[%s]", steamID);
+
+                char value[128];
+                FloatToString(playtime, value, sizeof(value));
+
+                Steam_SetHTTPRequestGetOrPostParameter(httpRequest, key, value);
+            }
+        }
+
+        for (int i = 1; i <= MaxClients; i++) {
+            if (IsClientConnected(i) && IsClientAuthorized(i)) {
+                StartPlayerTimer(i);
             }
         }
 
