@@ -51,7 +51,7 @@
 
                     <p>A substitute has been requested for <strong>{{item.player.alias}}</strong> (with role <strong>{{_getProperty(roles, item.role, 'name')}}</strong>).</p>
 
-                    <paper-progress class="period transiting" data-start$="{{item.start}}" data-end$="{{item.end}}" min="0" value="{{item.timeElapsed}}" max="{{item.timeTotal}}"></paper-progress>
+                    <p><paper-progress class="period transiting" data-start$="{{item.start}}" data-end$="{{item.end}}" min="0" value="{{item.timeElapsed}}" max="{{item.timeTotal}}"></paper-progress></p>
 
                     <p hidden$={{!user}}>
                         <a class="button" href="/game/{{item.game}}" target="_blank"><paper-button class="view" raised>View Game Info</paper-button></a>
