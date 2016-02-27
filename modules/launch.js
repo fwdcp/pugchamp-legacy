@@ -336,14 +336,16 @@ module.exports = function(app, chance, database, io, self) {
         });
     }
 
-    const checkLaunchHolds = _.debounce(co.wrap(function* checkLaunchHolds() {
+    const updateLaunchHolds = _.debounce(co.wrap(function* updateLaunchHolds() {
+        let shouldAttemptLaunch = !launchAttemptActive;
+
         currentLaunchHolds = yield getLaunchHolds(false);
 
         updateStatusInfo();
 
         io.sockets.emit('launchStatusUpdated', getCurrentStatusMessage());
 
-        if (!launchAttemptActive && _.size(currentLaunchHolds) === 0) {
+        if (shouldAttemptLaunch && _.size(currentLaunchHolds) === 0) {
             yield beginLaunchAttempt();
         }
     }), GET_LAUNCH_HOLD_DEBOUNCE_WAIT, {
@@ -359,7 +361,7 @@ module.exports = function(app, chance, database, io, self) {
 
         io.sockets.emit('launchStatusUpdated', getCurrentStatusMessage());
 
-        checkLaunchHolds();
+        updateLaunchHolds();
     };
 
     self.updateLaunchStatus();
