@@ -370,6 +370,10 @@ module.exports = function(app, chance, database, io, self) {
                 clearTimeout(request.timeout);
             }
 
+            for (let candidate of request.candidates) {
+                self.updateUserRestrictions(candidate);
+            }
+
             currentSubstituteRequests.delete(id);
 
             updateSubstituteRequestsInfo();
