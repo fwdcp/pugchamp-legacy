@@ -310,7 +310,7 @@ module.exports = function(app, chance, database, io, self) {
             try {
                 let result = yield self.sendRCONCommand(req.params.id, req.body.command);
 
-                res.send(result);
+                res.json(result);
             }
             catch (err) {
                 self.postToLog({
