@@ -70,6 +70,17 @@ module.exports = function(app, chance, database, io, self) {
         return co(function*() {
             let launchHolds = [];
 
+            let availableServers;
+            if (forceUpdate) {
+                availableServers = yield self.getAvailableServers();
+            }
+            else {
+                availableServers = yield self.throttledGetAvailableServers();
+            }
+            if (_.size(availableServers) === 0) {
+                launchHolds.push('availableServers');
+            }
+
             if (captainsAvailable.size < 2) {
                 launchHolds.push('availableCaptains');
             }
@@ -77,26 +88,22 @@ module.exports = function(app, chance, database, io, self) {
             let allPlayersAvailable = _.reduce(playersAvailable, function(allPlayers, players) {
                 return new Set(_.union([...allPlayers], [...players]));
             }, new Set());
-
             if (allPlayersAvailable.size < 2 * TEAM_SIZE) {
                 launchHolds.push('availablePlayers');
             }
 
             let availablePlayerRolesNeeded = calculateRolesNeeded(playersAvailable);
-
             if (_.size(availablePlayerRolesNeeded) !== 0) {
                 launchHolds.push('availablePlayerRoles');
             }
 
             if (launchAttemptActive) {
                 let captainsReady = new Set(_.intersection([...captainsAvailable], [...readiesReceived]));
-
                 if (captainsReady.size < 2) {
                     launchHolds.push('readyCaptains');
                 }
 
                 let allPlayersReady = new Set(_.intersection([...allPlayersAvailable], [...readiesReceived]));
-
                 if (allPlayersReady.size < 2 * TEAM_SIZE) {
                     launchHolds.push('readyPlayers');
                 }
@@ -104,9 +111,7 @@ module.exports = function(app, chance, database, io, self) {
                 let playersReady = _.mapValues(playersAvailable, function(available) {
                     return new Set(_.intersection([...available], [...readiesReceived]));
                 });
-
                 let readyPlayerRolesNeeded = calculateRolesNeeded(playersReady);
-
                 if (_.size(readyPlayerRolesNeeded) !== 0) {
                     launchHolds.push('readyPlayerRoles');
                 }
@@ -114,19 +119,6 @@ module.exports = function(app, chance, database, io, self) {
 
             if (self.isDraftActive()) {
                 launchHolds.push('inactiveDraft');
-            }
-
-            let availableServers;
-
-            if (forceUpdate) {
-                availableServers = yield self.getAvailableServers();
-            }
-            else {
-                availableServers = yield self.throttledGetAvailableServers();
-            }
-
-            if (_.size(availableServers) === 0) {
-                launchHolds.push('availableServers');
             }
 
             return launchHolds;
