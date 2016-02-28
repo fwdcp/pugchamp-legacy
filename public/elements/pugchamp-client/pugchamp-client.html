@@ -60,6 +60,7 @@
         <paper-toast text="Disconnected from the server." id="disconnectAlert"></paper-toast>
         <paper-toast text="Failed to reconnect to the server." id="reconnectFailedAlert"></paper-toast>
         <paper-toast text="Logged in with the server." id="authenticatedAlert"></paper-toast>
+        <paper-toast text="Failed to log in with the server." id="authenticationFailedAlert"></paper-toast>
     </template>
 
     <script>
@@ -67,8 +68,6 @@
             is: 'pugchamp-client',
             behaviors: [PugChampClientBehaviors.BaseBehavior],
             ready: function() {
-                this.$.token.generateRequest();
-
                 this._listenToEvent('connect', 'onConnect');
                 this._listenToEvent('reconnect', 'onReconnect');
                 this._listenToEvent('disconnect', 'onDisconnect');
@@ -78,7 +77,8 @@
 
                 this.socket.connect();
 
-                this.authenticate();
+                this.authenticated = false;
+                this.$.token.generateRequest();
 
                 this.async(function() {
                     this.$.disconnectedMessage.fitInto = this.$.client;
@@ -100,6 +100,8 @@
                 this.toggleDisconnectDisplay();
             },
             onDisconnect: function() {
+                this.authenticated = false;
+
                 this.$.disconnectAlert.show();
                 this.$.disconnectNotification.notify();
                 this.$.disconnectSound.play();
@@ -112,11 +114,17 @@
                 this.toggleDisconnectDisplay();
             },
             onUnauthorized: function(error) {
+                this.authenticated = false;
+
+                this.$.authenticationFailedAlert.show();
+
                 if (error.data && error.data.type === 'UnauthorizedError' && error.data.code === 'invalid_token') {
                     this.$.token.generateRequest();
                 }
             },
             onAuthenticated: function() {
+                this.authenticated = true;
+
                 this.$.authenticatedAlert.show();
             },
             infoReceived: function(event) {
@@ -129,6 +137,8 @@
                     this.socket.emit('authenticate', {
                         token: this.token
                     });
+
+                    this.async(this.retryAuthentication, 1000);
                 }
             },
             toggleDisconnectDisplay: function() {
@@ -143,6 +153,11 @@
             },
             reconnect: function() {
                 this.socket.io.reconnect();
+            },
+            retryAuthentication: function() {
+                if (!this.authenticated) {
+                    this.$.token.generateRequest();
+                }
             },
             connectionStatus: function(connected) {
                 return connected ? 'connected' : 'disconnected';
