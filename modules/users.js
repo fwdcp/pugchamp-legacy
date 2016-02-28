@@ -176,7 +176,7 @@ module.exports = function(app, chance, database, io, self) {
         }
 
         const CURRENT_SUBSTITUTE_REQUEST_RESTRICTIONS = {
-            aspects: ['sub', 'start', 'captain'],
+            aspects: ['start', 'captain'],
             reasons: ['You are currently applying to a substitute request.']
         };
         let appliedToSubstitute = _.some(self.getCurrentSubstituteRequests(), function(request) {
