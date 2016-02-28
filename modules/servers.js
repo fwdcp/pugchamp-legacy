@@ -173,6 +173,18 @@ module.exports = function(app, chance, database, io, self) {
     self.updateServerPlayers = co.wrap(function* updateServerPlayers(game) {
         let serverStatus = yield getServerStatus(game.server);
 
+        if (serverStatus.status === 'unreachable' || serverStatus.status === 'unknown') {
+            for (let delay of RETRY_ATTEMPTS) {
+                yield self.promiseDelay(delay, null, false);
+
+                serverStatus = yield getServerStatus(game.server);
+
+                if (serverStatus.status !== 'unreachable' && serverStatus.status !== 'unknown') {
+                    break;
+                }
+            }
+        }
+
         if (serverStatus.status !== 'assigned' || self.getDocumentID(serverStatus.game) !== self.getDocumentID(game)) {
             throw new Error('server not assigned to game');
         }
