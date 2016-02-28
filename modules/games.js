@@ -336,9 +336,9 @@ module.exports = function(app, chance, database, io, self) {
 
         yield game.save();
 
-        yield self.updateServerPlayers(game);
-
         processGameUpdate(game);
+
+        yield self.updateServerPlayers(game);
     });
 
     self.abortGame = co.wrap(function* abortGame(game) {
