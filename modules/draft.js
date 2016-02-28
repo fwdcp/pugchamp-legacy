@@ -80,10 +80,7 @@ module.exports = function(app, chance, database, io, self) {
     var draftChoices = [];
 
     var teamFactions = [];
-    var pickedTeams = [
-        [],
-        []
-    ];
+    var pickedTeams = [];
     var unavailablePlayers = [];
     var pickedMap = null;
     var remainingMaps = [];
@@ -247,10 +244,7 @@ module.exports = function(app, chance, database, io, self) {
         draftChoices = [];
 
         teamFactions = [];
-        pickedTeams = [
-            [],
-            []
-        ];
+        pickedTeams = [];
         unavailablePlayers = [];
         pickedMap = null;
         remainingMaps = [];
