@@ -9,7 +9,8 @@
                 "user": "76561198043850090",
                 "authorized": false
             }],
-            "authorizationAPIs": ["http://localhost:8080/checkUser"]
+            "authorizationAPIs": ["http://localhost:8080/checkUser"],
+			"donors": ["76561198015569189"]
         },
         "games": {
             "maps": {

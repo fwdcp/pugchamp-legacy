@@ -60,6 +60,9 @@ var userSchema = new mongoose.Schema({
 userSchema.virtual('admin').get(function() {
     return _.includes(config.get('app.users.admins'), this.steamID);
 });
+userSchema.virtual('donor').get(function() {
+    return _.includes(config.get('app.users.donors'), this.steamID);
+});
 userSchema.virtual('stats.rating.low').get(function() {
     return this.stats.rating.mean - (3 * this.stats.rating.deviation);
 });
