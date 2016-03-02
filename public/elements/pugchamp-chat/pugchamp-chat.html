@@ -61,7 +61,7 @@
                     <div class="message-time">{{formatTime(item.time)}}</div>
                     <div class="flex message-contents">
                         <template is="dom-if" if="{{item.user}}">
-                            <span class="message-author"><iron-icon hidden$="{{!item.user.admin}}" icon="flag"></iron-icon><iron-icon hidden$="{{!item.user.donor}}" icon="social:whatshot" style="color:#4527A0" ></iron-icon> {{item.user.alias}}</span>
+                            <span class="message-author"><iron-icon hidden$="{{!item.user.admin}}" icon="flag"></iron-icon> {{item.user.alias}}</span>
                         </template>
                         <em class="message-action">{{item.action}}</em>
                         <br>
