@@ -8,6 +8,7 @@ const moment = require('moment');
 
 module.exports = function(app, chance, database, io, self) {
     const SITE_NAME = config.get('app.common.siteName');
+    const SITE_SUBTITLE = config.get('app.common.siteSubtitle');
 
     self.promiseDelay = function(delay, value, fail) {
         return new Promise(function(resolve, reject) {
@@ -62,6 +63,7 @@ module.exports = function(app, chance, database, io, self) {
     // NOTE: must be here in order to take effect for all pages
     app.use(function(req, res, next) {
         res.locals.siteName = SITE_NAME;
+        res.locals.siteSubtitle = SITE_SUBTITLE;
         next();
     });
 
