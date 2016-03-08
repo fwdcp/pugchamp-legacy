@@ -197,7 +197,7 @@ module.exports = function(app, chance, database, io, self) {
             });
         });
 
-        let undraftedCount = database.Game.find({
+        let undraftedCount = yield database.Game.find({
             $nor: [{
                 'draft.choices': {
                     $elemMatch: {
