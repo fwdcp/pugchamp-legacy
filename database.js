@@ -38,8 +38,8 @@ var userSchema = new mongoose.Schema({
                 type: String,
                 enum: ['captain', 'picked', 'undrafted']
             },
-            role: String,
-            number: Number
+            position: Number,
+            count: Number
         }],
         rating: {
             mean: {
@@ -53,7 +53,7 @@ var userSchema = new mongoose.Schema({
         },
         roles: [{
             role: String,
-            number: Number
+            count: Number
         }]
     }
 });

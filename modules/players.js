@@ -6,6 +6,7 @@ const config = require('config');
 const distributions = require('distributions');
 const hbs = require('hbs');
 const HttpStatus = require('http-status-codes');
+const humanize = require('humanize');
 const math = require('mathjs');
 
 module.exports = function(app, chance, database, io, self) {
@@ -48,6 +49,7 @@ module.exports = function(app, chance, database, io, self) {
         }
     }
 
+    const DRAFT_ORDER = config.get('app.draft.order');
     const ROLES = config.get('app.games.roles');
     const UPDATE_PLAYER_CACHE_DEBOUNCE_MAX_WAIT = 5000;
     const UPDATE_PLAYER_CACHE_DEBOUNCE_WAIT = 1000;
@@ -80,7 +82,7 @@ module.exports = function(app, chance, database, io, self) {
 
             if (player.stats.roles) {
                 for (let stat of player.stats.roles) {
-                    if (stat.number > 0) {
+                    if (stat.count > 0) {
                         return true;
                     }
                 }
@@ -88,7 +90,7 @@ module.exports = function(app, chance, database, io, self) {
 
             if (player.stats.draft) {
                 for (let stat of player.stats.draft) {
-                    if (stat.type === 'captain' && stat.number > 0) {
+                    if (stat.type === 'captain' && stat.count > 0) {
                         return true;
                     }
                 }
@@ -141,24 +143,63 @@ module.exports = function(app, chance, database, io, self) {
 
         player.stats.captainScore = calculatePredictionInterval(scores);
 
-        player.stats.draft = yield _(ROLES).keys().map(role => database.Game.find({
+        let draftStats = [];
+
+        let draftPositions = {};
+
+        let playersPicked = _(DRAFT_ORDER).filter(function(turn) {
+            return turn.type === 'playerPick';
+        }).size();
+        for (let i = 1; i <= playersPicked; i++) {
+            draftPositions[i] = 0;
+        }
+
+        let draftedGames = yield database.Game.find({
             'draft.choices': {
                 $elemMatch: {
                     'type': 'playerPick',
-                    'role': role,
                     'player': player.id
                 }
             }
-        }).count().exec().then(count => ({
-            type: 'picked',
-            role,
-            number: count
-        }))).concat(database.Game.count({
+        });
+        for (let game in draftedGames) {
+            let position = 0;
+
+            for (let choice in game.draft.choices) {
+                if (choice.type === 'playerPick') {
+                    position++;
+
+                    if (self.getDocumentID(choice.player) === self.getDocumentID(player.id)) {
+                        break;
+                    }
+                }
+            }
+
+            if (!draftPositions[position]) {
+                draftPositions[position] = 0;
+            }
+            draftPositions[position]++;
+        }
+
+        _.each(draftPositions, function(count, position) {
+            draftStats.push({
+                type: 'picked',
+                position,
+                count
+            });
+        });
+
+        let captainGameCount = yield database.Game.count({
             'teams.captain': player.id
-        }).count().exec().then(count => ({
+        }).count().exec();
+        draftStats.push({
             type: 'captain',
-            number: count
-        })), database.Game.find({
+            count: captainGameCount
+        });
+
+        player.stats.draft = draftStats;
+
+        let undraftedCount = database.Game.find({
             $nor: [{
                 'draft.choices': {
                     $elemMatch: {
@@ -170,10 +211,11 @@ module.exports = function(app, chance, database, io, self) {
                 'teams.captain': player.id
             }],
             'draft.pool.players.user': player.id
-        }).count().exec().then(count => ({
+        }).count().exec();
+        draftStats.push({
             type: 'undrafted',
-            number: count
-        }))).value();
+            count: undraftedCount
+        });
 
         let rating = yield database.Rating.findOne({
             user: player.id
@@ -193,7 +235,7 @@ module.exports = function(app, chance, database, io, self) {
             }
         }).count().exec().then(count => ({
             role,
-            number: count
+            count
         }))).value();
 
         yield player.save();
@@ -203,20 +245,20 @@ module.exports = function(app, chance, database, io, self) {
 
     hbs.registerHelper('draftStatToRow', function(stat) {
         if (stat.type === 'captain') {
-            return JSON.stringify(['Captain', stat.number]);
+            return JSON.stringify(['Captain', stat.count]);
         }
         else if (stat.type === 'picked') {
-            return JSON.stringify([`Picked ${ROLES[stat.role].name}`, stat.number]);
+            return JSON.stringify([`Picked ${humanize.ordinal(stat.position)}`, stat.count]);
         }
         else if (stat.type === 'undrafted') {
-            return JSON.stringify(['Undrafted', stat.number]);
+            return JSON.stringify(['Undrafted', stat.count]);
         }
     });
     hbs.registerHelper('ratingStatToRow', function(stat) {
         return `[new Date("${stat.date}"),${stat.after.mean},${stat.after.low},${stat.after.high}]`;
     });
     hbs.registerHelper('roleStatToRow', function(stat) {
-        return JSON.stringify([ROLES[stat.role].name, stat.number]);
+        return JSON.stringify([ROLES[stat.role].name, stat.count]);
     });
 
     app.get('/player/:steam', co.wrap(function*(req, res) {
@@ -278,5 +320,13 @@ module.exports = function(app, chance, database, io, self) {
         res.render('playerList', {
             players: !req.user || !req.user.admin ? playerListFilteredCache : playerListCache
         });
+    });
+
+    co(function*() {
+        let users = yield database.User.find({}, '_id').exec();
+
+        for (let user of users) {
+            yield self.updatePlayerStats(user.id);
+        }
     });
 };

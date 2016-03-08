@@ -42,7 +42,7 @@
 
                 this.$.roles.cols = [{type: 'string', label: 'Role'}, {type: 'number', label: 'Games'}];
                 this.$.roles.rows = _.map(this.player.stats.roles, _.bind(function(stat) {
-                    return [this.roles[stat.role].name, stat.number];
+                    return [this.roles[stat.role].name, stat.count];
                 }, this));
                 this.$.roles.options = {
                     backgroundColor: 'transparent',
