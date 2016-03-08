@@ -29,6 +29,8 @@
         </p>
         {{/unless}}
 
+        <p><paper-checkbox name="showDraftStats" value="1" {{#if currentUser.options.showDraftStats}}checked{{/if}}>Show Draft Stats</paper-checkbox></p>
+
         <paper-button raised onclick="save()" id="save">Save</paper-button>
     </form>
 

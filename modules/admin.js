@@ -63,6 +63,18 @@ module.exports = function(app, chance, database, io, self) {
                 }
             }
 
+            let showDraftStats = !!req.body.showDraftStats;
+            if (showDraftStats != user.options.showDraftStats) {
+                if (showDraftStats) {
+                    postToAdminLog(req.user, `enabled showing draft stats for \`<${BASE_URL}/player/${user.steamID}|${user.alias}>\``);
+                }
+                else {
+                    postToAdminLog(req.user, `disabled showing draft stats for \`<${BASE_URL}/player/${user.steamID}|${user.alias}>\``);
+                }
+
+                user.options.showDraftStats = showDraftStats;
+            }
+
             try {
                 yield user.save();
 

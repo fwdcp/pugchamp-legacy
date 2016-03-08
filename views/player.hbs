@@ -88,6 +88,7 @@
     <form is="iron-form" method="post" action="/admin/user/{{user.id}}">
         <input type="hidden" name="type" value="changeSettings">
         <p><paper-input type="text" label="Alias" name="alias" placeholder="thesupremecommander" auto-validate error-message="up to fifteen alphanumeric characters only" pattern="^[A-Za-z0-9_]{1,15}$" value="{{user.alias}}" required></paper-input></p>
+        <p><paper-checkbox name="showDraftStats" value="1" {{#if currentUser.options.showDraftStats}}checked{{/if}}>Show Draft Stats</paper-checkbox></p>
 
         <paper-button raised onclick="submit(event)" class="action">Save</paper-button>
     </form>
