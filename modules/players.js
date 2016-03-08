@@ -161,7 +161,7 @@ module.exports = function(app, chance, database, io, self) {
                     'player': player.id
                 }
             }
-        });
+        }).exec();
         for (let game in draftedGames) {
             let position = 0;
 
