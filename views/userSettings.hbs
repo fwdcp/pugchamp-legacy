@@ -44,7 +44,7 @@
     <script>
         var draftStats = document.getElementById('draft-stats');
         draftStats.addEventListener('dom-change', function() {
-            draftStats.showDraftStats = {{{currentUser.options.showDraftStats}}};
+            draftStats.showDraftStats = {{#if currentUser.stats.draft}}1{{else}}0{{/if}};
         });
 
         function save() {
