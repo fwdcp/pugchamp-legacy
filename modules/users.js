@@ -17,6 +17,7 @@ const url = require('url');
 var socketDebug = debug('pugchamp:sockets');
 
 module.exports = function(app, chance, database, io, self) {
+    const BASE_URL = config.get('server.baseURL');
     const CAPTAIN_GAME_REQUIREMENT = config.get('app.users.captainGameRequirement');
     const UNAUTHENTICATED_RESTRICTIONS = {
         aspects: ['sub', 'start', 'captain', 'chat', 'support'],
@@ -472,7 +473,17 @@ module.exports = function(app, chance, database, io, self) {
 
             user.options.showDraftStats = !!req.body.showDraftStats;
 
-            yield req.user.save();
+            try {
+                yield req.user.save();
+            }
+            catch (err) {
+                self.postToLog({
+                    description: `failed to update user <${BASE_URL}/player/${req.user.steamID}|${req.user.alias}>: ${JSON.stringify(req.body)}`,
+                    error: err
+                });
+
+                errors.push('There was an error saving your information to the database.');
+            }
 
             res.render('userSettings', {
                 errors
