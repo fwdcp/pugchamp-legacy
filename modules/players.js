@@ -197,8 +197,6 @@ module.exports = function(app, chance, database, io, self) {
             });
         });
 
-        player.stats.draft = draftStats;
-
         let undraftedCount = database.Game.find({
             $nor: [{
                 'draft.choices': {
@@ -216,6 +214,8 @@ module.exports = function(app, chance, database, io, self) {
             type: 'undrafted',
             count: undraftedCount
         });
+
+        player.stats.draft = draftStats;
 
         let rating = yield database.Rating.findOne({
             user: player.id
