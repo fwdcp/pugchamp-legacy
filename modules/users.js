@@ -471,7 +471,7 @@ module.exports = function(app, chance, database, io, self) {
                 errors.push('Your account is not set up yet.');
             }
 
-            user.options.showDraftStats = !!req.body.showDraftStats;
+            req.user.options.showDraftStats = !!req.body.showDraftStats;
 
             try {
                 yield req.user.save();
