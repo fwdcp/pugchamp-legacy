@@ -30,12 +30,23 @@
         </p>
         {{/unless}}
 
-        <p><paper-checkbox name="showDraftStats" value="1" {{#if currentUser.options.showDraftStats}}checked{{/if}}>Show Draft Stats</paper-checkbox></p>
+        <template is="dom-bind" id="draft-stats">
+            <p>
+                <paper-checkbox value="1" checked="{{showDraftStats}}">Show Draft Stats</paper-checkbox>
+                <input type="hidden" name="showDraftStats" value$="{{showDraftStats}}">
+            </p>
+
+        </template>
 
         <paper-button raised onclick="save()" id="save">Save</paper-button>
     </form>
 
     <script>
+        var draftStats = document.getElementById('draft-stats');
+        draftStats.addEventListener('dom-change', function() {
+            draftStats.showDraftStats = {{{currentUser.options.showDraftStats}}};
+        });
+
         function save() {
             document.getElementById('user-settings').submit();
         }
