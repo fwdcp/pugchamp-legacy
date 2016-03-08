@@ -145,6 +145,14 @@ module.exports = function(app, chance, database, io, self) {
 
         let draftStats = [];
 
+        let captainGameCount = yield database.Game.count({
+            'teams.captain': player.id
+        }).count().exec();
+        draftStats.push({
+            type: 'captain',
+            count: captainGameCount
+        });
+
         let draftPositions = {};
 
         let playersPicked = _(DRAFT_ORDER).filter(function(turn) {
@@ -187,14 +195,6 @@ module.exports = function(app, chance, database, io, self) {
                 position,
                 count
             });
-        });
-
-        let captainGameCount = yield database.Game.count({
-            'teams.captain': player.id
-        }).count().exec();
-        draftStats.push({
-            type: 'captain',
-            count: captainGameCount
         });
 
         player.stats.draft = draftStats;
