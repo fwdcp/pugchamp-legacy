@@ -162,10 +162,10 @@ module.exports = function(app, chance, database, io, self) {
                 }
             }
         }).exec();
-        for (let game in draftedGames) {
+        for (let game of draftedGames) {
             let position = 0;
 
-            for (let choice in game.draft.choices) {
+            for (let choice of game.draft.choices) {
                 if (choice.type === 'playerPick') {
                     position++;
 
