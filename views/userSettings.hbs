@@ -33,7 +33,7 @@
         <template is="dom-bind" id="draft-stats">
             <p>
                 <paper-checkbox value="1" checked="\{{showDraftStats}}">Show Draft Stats</paper-checkbox>
-                <input type="hidden" name="showDraftStats" value="1" disabled$="\{{showDraftStats}}">
+                <input type="hidden" name="showDraftStats" value="1" disabled$="\{{!showDraftStats}}">
             </p>
 
         </template>
@@ -44,7 +44,7 @@
     <script>
         var draftStats = document.getElementById('draft-stats');
         draftStats.addEventListener('dom-change', function() {
-            draftStats.showDraftStats = {{#if currentUser.stats.draft}}1{{else}}0{{/if}};
+            draftStats.showDraftStats = {{#if currentUser.stats.draft}}true{{else}}false{{/if}};
         });
 
         function save() {
