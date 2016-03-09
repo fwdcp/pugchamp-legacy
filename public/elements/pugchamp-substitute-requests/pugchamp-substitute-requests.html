@@ -65,6 +65,8 @@
             </template>
         </div>
 
+        <hr hidden$="{{!requests.length}}">
+
         <pugchamp-notification id="substituteNotification" body="A substitute has been requested!" tag="substituteRequest"></pugchamp-notification>
         <pugchamp-sound id="substituteRequestedSound" src="/assets/snd/subreqs/requested.wav"></pugchamp-sound>
     </template>
