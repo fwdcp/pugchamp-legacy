@@ -83,7 +83,7 @@
             }
 
             .role {
-                background-color: var(--primary-color);
+                background-color: #58798A;
                 background-position: right;
                 background-repeat: no-repeat;
                 background-size: contain;
@@ -92,8 +92,14 @@
             .role iron-icon[item-icon] {
                 height: 40px;
                 width: 40px;
-            }
+				color:var(--tf2-theme-gold-color);
+				text-shadow: 2px 2px #ff0000;
 
+            }
+			.role-column {
+			padding-left: 1px;
+			padding-right:1px;
+			}
             .role h3 {
                 margin: 0;
             }
@@ -112,6 +118,13 @@
 			.player a {
 				color: inherit;
 				text-decoration: none;
+			}
+			.captain {
+			background-color: #BD3B3B;
+			}
+			.captain h3 {
+				margin:0;
+				
 			}
         </style>
 
@@ -188,7 +201,7 @@
             </div>
         </paper-material>
         <div id="captains">
-    		<paper-icon-item class="role">
+    		<paper-icon-item class="captain">
     			<iron-icon icon="pugchamp-role:captain" item-icon></iron-icon>
                 <paper-item-body two-line>
     				<div><h3>Captain</h3></div>
