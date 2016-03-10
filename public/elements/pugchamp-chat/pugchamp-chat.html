@@ -7,6 +7,7 @@
 <link rel="import" href="/components/paper-material/paper-material.html">
 <link rel="import" href="/components/paper-styles/typography.html">
 <link rel="import" href="/components/paper-tooltip/paper-tooltip.html">
+<link rel="import" href="/components/iron-list/iron-list.html">
 
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
@@ -16,7 +17,7 @@
     <template>
         <style is="custom-style">
             #messages {
-                height: calc(100vh - 175px);
+                height: calc(65vh - 175px);
                 overflow-y: auto;
             }
 
@@ -53,6 +54,29 @@
                 overflow-wrap: break-word;
                 word-wrap: break-word;
             }
+			#online {
+                height: calc(50vh - 175px);
+			}
+			.avatar {
+				height: 40px;
+				width: 40px;
+				border-radius: 20px;
+				box-sizing: border-box;
+				line-height:40px;
+			}
+			.player-alias {
+			line-height: 40px;
+			margin-left: 10px;
+			}
+			.player-online {
+				background-color: var(--tf2-theme-brown-color-faded);
+				padding:3px;
+				margin-bottom: 3px;
+			}
+			.player-online a, .player-online a:visited {
+			color: var(--tf2-theme-cream-color);
+			text-decoration:none;
+			}
         </style>
 
         <div id="messages">
@@ -71,17 +95,22 @@
             </template>
         </div>
         <div class="horizontal layout end wrap">
-            <paper-icon-button id="online" icon="social:people"></paper-icon-button>
-            <paper-tooltip for="online" position="top">
-                <strong>Currently online:</strong>
-                <template is="dom-repeat" items="{{onlineList}}">
-                    <br> {{item.alias}}
-                </template>
-            </paper-tooltip>
+
             <iron-a11y-keys id="submitWatcher" keys="enter" on-keys-pressed="onEnter"></iron-a11y-keys>
             <paper-textarea id="messageText" class="flex" maxlength="140" max-rows="3" char-counter disabled="{{isRestricted(restrictions, 'chat')}}"></paper-textarea>
             <paper-icon-button icon="send" on-tap="sendMessage" disabled="{{isRestricted(restrictions, 'chat')}}"></paper-icon-button>
         </div>
+		<div id="online" >
+		<h3> Online Users </h3>
+			<template is="dom-repeat" items="{{onlineList}}">
+					<div class="player-online horizontal layout wrap">
+						<img class="avatar" src="/assets/img/profile/temp-avatar.jpg">
+						<div class="player-alias flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a> </div>
+						<div class="player-twitch "><a href="https://www.twitch.tv/{{item.twitchID}}"> Twitch</a></div>
+					</div>
+			</template>
+	
+		</div>
     </template>
 
     <script src="/components/moment/moment.js"></script>
@@ -100,6 +129,7 @@
             },
             onOnlineUserListUpdated: function(list) {
                 this.set('onlineList', list);
+				
             },
             onMessageReceived: function(message) {
                 var atBottom = this.$.messages.scrollHeight - this.$.messages.scrollTop === this.$.messages.clientHeight;
