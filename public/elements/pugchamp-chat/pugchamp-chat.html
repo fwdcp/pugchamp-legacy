@@ -65,17 +65,17 @@
 				line-height:40px;
 			}
 			.player-alias {
-			line-height: 40px;
-			margin-left: 10px;
+				line-height: 40px;
+				margin-left: 10px;
 			}
 			.player-online {
-				background-color: var(--tf2-theme-brown-color-faded);
+				background-color: var(--box-background-color);
 				padding:3px;
 				margin-bottom: 3px;
 			}
 			.player-online a, .player-online a:visited {
-			color: var(--tf2-theme-cream-color);
-			text-decoration:none;
+				color: var(--dark-theme-text-color);
+				text-decoration:none;
 			}
         </style>
 
@@ -106,7 +106,7 @@
 					<div class="player-online horizontal layout wrap">
 						<img class="avatar" src="/assets/img/profile/temp-avatar.jpg">
 						<div class="player-alias flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a> </div>
-						<div class="player-twitch "><a href="https://www.twitch.tv/{{item.twitchID}}"> Twitch</a></div>
+						<div class="player-twitch "></div>
 					</div>
 			</template>
 	
