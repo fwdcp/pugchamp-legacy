@@ -26,6 +26,7 @@
         <style is="custom-style">
             #holds {
                 background: var(--box-background-color);
+                margin: 5px 0;
             }
 
             .hold {
@@ -35,17 +36,17 @@
             }
 
             .hold-cleared {
-                color: var(--paper-green-500);
+                color: var(--accent-color);
             }
 
             .hold-blocked {
-                color: var(--paper-red-500);
+                color: var(--team-red-color);
             }
 
             #ready {
                 background: var(--box-background-color);
                 padding: 5px 25px;
-                margin: 20px;
+                margin: 5px 0;
             }
 
             #readyTime {
@@ -75,15 +76,23 @@
             }
 
             #captains {
-                margin-top: 20px;
+                margin: 5px 0;
             }
 
             #roles {
-                margin-top: 20px;
+                margin: 5px 0;
+            }
+
+            .role-column {
+                margin-left: 5px;
+            }
+
+            .role-column:first-child {
+                margin-left: auto;
             }
 
             .role {
-                background-color: #58798A;
+                background-color: var(--primary-color);
                 background-position: right;
                 background-repeat: no-repeat;
                 background-size: contain;
@@ -92,18 +101,15 @@
             .role iron-icon[item-icon] {
                 height: 40px;
                 width: 40px;
-				color:var(--tf2-theme-gold-color);
-				text-shadow: 2px 2px #ff0000;
-
+				color:var(--accent-color);
             }
-			.role-column {
-			padding-left: 1px;
-			padding-right:1px;
-			}
+
             .role h3 {
                 margin: 0;
             }
-
+			.role paper-item-body {
+			min-height:55px !important;
+			}
             .player {
                 background: var(--box-background-color);
                 min-height: inherit;
@@ -118,13 +124,6 @@
 			.player a {
 				color: inherit;
 				text-decoration: none;
-			}
-			.captain {
-			background-color: #BD3B3B;
-			}
-			.captain h3 {
-				margin:0;
-				
 			}
         </style>
 
@@ -156,7 +155,6 @@
                     <iron-icon icon="block" hidden$="{{!_includes(holds, 'readyCaptains')}}"></iron-icon>
                     Captains
                 </span>
-                <br>
                 {{captains.length}}/2
             </div>
             <div class="hold flex">
@@ -170,7 +168,6 @@
                     <iron-icon icon="block" hidden$="{{!_includes(holds, 'readyPlayers')}}"></iron-icon>
                     Players
                 </span>
-                <br>
                 {{allPlayers.length}}/{{double(teamSize)}}
             </div>
             <div class="hold flex">
@@ -201,7 +198,7 @@
             </div>
         </paper-material>
         <div id="captains">
-    		<paper-icon-item class="captain">
+    		<paper-icon-item class="role" style="background-image: url('/assets/img/portraits/captain.png')">
     			<iron-icon icon="pugchamp-role:captain" item-icon></iron-icon>
                 <paper-item-body two-line>
     				<div><h3>Captain</h3></div>
