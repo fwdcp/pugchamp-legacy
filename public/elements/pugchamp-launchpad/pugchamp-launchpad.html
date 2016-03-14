@@ -39,10 +39,6 @@
                 color: var(--accent-color);
             }
 
-            .hold-blocked {
-                color: var(--team-red-color);
-            }
-
             #ready {
                 background: var(--box-background-color);
                 padding: 5px 25px;
@@ -98,18 +94,31 @@
                 background-size: contain;
             }
 
+            .role.available {
+				color: var(--accent-color);
+            }
+
             .role iron-icon[item-icon] {
                 height: 40px;
                 width: 40px;
-				color:var(--accent-color);
+            }
+
+            .role paper-item-body {
+                min-height: 60px;
+            }
+
+            .role paper-item-body div[secondary] {
+                color: var(--dark-theme-text-color);
+            }
+
+            .role paper-checkbox {
+                --paper-checkbox-checkmark-color: var(--accent-color);
             }
 
             .role h3 {
                 margin: 0;
             }
-			.role paper-item-body {
-			min-height:55px !important;
-			}
+
             .player {
                 background: var(--box-background-color);
                 min-height: inherit;
@@ -155,6 +164,7 @@
                     <iron-icon icon="block" hidden$="{{!_includes(holds, 'readyCaptains')}}"></iron-icon>
                     Captains
                 </span>
+                <br>
                 {{captains.length}}/2
             </div>
             <div class="hold flex">
@@ -168,6 +178,7 @@
                     <iron-icon icon="block" hidden$="{{!_includes(holds, 'readyPlayers')}}"></iron-icon>
                     Players
                 </span>
+                <br>
                 {{allPlayers.length}}/{{double(teamSize)}}
             </div>
             <div class="hold flex">
@@ -198,11 +209,11 @@
             </div>
         </paper-material>
         <div id="captains">
-    		<paper-icon-item class="role" style="background-image: url('/assets/img/portraits/captain.png')">
+    		<paper-icon-item class$="role {{classForRole(availability, 'captain')}}" style="background-image: url('/assets/img/portraits/captain.png')">
     			<iron-icon icon="pugchamp-role:captain" item-icon></iron-icon>
                 <paper-item-body two-line>
     				<div><h3>Captain</h3></div>
-    				<div secondary><paper-checkbox id="captainSelect" disabled="{{isRestricted(restrictions, 'captain')}}" on-change="updateAvailability"></paper-checkbox> {{playerAliasList(captains)}}</div>
+    				<div secondary><paper-checkbox id="captainSelect" disabled="{{isRestricted(restrictions, 'captain')}}" on-change="updateAvailability"></paper-checkbox>{{playerAliasList(captains)}}</div>
     			</paper-item-body>
     		</paper-icon-item>
         </div>
@@ -210,7 +221,7 @@
             <template is="dom-repeat" items="{{_convertObjectToRepeatable(roles)}}" as="role">
                 <div class="flex role-column">
                     <div class="vertical layout">
-                        <paper-icon-item class="role" style="background-image: url('/assets/img/portraits/{{role.key}}.png')">
+                        <paper-icon-item class$="role {{classForRole(availability, role.key)}}" style="background-image: url('/assets/img/portraits/{{role.key}}.png')">
                             <iron-icon icon="pugchamp-role:{{role.key}}" item-icon></iron-icon>
                             <paper-item-body two-line>
                                 <div><h3>{{role.value.name}}</h3></div>
@@ -372,6 +383,20 @@
                 else {
                     return 'hold-cleared';
                 }
+            },
+            classForRole: function(availability, role) {
+                if (role === 'captain') {
+                    if (availability.captain) {
+                        return 'available';
+                    }
+                }
+                else {
+                    if (availability.roles[role]) {
+                        return 'available';
+                    }
+                }
+
+                return '';
             },
             isAvailable: function(availability) {
                 for (var role of Object.keys(availability.roles)) {
