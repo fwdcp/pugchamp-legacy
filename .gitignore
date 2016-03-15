@@ -98,5 +98,3 @@ config/*
 !config/default*
 !config/example*
 
-# sizzlingstatsconfig
-gameservers/cfg/sizzlingplugins/sizzlingstats.cfg
