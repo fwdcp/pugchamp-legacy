@@ -1,0 +1,102 @@
+"Games"
+{
+	"tf"
+	{
+		"Offsets"
+		{
+			"CTFGameRules::SetWinningTeam"
+			{
+				"windows"	"160"
+				"linux"		"161"
+			}
+			"CTFGameRules::SetStalemate"
+			{
+				"windows"	"161"
+				"linux"		"162"
+			}
+			"CTFGameRules::HandleSwitchTeams"
+			{
+				"windows"	"164"
+				"linux"		"165"
+			}
+			"CTFGameRules::BetweenRounds_Start"
+			{
+				"windows"	"199"
+				"linux"		"201"
+			}
+			"CTFGameRules::BetweenRounds_End"
+			{
+				"windows"	"200"
+				"linux"		"202"
+			}
+			"CTFGameRules::BetweenRounds_Think"
+			{
+				"windows"	"201"
+				"linux"		"203"
+			}
+			"CTFGameRules::RestartTournament"
+			{
+				"windows"	"206"
+				"linux"		"208"
+			}
+			"CTFGameRules::CheckWinLimit"
+			{
+				"windows"	"218"
+				"linux"		"220"
+			}
+			"CTFGameRules::RoundRespawn"
+			{
+				"windows"	"223"
+				"linux"		"225"
+			}
+			"CTFGameRules::CleanUpMap"
+			{
+				"windows"	"224"
+				"linux"		"226"
+			}
+			"CTFTeam::GetTeamNumber"
+			{
+				"windows"	"190"
+				"linux"		"191"
+			}
+			"CTFTeam::ResetScores"
+			{
+				"windows"	"206"
+				"linux"		"207"
+			}
+		}
+
+		"Signatures"
+		{
+			"CHLTVDemoRecorder::StartRecording"
+			{
+				"library"	"engine"
+				"windows"	"\x55\x8B\xEC\x81\xEC****\x53\x56\x8B\xF1\x57\x8B\x06"
+				"linux"		"@_ZN17CHLTVDemoRecorder14StartRecordingEPKcb"
+			}
+			"CHLTVDemoRecorder::StopRecording"
+			{
+				"library"	"engine"
+				"windows"	"\x56\x8B\xF1\x80\xBE****\x00\x0F\x84****\x8B\x06\x53"
+				"linux"		"@_ZN17CHLTVDemoRecorder13StopRecordingEv"
+			}
+			"CTeamplayRoundBasedRules::State_Transition"
+			{
+				"library"	"server"
+				"windows"	"\x55\x8B\xEC\x56\x8B\xF1\x8B\x8E****\x8B\x86****"
+				"linux"		"@_ZN24CTeamplayRoundBasedRules16State_TransitionE22gamerules_roundstate_t"
+			}
+			"CTeamplayRoundBasedRules::State_Enter"
+			{
+				"library"	"server"
+				"windows"	"\x55\x8B\xEC\x56\x8B\xF1\x8D\x4D\x08\x57"
+				"linux"		"@_ZN24CTeamplayRoundBasedRules11State_EnterE22gamerules_roundstate_t"
+			}
+			"CTeamplayRoundBasedRules::State_Leave"
+			{
+				"library"	"server"
+				"linux"		"@_ZN24CTeamplayRoundBasedRules11State_LeaveEv"
+			}
+		}
+	}
+}
