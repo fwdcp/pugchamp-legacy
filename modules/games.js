@@ -513,6 +513,23 @@ module.exports = function(app, chance, database, io, self) {
                 yield game.save();
             }
         }
+        else if (info.status === 'demoavailable') {
+            if (info.url) {
+                let link = _.find(game.links, 'type', 'demos.tf');
+
+                if (link) {
+                    link.url = info.url;
+                }
+                else {
+                    game.links.push({
+                        type: 'demos.tf',
+                        url: info.url
+                    });
+                }
+
+                yield game.save();
+            }
+        }
     });
 
     function getUserCurrentGame(userID) {

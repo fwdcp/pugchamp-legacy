@@ -1,4 +1,5 @@
 #include <sourcemod>
+#include <demostf>
 #include <logstf>
 #include <morecolors>
 #include <sdktools>
@@ -430,19 +431,41 @@ public Action UserMessage_SayText2(UserMsg msg_id, BfRead msg, const int[] playe
 
 public void LogUploaded(bool success, const char[] logid, const char[] logurl) {
     if (gameAssigned) {
-        char url[2048];
-        apiURL.GetString(url, sizeof(url));
-        HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
+        if (success) {
+            char url[2048];
+            apiURL.GetString(url, sizeof(url));
+            HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
 
-        char id[32];
-        gameID.GetString(id, sizeof(id));
-        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "game", id);
+            char id[32];
+            gameID.GetString(id, sizeof(id));
+            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "game", id);
 
-        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "status", "logavailable");
+            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "status", "logavailable");
 
-        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "url", logurl);
+            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "url", logurl);
 
-        Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned);
+            Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned);
+        }
+    }
+}
+
+public void DemoUploaded(bool success, const char[] demourl) {
+    if (gameAssigned) {
+        if (success) {
+            char url[2048];
+            apiURL.GetString(url, sizeof(url));
+            HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
+
+            char id[32];
+            gameID.GetString(id, sizeof(id));
+            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "game", id);
+
+            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "status", "demoavailable");
+
+            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "url", demourl);
+
+            Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned);
+        }
     }
 }
 
