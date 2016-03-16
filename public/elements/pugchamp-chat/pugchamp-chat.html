@@ -6,6 +6,7 @@
 <link rel="import" href="/components/iron-pages/iron-pages.html">
 <link rel="import" href="/components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="/components/paper-input/paper-textarea.html">
+<link rel="import" href="/components/paper-item/paper-icon-item.html">
 <link rel="import" href="/components/paper-material/paper-material.html">
 <link rel="import" href="/components/paper-styles/typography.html">
 <link rel="import" href="/components/paper-tabs/paper-tabs.html">
@@ -121,7 +122,10 @@
                 </div>
                 <div id="online-users">
                     <template is="dom-repeat" items="{{onlineList}}">
-                        <paper-item class="user"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></paper-item>
+                        <paper-icon-item class="user">
+                            <iron-icon icon="flag" hidden$="{{!item.admin}}" item-icon></iron-icon>
+                            <div class="flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></div>
+                        </paper-icon-item>
                     </template>
                 </div>
             </iron-pages>
