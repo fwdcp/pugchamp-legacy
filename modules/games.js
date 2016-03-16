@@ -510,7 +510,12 @@ module.exports = function(app, chance, database, io, self) {
                     });
                 }
 
-                yield game.save();
+                try {
+                    yield game.save();
+                }
+                catch (err) {
+                    yield self.handleGameServerUpdate(info);
+                }
             }
         }
         else if (info.status === 'demoavailable') {
@@ -527,7 +532,12 @@ module.exports = function(app, chance, database, io, self) {
                     });
                 }
 
-                yield game.save();
+                try {
+                    yield game.save();
+                }
+                catch (err) {
+                    yield self.handleGameServerUpdate(info);
+                }
             }
         }
     });
