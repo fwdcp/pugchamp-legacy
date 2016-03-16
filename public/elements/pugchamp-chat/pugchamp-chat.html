@@ -1,11 +1,14 @@
 <link rel="import" href="/components/polymer/polymer.html">
 
 <link rel="import" href="/components/iron-a11y-keys/iron-a11y-keys.html">
+<link rel="import" href="/components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="/components/iron-icons/iron-icons.html">
+<link rel="import" href="/components/iron-pages/iron-pages.html">
 <link rel="import" href="/components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="/components/paper-input/paper-textarea.html">
 <link rel="import" href="/components/paper-material/paper-material.html">
 <link rel="import" href="/components/paper-styles/typography.html">
+<link rel="import" href="/components/paper-tabs/paper-tabs.html">
 <link rel="import" href="/components/paper-tooltip/paper-tooltip.html">
 
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
@@ -14,15 +17,26 @@
 
 <dom-module id="pugchamp-chat">
     <template>
-        <style is="custom-style">
+        <style is="custom-style" include="iron-flex iron-flex-factors">
+            :host {
+                height: calc(100vh - 100px);
+            }
+
+            #tabs {
+                margin: 5px 0;
+                --paper-tabs: {
+                    background-color: var(--box-background-color);
+                };
+            }
+
             #messages {
-                height: calc(100vh - 175px);
+                height: calc(100vh - 250px);
                 overflow-y: auto;
             }
 
             .message {
                 background: var(--box-background-color);
-                margin: 5px;
+                margin: 5px 0;
                 padding: 5px;
             }
 
@@ -53,34 +67,58 @@
                 overflow-wrap: break-word;
                 word-wrap: break-word;
             }
+
+            #online-users {
+                height: calc(100vh - 175px);
+                overflow-y: auto;
+            }
+
+            .user {
+                background: var(--box-background-color);
+                height: 32px;
+                min-height: auto;
+            }
+
+			.user a {
+				color: inherit;
+				text-decoration: none;
+			}
         </style>
 
-        <div id="messages">
-            <template is="dom-repeat" items="{{messages}}">
-                <paper-material class="message horizontal layout">
-                    <div class="message-time">{{formatTime(item.time)}}</div>
-                    <div class="flex message-contents">
-                        <template is="dom-if" if="{{item.user}}">
-                            <span class="message-author"><iron-icon hidden$="{{!item.user.admin}}" icon="flag"></iron-icon> {{item.user.alias}}</span>
+        <div id="main">
+            <paper-tabs id="tabs" selected="{{page}}">
+                <paper-tab>Chat</paper-tab>
+                <paper-tab>Online Users</paper-tab>
+            </paper-tabs>
+            <iron-pages selected="{{page}}">
+                <div>
+                    <div id="messages">
+                        <template is="dom-repeat" items="{{messages}}">
+                            <paper-material class="message horizontal layout">
+                                <div class="message-time">{{formatTime(item.time)}}</div>
+                                <div class="flex message-contents">
+                                    <template is="dom-if" if="{{item.user}}">
+                                        <span class="message-author"><iron-icon hidden$="{{!item.user.admin}}" icon="flag"></iron-icon> {{item.user.alias}}</span>
+                                    </template>
+                                    <em class="message-action">{{item.action}}</em>
+                                    <br>
+                                    <span class="message-body">{{item.body}}</span>
+                                </div>
+                            </paper-material>
                         </template>
-                        <em class="message-action">{{item.action}}</em>
-                        <br>
-                        <span class="message-body">{{item.body}}</span>
                     </div>
-                </paper-material>
-            </template>
-        </div>
-        <div class="horizontal layout end wrap">
-            <paper-icon-button id="online" icon="social:people"></paper-icon-button>
-            <paper-tooltip for="online" position="top">
-                <strong>Currently online:</strong>
-                <template is="dom-repeat" items="{{onlineList}}">
-                    <br> {{item.alias}}
-                </template>
-            </paper-tooltip>
-            <iron-a11y-keys id="submitWatcher" keys="enter" on-keys-pressed="onEnter"></iron-a11y-keys>
-            <paper-textarea id="messageText" class="flex" maxlength="140" max-rows="3" char-counter disabled="{{isRestricted(restrictions, 'chat')}}"></paper-textarea>
-            <paper-icon-button icon="send" on-tap="sendMessage" disabled="{{isRestricted(restrictions, 'chat')}}"></paper-icon-button>
+                    <div class="horizontal layout end wrap">
+                        <iron-a11y-keys id="submitWatcher" keys="enter" on-keys-pressed="onEnter"></iron-a11y-keys>
+                        <paper-textarea id="messageText" class="flex" maxlength="140" max-rows="3" char-counter disabled="{{isRestricted(restrictions, 'chat')}}"></paper-textarea>
+                        <paper-icon-button icon="send" on-tap="sendMessage" disabled="{{isRestricted(restrictions, 'chat')}}"></paper-icon-button>
+                    </div>
+                </div>
+                <div id="online-users">
+                    <template is="dom-repeat" items="{{onlineList}}">
+                        <paper-item class="user"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></paper-item>
+                    </template>
+                </div>
+            </iron-pages>
         </div>
     </template>
 
@@ -90,6 +128,7 @@
             is: 'pugchamp-chat',
             behaviors: [PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior],
             ready: function() {
+                this.set('page', 0);
                 this.set('messages', []);
                 this.set('onlineList', []);
 
