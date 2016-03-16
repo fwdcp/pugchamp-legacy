@@ -61,7 +61,7 @@ module.exports = function(app, chance, database, io, self) {
         let players = _.orderBy(self.getCachedUsers(), [function(player) {
             return player.stats.rating.low;
         }, function(player) {
-            return player.stats.captainScore ? player.stats.captainScore.low : null;
+            return player.stats.captainScore ? player.stats.captainScore.center : null;
         }], ['desc', 'desc']);
 
         playerListCache = _.map(players, player => ({
@@ -72,7 +72,7 @@ module.exports = function(app, chance, database, io, self) {
             ratingDeviation: math.round(player.stats.rating.deviation),
             ratingLowerBound: math.round(player.stats.rating.low),
             ratingUpperBound: math.round(player.stats.rating.high),
-            captainScore: player.stats.captainScore && _.isNumber(player.stats.captainScore.low) ? math.round(player.stats.captainScore.low, 3) : null
+            captainScore: player.stats.captainScore && _.isNumber(player.stats.captainScore.center) ? math.round(player.stats.captainScore.center, 3) : null
         }));
 
         playerListFilteredCache = _(players).filter(function(player) {
@@ -105,7 +105,7 @@ module.exports = function(app, chance, database, io, self) {
             ratingDeviation: math.round(player.stats.rating.deviation),
             ratingLowerBound: math.round(player.stats.rating.low),
             ratingUpperBound: math.round(player.stats.rating.high),
-            captainScore: player.stats.captainScore && _.isNumber(player.stats.captainScore.low) ? math.round(player.stats.captainScore.low, 3) : null
+            captainScore: player.stats.captainScore && _.isNumber(player.stats.captainScore.center) ? math.round(player.stats.captainScore.center, 3) : null
         })).value();
     }, UPDATE_PLAYER_CACHE_DEBOUNCE_WAIT, {
         maxWait: UPDATE_PLAYER_CACHE_DEBOUNCE_MAX_WAIT

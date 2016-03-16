@@ -682,7 +682,7 @@ module.exports = function(app, chance, database, io, self) {
             }
             else if (CAPTAIN_SELECTION_WEIGHT === 'success') {
                 weights = _.map(fullCaptains, function(captain) {
-                    return _.isNumber(captain.stats.captainScore.low) ? captain.stats.captainScore.low : 0;
+                    return _.isNumber(captain.stats.captainScore.center) ? captain.stats.captainScore.center : 0;
                 });
 
                 let boost = Math.sqrt(Number.EPSILON);
