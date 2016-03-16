@@ -134,10 +134,10 @@ module.exports = function(app, chance, database, io, self) {
             let differential = 0;
 
             if (teamIndex === 0) {
-                differential = game.score[0] - game.score[1];
+                differential = (game.score[0] - game.score[1]) / 5;
             }
             else if (teamIndex === 1) {
-                differential = game.score[1] - game.score[0];
+                differential = (game.score[1] - game.score[0]) / 5;
             }
 
             let duration = game.duration ? game.duration / 1800 : 1;
