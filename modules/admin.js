@@ -64,7 +64,7 @@ module.exports = function(app, chance, database, io, self) {
             }
 
             let showDraftStats = !!req.body.showDraftStats;
-            if (showDraftStats != user.options.showDraftStats) {
+            if (showDraftStats !== user.options.showDraftStats) {
                 if (showDraftStats) {
                     postToAdminLog(req.user, `enabled showing draft stats for \`<${BASE_URL}/player/${user.steamID}|${user.alias}>\``);
                 }
