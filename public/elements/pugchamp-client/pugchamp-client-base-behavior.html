@@ -4,7 +4,7 @@
     window.PugChampClientBehaviors = window.PugChampClientBehaviors || {};
 
     PugChampClientBehaviors.BaseBehavior = {
-        created: function() {
+        registered: function() {
             if (!window.socket) {
                 window.socket = io('/', {
                     autoConnect: false
