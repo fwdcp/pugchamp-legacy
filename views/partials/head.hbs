@@ -12,6 +12,7 @@
     </script>
 
     <script src="/components/webcomponentsjs/webcomponents-lite.js"></script>
+    <link rel="import" href="/components/iron-flex-layout/iron-flex-layout-classes.html">
     <link rel="import" href="/components/iron-icons/hardware-icons.html">
     <link rel="import" href="/components/iron-icons/iron-icons.html">
     <link rel="import" href="/components/iron-icons/social-icons.html">
@@ -30,7 +31,7 @@
     <link rel="import" href="/elements/pugchamp-layout-toggle/pugchamp-layout-toggle.html">
     <link rel="import" href="/elements/pugchamp-theme/theme.html">
 
-    <style is="custom-style">
+    <style is="custom-style" include="iron-flex iron-flex-alignment iron-flex-factors">
         body {
             @apply(--paper-font-body1);
             background-attachment: fixed;

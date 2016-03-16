@@ -1,6 +1,6 @@
 <link rel="import" href="/components/polymer/polymer.html">
 
-<link rel="import" href="/components/iron-flex-layout/classes/iron-flex-layout.html">
+<link rel="import" href="/components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="/components/paper-material/paper-material.html">
 <link rel="import" href="/components/paper-styles/color.html">
 <link rel="import" href="/components/paper-styles/typography.html">
@@ -10,7 +10,7 @@
 
 <dom-module id="pugchamp-game-summary">
     <template>
-        <style is="custom-style">
+        <style is="custom-style" include="iron-flex iron-flex-alignment iron-flex-factors">
             #match {
                 background: var(--box-background-color);
                 margin: 5px 0;
