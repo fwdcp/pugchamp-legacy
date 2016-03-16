@@ -14,6 +14,7 @@
 
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-user-behavior.html">
 <link rel="import" href="/elements/pugchamp-theme/theme.html">
 
 <dom-module id="pugchamp-chat">
@@ -40,6 +41,10 @@
                 background: var(--box-background-color);
                 margin: 5px 0;
                 padding: 5px;
+            }
+
+            .message.highlighted {
+                background: var(--accent-color);
             }
 
             .message .message-time {
@@ -101,7 +106,7 @@
                 <div>
                     <div id="messages">
                         <template is="dom-repeat" items="{{messages}}">
-                            <paper-material class="message horizontal layout">
+                            <paper-material class$="message horizontal layout {{highlightClassForMessage(message)}}">
                                 <div class="message-time">{{formatTime(item.time)}}</div>
                                 <div class="flex message-contents">
                                     <template is="dom-if" if="{{item.user}}">
@@ -160,7 +165,7 @@
                 if (atBottom) {
                     this.async(function() {
                         this.$.messages.scrollTop = this.$.messages.scrollHeight - this.$.messages.clientHeight;
-                    }, 10);
+                    }, 100);
                 }
             },
             onEnter: function(event) {
@@ -168,12 +173,34 @@
 
                 this.sendMessage();
             },
+            isHighlighted: function(user, message) {
+                if (message.highlighted) {
+                    return true;
+                }
+
+                if (message.mentions) {
+                    for (var mention of message.mentions) {
+                        if (this._isCurrentUser(this.user, mention.id)) {
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            },
             sendMessage: function() {
                 socket.emit('sendChatMessage', this.$.messageText.value);
                 this.$.messageText.value = '';
             },
             formatTime: function(time) {
                 return moment(time).format('LT');
+            },
+            highlightClassForMessage: function(message) {
+                if (this.isHighlighted(this.user, message)) {
+                    return 'highlighted';
+                }
+
+                return '';
             }
         });
     </script>

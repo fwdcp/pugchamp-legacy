@@ -3,6 +3,7 @@
 const _ = require('lodash');
 const co = require('co');
 const config = require('config');
+const twitter = require('twitter-text');
 
 module.exports = function(app, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
@@ -88,9 +89,23 @@ module.exports = function(app, chance, database, io, self) {
             }).deburr().value();
 
             if (trimmedMessage.length > 0) {
+                let highlighted = false;
+
+                if (/@everyone@/i.test(message)) {
+                    let user = self.getCachedUser(userID);
+
+                    if (user.admin) {
+                        highlighted = true;
+                    }
+                }
+
+                let mentions = _.intersectionWith(self.getCachedUsers(), twitter.extractMentions(trimmedMessage), (user, alias) => alias.localeCompare(user.alias, 'en', {usage: 'search', sensitivity: 'base'}) === 0);
+
                 self.sendMessage({
                     user: userID,
-                    body: trimmedMessage
+                    body: trimmedMessage,
+                    highlighted,
+                    mentions
                 });
             }
         }
