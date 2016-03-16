@@ -61,31 +61,28 @@ public void HttpRequestDone(bool success, const char[] contents, int metadata) {
 
             CPrintToChatAll("{green}[demos.tf]{default} STV available at: {olive}%s{default}", url);
 
-            int result;
             Call_StartForward(uploadForward);
             Call_PushCell(true);
             Call_PushString(url);
-            Call_Finish(result);
+            Call_Finish();
         }
         else {
             CPrintToChatAll("{green}[demos.tf]{default} Failed to upload demo!");
             LogError("Failed to upload demo: %s", contents);
 
-            int result;
             Call_StartForward(uploadForward);
             Call_PushCell(false);
             Call_PushString("");
-            Call_Finish(result);
+            Call_Finish();
         }
     }
     else {
         CPrintToChatAll("{green}[demos.tf]{default} Failed to upload demo!");
         LogError("Failed to upload demo.");
 
-        int result;
         Call_StartForward(uploadForward);
         Call_PushCell(false);
         Call_PushString("");
-        Call_Finish(result);
+        Call_Finish();
     }
 }
