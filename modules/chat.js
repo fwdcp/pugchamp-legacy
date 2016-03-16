@@ -62,28 +62,10 @@ module.exports = function(app, chance, database, io, self) {
     self.on('userConnected', function(userID) {
         onlineUsers.add(userID);
 
-        let user = self.getCachedUser(userID);
-
-        if (user.setUp && (user.authorized || user.admin)) {
-            self.sendMessage({
-                user: userID,
-                action: 'connected'
-            });
-        }
-
         io.sockets.emit('onlineUserListUpdated', self.getOnlineUserList());
     });
 
     self.on('userDisconnected', function(userID) {
-        let user = self.getCachedUser(userID);
-
-        if (user.setUp && (user.authorized || user.admin)) {
-            self.sendMessage({
-                user: userID,
-                action: 'disconnected'
-            });
-        }
-
         onlineUsers.delete(userID);
 
         io.sockets.emit('onlineUserListUpdated', self.getOnlineUserList());
