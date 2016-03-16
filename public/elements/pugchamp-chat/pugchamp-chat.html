@@ -15,6 +15,8 @@
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-user-behavior.html">
+<link rel="import" href="/elements/pugchamp-notification/pugchamp-notification.html">
+<link rel="import" href="/elements/pugchamp-sound/pugchamp-sound.html">
 <link rel="import" href="/elements/pugchamp-theme/theme.html">
 
 <dom-module id="pugchamp-chat">
@@ -136,6 +138,9 @@
                 </div>
             </iron-pages>
         </div>
+
+        <pugchamp-notification id="highlightNotification" body="A message has been highlighted for you!" tag="highlightedMessage"></pugchamp-notification>
+        <pugchamp-sound id="highlightSound" src="/assets/snd/chat/highlight.wav"></pugchamp-sound>
     </template>
 
     <script src="/components/moment/moment.js"></script>
@@ -162,6 +167,11 @@
                 message.time = new Date();
 
                 this.push('messages', message);
+
+                if (this.isHighlighted(this.user, message)) {
+                    this.$.highlightNotification.notify();
+                    this.$.highlightSound.play();
+                }
 
                 if (atBottom) {
                     this.async(function() {
