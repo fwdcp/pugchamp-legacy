@@ -99,7 +99,8 @@ module.exports = function(app, chance, database, io, self) {
                     }
                 }
 
-                let mentions = _.intersectionWith(self.getCachedUsers(), twitter.extractMentions(trimmedMessage), (user, alias) => alias.localeCompare(user.alias, 'en', {usage: 'search', sensitivity: 'base'}) === 0);
+                let mentionedAliases = twitter.extractMentions(trimmedMessage);
+                let mentions = _.filter(self.getCachedUsers(), user => _.some(mentionedAliases, alias => alias.localeCompare(user.alias, 'en', {usage: 'search', sensitivity: 'base'}) === 0));
 
                 self.sendMessage({
                     user: userID,
