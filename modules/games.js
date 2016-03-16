@@ -510,17 +510,7 @@ module.exports = function(app, chance, database, io, self) {
                     });
                 }
 
-                try {
-                    yield game.save();
-                }
-                catch (err) {
-                    self.postToLog({
-                        description: `failed to update log for game \`${game.id}\``,
-                        error: err
-                    });
-
-                    throw err;
-                }
+                yield game.save();
             }
         }
         else if (info.status === 'demoavailable') {
@@ -537,17 +527,7 @@ module.exports = function(app, chance, database, io, self) {
                     });
                 }
 
-                try {
-                    yield game.save();
-                }
-                catch (err) {
-                    self.postToLog({
-                        description: `failed to update demo for game \`${game.id}\``,
-                        error: err
-                    });
-
-                    throw err;
-                }
+                yield game.save();
             }
         }
     });

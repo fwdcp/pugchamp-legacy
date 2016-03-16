@@ -414,6 +414,11 @@ module.exports = function(app, chance, database, io, self) {
             res.sendStatus(HttpStatus.OK);
         }
         catch (err) {
+            self.postToLog({
+                description: `failed to handle game update: \`${JSON.stringify(req.query)}\``,
+                error: err
+            });
+
             let success = false;
 
             for (let delay of RETRY_ATTEMPTS) {
@@ -426,6 +431,11 @@ module.exports = function(app, chance, database, io, self) {
                     break;
                 }
                 catch (err) {
+                    self.postToLog({
+                        description: `failed to handle game update: \`${JSON.stringify(req.query)}\``,
+                        error: err
+                    });
+
                     success = false;
                     continue;
                 }
@@ -434,7 +444,7 @@ module.exports = function(app, chance, database, io, self) {
             if (success) {
                 res.sendStatus(HttpStatus.OK);
             }
-            else {    
+            else {
                 res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }
