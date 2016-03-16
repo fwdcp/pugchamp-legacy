@@ -414,7 +414,29 @@ module.exports = function(app, chance, database, io, self) {
             res.sendStatus(HttpStatus.OK);
         }
         catch (err) {
-            res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+            let success = false;
+
+            for (let delay of RETRY_ATTEMPTS) {
+                yield self.promiseDelay(delay, null, false);
+
+                try {
+                    yield self.handleGameServerUpdate(req.query);
+
+                    success = true;
+                    break;
+                }
+                catch (err) {
+                    success = false;
+                    continue;
+                }
+            }
+
+            if (success) {
+                res.sendStatus(HttpStatus.OK);
+            }
+            else {    
+                res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
         }
     }));
 };

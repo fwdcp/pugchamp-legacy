@@ -514,7 +514,12 @@ module.exports = function(app, chance, database, io, self) {
                     yield game.save();
                 }
                 catch (err) {
-                    yield self.handleGameServerUpdate(info);
+                    self.postToLog({
+                        description: `failed to update log for game \`${game.id}\``,
+                        error: err
+                    });
+
+                    throw err;
                 }
             }
         }
@@ -536,7 +541,12 @@ module.exports = function(app, chance, database, io, self) {
                     yield game.save();
                 }
                 catch (err) {
-                    yield self.handleGameServerUpdate(info);
+                    self.postToLog({
+                        description: `failed to update demo for game \`${game.id}\``,
+                        error: err
+                    });
+
+                    throw err;
                 }
             }
         }
