@@ -26,9 +26,9 @@ module.exports = function(app, chance, database, io, self) {
             let high = mean + (distribution.inv(ONE_DEVIATION_UPPER_BOUND) * deviation * math.sqrt(1 + (1 / n)));
 
             return {
-                low: low >= 0 ? low : 0,
+                low,
                 center: mean,
-                high: high <= 1 ? high : 1
+                high
             };
         }
         else if (n === 1) {
@@ -127,18 +127,22 @@ module.exports = function(app, chance, database, io, self) {
         });
 
         let scores = _.map(captainGames, function(game) {
-            let totalScore = math.sum(...game.score);
+            let teamIndex = _.findIndex(game.teams, function(team) {
+                return self.getDocumentID(team.captain) === player.id;
+            });
 
-            if (totalScore > 0) {
-                let teamIndex = _.findIndex(game.teams, function(team) {
-                    return self.getDocumentID(team.captain) === player.id;
-                });
+            let differential = 0;
 
-                return game.score[teamIndex] / totalScore;
+            if (teamIndex === 0) {
+                differential = game.score[0] - game.score[1];
             }
-            else {
-                return 0.5;
+            else if (teamIndex === 1) {
+                differential = game.score[1] - game.score[0];
             }
+
+            let duration = game.duration || 30;
+
+            return differential / duration;
         });
 
         player.stats.captainScore = calculatePredictionInterval(scores);
