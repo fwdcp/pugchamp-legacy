@@ -140,7 +140,7 @@ module.exports = function(app, chance, database, io, self) {
                 differential = game.score[1] - game.score[0];
             }
 
-            let duration = game.duration || 30;
+            let duration = game.duration ? game.duration / 1800 : 1;
 
             return differential / duration;
         });
