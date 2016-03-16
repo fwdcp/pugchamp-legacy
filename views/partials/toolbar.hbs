@@ -1,6 +1,7 @@
 <paper-toolbar id="toolbar">
-    <pugchamp-layout-toggle menu-open="\{{open}}"></pugchamp-layout-toggle>
-    <div hidden$="\{{open}}" class="app-name">PugChamp</div>
+    <pugchamp-layout-toggle menu-open="\{{open}}" hidden$="\{{open}}"></pugchamp-layout-toggle>
+    <div class="logo" hidden$="\{{open}}"><img src="/assets/img/logo_light.svg"></div>
+    <div class="app-name">{{siteSubtitle}}</div>
     <div hidden$="\{{open}}">
         <div class="toolbar-link">
             <a href="/" {{#if home}} target="_blank" {{/if}}>

@@ -21,15 +21,20 @@
     <template>
         <style is="custom-style">
             #draftTurns {
-                padding: 5px;
+                margin: 5px 0;
             }
 
             .draft-turn {
                 @apply(--paper-font-caption);
                 background: var(--box-background-color);
+                margin-left: 5px;
                 min-width: 100px;
                 padding: 5px;
                 text-align: center;
+            }
+
+            .draft-turn:first-child {
+                margin-left: auto;
             }
 
             .draft-turn .turn-time {
@@ -45,39 +50,58 @@
                 background: var(--paper-green-500);
             }
 
+            #teams {
+                margin: 5px 0;
+            }
+
+            .team {
+                margin: 5px 0;
+            }
+
             .team .captain {
-                margin: 5px;
                 padding: 5px;
                 text-align: right;
                 width: 150px;
             }
 
             .team[data-faction=RED] .captain {
-                background: var(--paper-red-500);
+                background: var(--team-red-color);
             }
 
             .team[data-faction=BLU] .captain {
-                background: var(--paper-blue-500);
+                background: var(--team-blu-color);
             }
 
             .team .player {
-                margin: 5px;
+                margin-left: 5px;
                 padding: 5px;
                 text-align: center;
             }
 
+            .team .player:last-child {
+                margin-left: auto;
+            }
+
             .team[data-faction=RED] .player {
-                background: var(--paper-red-300);
+                background: var(--team-red-color);
             }
 
             .team[data-faction=BLU] .player {
-                background: var(--paper-blue-300);
+                background: var(--team-blu-color);
+            }
+
+            #maps {
+                margin: 5px 0;
             }
 
             .map {
                 background: var(--box-background-color);
-                margin: 5px;
+                margin-left: 5px;
                 text-align: center;
+            }
+
+            .map:first-child {
+                margin-left: auto;
             }
 
             .map .map-overlay {
@@ -112,6 +136,18 @@
             .draft-choice.override {
                 background: var(--accent-color);
                 color: var(--light-theme-text-color);
+            }
+
+            #playerPool {
+                margin: 5px 0;
+            }
+
+            #playerPool .role-column {
+                margin-left: 5px;
+            }
+
+            #playerPool .role-column:first-child {
+                margin-left: auto;
             }
 
             #playerPool .role {
@@ -220,6 +256,8 @@
                 </template>
             </div>
         </div>
+
+        <hr hidden$="{{!active}}">
 
         <pugchamp-notification id="turnNotification" body="It is your turn to choose in the draft!" tag="draftTurn"></pugchamp-notification>
         <pugchamp-sound id="draftYourPickSound" src="/assets/snd/draft/your_pick.mp3"></pugchamp-sound>

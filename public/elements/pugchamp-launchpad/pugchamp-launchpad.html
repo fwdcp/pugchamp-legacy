@@ -2,8 +2,9 @@
 
 <link rel="import" href="/components/iron-flex-layout/classes/iron-flex-layout.html">
 <link rel="import" href="/components/paper-checkbox/paper-checkbox.html">
-<link rel="import" href="/components/paper-item/paper-item.html">
 <link rel="import" href="/components/paper-item/paper-icon-item.html">
+<link rel="import" href="/components/paper-item/paper-item.html">
+<link rel="import" href="/components/paper-item/paper-item-body.html">
 <link rel="import" href="/components/paper-material/paper-material.html">
 <link rel="import" href="/components/paper-progress/paper-progress.html">
 <link rel="import" href="/components/paper-styles/color.html">
@@ -25,6 +26,7 @@
         <style is="custom-style">
             #holds {
                 background: var(--box-background-color);
+                margin: 5px 0;
             }
 
             .hold {
@@ -34,27 +36,13 @@
             }
 
             .hold-cleared {
-                color: var(--paper-green-500);
-            }
-
-            .hold-blocked {
-                color: var(--paper-red-500);
-            }
-
-            #captains {
-                background: var(--box-background-color);
-                margin: 16px 0;
-                padding: 0 16px;
-            }
-
-            #captains div {
-                padding: 5px;
+                color: var(--accent-color);
             }
 
             #ready {
                 background: var(--box-background-color);
                 padding: 5px 25px;
-                margin: 20px;
+                margin: 5px 0;
             }
 
             #readyTime {
@@ -83,8 +71,52 @@
                 color: var(--dark-theme-text-color);
             }
 
+            #captains {
+                margin: 5px 0;
+            }
+
+            #roles {
+                margin: 5px 0;
+            }
+
+            .role-column {
+                margin-left: 5px;
+            }
+
+            .role-column:first-child {
+                margin-left: auto;
+            }
+
             .role {
-                background: var(--box-background-color);
+                background-color: var(--primary-color);
+                background-position: right;
+                background-repeat: no-repeat;
+                background-size: contain;
+            }
+
+            .role.available {
+				color: var(--accent-color);
+            }
+
+            .role iron-icon[item-icon] {
+                height: 40px;
+                width: 40px;
+            }
+
+            .role paper-item-body {
+                --paper-item-body-two-line-min-height: 60px;
+            }
+
+            .role paper-item-body div[secondary] {
+                color: var(--dark-theme-text-color);
+            }
+
+            .role paper-checkbox {
+                --paper-checkbox-checkmark-color: var(--accent-color);
+            }
+
+            .role h3 {
+                margin: 0;
             }
 
             .player {
@@ -176,25 +208,26 @@
                 </span>
             </div>
         </paper-material>
-        <paper-material class="horizontal layout" id="captains">
-            <div>
-                <paper-checkbox id="captainSelect" disabled="{{isRestricted(restrictions, 'captain')}}" on-change="updateAvailability">Captain</paper-checkbox>
-            </div>
-            <div class="flex" id="captains-list">
-                {{playerAliasList(captains)}}
-            </div>
-        </paper-material>
+        <div id="captains">
+    		<paper-icon-item class$="role {{classForRole(availability, 'captain')}}" style="background-image: url('/assets/img/portraits/captain.png')">
+    			<iron-icon icon="pugchamp-role:captain" item-icon></iron-icon>
+                <paper-item-body two-line>
+    				<div><h3>Captain</h3></div>
+    				<div secondary><paper-checkbox id="captainSelect" disabled="{{isRestricted(restrictions, 'captain')}}" on-change="updateAvailability"></paper-checkbox>{{playerAliasList(captains)}}</div>
+    			</paper-item-body>
+    		</paper-icon-item>
+        </div>
         <div class="horizontal layout wrap" id="roles">
             <template is="dom-repeat" items="{{_convertObjectToRepeatable(roles)}}" as="role">
                 <div class="flex role-column">
                     <div class="vertical layout">
-                        <paper-icon-item class="role">
+                        <paper-icon-item class$="role {{classForRole(availability, role.key)}}" style="background-image: url('/assets/img/portraits/{{role.key}}.png')">
                             <iron-icon icon="pugchamp-role:{{role.key}}" item-icon></iron-icon>
-                            <div class="role-name flex">
-                                <h3>{{role.value.name}}</h3>
-                            </div>
-                            <paper-checkbox class="role-select" value="{{role.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability">{{_getProperty(players, role.key, 'length')}}/{{double(role.value.min)}}</paper-checkbox>
-                        </paper-icon-item>
+                            <paper-item-body two-line>
+                                <div><h3>{{role.value.name}}</h3></div>
+                                <div secondary><paper-checkbox class="role-select" value="{{role.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability">{{_getProperty(players, role.key, 'length')}}/{{double(role.value.min)}}</paper-checkbox></div>
+                            </paper-item-body>
+						</paper-icon-item>
                         <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
                             <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" on-mouseenter="onPlayer" on-mouseleave="offPlayer">
                                 <div class="flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></div>
@@ -350,6 +383,20 @@
                 else {
                     return 'hold-cleared';
                 }
+            },
+            classForRole: function(availability, role) {
+                if (role === 'captain') {
+                    if (availability.captain) {
+                        return 'available';
+                    }
+                }
+                else {
+                    if (availability.roles[role]) {
+                        return 'available';
+                    }
+                }
+
+                return '';
             },
             isAvailable: function(availability) {
                 for (var role of Object.keys(availability.roles)) {

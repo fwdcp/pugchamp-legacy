@@ -1,6 +1,7 @@
 <paper-header-panel drawer id="drawer">
     <paper-toolbar>
-        <div class="flex app-name" hidden$="\{{!open}}">PugChamp</div>
+        <pugchamp-layout-toggle menu-open="\{{open}}" hidden$="\{{!open}}"></pugchamp-layout-toggle>
+        <div class="logo" hidden$="\{{!open}}"><img src="/assets/img/logo_light.svg"></div>
     </paper-toolbar>
 
     <paper-menu id="drawer-menu">

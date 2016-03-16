@@ -1,14 +1,10 @@
 <link rel="import" href="/components/polymer/polymer.html">
 
 <link rel="import" href="/components/paper-icon-button/paper-icon-button.html">
-<link rel="import" href="/components/paper-tooltip/paper-tooltip.html">
 
 <dom-module id="pugchamp-layout-toggle">
     <template>
-    	<paper-icon-button on-tap="openMenu" icon="menu" hidden="{{menuOpen}}" id="menu-open"></paper-icon-button>
-        <paper-tooltip for="menu-open">Show Menu</paper-tooltip>
-        <paper-icon-button on-tap="closeMenu" icon="more-horiz" hidden="{{!menuOpen}}" id="menu-close"></paper-icon-button>
-        <paper-tooltip for="menu-close">Hide Menu</paper-tooltip>
+    	<paper-icon-button on-tap="toggleMenu" icon="menu"></paper-icon-button>
 	</template>
 	<script>
         Polymer({
@@ -30,6 +26,9 @@
             },
             closeMenu: function() {
                 this.set('menuOpen', false);
+            },
+            toggleMenu: function() {
+                this.set('menuOpen', !this.menuOpen);
             },
             adjustMenu: function() {
                 this.set('menuOpen', document.documentElement.clientWidth >= 1800);

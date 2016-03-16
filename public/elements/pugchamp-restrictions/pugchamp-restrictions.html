@@ -10,11 +10,15 @@
     <template>
         <style is="custom-style">
             .restriction {
-                background: var(--paper-red-500);
-                color: var(--light-theme-text-color);
-                margin: 10px 0;
+                background: var(--secondary-red-color);
+                color: var(--dark-theme-text-color);
+                margin: 5px 0;
                 padding: 10px;
             }
+
+			.restriction a {
+	            color: var(--primary-color);
+			}
 
             .restriction p {
                 margin: initial;
@@ -26,6 +30,8 @@
                 <paper-material class="restriction markdown-html"></paper-material>
             </marked-element>
         </template>
+
+        <hr hidden$="{{!restrictions.reasons.length}}">
     </template>
 
     <script>

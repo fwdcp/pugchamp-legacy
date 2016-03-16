@@ -34,11 +34,10 @@
         body {
             @apply(--paper-font-body1);
             background-attachment: fixed;
-            background-image: url(/assets/img/background.png);
+            background-image: url(/assets/img/pattern.png);
             background-origin: border-box;
             background-position: left bottom;
-            background-repeat: no-repeat;
-            background-size: cover;
+            background-repeat: repeat;
             color: var(--dark-theme-text-color);
         }
 
@@ -86,6 +85,14 @@
 
         paper-material {
             background: var(--box-background-color);
+        }
+
+        .logo {
+            margin-right: 16px;
+        }
+
+        .logo img {
+            vertical-align: top;
         }
 
         .app-name {
