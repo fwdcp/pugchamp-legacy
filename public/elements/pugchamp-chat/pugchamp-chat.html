@@ -45,6 +45,7 @@
 
             .message.highlighted {
                 background: var(--accent-color);
+                color: var(--light-theme-text-color);
             }
 
             .message .message-time {
@@ -106,7 +107,7 @@
                 <div>
                     <div id="messages">
                         <template is="dom-repeat" items="{{messages}}">
-                            <paper-material class$="message horizontal layout {{highlightClassForMessage(message)}}">
+                            <paper-material class$="message horizontal layout {{highlightClassForMessage(item)}}">
                                 <div class="message-time">{{formatTime(item.time)}}</div>
                                 <div class="flex message-contents">
                                     <template is="dom-if" if="{{item.user}}">
@@ -141,7 +142,7 @@
     <script>
         Polymer({
             is: 'pugchamp-chat',
-            behaviors: [PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior],
+            behaviors: [PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior, PugChampClientBehaviors.UserBehavior],
             ready: function() {
                 this.set('page', 0);
                 this.set('messages', []);
