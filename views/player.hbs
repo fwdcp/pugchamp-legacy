@@ -189,25 +189,47 @@
         draftStats.cols = [{type: 'string', label: 'Outcome'}, {type: 'number', label: 'Occurrences'}]
         draftStats.rows = [{{#each user.stats.draft}}{{{draftStatToRow this}}},{{/each}}];
         draftStats.options = {
-            backgroundColor: '#212121',
-            legend: {
-                textStyle: {
-                    color: '#ffffff'
-                }
+            backgroundColor: 'transparent',
+            chartArea: {
+                height: '80%',
+                width: '100%'
             },
-            title: 'Draft Stats',
-            titleTextStyle: {
-                color: '#ffffff'
+            legend: {
+                position: 'bottom',
+                textStyle: {
+                    color: '#f5e7de'
+                }
             }
         };
         {{/if}}
+
+        var roleStats = document.getElementById('role-stats');
+        roleStats.cols = [{type: 'string', label: 'Role'}, {type: 'number', label: 'Games'}]
+        roleStats.rows = [{{#each user.stats.roles}}{{{roleStatToRow this}}},{{/each}}];
+        roleStats.options = {
+            backgroundColor: 'transparent',
+            chartArea: {
+                height: '80%',
+                width: '100%'
+            },
+            legend: {
+                position: 'bottom',
+                textStyle: {
+                    color: '#f5e7de'
+                }
+            }
+        };
 
         var ratingHistory = document.getElementById('rating-history');
         ratingHistory.cols = [{type: 'datetime', label: 'Date'}, {type: 'number', label: 'Rating'}, {type: 'number', role: 'interval'}, {type: 'number', role: 'interval'}]
         ratingHistory.rows = [{{#each ratings}}{{{ratingStatToRow this}}},{{/each}}];
         ratingHistory.options = {
-            backgroundColor: '#212121',
-            colors: ['#ffa000'],
+            backgroundColor: 'transparent',
+            chartArea: {
+                height: '100%',
+                width: '100%'
+            },
+            colors: ['#e2b913'],
             explorer: {
                 axis: 'horizontal',
                 keepInBounds: true
@@ -218,46 +240,26 @@
                     color: '#bcbcbc'
                 },
                 textStyle: {
-                    color: '#ffffff'
+                    color: '#f5e7de'
                 },
                 title: 'Date',
                 titleTextStyle: {
-                    color: '#ffffff'
+                    color: '#f5e7de'
                 }
             },
             legend: 'none',
-            title: 'Rating History',
-            titleTextStyle: {
-                color: '#ffffff'
-            },
             vAxis: {
                 baselineColor: '#bcbcbc',
                 gridlines: {
                     color: '#bcbcbc'
                 },
                 textStyle: {
-                    color: '#ffffff'
+                    color: '#f5e7de'
                 },
                 title: 'Rating',
                 titleTextStyle: {
-                    color: '#ffffff'
+                    color: '#f5e7de'
                 }
-            }
-        };
-
-        var roleStats = document.getElementById('role-stats');
-        roleStats.cols = [{type: 'string', label: 'Role'}, {type: 'number', label: 'Games'}]
-        roleStats.rows = [{{#each user.stats.roles}}{{{roleStatToRow this}}},{{/each}}];
-        roleStats.options = {
-            backgroundColor: '#212121',
-            legend: {
-                textStyle: {
-                    color: '#ffffff'
-                }
-            },
-            title: 'Role Stats',
-            titleTextStyle: {
-                color: '#ffffff'
             }
         };
     </script>

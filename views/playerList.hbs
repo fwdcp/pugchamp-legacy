@@ -39,8 +39,12 @@
         ratings.cols = [{type: 'number', label: 'Deviation'}, {type: 'number', label: 'Rating'}, {type: 'string', role: 'tooltip'}]
         ratings.rows = [{{#each players}}[{{ratingDeviation}}, {{ratingMean}}, '{{alias}}'],{{/each}}];
         ratings.options = {
-            backgroundColor: '#212121',
-            colors: ['#ffa000'],
+            backgroundColor: 'transparent',
+            chartArea: {
+                height: '80%',
+                width: '80%'
+            },
+            colors: ['#e2b913'],
             explorer: {},
             hAxis: {
                 baselineColor: '#bcbcbc',
@@ -51,18 +55,18 @@
                 maxValue: 500,
                 minValue: 0,
                 textStyle: {
-                    color: '#ffffff'
+                    color: '#f5e7de'
                 },
                 title: 'Deviation',
                 titleTextStyle: {
-                    color: '#ffffff'
+                    color: '#f5e7de'
                 },
                 viewWindowMode: 'maximized'
             },
             legend: 'none',
             title: 'Rating Distribution',
             titleTextStyle: {
-                color: '#ffffff'
+                color: '#f5e7de'
             },
             vAxis: {
                 baselineColor: '#bcbcbc',
@@ -72,11 +76,11 @@
                 maxValue: 3000,
                 minValue: 0,
                 textStyle: {
-                    color: '#ffffff'
+                    color: '#f5e7de'
                 },
                 title: 'Rating',
                 titleTextStyle: {
-                    color: '#ffffff'
+                    color: '#f5e7de'
                 },
                 viewWindowMode: 'maximized'
             }
