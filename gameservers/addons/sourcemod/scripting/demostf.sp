@@ -53,15 +53,6 @@ public void CompCtrl_OnStopRecording(const char[] file) {
 
 public void HttpRequestDone(bool success, const char[] contents, int metadata) {
     if (success) {
-        CPrintToChatAll("{green}[demos.tf]{default} Failed to upload demo!");
-
-        int result;
-        Call_StartForward(uploadForward);
-        Call_PushCell(false);
-        Call_PushString("");
-        Call_Finish(result);
-    }
-    else {
         int position = StrContains(contents, "STV available at: ");
 
         if (position != -1) {
@@ -77,8 +68,8 @@ public void HttpRequestDone(bool success, const char[] contents, int metadata) {
             Call_Finish(result);
         }
         else {
-            PrintToServer("Error in uploading demo: %s", contents);
             CPrintToChatAll("{green}[demos.tf]{default} Failed to upload demo!");
+            LogError("Failed to upload demo: %s", contents);
 
             int result;
             Call_StartForward(uploadForward);
@@ -86,5 +77,15 @@ public void HttpRequestDone(bool success, const char[] contents, int metadata) {
             Call_PushString("");
             Call_Finish(result);
         }
+    }
+    else {
+        CPrintToChatAll("{green}[demos.tf]{default} Failed to upload demo!");
+        LogError("Failed to upload demo.");
+
+        int result;
+        Call_StartForward(uploadForward);
+        Call_PushCell(false);
+        Call_PushString("");
+        Call_Finish(result);
     }
 }
