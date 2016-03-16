@@ -280,6 +280,9 @@ public void Event_GameStart(Event event, const char[] name, bool dontBroadcast) 
         Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "status", "live");
 
         Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned);
+
+        ServerCommand("tv_stoprecord");
+        ServerCommand("tv_record pugchamp-%s", id);
     }
 }
 
@@ -334,6 +337,8 @@ public void Event_GameOver(Event event, const char[] name, bool dontBroadcast) {
         }
 
         Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned);
+
+        ServerCommand("tv_stoprecord");
     }
 }
 
