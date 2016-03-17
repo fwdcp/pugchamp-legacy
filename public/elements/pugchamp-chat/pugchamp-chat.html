@@ -1,5 +1,7 @@
 <link rel="import" href="/components/polymer/polymer.html">
 
+<script src="/components/lodash/lodash.js"></script>
+
 <link rel="import" href="/components/iron-a11y-keys/iron-a11y-keys.html">
 <link rel="import" href="/components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="/components/iron-icons/iron-icons.html">
@@ -119,6 +121,9 @@
                                     <br>
                                     <span class="message-body">{{item.body}}</span>
                                 </div>
+                                <div>
+                                    <paper-icon-button icon="block" on-tap="purgeUser" hidden="{{!user.admin}}" disabled="{{!user.admin}}"></paper-icon-button>
+                                </div>
                             </paper-material>
                         </template>
                     </div>
@@ -156,6 +161,7 @@
                 this.$.submitWatcher.target = this.$.messageText;
 
                 this._listenToEvent('messageReceived', 'onMessageReceived');
+                this._listenToEvent('userPurged', 'onUserPurged');
                 this._listenToEvent('onlineUserListUpdated', 'onOnlineUserListUpdated');
             },
             onOnlineUserListUpdated: function(list) {
@@ -178,6 +184,11 @@
                         this.$.messages.scrollTop = this.$.messages.scrollHeight - this.$.messages.clientHeight;
                     }, 100);
                 }
+            },
+            onUserPurged: function(victim) {
+                this.set('messages', _.reject(this.messages, function(message) {
+                    return message.user && message.user.id === victim;
+                }));
             },
             onEnter: function(event) {
                 event.detail.keyboardEvent.preventDefault();
@@ -202,6 +213,11 @@
             sendMessage: function() {
                 socket.emit('sendChatMessage', this.$.messageText.value);
                 this.$.messageText.value = '';
+            },
+            purgeUser: function(event) {
+                if (event.model.item.user) {
+                    socket.emit('purgeUser', event.model.item.user.id);
+                }
             },
             formatTime: function(time) {
                 return moment(time).format('LT');

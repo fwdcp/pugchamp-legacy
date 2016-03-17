@@ -112,8 +112,19 @@ module.exports = function(app, chance, database, io, self) {
         }
     }
 
+    function onUserPurgeUser(victim) {
+        let userID = this.decoded_token.user;
+
+        let user = self.getCachedUser(userID);
+
+        if (user.admin) {
+            io.sockets.emit('userPurged', victim);
+        }
+    }
+
     io.sockets.on('authenticated', function(socket) {
         socket.removeAllListeners('sendChatMessage');
         socket.on('sendChatMessage', onUserSendChatMessage);
+        socket.on('purgeUser', onUserPurgeUser);
     });
 };
