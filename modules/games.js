@@ -224,7 +224,7 @@ module.exports = function(app, chance, database, io, self) {
                 }).exec();
 
                 selectedCandidate = _(candidatePlayers).sortBy(function(candidate) {
-                    return Math.abs(candidate.stats.rating.low - player.stats.rating.low);
+                    return Math.abs(candidate.stats.rating.mean - player.stats.rating.mean);
                 }).map(candidate => self.getDocumentID(candidate)).head();
             }
             else if (SUBSTITUTE_SELECTION_METHOD === 'random') {
