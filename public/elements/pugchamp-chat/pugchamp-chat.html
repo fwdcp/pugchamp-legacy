@@ -220,7 +220,7 @@
                 }
             },
             canPurge: function(user, message) {
-                return message.user && user.admin;
+                return message.user && user && user.admin;
             },
             formatTime: function(time) {
                 return moment(time).format('LT');
