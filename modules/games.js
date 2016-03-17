@@ -498,7 +498,7 @@ module.exports = function(app, chance, database, io, self) {
         }
         else if (info.status === 'logavailable') {
             if (info.url) {
-                let link = _.find(game.links, 'type', 'logs.tf');
+                let link = _.find(game.links, ['type', 'logs.tf']);
 
                 if (link) {
                     link.url = info.url;
@@ -515,7 +515,7 @@ module.exports = function(app, chance, database, io, self) {
         }
         else if (info.status === 'demoavailable') {
             if (info.url) {
-                let link = _.find(game.links, 'type', 'demos.tf');
+                let link = _.find(game.links, ['type', 'demos.tf']);
 
                 if (link) {
                     link.url = info.url;
