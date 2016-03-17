@@ -30,7 +30,7 @@ module.exports = function(app, chance, database, io, self) {
             attachments: [{
                 fallback: `${user.alias} ${action}`,
                 author_name: user.alias,
-                author_link: `${BASE_URL}/player/$(user.steamID}`,
+                author_link: `${BASE_URL}/player/${user.steamID}`,
                 text: action
             }]
         };
