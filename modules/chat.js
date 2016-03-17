@@ -112,13 +112,17 @@ module.exports = function(app, chance, database, io, self) {
         }
     }
 
-    function onUserPurgeUser(victim) {
+    function onUserPurgeUser(victimID) {
         let userID = this.decoded_token.user;
 
         let user = self.getCachedUser(userID);
 
         if (user.admin) {
-            io.sockets.emit('userPurged', victim);
+            let victim = self.getCachedUser(victimID);
+
+            self.postToAdminLog(user, `purged the chat messages of \`<${BASE_URL}/player/${victim.steamID}|${victim.alias}>\``);
+
+            io.sockets.emit('userPurged', victimID);
         }
     }
 
