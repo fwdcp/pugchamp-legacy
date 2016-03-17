@@ -32,17 +32,17 @@
                     "image": "gullywash.png",
                     "config": "pugchamp-6v6-standard"
                 },
-                "metalworks": {
-                    "name": "Metalworks",
-                    "file": "cp_metalworks_rc7",
-                    "image": "metalworks.png",
-                    "config": "pugchamp-6v6-standard"
-                },
                 "process": {
                     "name": "Process",
                     "file": "cp_process_final",
                     "image": "process.png",
                     "config": "pugchamp-6v6-standard"
+                },
+                "product": {
+                    "name": "Product",
+                    "file": "koth_product_rc8",
+                    "image": "product.png",
+                    "config": "pugchamp-6v6-koth"
                 },
                 "snakewater": {
                     "name": "Snakewater",
