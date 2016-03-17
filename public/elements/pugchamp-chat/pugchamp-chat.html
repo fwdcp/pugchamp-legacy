@@ -122,7 +122,7 @@
                                     <span class="message-body">{{item.body}}</span>
                                 </div>
                                 <div>
-                                    <paper-icon-button icon="block" on-tap="purgeUser" hidden="{{!user.admin}}" disabled="{{!user.admin}}"></paper-icon-button>
+                                    <paper-icon-button icon="block" on-tap="purgeUser" hidden="{{!canPurge(user, item)}}" disabled="{{!canPurge(user, item)}}"></paper-icon-button>
                                 </div>
                             </paper-material>
                         </template>
@@ -218,6 +218,9 @@
                 if (event.model.item.user) {
                     socket.emit('purgeUser', event.model.item.user.id);
                 }
+            },
+            canPurge: function(user, message) {
+                return message.user && user.admin;
             },
             formatTime: function(time) {
                 return moment(time).format('LT');
