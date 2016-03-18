@@ -10,7 +10,15 @@
                 "user": "76561198043850090",
                 "authorized": false
             }],
-            "authorizationAPIs": ["http://localhost:8080/checkUser"]
+            "authorizationAPIs": ["http://localhost:8080/checkUser"],
+            "initialRatings": [{
+                "api": "http://localhost:8080/checkUser",
+                "mean": 1800,
+                "deviation": 400
+            }, {
+                "mean": 1500,
+                "deviation": 500
+            }]
         },
         "games": {
             "maps": {

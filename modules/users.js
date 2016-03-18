@@ -19,6 +19,7 @@ var socketDebug = debug('pugchamp:sockets');
 module.exports = function(app, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const CAPTAIN_GAME_REQUIREMENT = config.get('app.users.captainGameRequirement');
+    const INITIAL_RATINGS = config.has('app.users.initialRatings') ? config.get('app.users.initialRatings') : [];
     const UNAUTHENTICATED_RESTRICTIONS = {
         aspects: ['sub', 'start', 'captain', 'chat', 'support'],
         reasons: ['You are currently not [logged on](/user/login).']
@@ -291,6 +292,40 @@ module.exports = function(app, chance, database, io, self) {
                 user = new database.User({
                     steamID: id
                 });
+
+                for (let initialRating of INITIAL_RATINGS) {
+                    if (initialRating.api) {
+                        try {
+                            let response = yield rp({
+                                resolveWithFullResponse: true,
+                                simple: false,
+                                qs: {
+                                    user: user.steamID
+                                },
+                                uri: initialRating.api
+                            });
+
+                            if (response.statusCode === HttpStatus.OK) {
+                                user.stats.rating.mean = initialRating.mean;
+                                user.stats.rating.deviation = initialRating.deviation;
+
+                                break;
+                            }
+                            else {
+                                continue;
+                            }
+                        }
+                        catch (err) {
+                            continue;
+                        }
+                    }
+                    else {
+                        user.stats.rating.mean = initialRating.mean;
+                        user.stats.rating.deviation = initialRating.deviation;
+
+                        break;
+                    }
+                }
             }
 
             yield user.save();
