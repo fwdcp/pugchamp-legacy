@@ -43,7 +43,7 @@ module.exports = function(app, chance, database, io, self) {
                 try {
                     let response = yield rp({
                         resolveWithFullResponse: true,
-                        simple: true,
+                        simple: false,
                         qs: {
                             user: user.steamID
                         },
