@@ -179,10 +179,12 @@
             document.location.reload();
         });
 
+        {{#if currentUser.admin}}
         var showDraftStats = document.getElementById('show-draft-stats');
         showDraftStats.addEventListener('dom-change', function() {
             showDraftStats.showDraftStats = {{#if user.stats.draft}}true{{else}}false{{/if}};
         });
+        {{/if}}
 
         {{#if user.stats.draft}}
         var draftStats = document.getElementById('draft-stats');
