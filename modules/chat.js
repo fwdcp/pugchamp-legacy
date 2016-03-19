@@ -12,7 +12,7 @@ module.exports = function(app, chance, database, io, self) {
     var onlineUsers = new Set();
 
     self.getOnlineUserList = function() {
-        return _([...onlineUsers]).map(userID => self.getCachedUser(userID)).filter(user => user.setUp).sortBy('alias').value();
+        return _([...onlineUsers]).map(userID => self.getCachedUser(userID)).filter(user => user.setUp && (user.authorized || user.admin)).sortBy('alias').value();
     };
 
     function postToMessageLog(message) {
