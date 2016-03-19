@@ -24,6 +24,9 @@
             "queryInterval": "15s",
             "retryAttempts": ["5s", "10s", "15s"],
             "serverTimeout": "10s"
+        },
+        "chat": {
+            "showConnectionMessages": false
         }
     },
     "server": {

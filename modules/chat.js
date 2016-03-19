@@ -7,6 +7,7 @@ const twitter = require('twitter-text');
 
 module.exports = function(app, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
+    const SHOW_CONNECTION_MESSAGES = config.get('app.chat.showConnectionMessages');
 
     var onlineUsers = new Set();
 
@@ -63,10 +64,32 @@ module.exports = function(app, chance, database, io, self) {
     self.on('userConnected', function(userID) {
         onlineUsers.add(userID);
 
+        if (SHOW_CONNECTION_MESSAGES) {
+            let user = self.getCachedUser(userID);
+
+            if (user.setUp && (user.authorized || user.admin)) {
+                self.sendMessage({
+                    user: userID,
+                    action: 'connected'
+                });
+            }
+        }
+
         io.sockets.emit('onlineUserListUpdated', self.getOnlineUserList());
     });
 
     self.on('userDisconnected', function(userID) {
+        let user = self.getCachedUser(userID);
+
+        if (SHOW_CONNECTION_MESSAGES) {
+            if (user.setUp && (user.authorized || user.admin)) {
+                self.sendMessage({
+                    user: userID,
+                    action: 'disconnected'
+                });
+            }
+        }
+
         onlineUsers.delete(userID);
 
         io.sockets.emit('onlineUserListUpdated', self.getOnlineUserList());
