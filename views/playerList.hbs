@@ -17,11 +17,14 @@
     {{#> body}}
     <h1>Players</h1>
 
+    {{#unless hideRatings}}
     <google-chart id="ratings" type="scatter"></google-chart>
+    {{/unless}}
 
     <paper-datatable data="{{toJSON players}}" id="players">
         <paper-datatable-column header="Player" property="alias" type="String" sortable></paper-datatable-column>
         <paper-datatable-column header="Steam ID" property="steamID" type="String"></paper-datatable-column>
+        {{#unless hideRatings}}
         <paper-datatable-column header="Rating" property="ratingMean" type="Number" sortable>
             <template>
                 \{{item.ratingMean}}&plusmn;\{{item.ratingDeviation}} (\{{item.ratingLowerBound}}&ndash;\{{item.ratingUpperBound}})
@@ -32,9 +35,11 @@
                 \{{value}}
             </template>
         </paper-datatable-column>
+        {{/unless}}
     </paper-datatable>
 
     <script>
+        {{#unless hideRatings}}
         var ratings = document.getElementById('ratings');
         ratings.cols = [{type: 'number', label: 'Deviation'}, {type: 'number', label: 'Rating'}, {type: 'string', role: 'tooltip'}]
         ratings.rows = [{{#each players}}[{{ratingDeviation}}, {{ratingMean}}, '{{alias}}'],{{/each}}];
@@ -85,6 +90,7 @@
                 viewWindowMode: 'maximized'
             }
         };
+        {{/unless}}
 
         document.getElementById('players').addEventListener('row-tap', function(event) {
             window.location = '/player/' + event.detail.item.steamID;

@@ -14,6 +14,7 @@ const path = require('path');
 require('moment-duration-format');
 
 module.exports = function(app, chance, database, io, self) {
+    const HIDE_RATINGS = config.get('app.users.hideRatings');
     const POST_GAME_RESET_DELAY = ms(config.get('app.games.postGameResetDelay'));
     const ROLES = config.get('app.games.roles');
     const SUBSTITUTE_REQUEST_PERIOD = ms(config.get('app.games.substituteRequestPeriod'));
@@ -656,12 +657,15 @@ module.exports = function(app, chance, database, io, self) {
             return;
         }
 
-        let ratings = yield database.Rating.find({
-            game: game.id
-        }).exec();
-
         game = game.toObject();
-        ratings = _.keyBy(ratings, rating => self.getDocumentID(rating.user));
+
+        let ratings = {};
+
+        if (!HIDE_RATINGS) {
+            ratings = _.keyBy(yield database.Rating.find({
+                game: game.id
+            }).exec(), rating => self.getDocumentID(rating.user));
+        }
 
         _.each(game.teams, function(team) {
             team.captain = self.getCachedUser(self.getDocumentID(team.captain));
@@ -678,14 +682,16 @@ module.exports = function(app, chance, database, io, self) {
                 _.each(role.players, function(player) {
                     player.user = self.getCachedUser(self.getDocumentID(player.user));
 
-                    let rating = ratings[self.getDocumentID(player.user)];
+                    if (!HIDE_RATINGS) {
+                        let rating = ratings[self.getDocumentID(player.user)];
 
-                    if (rating) {
-                        player.rating = {
-                            rating: rating.after.mean,
-                            deviation: rating.after.deviation,
-                            change: rating.after.mean - rating.before.mean
-                        };
+                        if (rating) {
+                            player.rating = {
+                                rating: rating.after.mean,
+                                deviation: rating.after.deviation,
+                                change: rating.after.mean - rating.before.mean
+                            };
+                        }
                     }
                 });
             });

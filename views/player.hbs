@@ -46,6 +46,7 @@
     <a class="button" href="https://steamcommunity.com/profiles/{{user.steamID}}"><paper-button class="link" id="steam" raised>Steam Profile</paper-button></a>
 	<a class="button" href="http://logs.tf/profile/{{user.steamID}}"><paper-button class="link" raised>Logs.tf Profile</paper-button></a>
 
+    {{#unless hideRatings}}
     <p><strong>Player Rating:</strong> {{user.stats.rating.mean}}&plusmn;{{user.stats.rating.deviation}} ({{user.stats.rating.low}}&ndash;{{user.stats.rating.high}})</p>
 
     <p>
@@ -61,6 +62,7 @@
         N/A
         {{/if}}
     </p>
+    {{/unless}}
 
     {{#if user.stats.draft}}
     <h2>Draft Stats</h2>
@@ -72,9 +74,11 @@
 
     <google-chart id="role-stats" type="pie"></google-chart>
 
+    {{#unless hideRatings}}
     <h2>Rating History</h2>
 
     <google-chart id="rating-history" type="line"></google-chart>
+    {{/unless}}
 
     <h2>Games</h2>
 
@@ -222,6 +226,7 @@
             }
         };
 
+        {{#unless hideRatings}}
         var ratingHistory = document.getElementById('rating-history');
         ratingHistory.cols = [{type: 'datetime', label: 'Date'}, {type: 'number', label: 'Rating'}, {type: 'number', role: 'interval'}, {type: 'number', role: 'interval'}]
         ratingHistory.rows = [{{#each ratings}}{{{ratingStatToRow this}}},{{/each}}];
@@ -264,6 +269,7 @@
                 }
             }
         };
+        {{/unless}}
     </script>
 
     {{/body}}

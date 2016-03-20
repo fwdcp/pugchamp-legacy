@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 
 const ADMINS = config.get('app.users.admins');
 const AUTHORIZATION_DEFAULT = config.has('app.users.authorizationDefault') ? config.get('app.users.authorizationDefault') : true;
+const HIDE_RATINGS = config.get('app.users.hideRatings');
 const MAPS = config.get('app.games.maps');
 const SERVER_POOL = config.get('app.servers.pool');
 
@@ -76,17 +77,23 @@ userSchema.set('toObject', {
     versionKey: false,
     transform(doc, ret) {
         if (ret.stats) {
-            if (ret.stats.captainScore) {
-                ret.stats.captainScore.low = _.isNumber(doc.stats.captainScore.low) ? math.round(doc.stats.captainScore.low, 3) : null;
-                ret.stats.captainScore.center = _.isNumber(doc.stats.captainScore.center) ? math.round(doc.stats.captainScore.center, 3) : null;
-                ret.stats.captainScore.high = _.isNumber(doc.stats.captainScore.high) ? math.round(doc.stats.captainScore.high, 3) : null;
-            }
+            if (!HIDE_RATINGS) {
+                if (ret.stats.captainScore) {
+                    ret.stats.captainScore.low = _.isNumber(doc.stats.captainScore.low) ? math.round(doc.stats.captainScore.low, 3) : null;
+                    ret.stats.captainScore.center = _.isNumber(doc.stats.captainScore.center) ? math.round(doc.stats.captainScore.center, 3) : null;
+                    ret.stats.captainScore.high = _.isNumber(doc.stats.captainScore.high) ? math.round(doc.stats.captainScore.high, 3) : null;
+                }
 
-            if (ret.stats.rating && _.isNumber(doc.stats.rating.mean) && _.isNumber(doc.stats.rating.deviation)) {
-                ret.stats.rating.mean = math.round(doc.stats.rating.mean, 0);
-                ret.stats.rating.deviation = math.round(doc.stats.rating.deviation, 0);
-                ret.stats.rating.low = math.round(doc.stats.rating.low, 0);
-                ret.stats.rating.high = math.round(doc.stats.rating.high, 0);
+                if (ret.stats.rating && _.isNumber(doc.stats.rating.mean) && _.isNumber(doc.stats.rating.deviation)) {
+                    ret.stats.rating.mean = math.round(doc.stats.rating.mean, 0);
+                    ret.stats.rating.deviation = math.round(doc.stats.rating.deviation, 0);
+                    ret.stats.rating.low = math.round(doc.stats.rating.low, 0);
+                    ret.stats.rating.high = math.round(doc.stats.rating.high, 0);
+                }
+            }
+            else {
+                delete ret.stats.captainScore;
+                delete ret.stats.rating;
             }
 
             if (doc.options && !doc.options.showDraftStats) {

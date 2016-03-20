@@ -2,7 +2,8 @@
     "app": {
         "users": {
             "authorizationDefault": true,
-            "captainGameRequirement": 5
+            "captainGameRequirement": 5,
+            "hideRatings": false
         },
         "games": {
             "postGameResetDelay": "1m",

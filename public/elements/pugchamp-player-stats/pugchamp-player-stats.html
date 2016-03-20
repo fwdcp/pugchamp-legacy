@@ -12,8 +12,10 @@
         </style>
 
         <strong>{{player.alias}}</strong>
-        <br>
-        <em>Rating</em>: {{player.stats.rating.mean}}&plusmn;{{player.stats.rating.deviation}} ({{player.stats.rating.low}}&ndash;{{player.stats.rating.high}})
+        <template is="dom-if" if="{{player.stats.rating}}">
+            <br>
+            <em>Rating</em>: {{player.stats.rating.mean}}&plusmn;{{player.stats.rating.deviation}} ({{player.stats.rating.low}}&ndash;{{player.stats.rating.high}})
+        </template>
         <br>
         <google-chart id="roles" type="pie"></google-chart>
 	</template>

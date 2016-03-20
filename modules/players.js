@@ -50,64 +50,77 @@ module.exports = function(app, chance, database, io, self) {
     }
 
     const DRAFT_ORDER = config.get('app.draft.order');
+    const HIDE_RATINGS = config.get('app.users.hideRatings');
     const ROLES = config.get('app.games.roles');
-    const UPDATE_PLAYER_CACHE_DEBOUNCE_MAX_WAIT = 5000;
-    const UPDATE_PLAYER_CACHE_DEBOUNCE_WAIT = 1000;
+    const UPDATE_PLAYER_CACHE_DEBOUNCE_MAX_WAIT = 60000;
+    const UPDATE_PLAYER_CACHE_DEBOUNCE_WAIT = 5000;
+
+    function shouldPubliclyListPlayer(player) {
+        if (!player.authorized) {
+            return false;
+        }
+
+        if (player.stats.roles) {
+            for (let stat of player.stats.roles) {
+                if (stat.count > 0) {
+                    return true;
+                }
+            }
+        }
+
+        if (player.stats.draft) {
+            for (let stat of player.stats.draft) {
+                if (stat.type === 'captain' && stat.count > 0) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    function formatCachedPlayerWithRating(player) {
+        return {
+            id: player.id,
+            alias: player.alias,
+            steamID: player.steamID,
+            ratingMean: math.round(player.stats.rating.mean),
+            ratingDeviation: math.round(player.stats.rating.deviation),
+            ratingLowerBound: math.round(player.stats.rating.low),
+            ratingUpperBound: math.round(player.stats.rating.high),
+            captainScore: player.stats.captainScore && _.isNumber(player.stats.captainScore.center) ? math.round(player.stats.captainScore.center, 3) : null
+        };
+    }
+
+    function formatCachedPlayerWithoutRating(player) {
+        return {
+            id: player.id,
+            alias: player.alias,
+            steamID: player.steamID
+        };
+    }
 
     var playerListCache;
     var playerListFilteredCache;
 
-    var updatePlayerCache = _.debounce(function updatePlayerCache() {
-        let players = _.orderBy(self.getCachedUsers(), [function(player) {
-            return player.stats.rating.low;
+    var updatePlayerCache = _.debounce(co.wrap(function* updatePlayerCache() {
+        let users = yield database.User.find({}).exec();
+
+        let players = _.orderBy(users, [function(player) {
+            return player.stats.rating.mean;
         }, function(player) {
             return player.stats.captainScore ? player.stats.captainScore.center : null;
         }], ['desc', 'desc']);
 
-        playerListCache = _.map(players, player => ({
-            id: player.id,
-            alias: player.alias,
-            steamID: player.steamID,
-            ratingMean: math.round(player.stats.rating.mean),
-            ratingDeviation: math.round(player.stats.rating.deviation),
-            ratingLowerBound: math.round(player.stats.rating.low),
-            ratingUpperBound: math.round(player.stats.rating.high),
-            captainScore: player.stats.captainScore && _.isNumber(player.stats.captainScore.center) ? math.round(player.stats.captainScore.center, 3) : null
-        }));
-
-        playerListFilteredCache = _(players).filter(function(player) {
-            if (!player.authorized) {
-                return false;
-            }
-
-            if (player.stats.roles) {
-                for (let stat of player.stats.roles) {
-                    if (stat.count > 0) {
-                        return true;
-                    }
-                }
-            }
-
-            if (player.stats.draft) {
-                for (let stat of player.stats.draft) {
-                    if (stat.type === 'captain' && stat.count > 0) {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }).map(player => ({
-            id: player.id,
-            alias: player.alias,
-            steamID: player.steamID,
-            ratingMean: math.round(player.stats.rating.mean),
-            ratingDeviation: math.round(player.stats.rating.deviation),
-            ratingLowerBound: math.round(player.stats.rating.low),
-            ratingUpperBound: math.round(player.stats.rating.high),
-            captainScore: player.stats.captainScore && _.isNumber(player.stats.captainScore.center) ? math.round(player.stats.captainScore.center, 3) : null
-        })).value();
-    }, UPDATE_PLAYER_CACHE_DEBOUNCE_WAIT, {
+        if (!HIDE_RATINGS) {
+            playerListCache = _.map(players, formatCachedPlayerWithRating);
+            playerListFilteredCache = _(players).filter(shouldPubliclyListPlayer).map(formatCachedPlayerWithRating).value();
+        }
+        else {
+            playerListCache = _.map(players, formatCachedPlayerWithoutRating);
+            playerListFilteredCache = _(players).filter(shouldPubliclyListPlayer).map(formatCachedPlayerWithoutRating).value();
+        }
+    }), UPDATE_PLAYER_CACHE_DEBOUNCE_WAIT, {
         maxWait: UPDATE_PLAYER_CACHE_DEBOUNCE_MAX_WAIT
     });
 
@@ -289,7 +302,7 @@ module.exports = function(app, chance, database, io, self) {
 
         let ratings = yield database.Rating.find({
             'user': user.id
-        }).populate('game', 'date').exec();
+        }).exec();
 
         let restrictions = yield database.Restriction.find({
             user: user.id
@@ -315,7 +328,7 @@ module.exports = function(app, chance, database, io, self) {
 
                 return revisedGame;
             }).value(),
-            ratings: _(ratings).map(rating => rating.toObject()).sortBy('date').value(),
+            ratings: !HIDE_RATINGS ? _(ratings).map(rating => rating.toObject()).sortBy('date').value() : undefined,
             restrictions: _(restrictions).map(restriction => restriction.toObject()).orderBy(['active', 'expires'], ['desc', 'desc']).value()
         });
     }));

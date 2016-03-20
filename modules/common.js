@@ -7,6 +7,7 @@ const math = require('mathjs');
 const moment = require('moment');
 
 module.exports = function(app, chance, database, io, self) {
+    const HIDE_RATINGS = config.get('app.users.hideRatings');
     const SITE_NAME = config.get('app.common.siteName');
     const SITE_SUBTITLE = config.get('app.common.siteSubtitle');
 
@@ -69,6 +70,11 @@ module.exports = function(app, chance, database, io, self) {
 
     app.use(function(req, res, next) {
         res.locals.currentUser = req.user ? req.user.toObject() : null;
+        next();
+    });
+
+    app.use(function(req, res, next) {
+        res.locals.hideRatings = HIDE_RATINGS;
         next();
     });
 
