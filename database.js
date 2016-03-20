@@ -5,6 +5,11 @@ const config = require('config');
 const math = require('mathjs');
 const mongoose = require('mongoose');
 
+const ADMINS = config.get('app.users.admins');
+const AUTHORIZATION_DEFAULT = config.has('app.users.authorizationDefault') ? config.get('app.users.authorizationDefault') : true;
+const MAPS = config.get('app.games.maps');
+const SERVER_POOL = config.get('app.servers.pool');
+
 mongoose.connect(config.get('server.mongodb'));
 
 var userSchema = new mongoose.Schema({
@@ -15,7 +20,7 @@ var userSchema = new mongoose.Schema({
     steamID: String,
     authorized: {
         type: Boolean,
-        default: config.has('app.users.authorizationDefault') ? config.get('app.users.authorizationDefault') : true
+        default: AUTHORIZATION_DEFAULT
     },
     setUp: {
         type: Boolean,
@@ -58,7 +63,7 @@ var userSchema = new mongoose.Schema({
     }
 });
 userSchema.virtual('admin').get(function() {
-    return _.includes(config.get('app.users.admins'), this.steamID);
+    return _.includes(ADMINS, this.steamID);
 });
 userSchema.virtual('stats.rating.low').get(function() {
     return this.stats.rating.mean - (3 * this.stats.rating.deviation);
@@ -165,11 +170,11 @@ gameSchema.set('toObject', {
     versionKey: false,
     transform(doc, ret) {
         if (doc.map) {
-            ret.map = config.get('app.games.maps')[doc.map];
+            ret.map = MAPS[doc.map];
         }
 
         if (doc.server) {
-            ret.server = _.omit(config.get('app.servers.pool')[doc.server], 'rcon', 'salt');
+            ret.server = _.omit(SERVER_POOL[doc.server], 'rcon', 'salt');
         }
     }
 });
