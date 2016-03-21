@@ -22,7 +22,7 @@
     <template>
         <style is="custom-style" include="iron-flex">
             #draftTurns {
-                margin: 5px 0;
+                margin-top: 5px;
             }
 
             .draft-turn {
@@ -31,10 +31,6 @@
                 min-width: 100px;
                 padding: 5px;
                 text-align: center;
-            }
-
-            .draft-turn:first-child {
-                margin-left: auto;
             }
 
             .draft-turn .turn-time {
@@ -51,17 +47,31 @@
             }
 
             #teams {
-                margin: 5px 0;
+                margin-bottom: 5px;
             }
 
             .team {
-                margin: 5px 0;
+                margin-left: -5px;
             }
 
             .team .captain {
-                padding: 5px;
-                text-align: right;
-                width: 150px;
+                margin-left: 5px;
+                margin-top: 5px;
+                min-width: 225px;
+            }
+
+            .team .captain paper-item-body {
+                min-height: 48px;
+            }
+
+            .team .captain div[secondary] iron-icon {
+                --iron-icon-height: 20px;
+                --iron-icon-width: 20px;
+            }
+
+            .team .captain a {
+                color: inherit;
+                text-decoration: none;
             }
 
             .team[data-faction=RED] .captain {
@@ -74,12 +84,21 @@
 
             .team .player {
                 margin-left: 5px;
-                padding: 5px;
-                text-align: center;
+                margin-top: 5px;
             }
 
-            .team .player:last-child {
-                margin-left: auto;
+            .team .player div[secondary] iron-icon {
+                --iron-icon-height: 20px;
+                --iron-icon-width: 20px;
+            }
+
+            .team .player paper-item-body {
+                min-height: 48px;
+            }
+
+            .team .player a {
+                color: inherit;
+                text-decoration: none;
             }
 
             .team[data-faction=RED] .player {
@@ -91,17 +110,14 @@
             }
 
             #maps {
-                margin: 5px 0;
+                margin-left: -5px;
+                margin-top: 5px;
             }
 
             .map {
                 background: var(--box-background-color);
                 margin-left: 5px;
                 text-align: center;
-            }
-
-            .map:first-child {
-                margin-left: auto;
             }
 
             .map .map-overlay {
@@ -139,19 +155,22 @@
             }
 
             #playerPool {
-                margin: 5px 0;
+                margin-left: -5px;
             }
 
             #playerPool .role-column {
                 margin-left: 5px;
-            }
-
-            #playerPool .role-column:first-child {
-                margin-left: auto;
+                margin-top: 5px;
+                min-width: 200px;
             }
 
             #playerPool .role {
                 background: var(--box-background-color);
+            }
+
+            #playerPool .role iron-icon[item-icon] {
+                height: 40px;
+                width: 40px;
             }
 
             #playerPool .player {
@@ -196,13 +215,23 @@
             <div id="teams">
                 <template is="dom-repeat" items="{{pickedTeams}}">
                     <div data-faction$="{{_getProperty(factions, index)}}" class="team horizontal layout">
-                        <paper-material class="captain">
-                            {{_getProperty(captains, index, 'alias')}}
-                        </paper-material>
+                        <paper-item class="captain">
+                            <paper-item-body two-line>
+                                <div><a href="/player/{{_getProperty(captains, index, 'steamID')}}" target="_blank">{{_getProperty(captains, index, 'alias')}}</a></div>
+                                <div secondary><iron-icon icon="pugchamp-role:captain"></iron-icon> Captain</div>
+                            </paper-item-body>
+                            <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{_getProperty(captains, index)}}"></pugchamp-player-stats></paper-tooltip>
+                        </paper-item>
                         <template is="dom-repeat" items="{{_padArray(item, teamSize)}}">
-                            <paper-material class="player flex">
-                                {{fullPlayerInfo(item)}}
-                            </paper-material>
+                            <paper-item class="player flex">
+                                <template is="dom-if" if="{{item}}">
+                                    <paper-item-body two-line>
+                                        <div><a href="/player/{{item.player.steamID}}" target="_blank">{{item.player.alias}}</a></div>
+                                        <div secondary><iron-icon icon="pugchamp-role:{{item.role}}"></iron-icon> {{_getProperty(roles, item.role, 'name')}}</div>
+                                    </paper-item-body>
+                                    <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item.player}}"></pugchamp-player-stats></paper-tooltip>
+                                </template>
+                            </paper-item>
                         </template>
                     </div>
                 </template>
@@ -387,11 +416,6 @@
                 }
                 else if (choice.type === 'factionSelect') {
                     return choice.faction;
-                }
-            },
-            fullPlayerInfo: function(player) {
-                if (player) {
-                    return player.player.alias + ' (' + this.roles[player.role].name + ')';
                 }
             },
             mapStatus: function(map, picked, remaining) {
