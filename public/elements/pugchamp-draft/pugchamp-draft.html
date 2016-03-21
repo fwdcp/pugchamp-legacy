@@ -54,58 +54,30 @@
                 margin-left: -5px;
             }
 
-            .team .captain {
-                margin-left: 5px;
-                margin-top: 5px;
-                min-width: 225px;
-            }
-
-            .team .captain paper-item-body {
-                min-height: 48px;
-            }
-
-            .team .captain div[secondary] iron-icon {
-                --iron-icon-height: 20px;
-                --iron-icon-width: 20px;
-            }
-
-            .team .captain a {
-                color: inherit;
-                text-decoration: none;
-            }
-
-            .team[data-faction=RED] .captain {
-                background: var(--team-red-color);
-            }
-
-            .team[data-faction=BLU] .captain {
-                background: var(--team-blu-color);
-            }
-
-            .team .player {
+            .team .user {
                 margin-left: 5px;
                 margin-top: 5px;
             }
 
-            .team .player div[secondary] iron-icon {
+            .team .user div[secondary] iron-icon {
                 --iron-icon-height: 20px;
                 --iron-icon-width: 20px;
             }
 
-            .team .player paper-item-body {
+            .team .user paper-item-body {
                 min-height: 48px;
             }
 
-            .team .player a {
+            .team .user a {
                 color: inherit;
                 text-decoration: none;
             }
 
-            .team[data-faction=RED] .player {
+            .team[data-faction=RED] .user {
                 background: var(--team-red-color);
             }
 
-            .team[data-faction=BLU] .player {
+            .team[data-faction=BLU] .user {
                 background: var(--team-blu-color);
             }
 
@@ -215,7 +187,7 @@
             <div id="teams">
                 <template is="dom-repeat" items="{{pickedTeams}}">
                     <div data-faction$="{{_getProperty(factions, index)}}" class="team horizontal layout">
-                        <paper-item class="captain">
+                        <paper-item class="user flex-2">
                             <paper-item-body two-line>
                                 <div><a href="/player/{{_getProperty(captains, index, 'steamID')}}" target="_blank">{{_getProperty(captains, index, 'alias')}}</a></div>
                                 <div secondary><iron-icon icon="pugchamp-role:captain"></iron-icon> Captain</div>
@@ -223,7 +195,7 @@
                             <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{_getProperty(captains, index)}}"></pugchamp-player-stats></paper-tooltip>
                         </paper-item>
                         <template is="dom-repeat" items="{{_padArray(item, teamSize)}}">
-                            <paper-item class="player flex">
+                            <paper-item class="user flex">
                                 <template is="dom-if" if="{{item}}">
                                     <paper-item-body two-line>
                                         <div><a href="/player/{{item.player.steamID}}" target="_blank">{{item.player.alias}}</a></div>
@@ -313,9 +285,9 @@
                 this.set('turns', status.draftTurns);
                 this.set('allPlayers', status.fullPlayerList);
                 this.set('currentTurn', status.currentDraftTurn);
-                this.set('pickedTeams', status.pickedTeams);
                 this.set('captains', status.draftCaptains);
                 this.set('factions', status.teamFactions);
+                this.set('pickedTeams', status.pickedTeams);
                 this.set('pickedMap', status.pickedMap);
                 this.set('remainingMaps', status.remainingMaps);
                 this.set('allowedRoles', status.allowedRoles);
