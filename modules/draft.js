@@ -222,10 +222,9 @@ module.exports = function(app, chance, database, io, self) {
     }
 
     self.cleanUpDraft = function cleanUpDraft() {
-        // NOTE: this is somewhat of a hack to keep players active after a draft ends
-        _.each(fullPlayerList, function(userID) {
-            self.markUserActivity(userID);
-        });
+        // NOTE: we need to save these to perform operations once draft is cleared
+        let previousDraftCaptains = draftCaptains;
+        let previousDraftPlayers = fullPlayerList;
 
         draftActive = false;
         draftComplete = false;
@@ -255,6 +254,16 @@ module.exports = function(app, chance, database, io, self) {
 
         updateStatusInfo();
         io.sockets.emit('draftStatusUpdated', getCurrentStatusMessage());
+
+        // NOTE: hacks with previous draft info - clear draft restrictions and mark activity to prevent players from getting removed
+        _.each(previousDraftCaptains, function(captain) {
+            self.markUserActivity(player);
+            self.updateUserRestrictions(captain);
+        });
+        _.each(previousDraftPlayers, function(player) {
+            self.markUserActivity(player);
+            self.updateUserRestrictions(player);
+        });
 
         self.updateLaunchStatus();
     };
