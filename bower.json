@@ -20,7 +20,8 @@
     "moment-duration-format": "^1.3.0",
     "paper-datatable": "David-Mulder/paper-datatable#^0.9.8",
     "whenever.js": "David-Mulder/whenever.js#master",
-    "molecules": "PolymerElements/molecules#~1.0.0"
+    "molecules": "PolymerElements/molecules#~1.0.0",
+    "format": "^1.0.1"
   },
   "resolutions": {
     "whenever.js": "master"

@@ -7,6 +7,7 @@
 <link rel="import" href="/components/paper-menu/paper-menu.html">
 <link rel="import" href="/components/paper-styles/color.html">
 
+<script src="/components/format/format.js"></script>
 <script src="/components/lodash/lodash.js"></script>
 
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
@@ -60,7 +61,9 @@
                 </p>
 
                 <p>
+                    <iframe id="gameServerConnect" width="0" height="0" hidden>
                     <paper-button class="connect" on-tap="connectToGameServer" raised>Connect to Game</paper-button>
+                    <iframe id="voiceServerConnect" width="0" height="0" hidden>
                     <paper-button class="connect" on-tap="connectToVoiceServer" hidden$="{{!game.server.voice}}" raised>Connect to Voice</paper-button>
                 </p>
             </div>
@@ -141,12 +144,15 @@
             },
             connectToGameServer: function() {
                 if (this.game) {
-                    window.open('steam://connect/' + this.game.server.address + '/' + this.game.server.password, 'pugchamp-game', 'width=640,height=360');
+                    document.getElementById('gameServerConnect').src = '';
+                    document.getElementById('gameServerConnect').src = 'steam://connect/' + this.game.server.address + '/' + this.game.server.password;
                 }
             },
             connectToVoiceServer: function() {
                 if (this.game && this.game.server.voice) {
-                    window.open(this.game.server.voice, 'pugchamp-game', 'width=640,height=360');
+                    var formattedVoiceURI = format(this.game.server.voice, {game: this.game, team: this.team, player: this.player, role: this.game.roles[player.role]});
+                    document.getElementById('gameServerConnect').src = '';
+                    document.getElementById('gameServerConnect').src = formattedVoiceURI;
                 }
             }
         });
