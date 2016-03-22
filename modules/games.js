@@ -421,21 +421,21 @@ module.exports = function(app, chance, database, io, self) {
                 game.duration = info.duration;
             }
 
-            yield game.save();
-
             if (info.time) {
                 _.each(game.teams, function(team) {
                     _.each(team.composition, function(role) {
                         _.each(role.players, function(player) {
                             let user = self.getCachedUser(self.getDocumentID(player.user));
 
-                            if (_.has(info.time, user.steamID)) {
+                            if (user && _.has(info.time, user.steamID)) {
                                 player.time = info.time[user.steamID];
                             }
                         });
                     });
                 });
             }
+
+            yield game.save();
 
             processGameUpdate(game);
         }
