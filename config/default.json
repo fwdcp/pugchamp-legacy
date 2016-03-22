@@ -15,7 +15,7 @@
             "readyPeriod": "60s"
         },
         "draft": {
-            "captainDraftExpireCooldown": "3m",
+            "captainDraftExpireCooldown": "2m",
             "captainSelectionWeight": "success",
             "turnTimeLimit": "90s"
         },
