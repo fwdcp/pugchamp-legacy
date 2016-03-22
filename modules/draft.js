@@ -257,7 +257,7 @@ module.exports = function(app, chance, database, io, self) {
 
         // NOTE: hacks with previous draft info - clear draft restrictions and mark activity to prevent players from getting removed
         _.each(previousDraftCaptains, function(captain) {
-            self.markUserActivity(player);
+            self.markUserActivity(captain);
             self.updateUserRestrictions(captain);
         });
         _.each(previousDraftPlayers, function(player) {
