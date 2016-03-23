@@ -151,7 +151,7 @@
             connectToVoiceServer: function() {
                 if (this.game && this.game.server.voice) {
                     this.$.voiceServerConnect.src = '';
-                    this.$.voiceServerConnect.src = format(this.game.server.voice, {game: this.game, team: this.team, player: this.player, role: this.game.roles[player.role]});
+                    this.$.voiceServerConnect.src = format(this.game.server.voice, {user: this.user, game: this.game, team: this.team, player: this.player, role: this.game.roles[this.player.role]});
                 }
             }
         });
