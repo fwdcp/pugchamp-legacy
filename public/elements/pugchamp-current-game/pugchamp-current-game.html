@@ -144,15 +144,14 @@
             },
             connectToGameServer: function() {
                 if (this.game) {
-                    document.getElementById('gameServerConnect').src = '';
-                    document.getElementById('gameServerConnect').src = 'steam://connect/' + this.game.server.address + '/' + this.game.server.password;
+                    this.$.gameServerConnect.src = '';
+                    this.$.gameServerConnect.src = 'steam://connect/' + this.game.server.address + '/' + this.game.server.password;
                 }
             },
             connectToVoiceServer: function() {
                 if (this.game && this.game.server.voice) {
-                    var formattedVoiceURI = format(this.game.server.voice, {game: this.game, team: this.team, player: this.player, role: this.game.roles[player.role]});
-                    document.getElementById('gameServerConnect').src = '';
-                    document.getElementById('gameServerConnect').src = formattedVoiceURI;
+                    this.$.voiceServerConnect.src = '';
+                    this.$.voiceServerConnect.src = format(this.game.server.voice, {game: this.game, team: this.team, player: this.player, role: this.game.roles[player.role]});
                 }
             }
         });
