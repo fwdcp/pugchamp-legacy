@@ -4,7 +4,6 @@ const _ = require('lodash');
 const bodyParser = require('body-parser');
 const co = require('co');
 const config = require('config');
-const debug = require('debug');
 const jwt = require('jsonwebtoken');
 const HttpStatus = require('http-status-codes');
 const moment = require('moment');
@@ -13,8 +12,6 @@ const passport = require('passport');
 const rp = require('request-promise');
 const socketioJwt = require('socketio-jwt');
 const url = require('url');
-
-var socketDebug = debug('pugchamp:sockets');
 
 module.exports = function(app, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
@@ -411,32 +408,6 @@ module.exports = function(app, chance, database, io, self) {
 
     io.sockets.on('authenticated', co.wrap(function*(socket) {
         let userID = socket.decoded_token.user;
-
-        function onUserSocketPacket() {
-            socketDebug(`user ${userID} sent packet (${this.transport.name})`);
-        }
-
-        function onUserSocketClose(reason) {
-            socketDebug(`user ${userID} connection closed: ${reason} (${this.transport.name})`);
-        }
-
-        function onUserSocketUpgrading(transport) {
-            socketDebug(`user ${userID} connection upgrading to (${transport.name})`);
-        }
-
-        function onUserSocketUpgrade(transport) {
-            socketDebug(`user ${userID} connection upgraded to (${transport.name})`);
-        }
-
-        socketDebug(`user ${userID} connected and authenticated (${socket.conn.transport.name})`);
-        socket.conn.removeListener('packet', onUserSocketPacket);
-        socket.conn.on('packet', onUserSocketPacket)
-        socket.conn.removeListener('close', onUserSocketClose);
-        socket.conn.on('close', onUserSocketClose);
-        socket.conn.removeListener('upgrading', onUserSocketUpgrading);
-        socket.conn.on('upgrading', onUserSocketUpgrading);
-        socket.conn.removeListener('upgraded', onUserSocketUpgrade);
-        socket.conn.on('upgraded', onUserSocketUpgrade);
 
         yield self.updateCachedUser(userID);
 
