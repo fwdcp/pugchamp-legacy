@@ -316,10 +316,12 @@ module.exports = function(app, chance, database, io, self) {
 
                 _.each(draftCaptains, function(captain) {
                     self.updateUserRestrictions(captain);
+                    self.updatePlayerStats(captain);
                 });
 
                 _.each(fullPlayerList, function(player) {
                     self.updateUserRestrictions(player);
+                    self.updatePlayerStats(player);
                 });
 
                 currentDraftGame = game.id;
