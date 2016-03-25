@@ -117,6 +117,7 @@ module.exports = function(app, chance, database, io, self) {
 
         return UNAUTHENTICATED_RESTRICTIONS;
     };
+
     self.updateUserRestrictions = co.wrap(function* updateUserRestrictions(userID) {
         let user = yield database.User.findById(userID);
         let restrictions = [];
@@ -139,6 +140,7 @@ module.exports = function(app, chance, database, io, self) {
         };
         user.authorized = yield checkUserAuthorization(user);
         yield user.save();
+        self.updateCachedUser(user.id);
         if (!user.authorized) {
             if (!user.admin) {
                 restrictions.push(UNAUTHORIZED_USER_RESTRICTIONS);
