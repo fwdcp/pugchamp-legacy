@@ -47,6 +47,11 @@ var userSchema = new mongoose.Schema({
             position: Number,
             count: Number
         }],
+        playerScore: {
+            low: Number,
+            center: Number,
+            high: Number
+        },
         rating: {
             mean: {
                 type: Number,
@@ -84,6 +89,12 @@ userSchema.set('toObject', {
                     ret.stats.captainScore.high = _.isNumber(doc.stats.captainScore.high) ? math.round(doc.stats.captainScore.high, 3) : null;
                 }
 
+                if (ret.stats.playerScore) {
+                    ret.stats.playerScore.low = _.isNumber(doc.stats.playerScore.low) ? math.round(doc.stats.playerScore.low, 3) : null;
+                    ret.stats.playerScore.center = _.isNumber(doc.stats.playerScore.center) ? math.round(doc.stats.playerScore.center, 3) : null;
+                    ret.stats.playerScore.high = _.isNumber(doc.stats.playerScore.high) ? math.round(doc.stats.playerScore.high, 3) : null;
+                }
+
                 if (ret.stats.rating && _.isNumber(doc.stats.rating.mean) && _.isNumber(doc.stats.rating.deviation)) {
                     ret.stats.rating.mean = math.round(doc.stats.rating.mean, 0);
                     ret.stats.rating.deviation = math.round(doc.stats.rating.deviation, 0);
@@ -93,6 +104,7 @@ userSchema.set('toObject', {
             }
             else {
                 delete ret.stats.captainScore;
+                delete ret.stats.playerScore;
                 delete ret.stats.rating;
             }
 

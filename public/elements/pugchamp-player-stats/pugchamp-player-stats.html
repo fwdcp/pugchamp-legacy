@@ -16,6 +16,10 @@
             <br>
             <em>Rating</em>: {{player.stats.rating.mean}}&plusmn;{{player.stats.rating.deviation}} ({{player.stats.rating.low}}&ndash;{{player.stats.rating.high}})
         </template>
+        <template is="dom-if" if="{{player.stats.playerScore}}">
+            <br>
+            <em>Player Score</em>: {{player.stats.playerScore.center}}
+        </template>
         <br>
         <google-chart id="roles" type="pie"></google-chart>
 	</template>

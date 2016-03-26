@@ -88,7 +88,8 @@ module.exports = function(app, chance, database, io, self) {
             ratingDeviation: math.round(player.stats.rating.deviation),
             ratingLowerBound: math.round(player.stats.rating.low),
             ratingUpperBound: math.round(player.stats.rating.high),
-            captainScore: player.stats.captainScore && _.isNumber(player.stats.captainScore.center) ? math.round(player.stats.captainScore.center, 3) : null
+            captainScore: player.stats.captainScore && _.isNumber(player.stats.captainScore.center) ? math.round(player.stats.captainScore.center, 3) : null,
+            playerScore: player.stats.playerScore && _.isNumber(player.stats.playerScore.center) ? math.round(player.stats.playerScore.center, 3) : null
         };
     }
 
@@ -109,8 +110,10 @@ module.exports = function(app, chance, database, io, self) {
         let players = _.orderBy(users, [function(player) {
             return player.stats.rating.mean;
         }, function(player) {
+            return player.stats.playerScore ? player.stats.playerScore.center : null;
+        }, function(player) {
             return player.stats.captainScore ? player.stats.captainScore.center : null;
-        }], ['desc', 'desc']);
+        }], ['desc', 'desc', 'desc']);
 
         if (!HIDE_RATINGS) {
             playerListCache = _.map(players, formatCachedPlayerWithRating);
@@ -139,7 +142,7 @@ module.exports = function(app, chance, database, io, self) {
             }
         });
 
-        let scores = _.map(captainGames, function(game) {
+        let captainScores = _.map(captainGames, function(game) {
             let teamIndex = _.findIndex(game.teams, function(team) {
                 return self.getDocumentID(team.captain) === player.id;
             });
@@ -158,7 +161,35 @@ module.exports = function(app, chance, database, io, self) {
             return differential / duration;
         });
 
-        player.stats.captainScore = calculatePredictionInterval(scores);
+        player.stats.captainScore = calculatePredictionInterval(captainScores);
+
+        let playerGames = yield database.Game.find({
+            'teams.composition.players.user': player.id,
+            'status': 'completed',
+            'score': {
+                $exists: true
+            }
+        });
+
+        let playerScores = _.map(playerGames, function(game) {
+            let gamePlayerInfo = self.getGamePlayerInfo(game, player.id);
+            let teamIndex = _.indexOf(game.teams, gamePlayerInfo.team);
+
+            let differential = 0;
+
+            if (teamIndex === 0) {
+                differential = (game.score[0] - game.score[1]) / 5;
+            }
+            else if (teamIndex === 1) {
+                differential = (game.score[1] - game.score[0]) / 5;
+            }
+
+            let duration = game.duration ? game.duration / 1800 : 1;
+
+            return differential / duration;
+        });
+
+        player.stats.playerScore = calculatePredictionInterval(playerScores);
 
         let draftStats = [];
 

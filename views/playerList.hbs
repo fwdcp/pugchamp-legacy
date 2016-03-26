@@ -30,6 +30,11 @@
                 \{{item.ratingMean}}&plusmn;\{{item.ratingDeviation}} (\{{item.ratingLowerBound}}&ndash;\{{item.ratingUpperBound}})
             </template>
         </paper-datatable-column>
+        <paper-datatable-column header="Player Score" property="playerScore" type="Number" sortable>
+            <template>
+                \{{value}}
+            </template>
+        </paper-datatable-column>
         <paper-datatable-column header="Captain Score" property="captainScore" type="Number" sortable>
             <template>
                 \{{value}}

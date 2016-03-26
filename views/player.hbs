@@ -50,6 +50,20 @@
     <p><strong>Player Rating:</strong> {{user.stats.rating.mean}}&plusmn;{{user.stats.rating.deviation}} ({{user.stats.rating.low}}&ndash;{{user.stats.rating.high}})</p>
 
     <p>
+        <strong>Player Score:</strong>
+
+        {{#if user.stats.playerScore}}
+        {{#if user.stats.playerScore.center}}
+        {{user.stats.playerScore.center}}
+        {{else}}
+        N/A
+        {{/if}}
+        {{else}}
+        N/A
+        {{/if}}
+    </p>
+
+    <p>
         <strong>Captain Score:</strong>
 
         {{#if user.stats.captainScore}}
