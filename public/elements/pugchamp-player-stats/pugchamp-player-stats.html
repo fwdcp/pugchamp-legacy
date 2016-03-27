@@ -14,18 +14,18 @@
         </style>
 
         <strong>{{player.alias}}</strong>
-        <template is="dom-if" if="{{player.stats.rating}}">
+        <div hidden$="{{!player.stats.rating}}">
             <br>
             <em>Rating</em>: {{player.stats.rating.mean}}&plusmn;{{player.stats.rating.deviation}} ({{player.stats.rating.low}}&ndash;{{player.stats.rating.high}})
-        </template>
-        <template is="dom-if" if="{{scoreExists(player.stats.playerScore)}}">
+        </div>
+        <div hidden$="{{!scoreExists(player.stats.playerScore)}}">
             <br>
             <em>Player Score</em>: {{player.stats.playerScore.center}}
-        </template>
-        <template is="dom-if" if="{{canRenderChart(player.stats.roles)}}">
+        </div>
+        <div hidden$="{{!canRenderChart(player.stats.roles)}}">
             <br>
             <google-chart id="roles" type="pie"></google-chart>
-        </template>
+        </div>
 	</template>
 
     <script src="/components/lodash/lodash.js"></script>
@@ -46,12 +46,16 @@
                 this._chartsRendered = false;
             },
             scoreExists: function(range) {
-                return range.center !== null;
+                return range && range.center !== null;
             },
             canRenderChart: function(stats) {
                 return _.sumBy(stats, 'count') > 0;
             },
             renderCharts: function() {
+                if (!this.canRenderChart(this.player.stats.roles)) {
+                    return;
+                }
+
                 if (this._chartsRendered) {
                     return;
                 }
