@@ -10,7 +10,7 @@
     <h1>Games</h1>
 
     {{#each games}}
-    <pugchamp-game-summary game="{{toJSON this}}"></pugchamp-game-summary>
+    <pugchamp-game-summary game="{{toJSON this}}" {{#if ../hideCaptains}}hide-captains{{/if}}></pugchamp-game-summary>
     {{/each}}
     {{/body}}
 

@@ -97,7 +97,7 @@
     <h2>Games</h2>
 
     {{#each games}}
-        <pugchamp-game-summary game="{{toJSON this}}"></pugchamp-game-summary>
+        <pugchamp-game-summary game="{{toJSON this}}" {{#if ../hideCaptains}}hide-captains{{/if}}></pugchamp-game-summary>
     {{/each}}
 
     {{#if currentUser.admin}}

@@ -6,6 +6,7 @@
             "hideRatings": false
         },
         "games": {
+            "hideCaptains": false,
             "postGameResetDelay": "1m",
             "substituteRequestPeriod": "1m",
             "substituteSelectionMethod": "closest"

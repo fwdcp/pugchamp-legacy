@@ -39,12 +39,12 @@
             padding: 10px;
         }
 
-        .header .captain {
+        .header .name {
             font-size: 48px;
             font-weight: 500;
         }
 
-        .header .captain a {
+        .header .name a {
             color: inherit;
             text-decoration: none;
         }
@@ -105,8 +105,12 @@
     <paper-material id="game" class="horizontal layout">
         <div class="flex-3 faction" id="faction-{{game.teams.[0].faction}}">
             <div class="header horizontal layout">
-                <div class="captain flex vertical layout center-justified">
+                <div class="name flex vertical layout center-justified">
+                    {{#unless hideCaptains}}
                     <a href="/player/{{game.teams.[0].captain.steamID}}">{{game.teams.[0].captain.alias}}</a>
+                    {{else}}
+                    {{game.teams.[0].faction}}
+                    {{/unless}}
                 </div>
                 {{#if game.score.[0] includeZero=true}}
                 <div class="score vertical layout center-justified">
@@ -154,8 +158,12 @@
         </div>
         <div class="flex-3 faction" id="faction-{{game.teams.[1].faction}}">
             <div class="header horizontal layout">
-                <div class="captain flex vertical layout center-justified">
+                <div class="name flex vertical layout center-justified">
+                    {{#unless hideCaptains}}
                     <a href="/player/{{game.teams.[1].captain.steamID}}">{{game.teams.[1].captain.alias}}</a>
+                    {{else}}
+                    {{game.teams.[1].faction}}
+                    {{/unless}}
                 </div>
                 {{#if game.score.[1] includeZero=true}}
                 <div class="score vertical layout center-justified">

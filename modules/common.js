@@ -7,6 +7,7 @@ const math = require('mathjs');
 const moment = require('moment');
 
 module.exports = function(app, chance, database, io, self) {
+    const HIDE_CAPTAINS = config.get('app.games.hideCaptains');
     const HIDE_RATINGS = config.get('app.users.hideRatings');
     const SITE_NAME = config.get('app.common.siteName');
     const SITE_SUBTITLE = config.get('app.common.siteSubtitle');
@@ -63,6 +64,8 @@ module.exports = function(app, chance, database, io, self) {
 
     // NOTE: must be here in order to take effect for all pages
     app.use(function(req, res, next) {
+        res.locals.hideCaptains = HIDE_CAPTAINS;
+        res.locals.hideRatings = HIDE_RATINGS;
         res.locals.siteName = SITE_NAME;
         res.locals.siteSubtitle = SITE_SUBTITLE;
         next();
@@ -70,11 +73,6 @@ module.exports = function(app, chance, database, io, self) {
 
     app.use(function(req, res, next) {
         res.locals.currentUser = req.user ? req.user.toObject() : null;
-        next();
-    });
-
-    app.use(function(req, res, next) {
-        res.locals.hideRatings = HIDE_RATINGS;
         next();
     });
 

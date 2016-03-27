@@ -28,12 +28,12 @@
                 text-align: center;
             }
 
-            .team .captain {
+            .team .name {
                 font-size: 21px;
                 font-weight: 500;
             }
 
-            .team .captain a {
+            .team .name a {
                 text-decoration: none;
             }
 
@@ -44,12 +44,12 @@
                 text-align: center;
             }
 
-            .team.team-0 .captain {
+            .team.team-0 .name {
                 margin-right: 5px;
                 text-align: right;
             }
 
-            .team.team-1 .captain {
+            .team.team-1 .name {
                 margin-left: 5px;
                 text-align: left;
             }
@@ -73,8 +73,13 @@
                 <span>{{game.status}}</span>
             </div>
             <div class$="team team-0 flex-3 horizontal layout faction-{{_getProperty(game.teams, team1, 'faction')}}">
-                <div class="captain flex vertical layout center-justified">
-                    <a href="/player/{{_getProperty(game.teams, team1, 'captain', 'steamID')}}">{{_getProperty(game.teams, team1, 'captain', 'alias')}}</a>
+                <div class="name flex vertical layout center-justified">
+                    <template is="dom-if" if="{{!hideCaptains()}}">
+                        <a href="/player/{{_getProperty(game.teams, team1, 'captain', 'steamID')}}">{{_getProperty(game.teams, team1, 'captain', 'alias')}}</a>
+                    </template>
+                    <template is="dom-if" if="{{hideCaptains()}}">
+                        {{_getProperty(game.teams, team1, 'faction')}}
+                    </template>
                 </div>
                 <template is="dom-if" if="{{_hasProperty(game.score, team1)}}">
                     <div class="score vertical layout center-justified">
@@ -94,8 +99,13 @@
                         <span>{{_getProperty(game.score, team2)}}</span>
                     </div>
                 </template>
-                <div class="captain flex vertical layout center-justified">
-                    <a href="/player/{{_getProperty(game.teams, team2, 'captain', 'steamID')}}">{{_getProperty(game.teams, team2, 'captain', 'alias')}}</a>
+                <div class="name flex vertical layout center-justified">
+                    <template is="dom-if" if="{{!hideCaptains}}">
+                        <a href="/player/{{_getProperty(game.teams, team2, 'captain', 'steamID')}}">{{_getProperty(game.teams, team2, 'captain', 'alias')}}</a>
+                    </template>
+                    <template is="dom-if" if="{{hideCaptains}}">
+                        {{_getProperty(game.teams, team2, 'faction')}}
+                    </template>
                 </div>
             </div>
         </paper-material>
@@ -108,10 +118,8 @@
             is: 'pugchamp-game-summary',
             behaviors: [PugChampPolymerHelperBehaviors],
             properties: {
-                game: Object
-            },
-            momentFromNow: function(date) {
-                return moment(date).fromNow();
+                game: Object,
+                hideCaptains: Boolean
             },
             ready: function() {
                 if (this.game && this.game.reverseTeams) {
@@ -125,6 +133,9 @@
             },
             formatDuration: function(duration) {
                 return moment.duration(duration, 'seconds').format();
+            },
+            momentFromNow: function(date) {
+                return moment(date).fromNow();
             }
         });
     </script>
