@@ -15,15 +15,12 @@
 
         <strong>{{player.alias}}</strong>
         <div hidden$="{{!player.stats.rating}}">
-            <br>
             <em>Rating</em>: {{player.stats.rating.mean}}&plusmn;{{player.stats.rating.deviation}} ({{player.stats.rating.low}}&ndash;{{player.stats.rating.high}})
         </div>
         <div hidden$="{{!scoreExists(player.stats.playerScore)}}">
-            <br>
             <em>Player Score</em>: {{player.stats.playerScore.center}}
         </div>
         <div hidden$="{{!canRenderChart(player.stats.roles)}}">
-            <br>
             <google-chart id="roles" type="pie"></google-chart>
         </div>
 	</template>
