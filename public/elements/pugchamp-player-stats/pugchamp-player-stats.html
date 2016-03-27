@@ -2,6 +2,8 @@
 
 <link rel="import" href="/components/google-chart/google-chart.html">
 
+<script src="/components/lodash/lodash.js"></script>
+
 <dom-module id="pugchamp-player-stats">
     <template>
         <style is="custom-style">
@@ -20,8 +22,10 @@
             <br>
             <em>Player Score</em>: {{player.stats.playerScore.center}}
         </template>
-        <br>
-        <google-chart id="roles" type="pie"></google-chart>
+        <template is="dom-if" if="{{canRenderChart(player.stats.roles)}}">
+            <br>
+            <google-chart id="roles" type="pie"></google-chart>
+        </template>
 	</template>
 
     <script src="/components/lodash/lodash.js"></script>
@@ -40,6 +44,9 @@
             },
             ready: function() {
                 this._chartsRendered = false;
+            },
+            canRenderChart: function(stats) {
+                return _.sumBy(stats, 'count') > 0;
             },
             renderCharts: function() {
                 if (this._chartsRendered) {
