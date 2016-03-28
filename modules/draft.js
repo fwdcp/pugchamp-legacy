@@ -359,7 +359,7 @@ module.exports = function(app, chance, database, io, self) {
             }, teamFactions, true);
 
             if (!legalNewState) {
-                throw new Error('Invalid state after draft completed!');
+                throw new Error('invalid state after draft completed');
             }
 
             currentDraftTurn = _.size(DRAFT_ORDER);
@@ -388,10 +388,10 @@ module.exports = function(app, chance, database, io, self) {
         try {
             let turnDefinition = DRAFT_ORDER[currentDraftTurn];
 
-            if (turnDefinition.method === 'captain' && choice.captain !== draftCaptains[turnDefinition.team]) {
+            if (turnDefinition.method === 'captain' && choice.user !== draftCaptains[turnDefinition.team]) {
                 return;
             }
-            else if (turnDefinition.method !== 'captain' && choice.captain) {
+            else if (turnDefinition.method !== 'captain' && choice.user) {
                 return;
             }
 
@@ -500,7 +500,7 @@ module.exports = function(app, chance, database, io, self) {
             }, newFactions, false);
 
             if (!legalNewState) {
-                throw new Error('Invalid state after valid choice!');
+                throw new Error('invalid state after committing choice');
             }
 
             draftCaptains = newCaptains;
@@ -593,7 +593,7 @@ module.exports = function(app, chance, database, io, self) {
                             return weight + boost;
                         });
 
-                        choice.captain = chance.weighted(fullCaptains, weights);
+                        choice.captain = chance.weighted(turnCaptainPool, weights);
 
                         supported = true;
                     }
@@ -825,7 +825,7 @@ module.exports = function(app, chance, database, io, self) {
         }, teamFactions, false);
 
         if (!legalState) {
-            throw new Error('invalid state before draft start!');
+            throw new Error('invalid state before draft start');
         }
 
         _.each(captainPool, function(captain) {
@@ -846,7 +846,7 @@ module.exports = function(app, chance, database, io, self) {
     function onUserMakeDraftChoice(choice) {
         let userID = this.decoded_token.user;
 
-        choice.captain = userID;
+        choice.user = userID;
 
         commitDraftChoice(choice);
     }

@@ -187,21 +187,19 @@
             <div id="teams">
                 <template is="dom-repeat" items="{{pickedTeams}}">
                     <div data-faction$="{{_getProperty(factions, index)}}" class="team horizontal layout">
-                        <template is="dom-if" if="{{!hideCaptains}}">
-                            <paper-item class="user flex-2">
-                                <paper-item-body two-line>
-                                    <div>
-                                        <template is="dom-if" if="{{_getProperty(captains, index)}}">
-                                            <a href="/player/{{_getProperty(captains, index, 'steamID')}}" target="_blank">{{_getProperty(captains, index, 'alias')}}</a>
-                                        </template>
-                                    </div>
-                                    <div secondary><iron-icon icon="pugchamp-role:captain"></iron-icon> Captain</div>
-                                </paper-item-body>
-                                <template is="dom-if" if="{{_getProperty(captains, index)}}">
-                                    <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{_getProperty(captains, index)}}"></pugchamp-player-stats></paper-tooltip>
-                                </template>
-                            </paper-item>
-                        </template>
+                        <paper-item class="user flex-2" hidden$="{{hideCaptains}}">
+                            <paper-item-body two-line>
+                                <div>
+                                    <template is="dom-if" if="{{_getProperty(captains, index)}}">
+                                        <a href="/player/{{_getProperty(captains, index, 'steamID')}}" target="_blank">{{_getProperty(captains, index, 'alias')}}</a>
+                                    </template>
+                                </div>
+                                <div secondary><iron-icon icon="pugchamp-role:captain"></iron-icon> Captain</div>
+                            </paper-item-body>
+                            <template is="dom-if" if="{{_getProperty(captains, index)}}">
+                                <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{_getProperty(captains, index)}}"></pugchamp-player-stats></paper-tooltip>
+                            </template>
+                        </paper-item>
                         <template is="dom-repeat" items="{{_padArray(item, teamSize)}}">
                             <paper-item class="user flex">
                                 <template is="dom-if" if="{{item}}">
@@ -440,7 +438,7 @@
                     return false;
                 }
 
-                if (!this._isCurrentUser(this.user, this.captains[this.turns[turn].captain].id)) {
+                if (!this._isCurrentUser(this.user, this.captains[this.turns[turn].team].id)) {
                     return false;
                 }
 
@@ -459,7 +457,7 @@
                     return false;
                 }
 
-                if (!this._isCurrentUser(this.user, this.captains[this.turns[turn].captain].id)) {
+                if (!this._isCurrentUser(this.user, this.captains[this.turns[turn].team].id)) {
                     return false;
                 }
 
@@ -482,7 +480,7 @@
                     return false;
                 }
 
-                if (!this._isCurrentUser(this.user, this.captains[this.turns[turn].captain].id)) {
+                if (!this._isCurrentUser(this.user, this.captains[this.turns[turn].team].id)) {
                     return false;
                 }
 
@@ -503,7 +501,7 @@
                     return false;
                 }
 
-                if (!this._isCurrentUser(this.user, this.captains[this.turns[turn].captain].id)) {
+                if (!this._isCurrentUser(this.user, this.captains[this.turns[turn].team].id)) {
                     return false;
                 }
 
@@ -551,7 +549,7 @@
                 });
             },
             playExpireWarning: function() {
-                if (this.active && !this.complete && this.user && this._isCurrentUser(this.user, this.captains[this.turns[this.currentTurn].captain].id)) {
+                if (this.active && !this.complete && this.user && this.turns[this.currentTurn].method === 'captain' && this._isCurrentUser(this.user, this.captains[this.turns[this.currentTurn].team].id)) {
                     var progress = Polymer.dom(this.$.draftTurns).querySelector('.draft-turn[data-status=current] .turn-time');
 
                     if (Math.round(progress.max - progress.value) === 10) {
