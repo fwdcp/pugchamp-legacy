@@ -63,6 +63,7 @@
         {{/if}}
     </p>
 
+    {{#unless hideCaptains}}
     <p>
         <strong>Captain Score:</strong>
 
@@ -76,6 +77,7 @@
         N/A
         {{/if}}
     </p>
+    {{/unless}}
     {{/unless}}
 
     {{#if user.stats.draft}}

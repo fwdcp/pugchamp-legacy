@@ -35,11 +35,13 @@
                 \{{value}}
             </template>
         </paper-datatable-column>
+        {{#unless hideCaptains}}
         <paper-datatable-column header="Captain Score" property="captainScore" type="Number" sortable>
             <template>
                 \{{value}}
             </template>
         </paper-datatable-column>
+        {{/unless}}
         {{/unless}}
     </paper-datatable>
 
