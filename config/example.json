@@ -108,55 +108,65 @@
             "order": [{
                 "type": "factionSelect",
                 "method": "random",
-                "captain": 1
+                "team": 1
+            }, {
+                "type": "captainSelect",
+                "method": "success",
+                "pool": "global",
+                "team": 1
+            }, {
+                "type": "captainSelect",
+                "method": "success",
+                "pool": "global",
+                "team": 0
             }, {
                 "type": "playerPick",
                 "method": "captain",
-                "captain": 0
+                "team": 0
             }, {
                 "type": "playerPick",
                 "method": "captain",
-                "captain": 1
+                "team": 1
             }, {
                 "type": "playerPick",
                 "method": "captain",
-                "captain": 1
+                "team": 1
             }, {
                 "type": "playerPick",
                 "method": "captain",
-                "captain": 0
+                "team": 0
             }, {
                 "type": "playerPick",
                 "method": "captain",
-                "captain": 0
+                "team": 0
             }, {
                 "type": "playerPick",
                 "method": "captain",
-                "captain": 1
+                "team": 1
             }, {
                 "type": "playerPick",
                 "method": "captain",
-                "captain": 1
+                "team": 1
             }, {
                 "type": "playerPick",
                 "method": "captain",
-                "captain": 0
+                "team": 0
             }, {
                 "type": "playerPick",
                 "method": "captain",
-                "captain": 0
+                "team": 0
             }, {
                 "type": "playerPick",
                 "method": "captain",
-                "captain": 1
+                "team": 1
             }, {
                 "type": "captainRole",
                 "method": "random",
-                "captain": 1
+                "team": 1
             }, {
                 "type": "captainRole",
                 "method": "random",
-                "captain": 0
+                "team": 0
             }, {
                 "type": "mapBan",
                 "method": "fresh"
@@ -166,11 +176,11 @@
             }, {
                 "type": "mapBan",
                 "method": "captain",
-                "captain": 0
+                "team": 0
             }, {
                 "type": "mapBan",
                 "method": "captain",
-                "captain": 1
+                "team": 1
             }, {
                 "type": "mapPick",
                 "method": "random"

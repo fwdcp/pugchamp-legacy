@@ -13,6 +13,7 @@ module.exports = function(app, chance, database, io, self) {
     const GET_LAUNCH_HOLD_DEBOUNCE_WAIT = 1000;
     const READY_PERIOD = ms(config.get('app.launch.readyPeriod'));
     const ROLES = config.get('app.games.roles');
+    const SEPARATE_CAPTAIN_POOL = config.get('app.draft.separateCaptainPool');
     const TEAM_SIZE = config.get('app.games.teamSize');
 
     function calculateRolesNeeded(playersAvailable) {
@@ -81,8 +82,10 @@ module.exports = function(app, chance, database, io, self) {
                 launchHolds.push('availableServers');
             }
 
-            if (captainsAvailable.size < 2) {
-                launchHolds.push('availableCaptains');
+            if (SEPARATE_CAPTAIN_POOL) {
+                if (captainsAvailable.size < 2) {
+                    launchHolds.push('availableCaptains');
+                }
             }
 
             let allPlayersAvailable = _.reduce(playersAvailable, function(allPlayers, players) {
@@ -98,9 +101,11 @@ module.exports = function(app, chance, database, io, self) {
             }
 
             if (launchAttemptActive) {
-                let captainsReady = new Set(_.intersection([...captainsAvailable], [...readiesReceived]));
-                if (captainsReady.size < 2) {
-                    launchHolds.push('readyCaptains');
+                if (SEPARATE_CAPTAIN_POOL) {
+                    let captainsReady = new Set(_.intersection([...captainsAvailable], [...readiesReceived]));
+                    if (captainsReady.size < 2) {
+                        launchHolds.push('readyCaptains');
+                    }
                 }
 
                 let allPlayersReady = new Set(_.intersection([...allPlayersAvailable], [...readiesReceived]));
@@ -138,9 +143,9 @@ module.exports = function(app, chance, database, io, self) {
             }, []).map(function(userID) {
                 return self.getCachedUser(userID);
             }).value(),
-            captainsAvailable: _.map([...captainsAvailable], function(userID) {
+            captainsAvailable: SEPARATE_CAPTAIN_POOL ? _.map([...captainsAvailable], function(userID) {
                 return self.getCachedUser(userID);
-            }),
+            }) : undefined,
             rolesNeeded: calculateRolesNeeded(playersAvailable),
             teamSize: TEAM_SIZE,
             launchHolds: currentLaunchHolds,
@@ -169,7 +174,10 @@ module.exports = function(app, chance, database, io, self) {
                 playersAvailable = _.mapValues(playersAvailable, function(available) {
                     return new Set(_.intersection([...available], [...readiesReceived]));
                 });
-                captainsAvailable = new Set(_.intersection([...captainsAvailable], [...readiesReceived]));
+
+                if (SEPARATE_CAPTAIN_POOL) {
+                    captainsAvailable = new Set(_.intersection([...captainsAvailable], [...readiesReceived]));
+                }
             }
             catch (err) {
                 self.postToLog({
@@ -191,11 +199,11 @@ module.exports = function(app, chance, database, io, self) {
 
             if (_.size(currentLaunchHolds) === 0) {
                 try {
-                    yield self.launchDraft({
+                    self.launchDraft({
                         players: _.mapValues(playersAvailable, function(available) {
                             return [...available];
                         }),
-                        captains: [...captainsAvailable]
+                        captains: SEPARATE_CAPTAIN_POOL ? [...captainsAvailable] : undefined
                     });
                 }
                 catch (err) {
@@ -229,7 +237,7 @@ module.exports = function(app, chance, database, io, self) {
             roles: _.mapValues(playersAvailable, function(players) {
                 return players.has(userID);
             }),
-            captain: captainsAvailable.has(userID)
+            captain: SEPARATE_CAPTAIN_POOL ? captainsAvailable.has(userID) : undefined
         }]);
     }
 
@@ -247,12 +255,14 @@ module.exports = function(app, chance, database, io, self) {
             });
         }
 
-        if (!_.includes(userRestrictions.aspects, 'captain')) {
-            if (availability.captain) {
-                captainsAvailable.add(userID);
-            }
-            else {
-                captainsAvailable.delete(userID);
+        if (SEPARATE_CAPTAIN_POOL) {
+            if (!_.includes(userRestrictions.aspects, 'captain')) {
+                if (availability.captain) {
+                    captainsAvailable.add(userID);
+                }
+                else {
+                    captainsAvailable.delete(userID);
+                }
             }
         }
 
@@ -395,14 +405,14 @@ module.exports = function(app, chance, database, io, self) {
             roles: _.mapValues(playersAvailable, function(players) {
                 return players.has(userID);
             }),
-            captain: captainsAvailable.has(userID)
+            captain: SEPARATE_CAPTAIN_POOL ? captainsAvailable.has(userID) : undefined
         });
     });
 
     self.on('userDisconnected', function(userID) {
         updateUserAvailability(userID, {
             roles: [],
-            captain: false
+            captain: SEPARATE_CAPTAIN_POOL ? false : undefined
         });
 
         updateUserReadyStatus(userID, false);
@@ -417,8 +427,10 @@ module.exports = function(app, chance, database, io, self) {
             });
         }
 
-        if (_.includes(userRestrictions.aspects, 'captain')) {
-            captainsAvailable.delete(userID);
+        if (SEPARATE_CAPTAIN_POOL) {
+            if (_.includes(userRestrictions.aspects, 'captain')) {
+                captainsAvailable.delete(userID);
+            }
         }
 
         syncUserAvailability(userID);

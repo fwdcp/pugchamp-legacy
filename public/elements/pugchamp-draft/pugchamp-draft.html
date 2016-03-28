@@ -173,7 +173,7 @@
                     <paper-material data-status$="{{turnComparison(index, currentTurn)}}" class="draft-turn flex">
                         <strong>{{fullTurnTypeDescription(item.type)}}</strong>
                         <br> {{fullTurnMethodDescription(item.method)}}
-                        <br> {{fullTurnCaptainName(item.captain)}}
+                        <br> {{fullTurnTeamName(item.team, captains, factions)}}
                         <br>
                         <paper-progress hidden$="{{!_equals(index, currentTurn)}}" class="turn-time" class="transiting" min="0"></paper-progress>
                         {{fullTurnChoiceInfo(item)}}
@@ -187,13 +187,21 @@
             <div id="teams">
                 <template is="dom-repeat" items="{{pickedTeams}}">
                     <div data-faction$="{{_getProperty(factions, index)}}" class="team horizontal layout">
-                        <paper-item class="user flex-2">
-                            <paper-item-body two-line>
-                                <div><a href="/player/{{_getProperty(captains, index, 'steamID')}}" target="_blank">{{_getProperty(captains, index, 'alias')}}</a></div>
-                                <div secondary><iron-icon icon="pugchamp-role:captain"></iron-icon> Captain</div>
-                            </paper-item-body>
-                            <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{_getProperty(captains, index)}}"></pugchamp-player-stats></paper-tooltip>
-                        </paper-item>
+                        <template is="dom-if" if="{{!hideCaptains}}">
+                            <paper-item class="user flex-2">
+                                <paper-item-body two-line>
+                                    <div>
+                                        <template is="dom-if" if="{{_getProperty(captains, index)}}">
+                                            <a href="/player/{{_getProperty(captains, index, 'steamID')}}" target="_blank">{{_getProperty(captains, index, 'alias')}}</a>
+                                        </template>
+                                    </div>
+                                    <div secondary><iron-icon icon="pugchamp-role:captain"></iron-icon> Captain</div>
+                                </paper-item-body>
+                                <template is="dom-if" if="{{_getProperty(captains, index)}}">
+                                    <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{_getProperty(captains, index)}}"></pugchamp-player-stats></paper-tooltip>
+                                </template>
+                            </paper-item>
+                        </template>
                         <template is="dom-repeat" items="{{_padArray(item, teamSize)}}">
                             <paper-item class="user flex">
                                 <template is="dom-if" if="{{item}}">
@@ -270,6 +278,9 @@
         Polymer({
             is: 'pugchamp-draft',
             behaviors: [PugChampPolymerHelperBehaviors, PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior, PugChampClientBehaviors.UserBehavior],
+            properties: {
+                hideCaptains: Boolean
+            },
             ready: function() {
                 this.set('active', false);
 
@@ -295,7 +306,7 @@
                 this.set('unavailablePlayers', status.unavailablePlayers);
 
                 if (this.active && !this.complete) {
-                    if (this.turns[this.currentTurn].method === 'captain' && this._isCurrentUser(this.user, this.captains[this.turns[this.currentTurn].captain].id)) {
+                    if (this.turns[this.currentTurn].method === 'captain' && this._isCurrentUser(this.user, this.captains[this.turns[this.currentTurn].team].id)) {
                         this.startDraftTurn();
                     }
 
@@ -341,6 +352,9 @@
                 if (type === 'factionSelect') {
                     return 'Faction Select';
                 }
+                else if (type === 'captainSelect') {
+                    return 'Captain Select';
+                }
                 else if (type === 'playerPick') {
                     return 'Player Pick';
                 }
@@ -364,10 +378,22 @@
                 else if (method === 'fresh') {
                     return 'Fresh';
                 }
+                else if (method === 'success') {
+                    return 'Success';
+                }
+                else if (method === 'experience') {
+                    return 'Experience';
+                }
             },
-            fullTurnCaptainName: function(captain) {
-                if (this.captains[captain]) {
-                    return this.captains[captain].alias;
+            fullTurnTeamName: function(team) {
+                if (this.captains[team] && !this.hideCaptains) {
+                    return this.captains[team].alias;
+                }
+                else if (this.factions[team]) {
+                    return this.factions[team];
+                }
+                else {
+                    return team === 0 ? 'A' : 'B';
                 }
             },
             fullTurnChoiceInfo: function(choice) {

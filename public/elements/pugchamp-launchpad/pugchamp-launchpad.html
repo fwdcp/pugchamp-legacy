@@ -140,7 +140,7 @@
             <p>
                 <paper-progress id="readyTime" class="transiting" min="0"></paper-progress>
             </p>
-            <p class="ready-status" hidden$="{{isAvailable(availability)}}"><iron-icon icon="block"></iron-icon> You are currently not marked as available for playing any roles or being a captain.</p>
+            <p class="ready-status" hidden$="{{isAvailable(availability)}}"><iron-icon icon="block"></iron-icon> You are currently not marked as available for an upcoming game.</p>
             <p>
                 <span class="ready-status not-ready" hidden$="{{readyToPlay}}"><iron-icon icon="block"></iron-icon> Not Ready</span>
                 <span class="ready-status ready" hidden$="{{!readyToPlay}}"><iron-icon icon="check"></iron-icon> Ready</span>
@@ -151,7 +151,7 @@
             </p>
         </paper-material>
         <paper-material id="holds" class="horizontal layout">
-            <div class="hold flex">
+            <div class="hold flex" hidden$="{{!captainsRequired}}">
                 <span class$="{{classForHold(holds, 'availableCaptains')}}" hidden$="{{launchActive}}">
                     <iron-icon icon="check" hidden$="{{_includes(holds, 'availableCaptains')}}"></iron-icon>
                     <iron-icon icon="block" hidden$="{{!_includes(holds, 'availableCaptains')}}"></iron-icon>
@@ -206,7 +206,7 @@
                 </span>
             </div>
         </paper-material>
-        <div id="captains">
+        <div id="captains" hidden$="{{!captainsRequired}}">
     		<paper-icon-item class$="role {{classForRole(availability, 'captain')}}" style="background-image: url('/assets/img/portraits/captain.png')">
     			<iron-icon icon="pugchamp-role:captain" item-icon></iron-icon>
                 <paper-item-body two-line>
@@ -246,10 +246,18 @@
         Polymer({
             is: 'pugchamp-launchpad',
             behaviors: [PugChampPolymerHelperBehaviors, PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior],
+            properties: {
+                captainsRequired: Boolean
+            },
             ready: function() {
                 this.set('launchActive', false);
                 this.set('readyToPlay', false);
-                this.set('availability', {roles: {}, captain: false});
+                if (this.captainsRequired) {
+                    this.set('availability', {roles: {}, captain: false});
+                }
+                else {
+                    this.set('availability', {roles: {}});
+                }
 
                 this._listenToEvent('launchStatusUpdated', 'onLaunchStatusUpdated');
                 this._listenToEvent('userAvailabilityUpdated', 'onUserAvailabilityUpdated');
@@ -260,7 +268,9 @@
                 this.set('players', status.playersAvailable);
                 this.set('allPlayers', status.allPlayersAvailable);
                 this.set('teamSize', status.teamSize);
-                this.set('captains', status.captainsAvailable);
+                if (this.captainsRequired) {
+                    this.set('captains', status.captainsAvailable);
+                }
                 this.set('rolesNeeded', status.rolesNeeded);
                 this.set('holds', status.launchHolds);
 
@@ -280,12 +290,19 @@
                     }
                 });
 
-                var captain = this.$.captainSelect.checked;
+                if (this.captainsRequired) {
+                    var captain = this.$.captainSelect.checked;
 
-                socket.emit('updateAvailability', {
-                    roles: roles,
-                    captain: captain
-                });
+                    socket.emit('updateAvailability', {
+                        roles: roles,
+                        captain: captain
+                    });
+                }
+                else {
+                    socket.emit('updateAvailability', {
+                        roles: roles
+                    });
+                }
             },
             onUserAvailabilityUpdated: function(availability) {
                 this.set('availability', availability);
@@ -294,7 +311,9 @@
                     button.checked = availability.roles[button.value];
                 });
 
-                this.$.captainSelect.checked = availability.captain;
+                if (this.captainsRequired) {
+                    this.$.captainSelect.checked = availability.captain;
+                }
             },
             incrementReadyTimer: function() {
                 this.$.readyTime.value++;
@@ -333,7 +352,9 @@
                         button.checked = false;
                     });
 
-                    this.$.captainSelect.checked = false;
+                    if (this.captainsRequired) {
+                        this.$.captainSelect.checked = false;
+                    }
                 }
 
                 this.set('readyToPlay', false);
@@ -403,7 +424,11 @@
                     }
                 }
 
-                return availability.captain;
+                if (this.captainsRequired) {
+                    return availability.captain;
+                }
+
+                return false;
             },
             double: function(number) {
                 return 2 * number;

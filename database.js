@@ -180,6 +180,10 @@ var gameSchema = new mongoose.Schema({
                     ref: 'User'
                 },
                 roles: [String]
+            }],
+            captains: [{
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'User'
             }]
         }
     }

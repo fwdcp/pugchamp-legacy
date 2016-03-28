@@ -17,7 +17,7 @@
         },
         "draft": {
             "captainDraftExpireCooldown": "2m",
-            "captainSelectionWeight": "success",
+            "separateCaptainPool": true,
             "turnTimeLimit": "90s"
         },
         "servers": {
