@@ -328,7 +328,10 @@ module.exports = function(app, chance, database, io, self) {
                         user: user.id
                     }
                 }
-            }]
+            }],
+            status: {
+                $in: ['launching', 'live', 'completed']
+            }
         }).sort('-date').populate('teams.captain').exec();
 
         let ratings = yield database.Rating.find({
