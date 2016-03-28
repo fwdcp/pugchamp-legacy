@@ -625,6 +625,57 @@ module.exports = function(app, chance, database, io, self) {
 
                         supported = true;
                     }
+                    else if (turnDefinition.method === 'balance') {
+                        let currentRoleDistribution = calculateRoleDistribution(pickedTeams[turnDefinition.team]);
+
+                        choice.role = _.maxBy(allowedRoles, function(role) {
+                            return (ROLES[role].min - currentRoleDistribution[role] + Math.sqrt(Number.EPSILON)) / (_(playerPool[choice.role]).difference(unavailablePlayers).size() + Math.sqrt(Number.EPSILON));
+                        });
+
+                        choice.override = _.includes(overrideRoles, choice.role);
+                        let choicePool = choice.override ? _.difference(fullPlayerList, unavailablePlayers) : _.difference(playerPool[choice.role], unavailablePlayers);
+
+                        let desiredRating = 1500;
+
+                        let allyTeam = turnDefinition.team === 0 ? 0 : 1;
+                        let enemyTeam = turnDefinition.team === 0 ? 1 : 0;
+                        if (_.size(pickedTeams[allyTeam]) < _.size(pickedTeams[enemyTeam])) {
+                            let allyTotalRating = _.sumBy(pickedTeams[allyTeam], function(player) {
+                                let user = self.getCachedUser(player.player);
+
+                                return user.stats.rating.mean;
+                            });
+
+                            let enemyTotalRating = _.sumBy(pickedTeams[enemyTeam], function(player) {
+                                let user = self.getCachedUser(player.player);
+
+                                return user.stats.rating.mean;
+                            });
+
+                            desiredRating = enemyTotalRating - allyTotalRating;
+                        }
+                        else {
+                            desiredRating = _.sumBy(choicePool, function(player) {
+                                let user = self.getCachedUser(player.player);
+
+                                return user.stats.rating.mean;
+                            }) / _.size(choicePool);
+                        }
+
+                        let sortedChoicePool = _.sortBy(choicePool, function(player) {
+                            let user = self.getCachedUser(player.player);
+
+                            return Math.abs(user.stats.rating.mean - desiredRating);
+                        }, function(player) {
+                            let user = self.getCachedUser(player.player);
+
+                            return user.stats.rating.deviation;
+                        });
+
+                        choice.player = sortedChoicePool[0];
+
+                        supported = true;
+                    }
                 }
                 else if (turnDefinition.type === 'captainRole') {
                     if (turnDefinition.method === 'random') {
