@@ -174,6 +174,10 @@ module.exports = function(app, chance, database, io, self) {
                     completeTurn.player = self.getCachedUser(completeTurn.player);
                 }
 
+                if (completeTurn.captain) {
+                    completeTurn.captain = self.getCachedUser(completeTurn.captain);
+                }
+
                 return completeTurn;
             }),
             playerPool: _.mapValues(playerPool, function(rolePool) {

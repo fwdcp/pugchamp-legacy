@@ -395,7 +395,15 @@
                 }
             },
             fullTurnChoiceInfo: function(choice) {
-                if (choice.type === 'playerPick') {
+                if (choice.type === 'factionSelect') {
+                    return choice.faction;
+                }
+                else if (choice.type === 'captainSelect') {
+                    if (choice.captain) {
+                        return choice.captain.alias;
+                    }
+                }
+                else if (choice.type === 'playerPick') {
                     if (choice.player) {
                         return choice.player.alias + ' (' + this.roles[choice.role].name + ')';
                     }
@@ -409,9 +417,6 @@
                     if (choice.map) {
                         return this.maps[choice.map].name;
                     }
-                }
-                else if (choice.type === 'factionSelect') {
-                    return choice.faction;
                 }
             },
             mapStatus: function(map, picked, remaining) {
