@@ -163,8 +163,12 @@ var gameSchema = new mongoose.Schema({
                 type: String
             },
             method: String,
-            captain: Number,
+            team: Number,
             faction: String,
+            captain: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'User'
+            },
             role: String,
             player: {
                 type: mongoose.Schema.Types.ObjectId,
