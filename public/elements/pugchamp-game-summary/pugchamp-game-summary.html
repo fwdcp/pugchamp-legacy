@@ -74,10 +74,10 @@
             </div>
             <div class$="team team-0 flex-3 horizontal layout faction-{{_getProperty(game.teams, team1, 'faction')}}">
                 <div class="name flex vertical layout center-justified">
-                    <template is="dom-if" if="{{!hideCaptains()}}">
+                    <template is="dom-if" if="{{!hideCaptains}}">
                         <a href="/player/{{_getProperty(game.teams, team1, 'captain', 'steamID')}}">{{_getProperty(game.teams, team1, 'captain', 'alias')}}</a>
                     </template>
-                    <template is="dom-if" if="{{hideCaptains()}}">
+                    <template is="dom-if" if="{{hideCaptains}}">
                         {{_getProperty(game.teams, team1, 'faction')}}
                     </template>
                 </div>
