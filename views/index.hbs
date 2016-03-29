@@ -28,7 +28,7 @@
                 <pugchamp-current-game></pugchamp-current-game>
                 <pugchamp-substitute-requests></pugchamp-substitute-requests>
                 <pugchamp-draft {{#if hideCaptains}}hide-captains{{/if}}></pugchamp-draft>
-                <pugchamp-launchpad {{#if separateCaptainPool}}captains-required{{/if}}></pugchamp-launchpad>
+                <pugchamp-launchpad {{#unless separateCaptainPool}}no-captains{{/if}}></pugchamp-launchpad>
             </div>
             <pugchamp-chat></pugchamp-chat>
         </div>

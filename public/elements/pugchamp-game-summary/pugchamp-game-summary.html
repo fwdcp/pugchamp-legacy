@@ -119,7 +119,10 @@
             behaviors: [PugChampPolymerHelperBehaviors],
             properties: {
                 game: Object,
-                hideCaptains: Boolean
+                hideCaptains: {
+                    type: Boolean,
+                    value: false
+                }
             },
             ready: function() {
                 if (this.game && this.game.reverseTeams) {

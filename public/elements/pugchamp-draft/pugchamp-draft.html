@@ -187,19 +187,21 @@
             <div id="teams">
                 <template is="dom-repeat" items="{{pickedTeams}}">
                     <div data-faction$="{{_getProperty(factions, index)}}" class="team horizontal layout">
-                        <paper-item class="user flex-2" hidden$="{{hideCaptains}}">
-                            <paper-item-body two-line>
-                                <div>
-                                    <template is="dom-if" if="{{_getProperty(captains, index)}}">
-                                        <a href="/player/{{_getProperty(captains, index, 'steamID')}}" target="_blank">{{_getProperty(captains, index, 'alias')}}</a>
-                                    </template>
-                                </div>
-                                <div secondary><iron-icon icon="pugchamp-role:captain"></iron-icon> Captain</div>
-                            </paper-item-body>
-                            <template is="dom-if" if="{{_getProperty(captains, index)}}">
-                                <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{_getProperty(captains, index)}}"></pugchamp-player-stats></paper-tooltip>
-                            </template>
-                        </paper-item>
+                        <template is="dom-if" if="{{!hideCaptains}}">
+                            <paper-item class="user flex-2">
+                                <paper-item-body two-line>
+                                    <div>
+                                        <template is="dom-if" if="{{_getProperty(captains, index)}}">
+                                            <a href="/player/{{_getProperty(captains, index, 'steamID')}}" target="_blank">{{_getProperty(captains, index, 'alias')}}</a>
+                                        </template>
+                                    </div>
+                                    <div secondary><iron-icon icon="pugchamp-role:captain"></iron-icon> Captain</div>
+                                </paper-item-body>
+                                <template is="dom-if" if="{{_getProperty(captains, index)}}">
+                                    <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{_getProperty(captains, index)}}"></pugchamp-player-stats></paper-tooltip>
+                                </template>
+                            </paper-item>
+                        </template>
                         <template is="dom-repeat" items="{{_padArray(item, teamSize)}}">
                             <paper-item class="user flex">
                                 <template is="dom-if" if="{{item}}">
@@ -277,7 +279,10 @@
             is: 'pugchamp-draft',
             behaviors: [PugChampPolymerHelperBehaviors, PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior, PugChampClientBehaviors.UserBehavior],
             properties: {
-                hideCaptains: Boolean
+                hideCaptains: {
+                    type: Boolean,
+                    value: false
+                }
             },
             ready: function() {
                 this.set('active', false);

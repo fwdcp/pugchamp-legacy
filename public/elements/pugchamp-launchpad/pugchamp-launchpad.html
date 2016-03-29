@@ -151,20 +151,22 @@
             </p>
         </paper-material>
         <paper-material id="holds" class="horizontal layout">
-            <div class="hold flex" hidden$="{{!captainsRequired}}">
-                <span class$="{{classForHold(holds, 'availableCaptains')}}" hidden$="{{launchActive}}">
-                    <iron-icon icon="check" hidden$="{{_includes(holds, 'availableCaptains')}}"></iron-icon>
-                    <iron-icon icon="block" hidden$="{{!_includes(holds, 'availableCaptains')}}"></iron-icon>
-                    Captains
-                </span>
-                <span class$="{{classForHold(holds, 'readyCaptains')}}" hidden$="{{!launchActive}}">
-                    <iron-icon icon="check" hidden$="{{_includes(holds, 'readyCaptains')}}"></iron-icon>
-                    <iron-icon icon="block" hidden$="{{!_includes(holds, 'readyCaptains')}}"></iron-icon>
-                    Captains
-                </span>
-                <br>
-                {{captains.length}}/2
-            </div>
+            <template is="dom-if" if="{{!noCaptains}}">
+                <div class="hold flex">
+                    <span class$="{{classForHold(holds, 'availableCaptains')}}" hidden$="{{launchActive}}">
+                        <iron-icon icon="check" hidden$="{{_includes(holds, 'availableCaptains')}}"></iron-icon>
+                        <iron-icon icon="block" hidden$="{{!_includes(holds, 'availableCaptains')}}"></iron-icon>
+                        Captains
+                    </span>
+                    <span class$="{{classForHold(holds, 'readyCaptains')}}" hidden$="{{!launchActive}}">
+                        <iron-icon icon="check" hidden$="{{_includes(holds, 'readyCaptains')}}"></iron-icon>
+                        <iron-icon icon="block" hidden$="{{!_includes(holds, 'readyCaptains')}}"></iron-icon>
+                        Captains
+                    </span>
+                    <br>
+                    {{captains.length}}/2
+                </div>
+            </template>
             <div class="hold flex">
                 <span class$="{{classForHold(holds, 'availablePlayers')}}" hidden$="{{launchActive}}">
                     <iron-icon icon="check" hidden$="{{_includes(holds, 'availablePlayers')}}"></iron-icon>
@@ -206,15 +208,17 @@
                 </span>
             </div>
         </paper-material>
-        <div id="captains" hidden$="{{!captainsRequired}}">
-    		<paper-icon-item class$="role {{classForRole(availability, 'captain')}}" style="background-image: url('/assets/img/portraits/captain.png')">
-    			<iron-icon icon="pugchamp-role:captain" item-icon></iron-icon>
-                <paper-item-body two-line>
-    				<div><h3>Captain</h3></div>
-    				<div secondary><paper-checkbox id="captainSelect" disabled="{{isRestricted(restrictions, 'captain')}}" on-change="updateAvailability"></paper-checkbox>{{playerAliasList(captains)}}</div>
-    			</paper-item-body>
-    		</paper-icon-item>
-        </div>
+        <template is="dom-if" if="{{!noCaptains}}">
+            <div id="captains">
+        		<paper-icon-item class$="role {{classForRole(availability, 'captain')}}" style="background-image: url('/assets/img/portraits/captain.png')">
+        			<iron-icon icon="pugchamp-role:captain" item-icon></iron-icon>
+                    <paper-item-body two-line>
+        				<div><h3>Captain</h3></div>
+        				<div secondary><paper-checkbox id="captainSelect" disabled="{{isRestricted(restrictions, 'captain')}}" on-change="updateAvailability"></paper-checkbox>{{playerAliasList(captains)}}</div>
+        			</paper-item-body>
+        		</paper-icon-item>
+            </div>
+        </template>
         <div class="horizontal layout wrap" id="roles">
             <template is="dom-repeat" items="{{_convertObjectToRepeatable(roles)}}" as="role">
                 <div class="flex role-column">
@@ -247,12 +251,15 @@
             is: 'pugchamp-launchpad',
             behaviors: [PugChampPolymerHelperBehaviors, PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior],
             properties: {
-                captainsRequired: Boolean
+                noCaptains: {
+                    type: Boolean,
+                    value: false
+                }
             },
             ready: function() {
                 this.set('launchActive', false);
                 this.set('readyToPlay', false);
-                if (this.captainsRequired) {
+                if (!this.noCaptains) {
                     this.set('availability', {roles: {}, captain: false});
                 }
                 else {
@@ -268,7 +275,7 @@
                 this.set('players', status.playersAvailable);
                 this.set('allPlayers', status.allPlayersAvailable);
                 this.set('teamSize', status.teamSize);
-                if (this.captainsRequired) {
+                if (!this.noCaptains) {
                     this.set('captains', status.captainsAvailable);
                 }
                 this.set('rolesNeeded', status.rolesNeeded);
@@ -290,7 +297,7 @@
                     }
                 });
 
-                if (this.captainsRequired) {
+                if (!this.noCaptains) {
                     var captain = this.$.captainSelect.checked;
 
                     socket.emit('updateAvailability', {
@@ -311,7 +318,7 @@
                     button.checked = availability.roles[button.value];
                 });
 
-                if (this.captainsRequired) {
+                if (!this.noCaptains) {
                     this.$.captainSelect.checked = availability.captain;
                 }
             },
@@ -352,7 +359,7 @@
                         button.checked = false;
                     });
 
-                    if (this.captainsRequired) {
+                    if (!this.noCaptains) {
                         this.$.captainSelect.checked = false;
                     }
                 }
@@ -424,7 +431,7 @@
                     }
                 }
 
-                if (this.captainsRequired) {
+                if (!this.noCaptains) {
                     return availability.captain;
                 }
 
