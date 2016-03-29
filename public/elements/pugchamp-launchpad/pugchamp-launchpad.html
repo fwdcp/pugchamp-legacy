@@ -208,17 +208,15 @@
                 </span>
             </div>
         </paper-material>
-        <template is="dom-if" if="{{!noCaptains}}">
-            <div id="captains">
-        		<paper-icon-item class$="role {{classForRole(availability, 'captain')}}" style="background-image: url('/assets/img/portraits/captain.png')">
-        			<iron-icon icon="pugchamp-role:captain" item-icon></iron-icon>
-                    <paper-item-body two-line>
-        				<div><h3>Captain</h3></div>
-        				<div secondary><paper-checkbox id="captainSelect" disabled="{{isRestricted(restrictions, 'captain')}}" on-change="updateAvailability"></paper-checkbox>{{playerAliasList(captains)}}</div>
-        			</paper-item-body>
-        		</paper-icon-item>
-            </div>
-        </template>
+        <div id="captains" hidden$="{{noCaptains}}">
+        	<paper-icon-item class$="role {{classForRole(availability, 'captain')}}" style="background-image: url('/assets/img/portraits/captain.png')">
+        		<iron-icon icon="pugchamp-role:captain" item-icon></iron-icon>
+                <paper-item-body two-line>
+        			<div><h3>Captain</h3></div>
+        			<div secondary><paper-checkbox id="captainSelect" disabled="{{isRestricted(restrictions, 'captain')}}" on-change="updateAvailability"></paper-checkbox>{{playerAliasList(captains)}}</div>
+        		</paper-item-body>
+        	</paper-icon-item>
+        </div>
         <div class="horizontal layout wrap" id="roles">
             <template is="dom-repeat" items="{{_convertObjectToRepeatable(roles)}}" as="role">
                 <div class="flex role-column">
