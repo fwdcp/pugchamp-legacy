@@ -49,9 +49,9 @@
             <input type="hidden" name="type" value="abortGame">
             <paper-button class="action" hidden$="{{!isLive(game.status)}}" onclick="submit(event)" raised>Abort Game</paper-button>
         </form>
-	</template>
+    </template>
 
-	<script>
+    <script>
         Polymer({
             is: 'pugchamp-admin-game-control',
             properties: {

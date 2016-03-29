@@ -19,32 +19,32 @@
             }
         </style>
 
-    	<paper-icon-button on-tap="openDialog" data-dialog="modal" icon="help" hidden="{{!user}}" disabled="{{isRestricted(restrictions, 'support')}}" id="trigger"></paper-icon-button>
-    	<paper-tooltip for="trigger">Request Admin</paper-tooltip>
+        <paper-icon-button on-tap="openDialog" data-dialog="modal" icon="help" hidden="{{!user}}" disabled="{{isRestricted(restrictions, 'support')}}" id="trigger"></paper-icon-button>
+        <paper-tooltip for="trigger">Request Admin</paper-tooltip>
 
-    	<paper-dialog id="dialog" modal>
+        <paper-dialog id="dialog" modal>
             <h2>Request Admin</h2>
 
-    		<paper-textarea id="message" maxlength="300" char-counter placeholder="issue description" disabled="{{isRestricted(restrictions, 'support')}}" value="{{message}}"></paper-textarea>
+            <paper-textarea id="message" maxlength="300" char-counter placeholder="issue description" disabled="{{isRestricted(restrictions, 'support')}}" value="{{message}}"></paper-textarea>
 
-    		<div class="buttons">
-    		    <paper-button dialog-dismiss>Cancel</paper-button>
-    			<paper-button dialog-confirm autofocus on-tap="sendRequest" disabled="{{isRestricted(restrictions, 'support')}}">Request Admin</paper-button>
-    		</div>
+            <div class="buttons">
+                <paper-button dialog-dismiss>Cancel</paper-button>
+                <paper-button dialog-confirm autofocus on-tap="sendRequest" disabled="{{isRestricted(restrictions, 'support')}}">Request Admin</paper-button>
+            </div>
         </paper-dialog>
-	</template>
-	<script>
+    </template>
+    <script>
         Polymer({
             is: 'pugchamp-admin-request',
             behaviors: [PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior, PugChampClientBehaviors.UserBehavior],
-			openDialog: function() {
-				this.$.dialog.open();
-			},
-			sendRequest: function() {
-				socket.emit('requestAdmin', this.message);
+            openDialog: function() {
+                this.$.dialog.open();
+            },
+            sendRequest: function() {
+                socket.emit('requestAdmin', this.message);
 
-				this.set('message', '');
-			}
+                this.set('message', '');
+            }
         });
     </script>
 </dom-module>

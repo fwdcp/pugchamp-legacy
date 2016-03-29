@@ -44,7 +44,8 @@
     <h1>{{user.alias}}</h1>
 
     <a class="button" href="https://steamcommunity.com/profiles/{{user.steamID}}"><paper-button class="link" id="steam" raised>Steam Profile</paper-button></a>
-	<a class="button" href="http://logs.tf/profile/{{user.steamID}}"><paper-button class="link" raised>Logs.tf Profile</paper-button></a>
+    <a class="button" href="http://logs.tf/profile/{{user.steamID}}"><paper-button class="link" raised>Logs.tf Profile</paper-button></a>
+    <a class="button" href="https://demos.tf/profiles/{{user.steamID}}"><paper-button class="link" raised>demos.tf Profile</paper-button></a>
 
     {{#unless hideRatings}}
     <p><strong>Player Rating:</strong> {{user.stats.rating.mean}}&plusmn;{{user.stats.rating.deviation}} ({{user.stats.rating.low}}&ndash;{{user.stats.rating.high}})</p>

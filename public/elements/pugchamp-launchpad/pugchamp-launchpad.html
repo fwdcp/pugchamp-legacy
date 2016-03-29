@@ -93,7 +93,7 @@
             }
 
             .role.available {
-				color: var(--accent-color);
+                color: var(--accent-color);
             }
 
             .role iron-icon[item-icon] {
@@ -128,10 +128,10 @@
                 font-weight: 700;
             }
 
-			.player a {
-				color: inherit;
-				text-decoration: none;
-			}
+            .player a {
+                color: inherit;
+                text-decoration: none;
+            }
         </style>
 
         <paper-material id="ready" hidden$="{{!launchActive}}">
@@ -209,13 +209,13 @@
             </div>
         </paper-material>
         <div id="captains" hidden$="{{noCaptains}}">
-        	<paper-icon-item class$="role {{classForRole(availability, 'captain')}}" style="background-image: url('/assets/img/portraits/captain.png')">
-        		<iron-icon icon="pugchamp-role:captain" item-icon></iron-icon>
+            <paper-icon-item class$="role {{classForRole(availability, 'captain')}}" style="background-image: url('/assets/img/portraits/captain.png')">
+                <iron-icon icon="pugchamp-role:captain" item-icon></iron-icon>
                 <paper-item-body two-line>
-        			<div><h3>Captain</h3></div>
-        			<div secondary><paper-checkbox id="captainSelect" disabled="{{isRestricted(restrictions, 'captain')}}" on-change="updateAvailability"></paper-checkbox>{{playerAliasList(captains)}}</div>
-        		</paper-item-body>
-        	</paper-icon-item>
+                    <div><h3>Captain</h3></div>
+                    <div secondary><paper-checkbox id="captainSelect" disabled="{{isRestricted(restrictions, 'captain')}}" on-change="updateAvailability"></paper-checkbox>{{playerAliasList(captains)}}</div>
+                </paper-item-body>
+            </paper-icon-item>
         </div>
         <div class="horizontal layout wrap" id="roles">
             <template is="dom-repeat" items="{{_convertObjectToRepeatable(roles)}}" as="role">
@@ -227,7 +227,7 @@
                                 <div><h3>{{role.value.name}}</h3></div>
                                 <div secondary><paper-checkbox class="role-select" value="{{role.key}}" disabled="{{isRestricted(restrictions, 'start')}}" on-change="updateAvailability">{{_getProperty(players, role.key, 'length')}}/{{double(role.value.min)}}</paper-checkbox></div>
                             </paper-item-body>
-						</paper-icon-item>
+                        </paper-icon-item>
                         <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
                             <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" on-mouseenter="onPlayer" on-mouseleave="offPlayer">
                                 <div class="flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></div>

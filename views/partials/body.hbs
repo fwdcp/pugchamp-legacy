@@ -1,15 +1,15 @@
 <body class="fullbleed" unresolved>
-	<template is="dom-bind">
-		<paper-drawer-panel disable-edge-swipe disable-swipe drawer-width="300px" force-narrow="\{{!open}}" responsive-width="0">
-			{{> drawer}}
+    <template is="dom-bind">
+        <paper-drawer-panel disable-edge-swipe disable-swipe drawer-width="300px" force-narrow="\{{!open}}" responsive-width="0">
+            {{> drawer}}
 
-			<paper-scroll-header-panel main>
-				{{> toolbar}}
+            <paper-scroll-header-panel main>
+                {{> toolbar}}
 
-				<div id="main">
-					{{> @partial-block }}
-				</div>
-			</paper-scroll-header-panel>
-		</paper-drawer-panel>
-	</template>
+                <div id="main">
+                    {{> @partial-block }}
+                </div>
+            </paper-scroll-header-panel>
+        </paper-drawer-panel>
+    </template>
 </body>
