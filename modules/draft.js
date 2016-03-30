@@ -74,14 +74,12 @@ module.exports = function(app, chance, database, io, self) {
     });
     var captainPool = [];
     var fullPlayerList = [];
-    var draftCaptains = [];
     var currentDraftTurn = 0;
     var currentDraftTurnStartTime = null;
     var currentDraftTurnExpireTimeout = null;
     var draftChoices = [];
 
-    var teamFactions = [];
-    var pickedTeams = [];
+    var draftTeams = [];
     var unavailablePlayers = [];
     var pickedMap = null;
     var remainingMaps = [];
@@ -109,9 +107,9 @@ module.exports = function(app, chance, database, io, self) {
         }
     };
 
-    function checkIfLegalState(captains, teams, maps, factions, final) {
+    function checkIfLegalState(teams, maps, final) {
         let teamsValid = _.every(teams, function(team) {
-            let teamState = calculateCurrentTeamState(team);
+            let teamState = calculateCurrentTeamState(team.players);
 
             if (teamState.remaining < 0) {
                 return false;
@@ -126,6 +124,14 @@ module.exports = function(app, chance, database, io, self) {
             }
 
             if (final) {
+                if (!team.captain) {
+                    return false;
+                }
+
+                if (team.faction !== 'RED' && team.faction !== 'BLU') {
+                    return false;
+                }
+
                 if (teamState.remaining !== 0) {
                     return false;
                 }
@@ -147,15 +153,11 @@ module.exports = function(app, chance, database, io, self) {
         }
 
         if (final) {
-            if (_.size(captains) !== 2 || !captains[0] || !captains[1]) {
-                return false;
-            }
-
             if (!maps.picked) {
                 return false;
             }
 
-            if (_(factions).intersection(['RED', 'BLU']).size() !== 2) {
+            if (teams[0].faction === teams[1].faction) {
                 return false;
             }
         }
@@ -192,19 +194,21 @@ module.exports = function(app, chance, database, io, self) {
                 return self.getCachedUser(userID);
             }),
             mapPool: MAP_POOL,
-            draftCaptains: _.map(draftCaptains, function(userID) {
-                return self.getCachedUser(userID);
-            }),
             currentDraftTurn,
-            teamFactions,
-            pickedTeams: _.map(pickedTeams, function(team) {
-                return _.map(team, function(player) {
-                    let filteredPlayer = _.clone(player);
+            draftTeams: _.map(draftTeams, function(team) {
+                let formattedTeam = _.cloneDeep(team);
 
-                    filteredPlayer.player = self.getCachedUser(player.player);
+                if (formattedTeam.captain) {
+                    formattedTeam.captain = self.getCachedUser(formattedTeam.captain);
+                }
 
-                    return filteredPlayer;
+                formattedTeam.players = _.map(formattedTeam.players, function(player) {
+                    player.user = self.getCachedUser(player.user);
+
+                    return player;
                 });
+
+                return formattedTeam;
             }),
             unavailablePlayers,
             pickedMap,
@@ -242,7 +246,6 @@ module.exports = function(app, chance, database, io, self) {
         });
         captainPool = [];
         fullPlayerList = [];
-        draftCaptains = [];
         currentDraftTurn = 0;
         currentDraftTurnStartTime = null;
         if (currentDraftTurnExpireTimeout) {
@@ -251,8 +254,7 @@ module.exports = function(app, chance, database, io, self) {
         }
         draftChoices = [];
 
-        teamFactions = [];
-        pickedTeams = [];
+        draftTeams = [];
         unavailablePlayers = [];
         pickedMap = null;
         remainingMaps = [];
@@ -284,15 +286,15 @@ module.exports = function(app, chance, database, io, self) {
             game.date = new Date();
             game.map = pickedMap;
 
-            game.teams = _.map(pickedTeams, function(team, teamNumber) {
+            game.teams = _.map(draftTeams, function(team) {
                 return {
-                    captain: draftCaptains[teamNumber],
-                    faction: teamFactions[teamNumber],
-                    composition: _.map(team, function(player) {
+                    captain: team.captain,
+                    faction: team.faction,
+                    composition: _.map(team.players, function(player) {
                         return {
                             role: player.role,
                             players: [{
-                                user: player.player
+                                user: player.user
                             }]
                         };
                     })
@@ -324,7 +326,7 @@ module.exports = function(app, chance, database, io, self) {
 
                 self.emit('gameUpdated', game.id);
 
-                _.each(draftCaptains, function(captain) {
+                _.each(captainPool, function(captain) {
                     self.updateUserRestrictions(captain);
                     self.updatePlayerStats(captain);
                 });
@@ -357,10 +359,10 @@ module.exports = function(app, chance, database, io, self) {
         return co(function*() {
             draftComplete = true;
 
-            let legalNewState = checkIfLegalState(draftCaptains, pickedTeams, {
+            let legalNewState = checkIfLegalState(draftTeams, {
                 picked: pickedMap,
                 remaining: remainingMaps
-            }, teamFactions, true);
+            }, true);
 
             if (!legalNewState) {
                 throw new Error('invalid state after draft completed');
@@ -371,9 +373,9 @@ module.exports = function(app, chance, database, io, self) {
             allowedRoles = [];
             overrideRoles = [];
 
-            unavailablePlayers = _(pickedTeams).flatten().map(function(pick) {
-                return pick.player;
-            }).union(draftCaptains).uniq().value();
+            unavailablePlayers = _(draftTeams).map(function(team) {
+                return _(team.players).map(player => player.user).concat(team.captain).value();
+            }).flatten().uniq().value();
 
             currentDraftTurnStartTime = Date.now();
 
@@ -392,7 +394,7 @@ module.exports = function(app, chance, database, io, self) {
         try {
             let turnDefinition = DRAFT_ORDER[currentDraftTurn];
 
-            if (turnDefinition.method === 'captain' && choice.user !== draftCaptains[turnDefinition.team]) {
+            if (turnDefinition.method === 'captain' && choice.user !== draftTeams[turnDefinition.team].captain) {
                 return;
             }
             else if (turnDefinition.method !== 'captain' && choice.user) {
@@ -403,9 +405,7 @@ module.exports = function(app, chance, database, io, self) {
                 return;
             }
 
-            let newCaptains = _.cloneDeep(draftCaptains);
-            let newFactions = _.cloneDeep(teamFactions);
-            let newTeams = _.cloneDeep(pickedTeams);
+            let newTeams = _.cloneDeep(draftTeams);
             let newPickedMap = pickedMap;
             let newRemainingMaps = _.cloneDeep(remainingMaps);
 
@@ -414,34 +414,24 @@ module.exports = function(app, chance, database, io, self) {
                     return;
                 }
 
-                if (turnDefinition.team === 0) {
-                    if (choice.faction === 'RED') {
-                        newFactions = ['RED', 'BLU'];
-                    }
-                    else if (choice.faction === 'BLU') {
-                        newFactions = ['BLU', 'RED'];
-                    }
+                let allyTeam = turnDefinition.team === 0 ? 0 : 1;
+                let enemyTeam = turnDefinition.team === 0 ? 1 : 0;
+
+                if (choice.faction === 'RED') {
+                    newTeams[allyTeam].faction = 'RED';
+                    newTeams[enemyTeam].faction = 'BLU';
                 }
-                else if (turnDefinition.team === 1) {
-                    if (choice.faction === 'RED') {
-                        newFactions = ['BLU', 'RED'];
-                    }
-                    else if (choice.faction === 'BLU') {
-                        newFactions = ['RED', 'BLU'];
-                    }
+                else if (choice.faction === 'BLU') {
+                    newTeams[allyTeam].faction = 'BLU';
+                    newTeams[enemyTeam].faction = 'RED';
                 }
             }
             else if (turnDefinition.type === 'captainSelect') {
-                if (_.some(unavailablePlayers, choice.captain) && !_.some(pickedTeams[turnDefinition.team], player => player.player === choice.captain)) {
+                if (_.some(unavailablePlayers, choice.captain) && !_.some(draftTeams[turnDefinition.team].players, player => player.user === choice.captain)) {
                     return;
                 }
 
-                if (turnDefinition.team === 0) {
-                    newCaptains = [choice.captain, draftCaptains[1]];
-                }
-                else if (turnDefinition.team === 1) {
-                    newCaptains = [draftCaptains[0], choice.captain];
-                }
+                newTeams[turnDefinition.team].captain = choice.captain;
             }
             else if (turnDefinition.type === 'playerPick') {
                 if (_.includes(unavailablePlayers, choice.player)) {
@@ -463,8 +453,8 @@ module.exports = function(app, chance, database, io, self) {
                     }
                 }
 
-                newTeams[turnDefinition.team].push({
-                    player: choice.player,
+                newTeams[turnDefinition.team].players.push({
+                    user: choice.player,
                     role: choice.role
                 });
             }
@@ -473,12 +463,12 @@ module.exports = function(app, chance, database, io, self) {
                     return;
                 }
 
-                if (!draftCaptains[turnDefinition.team]) {
+                if (!draftTeams[turnDefinition.team].captain) {
                     return;
                 }
 
-                newTeams[turnDefinition.team].push({
-                    player: draftCaptains[turnDefinition.team],
+                newTeams[turnDefinition.team].players.push({
+                    user: draftTeams[turnDefinition.team].captain,
                     role: choice.role
                 });
             }
@@ -498,18 +488,16 @@ module.exports = function(app, chance, database, io, self) {
                 newRemainingMaps = _.without(remainingMaps, choice.map);
             }
 
-            let legalNewState = checkIfLegalState(newCaptains, newTeams, {
+            let legalNewState = checkIfLegalState(newTeams, {
                 picked: newPickedMap,
                 remaining: newRemainingMaps
-            }, newFactions, false);
+            }, false);
 
             if (!legalNewState) {
                 throw new Error('invalid state after committing choice');
             }
 
-            draftCaptains = newCaptains;
-            teamFactions = newFactions;
-            pickedTeams = newTeams;
+            draftTeams = newTeams;
             pickedMap = newPickedMap;
             remainingMaps = newRemainingMaps;
 
@@ -564,7 +552,7 @@ module.exports = function(app, chance, database, io, self) {
                         turnCaptainPool = _.difference(captainPool, unavailablePlayers);
                     }
                     else if (turnDefinition.pool === 'team') {
-                        turnCaptainPool = _(pickedTeams[turnDefinition.team]).map(player => player.player).intersection(captainPool).value();
+                        turnCaptainPool = _(draftTeams[turnDefinition.team].players).map(player => player.user).intersection(captainPool).value();
                     }
 
                     if (_.size(turnCaptainPool) === 0) {
@@ -630,7 +618,7 @@ module.exports = function(app, chance, database, io, self) {
                         supported = true;
                     }
                     else if (turnDefinition.method === 'balance') {
-                        let currentRoleDistribution = calculateRoleDistribution(pickedTeams[turnDefinition.team]);
+                        let currentRoleDistribution = calculateRoleDistribution(draftTeams[turnDefinition.team].players);
 
                         choice.role = _.maxBy(allowedRoles, function(role) {
                             return (ROLES[role].min - currentRoleDistribution[role] + Math.sqrt(Number.EPSILON)) / (_(playerPool[choice.role]).difference(unavailablePlayers).size() + Math.sqrt(Number.EPSILON));
@@ -643,15 +631,15 @@ module.exports = function(app, chance, database, io, self) {
 
                         let allyTeam = turnDefinition.team === 0 ? 0 : 1;
                         let enemyTeam = turnDefinition.team === 0 ? 1 : 0;
-                        if (_.size(pickedTeams[allyTeam]) < _.size(pickedTeams[enemyTeam])) {
-                            let allyTotalRating = _.sumBy(pickedTeams[allyTeam], function(player) {
-                                let user = self.getCachedUser(player.player);
+                        if (_.size(draftTeams[allyTeam].players) < _.size(draftTeams[enemyTeam].players)) {
+                            let allyTotalRating = _.sumBy(draftTeams[allyTeam].players, function(player) {
+                                let user = self.getCachedUser(player.user);
 
                                 return user.stats.rating.mean;
                             });
 
-                            let enemyTotalRating = _.sumBy(pickedTeams[enemyTeam], function(player) {
-                                let user = self.getCachedUser(player.player);
+                            let enemyTotalRating = _.sumBy(draftTeams[enemyTeam].players, function(player) {
+                                let user = self.getCachedUser(player.user);
 
                                 return user.stats.rating.mean;
                             });
@@ -660,18 +648,18 @@ module.exports = function(app, chance, database, io, self) {
                         }
                         else {
                             desiredRating = _.sumBy(choicePool, function(player) {
-                                let user = self.getCachedUser(player.player);
+                                let user = self.getCachedUser(player.user);
 
                                 return user.stats.rating.mean;
                             }) / _.size(choicePool);
                         }
 
                         let sortedChoicePool = _.sortBy(choicePool, function(player) {
-                            let user = self.getCachedUser(player.player);
+                            let user = self.getCachedUser(player.user);
 
                             return Math.abs(user.stats.rating.mean - desiredRating);
                         }, function(player) {
-                            let user = self.getCachedUser(player.player);
+                            let user = self.getCachedUser(player.user);
 
                             return user.stats.rating.deviation;
                         });
@@ -695,7 +683,7 @@ module.exports = function(app, chance, database, io, self) {
                         supported = true;
                     }
                     else if (turnDefinition.method === 'fresh') {
-                        let recentGames = yield _(pickedTeams).flatten().map(player => database.Game.findOne({'teams.composition.players.user': player.player}).sort({date: -1}).exec()).value();
+                        let recentGames = yield _(draftTeams).map(team => team.players).flatten().uniq().map(player => database.Game.findOne({'teams.composition.players.user': player.user}).sort({date: -1}).exec()).value();
 
                         let recentlyPlayedMap = _.chain(recentGames).reduce(function(maps, game) {
                             if (!game || !_.includes(remainingMaps, game.map)) {
@@ -728,7 +716,7 @@ module.exports = function(app, chance, database, io, self) {
                         supported = true;
                     }
                     else if (turnDefinition.method === 'fresh') {
-                        let recentGames = yield _(pickedTeams).flatten().map(player => database.Game.findOne({'teams.composition.players.user': player.player}).sort({date: -1}).exec()).value();
+                        let recentGames = yield _(draftTeams).map(team => team.players).flatten().uniq().map(player => database.Game.findOne({'teams.composition.players.user': player.user}).sort({date: -1}).exec()).value();
 
                         let recentlyPlayedMap = _.chain(recentGames).reduce(function(maps, game) {
                             if (!game || !_.includes(remainingMaps, game.map)) {
@@ -780,7 +768,7 @@ module.exports = function(app, chance, database, io, self) {
         let turnDefinition = DRAFT_ORDER[currentDraftTurn];
 
         if (turnDefinition.method === 'captain') {
-            let captain = draftCaptains[turnDefinition.team];
+            let captain = draftTeams[turnDefinition.team].captain;
 
             if (captain) {
                 currentDraftExpireCooldowns.add(captain);
@@ -801,14 +789,14 @@ module.exports = function(app, chance, database, io, self) {
     function beginDraftTurn(turn) {
         currentDraftTurn = turn;
 
-        unavailablePlayers = _(pickedTeams).flatten().map(function(pick) {
-            return pick.player;
-        }).union(draftCaptains).uniq().value();
+        unavailablePlayers = _(draftTeams).map(function(team) {
+            return _(team.players).map(player => player.user).concat(team.captain).value();
+        }).flatten().uniq().value();
 
         let turnDefinition = DRAFT_ORDER[turn];
 
         if (turnDefinition.type === 'playerPick' || turnDefinition.type === 'captainRole') {
-            let team = pickedTeams[turnDefinition.team];
+            let team = draftTeams[turnDefinition.team].players;
             let teamState = calculateCurrentTeamState(team);
 
             if (teamState.remaining > teamState.underfilledTotal) {
@@ -834,7 +822,7 @@ module.exports = function(app, chance, database, io, self) {
         io.sockets.emit('draftStatusUpdated', getCurrentStatusMessage());
 
         if (turnDefinition.method === 'captain') {
-            if (!draftCaptains[turnDefinition.team]) {
+            if (!draftTeams[turnDefinition.team].captain) {
                 throw new Error('no captain to perform selection');
             }
         }
@@ -864,20 +852,23 @@ module.exports = function(app, chance, database, io, self) {
 
         remainingMaps = _.keys(MAP_POOL);
 
-        draftCaptains = [];
-        teamFactions = [];
-        pickedTeams = [
-            [],
-            []
-        ];
+        draftTeams = [{
+            faction: null,
+            captain: null,
+            players: []
+        }, {
+            faction: null,
+            captain: null,
+            players: []
+        }];
         pickedMap = null;
 
         currentDraftGame = null;
 
-        let legalState = checkIfLegalState(draftCaptains, pickedTeams, {
+        let legalState = checkIfLegalState(draftTeams, {
             picked: pickedMap,
             remaining: remainingMaps
-        }, teamFactions, false);
+        }, false);
 
         if (!legalState) {
             throw new Error('invalid state before draft start');

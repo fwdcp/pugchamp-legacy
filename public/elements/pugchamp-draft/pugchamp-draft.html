@@ -73,11 +73,11 @@
                 text-decoration: none;
             }
 
-            .team[data-faction=RED] .user {
+            .team.faction-RED .user {
                 background: var(--team-red-color);
             }
 
-            .team[data-faction=BLU] .user {
+            .team.faction-BLU .user {
                 background: var(--team-blu-color);
             }
 
@@ -172,11 +172,13 @@
                 <template is="dom-repeat" items="{{turns}}">
                     <paper-material data-status$="{{turnComparison(index, currentTurn)}}" class="draft-turn flex">
                         <strong>{{fullTurnTypeDescription(item.type)}}</strong>
-                        <br> {{fullTurnMethodDescription(item.method)}}
-                        <br> {{fullTurnTeamName(item.team, captains, factions)}}
                         <br>
-                        <paper-progress hidden$="{{!_equals(index, currentTurn)}}" class="turn-time" class="transiting" min="0"></paper-progress>
+                        {{fullTurnMethodDescription(item.method)}}
+                        <br>
+                        {{fullTurnTeamName(item.team, teams)}}
+                        <br>
                         {{fullTurnChoiceInfo(item)}}
+                        <paper-progress hidden$="{{!_equals(index, currentTurn)}}" class="turn-time" class="transiting" min="0"></paper-progress>
                     </paper-material>
                 </template>
             </div>
@@ -185,31 +187,31 @@
                 <paper-button class="draft-choice" data-faction$="RED" hidden$="{{!factionChoiceAllowed(user, currentTurn)}}" disabled="{{!factionChoiceAllowed(user, currentTurn)}}" on-tap="selectFaction" raised>Select RED</paper-button>
             </div>
             <div id="teams">
-                <template is="dom-repeat" items="{{pickedTeams}}">
-                    <div data-faction$="{{_getProperty(factions, index)}}" class="team horizontal layout">
+                <template is="dom-repeat" items="{{teams}}">
+                    <div class$="team {{teamFactionClass(item.faction)}} horizontal layout">
                         <template is="dom-if" if="{{!hideCaptains}}">
                             <paper-item class="user flex-2">
                                 <paper-item-body two-line>
                                     <div>
-                                        <template is="dom-if" if="{{_getProperty(captains, index)}}">
-                                            <a href="/player/{{_getProperty(captains, index, 'steamID')}}" target="_blank">{{_getProperty(captains, index, 'alias')}}</a>
+                                        <template is="dom-if" if="{{item.captain}}">
+                                            <a href="/player/{{item.captain.steamID}}" target="_blank">{{item.captain.alias}}</a>
                                         </template>
                                     </div>
                                     <div secondary><iron-icon icon="pugchamp-role:captain"></iron-icon> Captain</div>
                                 </paper-item-body>
-                                <template is="dom-if" if="{{_getProperty(captains, index)}}">
-                                    <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{_getProperty(captains, index)}}"></pugchamp-player-stats></paper-tooltip>
+                                <template is="dom-if" if="{{item.captain}}">
+                                    <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item.captain}}"></pugchamp-player-stats></paper-tooltip>
                                 </template>
                             </paper-item>
                         </template>
-                        <template is="dom-repeat" items="{{_padArray(item, teamSize)}}">
+                        <template is="dom-repeat" items="{{_padArray(item.players, teamSize)}}">
                             <paper-item class="user flex">
                                 <template is="dom-if" if="{{item}}">
                                     <paper-item-body two-line>
-                                        <div><a href="/player/{{item.player.steamID}}" target="_blank">{{item.player.alias}}</a></div>
+                                        <div><a href="/player/{{item.user.steamID}}" target="_blank">{{item.user.alias}}</a></div>
                                         <div secondary><iron-icon icon="pugchamp-role:{{item.role}}"></iron-icon> {{_getProperty(roles, item.role, 'name')}}</div>
                                     </paper-item-body>
-                                    <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item.player}}"></pugchamp-player-stats></paper-tooltip>
+                                    <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item.user}}"></pugchamp-player-stats></paper-tooltip>
                                 </template>
                             </paper-item>
                         </template>
@@ -299,9 +301,7 @@
                 this.set('turns', status.draftTurns);
                 this.set('allPlayers', status.fullPlayerList);
                 this.set('currentTurn', status.currentDraftTurn);
-                this.set('captains', status.draftCaptains);
-                this.set('factions', status.teamFactions);
-                this.set('pickedTeams', status.pickedTeams);
+                this.set('teams', status.draftTeams);
                 this.set('pickedMap', status.pickedMap);
                 this.set('remainingMaps', status.remainingMaps);
                 this.set('allowedRoles', status.allowedRoles);
@@ -309,7 +309,7 @@
                 this.set('unavailablePlayers', status.unavailablePlayers);
 
                 if (this.active && !this.complete) {
-                    if (this.turns[this.currentTurn].method === 'captain' && this._isCurrentUser(this.user, this.captains[this.turns[this.currentTurn].team].id)) {
+                    if (this.turns[this.currentTurn].method === 'captain' && this._isCurrentUser(this.user, this.teams[this.turns[this.currentTurn].team].captain.id)) {
                         this.startDraftTurn();
                     }
 
@@ -388,16 +388,17 @@
                     return 'Experience';
                 }
             },
-            fullTurnTeamName: function(team) {
-                if (this.captains[team] && !this.hideCaptains) {
-                    return this.captains[team].alias;
+            fullTurnTeamName: function(team, teams) {
+                if (teams[team]) {
+                    if (teams[team].captain && !this.hideCaptains) {
+                        return teams[team].captain.alias;
+                    }
+                    else if (teams[team].faction) {
+                        return teams[team].faction;
+                    }
                 }
-                else if (this.factions[team]) {
-                    return this.factions[team];
-                }
-                else {
-                    return team === 0 ? 'A' : 'B';
-                }
+
+                return team === 0 ? 'A' : 'B';
             },
             fullTurnChoiceInfo: function(choice) {
                 if (choice.type === 'factionSelect') {
@@ -448,7 +449,7 @@
                     return false;
                 }
 
-                if (!this._isCurrentUser(this.user, this.captains[this.turns[turn].team].id)) {
+                if (!this._isCurrentUser(this.user, this.teams[this.turns[turn].team].captain.id)) {
                     return false;
                 }
 
@@ -467,7 +468,7 @@
                     return false;
                 }
 
-                if (!this._isCurrentUser(this.user, this.captains[this.turns[turn].team].id)) {
+                if (!this._isCurrentUser(this.user, this.teams[this.turns[turn].team].captain.id)) {
                     return false;
                 }
 
@@ -490,7 +491,7 @@
                     return false;
                 }
 
-                if (!this._isCurrentUser(this.user, this.captains[this.turns[turn].team].id)) {
+                if (!this._isCurrentUser(this.user, this.teams[this.turns[turn].team].captain.id)) {
                     return false;
                 }
 
@@ -511,7 +512,7 @@
                     return false;
                 }
 
-                if (!this._isCurrentUser(this.user, this.captains[this.turns[turn].team].id)) {
+                if (!this._isCurrentUser(this.user, this.teams[this.turns[turn].team].captain.id)) {
                     return false;
                 }
 
@@ -559,7 +560,7 @@
                 });
             },
             playExpireWarning: function() {
-                if (this.active && !this.complete && this.user && this.turns[this.currentTurn].method === 'captain' && this._isCurrentUser(this.user, this.captains[this.turns[this.currentTurn].team].id)) {
+                if (this.active && !this.complete && this.user && this.turns[this.currentTurn].method === 'captain' && this._isCurrentUser(this.user, this.teams[this.turns[this.currentTurn].team].id)) {
                     var progress = Polymer.dom(this.$.draftTurns).querySelector('.draft-turn[data-status=current] .turn-time');
 
                     if (Math.round(progress.max - progress.value) === 10) {
@@ -595,6 +596,14 @@
                 }
                 else if (this.turns[turn].type === 'mapPick') {
                     return 'Pick';
+                }
+            },
+            teamFactionClass: function(faction) {
+                if (faction) {
+                    return 'faction-' + faction;
+                }
+                else {
+                    return '';
                 }
             }
         });
