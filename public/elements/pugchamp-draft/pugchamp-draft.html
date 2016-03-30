@@ -298,15 +298,15 @@
                 this.set('teamSize', status.teamSize);
                 this.set('maps', status.mapPool);
                 this.set('players', status.playerPool);
-                this.set('turns', status.draftTurns);
                 this.set('allPlayers', status.fullPlayerList);
-                this.set('currentTurn', status.currentDraftTurn);
                 this.set('teams', status.draftTeams);
                 this.set('pickedMap', status.pickedMap);
                 this.set('remainingMaps', status.remainingMaps);
                 this.set('allowedRoles', status.allowedRoles);
                 this.set('overrideRoles', status.overrideRoles);
                 this.set('unavailablePlayers', status.unavailablePlayers);
+                this.set('turns', status.draftTurns);
+                this.set('currentTurn', status.currentDraftTurn);
 
                 if (this.active && !this.complete) {
                     if (this.turns[this.currentTurn].method === 'captain' && this._isCurrentUser(this.user, this.teams[this.turns[this.currentTurn].team].captain.id)) {
