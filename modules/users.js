@@ -503,11 +503,10 @@ module.exports = function(app, chance, database, io, self) {
     }));
 
     co(function*() {
-        let users = yield database.User.find({}, '_id').exec();
+        let users = yield database.User.find({}, '_id steamID').exec();
 
         for (let user of users) {
             user.authorized = yield checkUserAuthorization(user);
-
             yield user.save();
 
             yield self.updateCachedUser(user.id);
