@@ -571,6 +571,7 @@ module.exports = function(app, chance, database, io, self) {
                             }
                         }).exec();
 
+                        let candidates = _.map(fullCaptains, captain => captain.id);
                         let weights = _.map(fullCaptains, function(captain) {
                             return _.isNumber(captain.stats.captainScore.center) ? captain.stats.captainScore.center : 0;
                         });
@@ -585,7 +586,7 @@ module.exports = function(app, chance, database, io, self) {
                             return weight + boost;
                         });
 
-                        choice.captain = chance.weighted(turnCaptainPool, weights);
+                        choice.captain = chance.weighted(candidates, weights);
 
                         supported = true;
                     }
