@@ -2,10 +2,10 @@
 
 const co = require('co');
 
-var database = require('./database');
+var database = require('../database');
 
 co(function*() {
-    let users = yield database.User.find({}).exec();
+    let users = yield database.User.find({}, 'alias stats.rating').exec();
 
     for (let user of users) {
         let mean = user.stats.rating.mean;
@@ -43,4 +43,6 @@ co(function*() {
         yield newRating.save();
         yield user.save();
     }
+
+    process.exit(0);
 });
