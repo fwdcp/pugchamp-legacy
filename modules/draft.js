@@ -855,7 +855,7 @@ module.exports = function(app, chance, database, io, self) {
             captainPool = draftInfo.captains;
         }
         else {
-            captainPool = _.filter(draftInfo.fullPlayerList, function(player) {
+            captainPool = _.filter(fullPlayerList, function(player) {
                 let userRestrictions = self.getUserRestrictions(player);
 
                 return !_.includes(userRestrictions.aspects, 'captain');
