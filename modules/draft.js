@@ -649,18 +649,18 @@ module.exports = function(app, chance, database, io, self) {
                         }
                         else {
                             desiredRating = _.sumBy(choicePool, function(player) {
-                                let user = self.getCachedUser(player.user);
+                                let user = self.getCachedUser(player);
 
                                 return user.stats.rating.mean;
                             }) / _.size(choicePool);
                         }
 
                         let sortedChoicePool = _.sortBy(choicePool, function(player) {
-                            let user = self.getCachedUser(player.user);
+                            let user = self.getCachedUser(player);
 
                             return Math.abs(user.stats.rating.mean - desiredRating);
                         }, function(player) {
-                            let user = self.getCachedUser(player.user);
+                            let user = self.getCachedUser(player);
 
                             return user.stats.rating.deviation;
                         });
