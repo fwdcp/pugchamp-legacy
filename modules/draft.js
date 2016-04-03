@@ -626,46 +626,57 @@ module.exports = function(app, chance, database, io, self) {
                         });
 
                         choice.override = _.includes(overrideRoles, choice.role);
-                        let choicePool = choice.override ? _.difference(fullPlayerList, unavailablePlayers) : _.difference(playerPool[choice.role], unavailablePlayers);
+
+                        let choicePool = yield database.User.find({
+                            _id: {
+                                $in: choice.override ? _.difference(fullPlayerList, unavailablePlayers) : _.difference(playerPool[choice.role], unavailablePlayers)
+                            }
+                        }).exec();
+
+                        if (_.size(choicePool) === 0) {
+                            throw new Error('no players to choose from');
+                        }
 
                         let desiredRating = 1500;
 
                         let allyTeam = turnDefinition.team === 0 ? 0 : 1;
                         let enemyTeam = turnDefinition.team === 0 ? 1 : 0;
                         if (_.size(draftTeams[allyTeam].players) < _.size(draftTeams[enemyTeam].players)) {
-                            let allyTotalRating = _.sumBy(draftTeams[allyTeam].players, function(player) {
-                                let user = self.getCachedUser(player.user);
+                            let allyPlayers = yield database.User.find({
+                                _id: {
+                                    $in: _.map(draftTeams[allyTeam].players, player => player.user)
+                                }
+                            }).exec();
 
-                                return user.stats.rating.mean;
+                            let allyTotalRating = _.sumBy(allyPlayers, function(player) {
+                                return player.stats.rating.mean;
                             });
 
-                            let enemyTotalRating = _.sumBy(draftTeams[enemyTeam].players, function(player) {
-                                let user = self.getCachedUser(player.user);
+                            let enemyPlayers = yield database.User.find({
+                                _id: {
+                                    $in: _.map(draftTeams[enemyTeam].players, player => player.user)
+                                }
+                            }).exec();
 
-                                return user.stats.rating.mean;
+                            let enemyTotalRating = _.sumBy(enemyPlayers, function(player) {
+                                return player.stats.rating.mean;
                             });
 
                             desiredRating = enemyTotalRating - allyTotalRating;
                         }
                         else {
                             desiredRating = _.sumBy(choicePool, function(player) {
-                                let user = self.getCachedUser(player);
-
-                                return user.stats.rating.mean;
+                                return player.stats.rating.mean;
                             }) / _.size(choicePool);
                         }
 
                         let sortedChoicePool = _.sortBy(choicePool, function(player) {
-                            let user = self.getCachedUser(player);
-
-                            return Math.abs(user.stats.rating.mean - desiredRating);
+                            return Math.abs(player.stats.rating.mean - desiredRating);
                         }, function(player) {
-                            let user = self.getCachedUser(player);
-
-                            return user.stats.rating.deviation;
+                            return player.stats.rating.deviation;
                         });
 
-                        choice.player = sortedChoicePool[0];
+                        choice.player = sortedChoicePool[0].id;
 
                         supported = true;
                     }
