@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 
 const ADMINS = config.get('app.users.admins');
 const AUTHORIZATION_DEFAULT = config.has('app.users.authorizationDefault') ? config.get('app.users.authorizationDefault') : true;
+const HIDE_DRAFT_STATS = config.get('app.users.hideDraftStats');
 const HIDE_RATINGS = config.get('app.users.hideRatings');
 const MAPS = config.get('app.games.maps');
 const SERVER_POOL = config.get('app.servers.pool');
@@ -108,7 +109,7 @@ userSchema.set('toObject', {
                 delete ret.stats.rating;
             }
 
-            if (doc.options && !doc.options.showDraftStats) {
+            if (HIDE_DRAFT_STATS || (doc.options && !doc.options.showDraftStats)) {
                 delete ret.stats.draft;
             }
         }

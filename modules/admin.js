@@ -11,6 +11,7 @@ const moment = require('moment');
 module.exports = function(app, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const GAME_SERVER_POOL = config.get('app.servers.pool');
+    const HIDE_DRAFT_STATS = config.get('app.users.hideDraftStats');
 
     var router = express.Router();
 
@@ -61,16 +62,18 @@ module.exports = function(app, chance, database, io, self) {
                 }
             }
 
-            let showDraftStats = !!req.body.showDraftStats;
-            if (showDraftStats !== user.options.showDraftStats) {
-                if (showDraftStats) {
-                    self.postToAdminLog(req.user, `enabled showing draft stats for \`<${BASE_URL}/player/${user.steamID}|${user.alias}>\``);
-                }
-                else {
-                    self.postToAdminLog(req.user, `disabled showing draft stats for \`<${BASE_URL}/player/${user.steamID}|${user.alias}>\``);
-                }
+            if (!HIDE_DRAFT_STATS) {
+                let showDraftStats = !!req.body.showDraftStats;
+                if (showDraftStats !== user.options.showDraftStats) {
+                    if (showDraftStats) {
+                        self.postToAdminLog(req.user.id, `enabled showing draft stats for \`<${BASE_URL}/player/${user.steamID}|${user.alias}>\``);
+                    }
+                    else {
+                        self.postToAdminLog(req.user.id, `disabled showing draft stats for \`<${BASE_URL}/player/${user.steamID}|${user.alias}>\``);
+                    }
 
-                user.options.showDraftStats = showDraftStats;
+                    user.options.showDraftStats = showDraftStats;
+                }
             }
 
             try {

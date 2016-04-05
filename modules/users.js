@@ -16,6 +16,7 @@ const url = require('url');
 module.exports = function(app, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const CAPTAIN_GAME_REQUIREMENT = config.get('app.users.captainGameRequirement');
+    const HIDE_DRAFT_STATS = config.get('app.users.hideDraftStats');
     const INITIAL_RATINGS = config.has('app.users.initialRatings') ? config.get('app.users.initialRatings') : [];
     const UNAUTHENTICATED_RESTRICTIONS = {
         aspects: ['sub', 'start', 'captain', 'chat', 'support'],
@@ -479,7 +480,9 @@ module.exports = function(app, chance, database, io, self) {
                 errors.push('Your account is not set up yet.');
             }
 
-            req.user.options.showDraftStats = !!req.body.showDraftStats;
+            if (!HIDE_DRAFT_STATS) {
+                req.user.options.showDraftStats = !!req.body.showDraftStats;
+            }
 
             try {
                 yield req.user.save();

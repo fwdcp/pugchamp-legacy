@@ -3,6 +3,7 @@
         "users": {
             "authorizationDefault": true,
             "captainGameRequirement": 5,
+            "hideDraftStats": false,
             "hideRatings": false
         },
         "games": {

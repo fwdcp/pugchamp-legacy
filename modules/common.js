@@ -8,6 +8,7 @@ const moment = require('moment');
 
 module.exports = function(app, chance, database, io, self) {
     const HIDE_CAPTAINS = config.get('app.games.hideCaptains');
+    const HIDE_DRAFT_STATS = config.get('app.users.hideDraftStats');
     const HIDE_RATINGS = config.get('app.users.hideRatings');
     const SEPARATE_CAPTAIN_POOL = config.get('app.draft.separateCaptainPool');
     const SITE_NAME = config.get('app.common.siteName');
@@ -66,6 +67,7 @@ module.exports = function(app, chance, database, io, self) {
     // NOTE: must be here in order to take effect for all pages
     app.use(function(req, res, next) {
         res.locals.hideCaptains = HIDE_CAPTAINS;
+        res.locals.hideDraftStats = HIDE_DRAFT_STATS;
         res.locals.hideRatings = HIDE_RATINGS;
         res.locals.separateCaptainPool = SEPARATE_CAPTAIN_POOL;
         res.locals.siteName = SITE_NAME;
