@@ -33,7 +33,7 @@
         }
     },
     "server": {
-        "sessionExpiration": "2w",
+        "sessionExpiration": "14d",
         "tokenExpiration": "1h"
     }
 }
