@@ -135,7 +135,7 @@
                 }
             },
             formatDuration: function(duration) {
-                return moment.duration(duration, 'seconds').format();
+                return moment.duration(duration, 'seconds').format('m:ss', {trim: false});
             },
             momentFromNow: function(date) {
                 return moment(date).fromNow();

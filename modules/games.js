@@ -646,7 +646,7 @@ module.exports = function(app, chance, database, io, self) {
         }
     });
     hbs.registerHelper('gameDuration', function(duration) {
-        return moment.duration(duration, 'seconds').format();
+        return moment.duration(duration, 'seconds').format('m:ss', {trim: false});
     });
 
     app.get('/game/:id', co.wrap(function*(req, res) {
