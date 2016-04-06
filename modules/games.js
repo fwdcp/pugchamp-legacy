@@ -287,12 +287,12 @@ module.exports = function(app, chance, database, io, self) {
         }
     };
 
-    self.requestSubstitute = function requestSubstitute(game, player) {
+    self.requestSubstitute = function requestSubstitute(game, playerID) {
         if (!game || game.status === 'completed' || game.status === 'aborted') {
             return;
         }
 
-        let gamePlayerInfo = self.getGamePlayerInfo(game, player);
+        let gamePlayerInfo = self.getGamePlayerInfo(game, playerID);
 
         if (!gamePlayerInfo || gamePlayerInfo.player.replaced) {
             return;
@@ -316,21 +316,21 @@ module.exports = function(app, chance, database, io, self) {
         io.sockets.emit('substituteRequestsUpdated', getCurrentSubstituteRequestsMessage());
     };
 
-    self.performSubstitution = co.wrap(function* performSubstitution(game, oldPlayer, newPlayer) {
-        if (!game || !oldPlayer || !newPlayer) {
+    self.performSubstitution = co.wrap(function* performSubstitution(game, oldPlayerID, newPlayerID) {
+        if (!game || !oldPlayerID || !newPlayerID) {
             return;
         }
 
         _(game.teams).map(team => team.composition).flatten().forEach(function(role) {
             let player = _.find(role.players, function(currentPlayer) {
-                return !currentPlayer.replaced && oldPlayer === self.getDocumentID(currentPlayer.user);
+                return !currentPlayer.replaced && oldPlayerID === self.getDocumentID(currentPlayer.user);
             });
 
             if (player) {
                 player.replaced = true;
 
                 role.players.push({
-                    user: newPlayer
+                    user: newPlayerID
                 });
             }
         });

@@ -143,7 +143,7 @@ module.exports = function(app, chance, database, io, self) {
         if (user.admin) {
             let victim = self.getCachedUser(victimID);
 
-            self.postToAdminLog(user, `purged the chat messages of \`<${BASE_URL}/player/${victim.steamID}|${victim.alias}>\``);
+            self.postToAdminLog(user.id, `purged the chat messages of \`<${BASE_URL}/player/${victim.steamID}|${victim.alias}>\``);
 
             io.sockets.emit('userPurged', victimID);
         }

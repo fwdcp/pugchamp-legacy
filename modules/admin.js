@@ -25,7 +25,9 @@ module.exports = function(app, chance, database, io, self) {
         }
     });
 
-    self.postToAdminLog = co.wrap(function* postToAdminLog(user, action) {
+    self.postToAdminLog = co.wrap(function* postToAdminLog(userID, action) {
+        let user = self.getCachedUser(userID);
+
         let message = {
             channel: '#admin-log',
             attachments: [{
@@ -56,7 +58,7 @@ module.exports = function(app, chance, database, io, self) {
                 });
 
                 if (!existingUser) {
-                    self.postToAdminLog(req.user, `changed the alias of \`<${BASE_URL}/player/${user.steamID}|${req.body.alias}>\` from \`${user.alias}\``);
+                    self.postToAdminLog(req.user.id, `changed the alias of \`<${BASE_URL}/player/${user.steamID}|${req.body.alias}>\` from \`${user.alias}\``);
 
                     user.alias = req.body.alias;
                 }
@@ -106,7 +108,7 @@ module.exports = function(app, chance, database, io, self) {
             let formattedAspects = _.size(restriction.aspects) > 0 ? ` (aspects: ${restriction.aspects.join(', ')})` : '';
             let formattedExpiration = restriction.expires ? ` (expires: ${moment(restriction.expires).format('llll')})` : ' (expires: never)';
             let formattedReason = restriction.reason ? ` (reason: ${restriction.reason})` : '';
-            self.postToAdminLog(req.user, `restricted \`<${BASE_URL}/player/${user.steamID}|${user.alias}>\`${formattedAspects}${formattedExpiration}${formattedReason}`);
+            self.postToAdminLog(req.user.id, `restricted \`<${BASE_URL}/player/${user.steamID}|${user.alias}>\`${formattedAspects}${formattedExpiration}${formattedReason}`);
 
             try {
                 yield restriction.save();
@@ -135,7 +137,7 @@ module.exports = function(app, chance, database, io, self) {
                 let formattedAspects = _.size(restriction.aspects) > 0 ? ` (aspects: ${restriction.aspects.join(', ')})` : '';
                 let formattedExpiration = restriction.expires ? ` (expires: ${moment(restriction.expires).format('llll')})` : ' (expires: never)';
                 let formattedReason = restriction.reason ? ` (reason: ${restriction.reason})` : '';
-                self.postToAdminLog(req.user, `revoked restriction for \`<${BASE_URL}/player/${user.steamID}|${user.alias}>\`${formattedAspects}${formattedExpiration}${formattedReason}`);
+                self.postToAdminLog(req.user.id, `revoked restriction for \`<${BASE_URL}/player/${user.steamID}|${user.alias}>\`${formattedAspects}${formattedExpiration}${formattedReason}`);
 
                 restriction.active = false;
 
@@ -188,7 +190,7 @@ module.exports = function(app, chance, database, io, self) {
 
             let server = chance.pick(availableServers);
 
-            self.postToAdminLog(req.user, `reassigned game \`<${BASE_URL}/game/${game.id}|${game.id}>\` to server \`${server}\``);
+            self.postToAdminLog(req.user.id, `reassigned game \`<${BASE_URL}/game/${game.id}|${game.id}>\` to server \`${server}\``);
 
             try {
                 yield self.shutdownGame(game);
@@ -211,7 +213,7 @@ module.exports = function(app, chance, database, io, self) {
                 return;
             }
 
-            self.postToAdminLog(req.user, `reinitialized server \`${game.server}\` for game \`<${BASE_URL}/game/${game.id}|${game.id}>\``);
+            self.postToAdminLog(req.user.id, `reinitialized server \`${game.server}\` for game \`<${BASE_URL}/game/${game.id}|${game.id}>\``);
 
             try {
                 yield self.initializeServer(game);
@@ -233,7 +235,7 @@ module.exports = function(app, chance, database, io, self) {
                 return;
             }
 
-            self.postToAdminLog(req.user, `updated players for server \`${game.server}\` for game \`<${BASE_URL}/game/${game.id}|${game.id}>\``);
+            self.postToAdminLog(req.user.id, `updated players for server \`${game.server}\` for game \`<${BASE_URL}/game/${game.id}|${game.id}>\``);
 
             try {
                 yield self.updateServerPlayers(game);
@@ -269,7 +271,7 @@ module.exports = function(app, chance, database, io, self) {
                 return;
             }
 
-            self.postToAdminLog(req.user, `requested substitute for player \`<${BASE_URL}/player/${player.steamID}|${player.alias}>\` for game \`<${BASE_URL}/game/${game.id}|${game.id}>\``);
+            self.postToAdminLog(req.user.id, `requested substitute for player \`<${BASE_URL}/player/${player.steamID}|${player.alias}>\` for game \`<${BASE_URL}/game/${game.id}|${game.id}>\``);
 
             self.requestSubstitute(game, player.id);
 
@@ -281,7 +283,7 @@ module.exports = function(app, chance, database, io, self) {
                 return;
             }
 
-            self.postToAdminLog(req.user, `aborted game \`<${BASE_URL}/game/${game.id}|${game.id}>\``);
+            self.postToAdminLog(req.user.id, `aborted game \`<${BASE_URL}/game/${game.id}|${game.id}>\``);
 
             try {
                 yield self.abortGame(game);
@@ -318,7 +320,7 @@ module.exports = function(app, chance, database, io, self) {
                 return;
             }
 
-            self.postToAdminLog(req.user, `executed \`${req.body.command}\` on server \`${req.params.id}\``);
+            self.postToAdminLog(req.user.id, `executed \`${req.body.command}\` on server \`${req.params.id}\``);
 
             try {
                 let result = yield self.sendRCONCommand(req.params.id, req.body.command);
