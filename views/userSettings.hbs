@@ -30,21 +30,25 @@
         </p>
         {{/unless}}
 
+        {{#unless hideDraftStats}}
         <template is="dom-bind" id="draft-stats">
             <p>
                 <paper-checkbox value="1" checked="\{{showDraftStats}}">Show Draft Stats</paper-checkbox>
                 <input type="hidden" name="showDraftStats" value="1" disabled$="\{{!showDraftStats}}">
             </p>
         </template>
+        {{/unless}}
 
         <paper-button raised onclick="save()" id="save">Save</paper-button>
     </form>
 
     <script>
+        {{#unless hideDraftStats}}
         var draftStats = document.getElementById('draft-stats');
         draftStats.addEventListener('dom-change', function() {
             draftStats.showDraftStats = {{#if currentUser.stats.draft}}true{{else}}false{{/if}};
         });
+        {{/unless}}
 
         function save() {
             document.getElementById('user-settings').submit();
