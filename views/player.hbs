@@ -203,10 +203,12 @@
         });
 
         {{#if currentUser.admin}}
+        {{#unless hideDraftStats}}
         var showDraftStats = document.getElementById('show-draft-stats');
         showDraftStats.addEventListener('dom-change', function() {
             showDraftStats.showDraftStats = {{#if user.stats.draft}}true{{else}}false{{/if}};
         });
+        {{/unless}}
         {{/if}}
 
         {{#if user.stats.draft}}
