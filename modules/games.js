@@ -306,7 +306,7 @@ module.exports = function(app, chance, database, io, self) {
             game: game.id,
             role: gamePlayerInfo.role.role,
             captain: self.getDocumentID(gamePlayerInfo.team.captain),
-            player,
+            player: playerID,
             opened: Date.now(),
             candidates: new Set(),
             timeout: setTimeout(attemptSubstitution, SUBSTITUTE_REQUEST_PERIOD, gamePlayerInfo.player.id)
