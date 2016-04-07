@@ -189,75 +189,62 @@ module.exports = function(app, chance, database, io, self) {
             throw new Error('server not assigned to game');
         }
 
-        let rcon = yield connectToRCON(game.server);
+        let populatedGame = yield game.populate('teams.composition.players.user').execPopulate();
 
-        try {
-            let populatedGame = yield game.populate('teams.composition.players.user').execPopulate();
+        let command = _(populatedGame.teams).map(function(team) {
+            return _.map(team.composition, function(role) {
+                return _.map(role.players, function(player) {
+                    if (!player.replaced) {
+                        let className = ROLES[role.role].class;
 
-            let players = _(populatedGame.teams).map(function(team) {
-                return _.map(team.composition, function(role) {
-                    return _.map(role.players, function(player) {
-                        return {
-                            id: player.user.steamID,
-                            alias: player.user.alias,
-                            faction: team.faction,
-                            class: ROLES[role.role].class,
-                            replaced: player.replaced
-                        };
-                    });
+                        let gameTeam = 1;
+                        let gameClass = 0;
+
+                        if (team.faction === 'RED') {
+                            gameTeam = 2;
+                        }
+                        else if (team.faction === 'BLU') {
+                            gameTeam = 3;
+                        }
+
+                        if (className === 'scout') {
+                            gameClass = 1;
+                        }
+                        else if (className === 'soldier') {
+                            gameClass = 3;
+                        }
+                        else if (className === 'pyro') {
+                            gameClass = 7;
+                        }
+                        else if (className === 'demoman') {
+                            gameClass = 4;
+                        }
+                        else if (className === 'heavy') {
+                            gameClass = 6;
+                        }
+                        else if (className === 'engineer') {
+                            gameClass = 9;
+                        }
+                        else if (className === 'medic') {
+                            gameClass = 5;
+                        }
+                        else if (className === 'sniper') {
+                            gameClass = 2;
+                        }
+                        else if (className === 'spy') {
+                            gameClass = 8;
+                        }
+
+                        return `pugchamp_game_player_add "${player.user.steamID}" "${player.user.alias}" ${gameTeam} ${gameClass}`;
+                    }
+                    else {
+                        return `pugchamp_game_player_remove "${player.user.steamID}"`;
+                    }
                 });
-            }).flattenDeep().compact().value();
+            });
+        }).flattenDeep().compact().join('; ');
 
-            for (let player of players) {
-                if (!player.replaced) {
-                    let gameTeam = 1;
-                    let gameClass = 0;
-
-                    if (player.faction === 'RED') {
-                        gameTeam = 2;
-                    }
-                    else if (player.faction === 'BLU') {
-                        gameTeam = 3;
-                    }
-
-                    if (player.class === 'scout') {
-                        gameClass = 1;
-                    }
-                    else if (player.class === 'soldier') {
-                        gameClass = 3;
-                    }
-                    else if (player.class === 'pyro') {
-                        gameClass = 7;
-                    }
-                    else if (player.class === 'demoman') {
-                        gameClass = 4;
-                    }
-                    else if (player.class === 'heavy') {
-                        gameClass = 6;
-                    }
-                    else if (player.class === 'engineer') {
-                        gameClass = 9;
-                    }
-                    else if (player.class === 'medic') {
-                        gameClass = 5;
-                    }
-                    else if (player.class === 'sniper') {
-                        gameClass = 2;
-                    }
-                    else if (player.class === 'spy') {
-                        gameClass = 8;
-                    }
-
-                    yield sendCommandToServer(rcon, `pugchamp_game_player_add "${player.id}" "${player.alias}" ${gameTeam} ${gameClass}`);
-                }
-                else {
-                    yield sendCommandToServer(rcon, `pugchamp_game_player_remove "${player.id}"`);
-                }
-            }
-        }
-        finally {
-            yield disconnectFromRCON(rcon);
-        }
+        yield self.sendRCONCommand(game.server, command);
     });
 
     self.initializeServer = co.wrap(function* initializeServer(game) {
@@ -277,13 +264,10 @@ module.exports = function(app, chance, database, io, self) {
             let hash = crypto.createHash('sha256');
             hash.update(`${game.id}|${gameServerInfo.salt}`);
             let key = hash.digest('hex');
-            yield sendCommandToServer(rcon, `pugchamp_api_url "${BASE_URL}/api/servers/${key}"`);
 
-            yield sendCommandToServer(rcon, `pugchamp_game_id "${game.id}"`);
+            let mapInfo = MAPS[game.map];
 
-            let map = MAPS[game.map];
-            yield sendCommandToServer(rcon, `pugchamp_game_map "${map.file}"`);
-            yield sendCommandToServer(rcon, `pugchamp_game_config "${map.config}"`);
+            yield sendCommandToServer(rcon, `pugchamp_api_url "${BASE_URL}/api/servers/${key}"; pugchamp_game_id "${game.id}"; pugchamp_game_map "${mapInfo.file}"; pugchamp_game_config "${mapInfo.config}"`);
 
             yield self.updateServerPlayers(game);
 
