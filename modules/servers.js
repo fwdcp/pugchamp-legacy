@@ -40,7 +40,7 @@ module.exports = function(app, chance, database, io, self) {
             let condensedCommands = [];
 
             let partialCondensedCommand = '';
-            for (let command in commands) {
+            for (let command of commands) {
                 if (_.size(partialCondensedCommand) + 1 + _.size(command) > MAXIMUM_SERVER_COMMAND_LENGTH) {
                     condensedCommands.push(partialCondensedCommand);
                     partialCondensedCommand = command;
@@ -55,7 +55,7 @@ module.exports = function(app, chance, database, io, self) {
 
             let results = [];
 
-            for (let condensedCommand in condensedCommands) {
+            for (let condensedCommand of condensedCommands) {
                 let result = yield rcon.command(condensedCommand, !_.isUndefined(timeout) ? timeout : COMMAND_TIMEOUT);
 
                 results.push(result);
