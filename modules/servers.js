@@ -384,7 +384,7 @@ module.exports = function(app, chance, database, io, self) {
         }
 
         res.render('servers', {
-            servers: _(servers).mapValues(function(status, name) => ({server: _.omit(GAME_SERVER_POOL[name], 'rcon', 'salt'), status: status})).value()
+            servers: _(servers).mapValues((status, name) => ({server: _.omit(GAME_SERVER_POOL[name], 'rcon', 'salt'), status: status})).value()
         });
     }));
 
