@@ -14,19 +14,10 @@
     {{#each servers}}
     <h2>{{@key}}</h2>
 
-    <p><strong>Address:</strong> {{address}}</p>
-
-    {{#if stv}}
-    <p><strong>SourceTV Address:</strong> {{stv}}</p>
-    {{#if stvpassword}}
-    <p><strong>SourceTV Password:</strong> {{stvpassword}}</p>
-    {{/if}}
-    {{/if}}
-
     <p>
-        <strong>Status:</strong> {{status}}
-        {{#if game}}
-            (<a href="/game/{{game.id}}">Game</a>)
+        <strong>Status:</strong> {{status.status}}
+        {{#if status.game}}
+            (<a href="/game/{{status.game.id}}">Game</a>)
         {{/if}}
     </p>
 
