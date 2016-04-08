@@ -14,30 +14,30 @@
             })
         },
         // access variable properties from an object, however nested they may be
-        _getProperty: function(object) {
+        _getProperty: function(object, ...keys) {
             var property = object;
 
-            for (var i = 1; i < arguments.length; i++) {
-                if (!property.hasOwnProperty(arguments[i])) {
-                    console.error('failed to get property ' + _(arguments).drop().join('.') + ' of object', object);
+            for (var key of keys) {
+                if (!_.has(property, key)) {
+                    console.error('failed to get property ' + keys.join('.') + ' of object', object);
                     return undefined;
                 }
 
-                property = property[arguments[i]];
+                property = property[key];
             }
 
             return property;
         },
         // check for nested property existence
-        _hasProperty: function(object) {
+        _hasProperty: function(object, ...keys) {
             var property = object;
 
-            for (var i = 1; i < arguments.length; i++) {
-                if (!property.hasOwnProperty(arguments[i])) {
+            for (var key of keys) {
+                if (!_.has(property, key)) {
                     return false;
                 }
 
-                property = property[arguments[i]];
+                property = property[key];
             }
 
             return true;
