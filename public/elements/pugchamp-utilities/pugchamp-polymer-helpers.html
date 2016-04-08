@@ -2,6 +2,10 @@
 
 <script>
     window.PugChampPolymerHelperBehaviors = window.PugChampPolymerHelperBehaviors || {
+        // call function of an object
+        _callMethod(object, methodName, ...parameters) {
+            return object[methodName].apply(object, parameters);
+        },
         // Polymer doesn't support iterating over objects
         // see: https://github.com/Polymer/polymer/issues/1385
         // this allows us to use objects in dom-repeat until this is the case
@@ -13,8 +17,12 @@
                 };
             })
         },
+        // equal to each other
+        _equals(a, b) {
+            return a === b;
+        },
         // access variable properties from an object, however nested they may be
-        _getProperty: function(object, ...keys) {
+        _getProperty(object, ...keys) {
             var property = object;
 
             for (var key of keys) {
@@ -29,7 +37,7 @@
             return property;
         },
         // check for nested property existence
-        _hasProperty: function(object, ...keys) {
+        _hasProperty(object, ...keys) {
             var property = object;
 
             for (var key of keys) {
@@ -42,8 +50,12 @@
 
             return true;
         },
+        // element contained in array
+        _includes(array, element) {
+            return array.includes(element);
+        },
         // pad an array with empty values to a certain size
-        _padArray: function(array, min) {
+        _padArray(array, min) {
             var newArray = _.cloneDeep(array);
 
             while (newArray.length < min) {
@@ -51,15 +63,7 @@
             }
 
             return newArray;
-        },
-        // element contained in array
-        _includes: function(array, element) {
-            return array.includes(element);
-        },
-        // equal to each other
-        _equals: function(a, b) {
-            return a === b;
-        },
+        }
     };
 
 </script>
