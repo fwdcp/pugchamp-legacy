@@ -203,6 +203,7 @@ gameSchema.set('toObject', {
 
         if (doc.server) {
             ret.server = _.omit(SERVER_POOL[doc.server], 'rcon', 'salt');
+            ret.server.id = doc.server;
         }
     }
 });

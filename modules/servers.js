@@ -24,10 +24,7 @@ module.exports = function(app, chance, database, io, self) {
         return co(function*() {
             let gameServerInfo = GAME_SERVER_POOL[gameServer];
 
-            let rcon = RCON({
-                address: gameServerInfo.address,
-                password: gameServerInfo.rcon
-            });
+            let rcon = RCON(gameServerInfo.rcon);
 
             yield rcon.connect();
 

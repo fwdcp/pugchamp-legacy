@@ -7,8 +7,10 @@
 <link rel="import" href="/components/paper-menu/paper-menu.html">
 <link rel="import" href="/components/paper-styles/color.html">
 
+<script src="/components/clipboard/dist/clipboard.min.js"></script>
 <script src="/components/format/format.js"></script>
 <script src="/components/lodash/lodash.js"></script>
+<script src="/components/urijs/src/URI.min.js"></script>
 
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-user-behavior.html">
@@ -61,10 +63,44 @@
                 </p>
 
                 <p>
+                    <strong>Server</strong>: {{game.server.id}}
+                    <br>
                     <iframe id="gameServerConnect" width="0" height="0" hidden></iframe>
-                    <paper-button class="connect" on-tap="connectToGameServer" raised>Connect to Game</paper-button>
+                    <paper-button class="connect" on-tap="connectToGameServer" hidden$="{{!game.server.game}}" raised id="gameConnect">Connect to Game</paper-button>
+                    <paper-button hidden$="{{!connectCommand(gameServerURI)}}" data-clipboard-text$="{{connectCommand(gameServerURI)}}" raised id="gameConnectCommand">Copy Game Connect Command</paper-button>
+                    <template is="dom-if" if="{{isSteamServer(gameServerURI)}}">
+                        <paper-tooltip for="gameConnect">
+                            <strong>Address</strong>: {{_callMethod(gameServerURI, 'segmentCoded', 0)}}
+                            <template is="dom-if" if="{{_callMethod(gameServerURI, 'segmentCoded', 1)}}">
+                                <br>
+                                <strong>Password</strong>: {{_callMethod(gameServerURI, 'segmentCoded', 1)}}
+                            </template>
+                        </paper-tooltip>
+                    </template>
+                    <br>
                     <iframe id="voiceServerConnect" width="0" height="0" hidden></iframe>
-                    <paper-button class="connect" on-tap="connectToVoiceServer" hidden$="{{!game.server.voice}}" raised>Connect to Voice</paper-button>
+                    <paper-button class="connect" on-tap="connectToVoiceServer" hidden$="{{!game.server.voice}}" raised id="voiceConnect">Connect to Voice</paper-button>
+                    <template is="dom-if" if="{{isMumbleServer(voiceServerURI)}}">
+                        <paper-tooltip for="voiceConnect">
+                            <strong>Address</strong>: {{_callMethod(voiceServerURI, 'hostname')}}
+                            <template is="dom-if" if="{{_callMethod(voiceServerURI, 'port')}}">
+                                <br>
+                                <strong>Port</strong>: {{_callMethod(voiceServerURI, 'port')}}
+                            </template>
+                            <template is="dom-if" if="{{_callMethod(voiceServerURI, 'username')}}">
+                                <br>
+                                <strong>Username</strong>: {{_callMethod(voiceServerURI, 'username')}}
+                            </template>
+                            <template is="dom-if" if="{{_callMethod(voiceServerURI, 'password')}}">
+                                <br>
+                                <strong>Password</strong>: {{_callMethod(voiceServerURI, 'password')}}
+                            </template>
+                            <template is="dom-if" if="{{channelPath(voiceServerURI)}}">
+                                <br>
+                                <strong>Channel</strong>: {{channelPath(voiceServerURI)}}
+                            </template>
+                        </paper-tooltip>
+                    </template>
                 </p>
             </div>
 
@@ -84,7 +120,6 @@
                         </paper-menu>
                     </paper-dropdown-menu>
                     <paper-button on-tap="requestSubstitute" raised>Request Substitute</paper-button>
-                    </a>
                 </p>
             </div>
         </paper-material>
@@ -103,8 +138,13 @@
                 this.set('player', null);
                 this.set('captain', null);
 
+                this.set('gameServerURI', null);
+                this.set('voiceServerURI', null);
+
                 this._listenToEvent('currentGameUpdated', 'onCurrentGameUpdated');
                 this._listenToEvent('userInfoUpdated', 'onUserInfoUpdated');
+
+                new Clipboard(this.$.gameConnectCommand);
             },
             onCurrentGameUpdated: function(info) {
                 if (!this.game && info) {
@@ -127,6 +167,32 @@
 
                         return this.captain || this.player;
                     }, this)));
+
+                    try {
+                        this.set('gameServerURI', URI(format(this.game.server.game, {
+                            user: this.user,
+                            game: this.game,
+                            team: this.team,
+                            player: this.player,
+                            role: this.player ? this.game.roles[this.player.role] : undefined
+                        })));
+                    }
+                    catch (err) {}
+
+                    try {
+                        this.set('voiceServerURI', URI(format(this.game.server.voice, {
+                            user: this.user,
+                            game: this.game,
+                            team: this.team,
+                            player: this.player,
+                            role: this.player ? this.game.roles[this.player.role] : undefined
+                        })));
+                    }
+                    catch (err) {}
+                } else {
+                    this.set('team', null);
+                    this.set('captain', null);
+                    this.set('player', null);
                 }
             },
             onUserInfoUpdated: function() {
@@ -145,14 +211,32 @@
             connectToGameServer: function() {
                 if (this.game) {
                     this.$.gameServerConnect.src = '';
-                    this.$.gameServerConnect.src = 'steam://connect/' + this.game.server.address + '/' + this.game.server.password;
+                    this.$.gameServerConnect.src = this.gameServerURI.href();
                 }
             },
             connectToVoiceServer: function() {
                 if (this.game && this.game.server.voice) {
                     this.$.voiceServerConnect.src = '';
-                    this.$.voiceServerConnect.src = format(this.game.server.voice, {user: this.user, game: this.game, team: this.team, player: this.player, role: this.game.roles[this.player.role]});
+                    this.$.voiceServerConnect.src = this.voiceServerURI.href();
                 }
+            },
+            isSteamServer: function(uri) {
+                return uri && uri.protocol() === 'steam';
+            },
+            connectCommand: function(uri) {
+                if (uri && this.isSteamServer(uri)) {
+                    return `connect ${uri.segmentCoded(0)}; password ${uri.segmentCoded(1)}`;
+                }
+
+                return '';
+            },
+            isMumbleServer: function(uri) {
+                return uri && uri.protocol() === 'mumble';
+            },
+            channelPath: function(uri) {
+                var title = uri.hasQuery('title') ? uri.search(true).title : '';
+
+                return URI.decode(`${title}${uri.pathname()}`);
             }
         });
     </script>
