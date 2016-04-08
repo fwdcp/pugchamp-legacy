@@ -323,7 +323,7 @@ module.exports = function(app, chance, database, io, self) {
             self.postToAdminLog(req.user.id, `executed \`${req.body.command}\` on server \`${req.params.id}\``);
 
             try {
-                let result = yield self.sendRCONCommand(req.params.id, req.body.command);
+                let result = yield self.sendRCONCommands(req.params.id, _.split(req.body.command, ';'));
 
                 res.json(result);
             }

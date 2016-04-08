@@ -14,6 +14,7 @@ module.exports = function(app, chance, database, io, self) {
     const GAME_SERVER_POOL = config.get('app.servers.pool');
     const MAP_CHANGE_TIMEOUT = ms(config.get('app.servers.mapChangeTimeout'));
     const MAPS = config.get('app.games.maps');
+    const MAXIMUM_SERVER_COMMAND_LENGTH = 511;
     const QUERY_INTERVAL = config.get('app.servers.queryInterval');
     const RETRY_ATTEMPTS = _.map(config.get('app.servers.retryAttempts'), delay => ms(delay));
     const ROLES = config.get('app.games.roles');
@@ -34,11 +35,33 @@ module.exports = function(app, chance, database, io, self) {
         });
     }
 
-    function sendCommandToServer(rcon, command, timeout) {
+    function sendCommandsToServer(rcon, commands, timeout) {
         return co(function*() {
-            let result = yield rcon.command(command, timeout ? timeout : COMMAND_TIMEOUT);
+            let condensedCommands = [];
 
-            return result;
+            let partialCondensedCommand = '';
+            for (let command in commands) {
+                if (_.size(partialCondensedCommand) + 1 + _.size(command) > MAXIMUM_SERVER_COMMAND_LENGTH) {
+                    condensedCommands.push(partialCondensedCommand);
+                    partialCondensedCommand = command;
+                }
+                else {
+                    partialCondensedCommand = `${partialCondensedCommand};${command}`;
+                }
+            }
+            if (_.size(partialCondensedCommand) > 0) {
+                condensedCommands.push(partialCondensedCommand);
+            }
+
+            let results = [];
+
+            for (let condensedCommand in condensedCommands) {
+                let result = yield rcon.command(condensedCommand, !_.isUndefined(timeout) ? timeout : COMMAND_TIMEOUT);
+
+                results.push(result);
+            }
+
+            return _.join(results, '\n');
         });
     }
 
@@ -54,7 +77,7 @@ module.exports = function(app, chance, database, io, self) {
                 let rcon = yield connectToRCON(gameServer);
 
                 try {
-                    let response = yield sendCommandToServer(rcon, 'pugchamp_game_info');
+                    let response = yield sendCommandsToServer(rcon, ['pugchamp_game_info']);
 
                     let gameStatus = _.trim(response);
 
@@ -133,11 +156,11 @@ module.exports = function(app, chance, database, io, self) {
 
     self.throttledGetAvailableServers = _.throttle(self.getAvailableServers, QUERY_INTERVAL);
 
-    self.sendRCONCommand = co.wrap(function* sendRCONCommand(server, command) {
+    self.sendRCONCommands = co.wrap(function* sendRCONCommands(server, commands) {
         let rcon = yield connectToRCON(server);
 
         try {
-            let result = yield sendCommandToServer(rcon, command);
+            let result = yield sendCommandsToServer(rcon, commands);
 
             return result;
         }
@@ -164,7 +187,7 @@ module.exports = function(app, chance, database, io, self) {
                 }
 
                 if (serverStatus.status === 'assigned' && self.getDocumentID(serverStatus.game) === self.getDocumentID(game)) {
-                    yield self.sendRCONCommand(server, 'pugchamp_game_reset');
+                    yield self.sendRCONCommands(server, ['pugchamp_game_reset']);
                 }
             });
         });
@@ -191,7 +214,7 @@ module.exports = function(app, chance, database, io, self) {
 
         let populatedGame = yield game.populate('teams.composition.players.user').execPopulate();
 
-        let command = _(populatedGame.teams).map(function(team) {
+        let commands = _(populatedGame.teams).map(function(team) {
             return _.map(team.composition, function(role) {
                 return _.map(role.players, function(player) {
                     if (!player.replaced) {
@@ -242,9 +265,9 @@ module.exports = function(app, chance, database, io, self) {
                     }
                 });
             });
-        }).flattenDeep().compact().join('; ');
+        }).flattenDeep().compact().value();
 
-        yield self.sendRCONCommand(game.server, command);
+        yield self.sendRCONCommands(game.server, commands);
     });
 
     self.initializeServer = co.wrap(function* initializeServer(game) {
@@ -258,7 +281,7 @@ module.exports = function(app, chance, database, io, self) {
         let rcon = yield connectToRCON(game.server);
 
         try {
-            yield sendCommandToServer(rcon, 'pugchamp_game_reset');
+            yield sendCommandsToServer(rcon, ['pugchamp_game_reset']);
 
             let gameServerInfo = GAME_SERVER_POOL[game.server];
             let hash = crypto.createHash('sha256');
@@ -267,12 +290,12 @@ module.exports = function(app, chance, database, io, self) {
 
             let mapInfo = MAPS[game.map];
 
-            yield sendCommandToServer(rcon, `pugchamp_api_url "${BASE_URL}/api/servers/${key}"; pugchamp_game_id "${game.id}"; pugchamp_game_map "${mapInfo.file}"; pugchamp_game_config "${mapInfo.config}"`);
+            yield sendCommandsToServer(rcon, [`pugchamp_api_url "${BASE_URL}/api/servers/${key}"`, `pugchamp_game_id "${game.id}"`, `pugchamp_game_map "${mapInfo.file}"`, `pugchamp_game_config "${mapInfo.config}"`]);
 
             yield self.updateServerPlayers(game);
 
             try {
-                yield sendCommandToServer(rcon, 'pugchamp_game_start', MAP_CHANGE_TIMEOUT);
+                yield sendCommandsToServer(rcon, ['pugchamp_game_start'], MAP_CHANGE_TIMEOUT);
             }
             catch (err) {
                 let serverStatus = yield getServerStatus(game.server);
