@@ -4,7 +4,58 @@
             "authorizationDefault": true,
             "captainGameRequirement": 5,
             "hideDraftStats": false,
-            "hideRatings": false
+            "hideRatings": false,
+            "restrictionDurations": [{
+                "name": "1 hour",
+                "type": "temporary",
+                "length": "1h"
+            }, {
+                "name": "3 hours",
+                "type": "temporary",
+                "length": "3h"
+            }, {
+                "name": "12 hours",
+                "type": "temporary",
+                "length": "12h"
+            }, {
+                "name": "1 day",
+                "type": "temporary",
+                "length": "1d"
+            }, {
+                "name": "3 days",
+                "type": "temporary",
+                "length": "3d"
+            }, {
+                "name": "1 week",
+                "type": "temporary",
+                "length": "7d"
+            }, {
+                "name": "2 weeks",
+                "type": "temporary",
+                "length": "14d"
+            }, {
+                "name": "1 month",
+                "type": "temporary",
+                "length": "30d"
+            }, {
+                "name": "3 months",
+                "type": "temporary",
+                "length": "90d"
+            }, {
+                "name": "6 months",
+                "type": "temporary",
+                "length": "180d"
+            }, {
+                "name": "1 year",
+                "type": "temporary",
+                "length": "1y"
+            }, {
+                "name": "permanent",
+                "type": "permanent"
+            }, {
+                "name": "custom",
+                "type": "custom"
+            }]
         },
         "games": {
             "hideCaptains": false,

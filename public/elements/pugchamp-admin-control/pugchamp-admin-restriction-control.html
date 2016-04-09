@@ -1,0 +1,131 @@
+<link rel="import" href="/components/polymer/polymer.html">
+
+<link rel="import" href="/components/iron-form/iron-form.html">
+<link rel="import" href="/components/paper-button/paper-button.html">
+<link rel="import" href="/components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="/components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="/components/paper-input/paper-input.html">
+<link rel="import" href="/components/paper-item/paper-item.html">
+
+<dom-module id="pugchamp-admin-restriction-control">
+    <template>
+        <style is="custom-style">
+            .action {
+                background: var(--accent-color);
+                color: var(--light-theme-text-color);
+            }
+
+            paper-datatable {
+                --paper-datatable-row-hover-color: var(--dark-theme-background-color);
+
+                --paper-datatable-column-header: {
+                    color: var(--dark-theme-text-color);
+                };
+
+                --paper-datatable-cell: {
+                    background: var(--box-background-color);
+                    color: var(--dark-theme-text-color);
+                };
+
+                --paper-datatable-column-header-sorted: {
+                    color: inherit;
+                };
+            }
+        </style>
+
+        <form is="iron-form" method="post" action="/admin/user/{{user.id}}" on-iron-form-response="reload" on-iron-form-error="reload">
+            <input type="hidden" name="type" value="createRestriction">
+
+            <p>
+                <label>Restrictions:</label>
+                <paper-checkbox name="aspects" value="sub">sub</paper-checkbox>
+                <paper-checkbox name="aspects" value="start">start</paper-checkbox>
+                <paper-checkbox name="aspects" value="captain">captain</paper-checkbox>
+                <paper-checkbox name="aspects" value="chat">chat</paper-checkbox>
+                <paper-checkbox name="aspects" value="support">support</paper-checkbox>
+            </p>
+            <p><paper-input type="text" label="Reason" name="reason" placeholder="being the worst medic in TF2 history"></paper-input></p>
+            <p>
+                <paper-dropdown-menu label="Duration" name="duration" selected-item="{{duration}}">
+                    <paper-menu class="dropdown-content">
+                        <template is="dom-repeat" items="{{restrictionDurations}}">
+                            <paper-item value$="{{item.name}}" data-type$="{{item.type}}">{{item.name}}</paper-item>
+                        </template>
+                    </paper-menu>
+                </paper-dropdown-menu>
+            </p>
+            <template is="dom-if" if="{{isCustomDuration(duration)}}">
+                <p><label>Expires:</label> <input type="datetime-local" label="Expires" name="expires"></input></p>
+            </template>
+
+            <paper-button raised class="action" onclick="submit(event)">Create</paper-button>
+        </form>
+
+        <h3>History</h3>
+
+        <paper-datatable data="{{restrictions}}">
+            <paper-datatable-column header="Active" property="active" type="Boolean" sortable></paper-datatable-column>
+            <paper-datatable-column header="Aspects" property="aspects" type="Array">
+                <template>
+                    <ul>
+                        <template is="dom-repeat" items="{{value}}">
+                            <li>{{item}}</li>
+                        </template>
+                    </ul>
+                </template>
+            </paper-datatable-column>
+            <paper-datatable-column header="Reason" property="reason">
+                <template>
+                    {{value}}
+                </template>
+            </paper-datatable-column>
+            <paper-datatable-column header="Expiration" property="expires" type="Date" sortable>
+                <template>
+                    <template is="dom-if" if="{{value}}">
+                        {{value}}
+                    </template>
+                    <template is="dom-if" if="{{!value}}">
+                        never
+                    </template>
+                </template>
+            </paper-datatable-column>
+            <paper-datatable-column header="Action">
+                <template>
+                    <template is="dom-if" if="{{item.active}}">
+                        <paper-button class="action" data-restriction$="{{item.id}}" on-tap="revokeRestriction" raised>Revoke</paper-button>
+                    </template>
+                </template>
+            </paper-datatable-column>
+        </paper-datatable>
+
+        <form is="iron-form" method="post" action="/admin/user/{{user.id}}" on-iron-form-response="reload" on-iron-form-error="reload" id="revokeRestriction">
+            <input type="hidden" name="type" value="revokeRestriction">
+            <input type="hidden" name="restriction" id="revokeRestrictionID">
+        </form>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'pugchamp-admin-restriction-control',
+            isCustomDuration: function(duration) {
+                return duration && duration.dataset.type === 'custom';
+            },
+            properties: {
+                restrictionDurations: Array,
+                restrictions: Array,
+                user: Object
+            },
+            reload: function() {
+                document.location.reload();
+            },
+            revokeRestriction: function(event) {
+                this.$.revokeRestrictionID.value = event.target.dataset.restriction;
+                this.$.revokeRestriction.submit();
+            }
+        });
+
+        function submit(e) {
+            Polymer.dom(e).localTarget.parentElement.submit();
+        }
+    </script>
+</dom-module>

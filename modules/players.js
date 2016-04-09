@@ -51,6 +51,7 @@ module.exports = function(app, chance, database, io, self) {
 
     const DRAFT_ORDER = config.get('app.draft.order');
     const HIDE_RATINGS = config.get('app.users.hideRatings');
+    const RESTRICTION_DURATIONS = config.get('app.users.restrictionDurations');
     const ROLES = config.get('app.games.roles');
     const UPDATE_PLAYER_CACHE_DEBOUNCE_MAX_WAIT = 60000;
     const UPDATE_PLAYER_CACHE_DEBOUNCE_WAIT = 5000;
@@ -363,7 +364,8 @@ module.exports = function(app, chance, database, io, self) {
                 return revisedGame;
             }).value(),
             ratings: !HIDE_RATINGS ? _(ratings).map(rating => rating.toObject()).sortBy('date').value() : undefined,
-            restrictions: _(restrictions).map(restriction => restriction.toObject()).orderBy(['active', 'expires'], ['desc', 'desc']).value()
+            restrictions: _(restrictions).map(restriction => restriction.toObject()).orderBy(['active', 'expires'], ['desc', 'desc']).value(),
+            restrictionDurations: RESTRICTION_DURATIONS
         });
     }));
 

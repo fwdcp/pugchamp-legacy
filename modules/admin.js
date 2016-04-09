@@ -7,11 +7,13 @@ const config = require('config');
 const express = require('express');
 const HttpStatus = require('http-status-codes');
 const moment = require('moment');
+const ms = require('ms');
 
 module.exports = function(app, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const GAME_SERVER_POOL = config.get('app.servers.pool');
     const HIDE_DRAFT_STATS = config.get('app.users.hideDraftStats');
+    const RESTRICTION_DURATIONS = config.get('app.users.restrictionDurations');
 
     var router = express.Router();
 
@@ -94,8 +96,25 @@ module.exports = function(app, chance, database, io, self) {
         }
         else if (req.body.type === 'createRestriction') {
             let aspects = req.body.aspects ? _.split(req.body.aspects, ',') : [];
-            let expires = req.body.expires ? req.body.expires : null;
             let reason = req.body.reason ? req.body.reason : null;
+
+            let expires;
+            let duration = _.find(RESTRICTION_DURATIONS, ['name', req.body.duration]);
+
+            if (!duration) {
+                res.sendStatus(HttpStatus.BAD_REQUEST);
+                return;
+            }
+
+            if (duration.type === 'temporary') {
+                expires = moment().add(ms(duration.length), 'ms');
+            }
+            else if (duration.type === 'permanent') {
+                expires = null;
+            }
+            else if (duration.type === 'custom') {
+                expires = req.body.expires ? req.body.expires : null;
+            }
 
             let restriction = new database.Restriction({
                 user: user.id,
