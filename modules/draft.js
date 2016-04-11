@@ -8,6 +8,7 @@ const ms = require('ms');
 module.exports = function(app, chance, database, io, self) {
     const CAPTAIN_DRAFT_EXPIRE_COOLDOWN = ms(config.get('app.draft.captainDraftExpireCooldown'));
     const DRAFT_ORDER = config.get('app.draft.order');
+    const EPSILON = Math.sqrt(Number.EPSILON);
     const MAP_POOL = config.get('app.games.maps');
     const ROLES = config.get('app.games.roles');
     const SEPARATE_CAPTAIN_POOL = config.get('app.draft.separateCaptainPool');
@@ -576,7 +577,7 @@ module.exports = function(app, chance, database, io, self) {
                             return _.isNumber(captain.stats.captainScore.center) ? captain.stats.captainScore.center : 0;
                         });
 
-                        let boost = Math.sqrt(Number.EPSILON);
+                        let boost = EPSILON;
                         let minWeight = _.min(weights);
                         if (minWeight <= 0) {
                             boost += -1 * minWeight;
@@ -606,15 +607,9 @@ module.exports = function(app, chance, database, io, self) {
                 }
                 else if (turnDefinition.type === 'playerPick') {
                     if (turnDefinition.method === 'random') {
-                        choice.role = chance.pick(allowedRoles);
-
-                        if (_.includes(overrideRoles, choice.role)) {
-                            choice.override = true;
-                            choice.player = chance.pick(_.difference(fullPlayerList, unavailablePlayers));
-                        }
-                        else {
-                            choice.player = chance.pick(_.difference(playerPool[choice.role], unavailablePlayers));
-                        }
+                        choice.role = chance.weighted(allowedRoles, _.map(allowedRoles, role => (_.has(ROLES[role].priority) ? ROLES[role].priority : 1)));
+                        choice.override = _.includes(overrideRoles, choice.role);
+                        choice.player = chance.pick(choice.override ? _.difference(fullPlayerList, unavailablePlayers) : _.difference(playerPool[choice.role], unavailablePlayers));
 
                         supported = true;
                     }
@@ -622,7 +617,11 @@ module.exports = function(app, chance, database, io, self) {
                         let currentRoleDistribution = calculateRoleDistribution(draftTeams[turnDefinition.team].players);
 
                         choice.role = _.maxBy(allowedRoles, function(role) {
-                            return (ROLES[role].min - currentRoleDistribution[role] + Math.sqrt(Number.EPSILON)) / (_(playerPool[choice.role]).difference(unavailablePlayers).size() + Math.sqrt(Number.EPSILON));
+                            let playersNeeded = ROLES[role].min - currentRoleDistribution[role];
+                            let playersAvailable = _(playerPool[role]).difference(unavailablePlayers).size();
+                            let priority = _.has(ROLES[role].priority) ? ROLES[role].priority : 1;
+
+                            return ((priority * playersNeeded) + EPSILON) / (playersAvailable + EPSILON);
                         });
 
                         choice.override = _.includes(overrideRoles, choice.role);
@@ -683,7 +682,7 @@ module.exports = function(app, chance, database, io, self) {
                 }
                 else if (turnDefinition.type === 'captainRole') {
                     if (turnDefinition.method === 'random') {
-                        choice.role = chance.pick(allowedRoles);
+                        choice.role = chance.weighted(allowedRoles, _.map(allowedRoles, role => (_.has(ROLES[role].priority) ? ROLES[role].priority : 1)));
 
                         supported = true;
                     }

@@ -71,35 +71,40 @@
                     "class": "scout",
                     "min": 2,
                     "max": 2,
-                    "overrideImmune": false
+                    "overrideImmune": false,
+                    "priority": 1
                 },
                 "roamer": {
                     "name": "Roamer",
                     "class": "soldier",
                     "min": 1,
                     "max": 1,
-                    "overrideImmune": false
+                    "overrideImmune": false,
+                    "priority": 1
                 },
                 "pocket": {
                     "name": "Pocket",
                     "class": "soldier",
                     "min": 1,
                     "max": 1,
-                    "overrideImmune": false
+                    "overrideImmune": false,
+                    "priority": 1
                 },
                 "demoman": {
                     "name": "Demoman",
                     "class": "demoman",
                     "min": 1,
                     "max": 1,
-                    "overrideImmune": false
+                    "overrideImmune": false,
+                    "priority": 1
                 },
                 "medic": {
                     "name": "Medic",
                     "class": "medic",
                     "min": 1,
                     "max": 1,
-                    "overrideImmune": true
+                    "overrideImmune": true,
+                    "priority": 2
                 }
             },
             "teamSize": 6
