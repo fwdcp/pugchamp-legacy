@@ -11,10 +11,11 @@ module.exports = function(app, chance, database, io, self) {
     const HIDE_DRAFT_STATS = config.get('app.users.hideDraftStats');
     const HIDE_RATINGS = config.get('app.users.hideRatings');
     const SEPARATE_CAPTAIN_POOL = config.get('app.draft.separateCaptainPool');
+    const SITE_BRAND_NAME = config.get('app.common.siteBrandName');
+    const SITE_LOGO = config.get('app.common.siteLogo');
     const SITE_NAME = config.get('app.common.siteName');
     const SITE_SUBTITLE = config.get('app.common.siteSubtitle');
-    const SITE_THEME = config.get('app.theme.themeName');
-    const SITE_LOGO = config.get('app.theme.siteLogo');
+    const SITE_THEME = config.get('app.common.siteTheme');
 
     self.promiseDelay = function(delay, value, fail) {
         return new Promise(function(resolve, reject) {
@@ -72,10 +73,11 @@ module.exports = function(app, chance, database, io, self) {
         res.locals.hideDraftStats = HIDE_DRAFT_STATS;
         res.locals.hideRatings = HIDE_RATINGS;
         res.locals.separateCaptainPool = SEPARATE_CAPTAIN_POOL;
+        res.locals.siteBrandName = SITE_BRAND_NAME;
+        res.locals.siteLogo = SITE_LOGO;
         res.locals.siteName = SITE_NAME;
         res.locals.siteSubtitle = SITE_SUBTITLE;
-        res.locals.themeName = SITE_THEME;
-        res.locals.siteLogo = SITE_LOGO;
+        res.locals.siteTheme = SITE_THEME;
         next();
     });
 

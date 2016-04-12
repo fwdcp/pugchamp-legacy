@@ -1,6 +1,8 @@
 {
     "app": {
         "common": {
+            "siteBrandName": "PugChamp",
+            "siteLogo": "/assets/img/logo_pugchamp_light.svg",
             "siteName": "PugChamp",
             "siteSubtitle": ""
         },

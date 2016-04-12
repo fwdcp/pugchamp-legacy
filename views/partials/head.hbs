@@ -8,8 +8,6 @@
     <script>
         window.PugChampSettings = {
             siteName: {{{toJSON siteName}}}
-            themeName: {{{toJSON themeName}}}
-            siteLogo: {{{toJSON siteLogo}}}
         };
     </script>
 
@@ -31,8 +29,7 @@
     <link rel="import" href="/components/paper-tooltip/paper-tooltip.html">
 
     <link rel="import" href="/elements/pugchamp-layout-toggle/pugchamp-layout-toggle.html">
-    <link rel="import" href="/elements/pugchamp-theme/theme.html">
-    <link rel="import" href="/elements/pugchamp-theme/{{themeName}}">
+    <link rel="import" href="{{siteTheme}}">
 
     <style is="custom-style" include="iron-flex iron-flex-alignment iron-flex-factors">
         body {
