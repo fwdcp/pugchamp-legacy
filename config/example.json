@@ -1,10 +1,11 @@
 {
     "app": {
         "common": {
-            "siteBrandName": "PugChamp",
+            "siteBrandName": "PugChamp Clone",
             "siteLogo": "/assets/img/logo_pugchamp_light.svg",
             "siteName": "PugChamp",
-            "siteSubtitle": ""
+            "siteSubtitle": "Clone",
+            "siteTheme": "/elements/pugchamp-theme/pugchamp-theme.html"
         },
         "users": {
             "admins": ["76561198043850090"],

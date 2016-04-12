@@ -1,8 +1,5 @@
 {
     "app": {
-        "common": {
-            "siteTheme": "/elements/pugchamp-theme/pugchamp-theme.html"
-        },
         "users": {
             "authorizationDefault": true,
             "captainGameRequirement": 5,
