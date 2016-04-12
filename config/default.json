@@ -81,7 +81,11 @@
         },
         "chat": {
             "showConnectionMessages": false
-        }
+        },
+		"theme": {
+			"themeName": "theme.html",
+			"siteLogo": "logo_light.svg"			
+		}
     },
     "server": {
         "sessionExpiration": "14d",
