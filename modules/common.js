@@ -13,8 +13,8 @@ module.exports = function(app, chance, database, io, self) {
     const SEPARATE_CAPTAIN_POOL = config.get('app.draft.separateCaptainPool');
     const SITE_NAME = config.get('app.common.siteName');
     const SITE_SUBTITLE = config.get('app.common.siteSubtitle');
-	const SITE_THEME = config.get('app.theme.themeName');
-	const SITE_LOGO = config.get('app.theme.siteLogo');
+    const SITE_THEME = config.get('app.theme.themeName');
+    const SITE_LOGO = config.get('app.theme.siteLogo');
 
     self.promiseDelay = function(delay, value, fail) {
         return new Promise(function(resolve, reject) {
@@ -74,8 +74,8 @@ module.exports = function(app, chance, database, io, self) {
         res.locals.separateCaptainPool = SEPARATE_CAPTAIN_POOL;
         res.locals.siteName = SITE_NAME;
         res.locals.siteSubtitle = SITE_SUBTITLE;
-		res.locals.themeName = SITE_THEME;
-		res.locals.siteLogo = SITE_LOGO;
+        res.locals.themeName = SITE_THEME;
+        res.locals.siteLogo = SITE_LOGO;
         next();
     });
 
