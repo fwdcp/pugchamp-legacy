@@ -591,6 +591,44 @@ module.exports = function(app, chance, database, io, self) {
 
                         supported = true;
                     }
+                    else if (turnDefinition.method === 'success-random') {
+                        let fullCaptains = yield database.User.find({
+                            _id: {
+                                $in: turnCaptainPool
+                            }
+                        }).exec();
+
+                        let candidates = _.map(fullCaptains, captain => captain.id);
+                        let weights = _.map(fullCaptains, function(captain) {
+                            return _.isNumber(captain.stats.captainScore.center) ? captain.stats.captainScore.center : 0;
+                        });
+
+                        let boost = EPSILON;
+                        let minWeight = _.min(weights);
+                        if (minWeight <= 0) {
+                            boost += -1 * minWeight;
+                        }
+
+                        weights = _.map(weights, function(weight) {
+                            return weight + boost;
+                        });
+
+                        let finalCandidates = [];
+
+                        while (_.size(finalCandidates) < 2 && _.size(candidates) > 0) {
+                            let candidate = chance.weighted(candidates, weights);
+
+                            let index = _.indexOf(candidates, candidate);
+                            _.pullAt(candidates, index);
+                            _.pullAt(weights, index);
+
+                            finalCandidates.push(candidate);
+                        }
+
+                        choice.captain = chance.pick(finalCandidates);
+
+                        supported = true;
+                    }
                     else if (turnDefinition.method === 'experience') {
                         choice.captain = _.maxBy(turnCaptainPool, function(captain) {
                             let user = self.getCachedUser(captain);
