@@ -9,7 +9,7 @@ const HttpStatus = require('http-status-codes');
 const moment = require('moment');
 const ms = require('ms');
 
-module.exports = function(app, chance, database, io, self) {
+module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const GAME_SERVER_POOL = config.get('app.servers.pool');
     const HIDE_DRAFT_STATS = config.get('app.users.hideDraftStats');

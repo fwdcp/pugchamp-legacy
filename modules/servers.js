@@ -8,7 +8,7 @@ const HttpStatus = require('http-status-codes');
 const ms = require('ms');
 const RCON = require('srcds-rcon');
 
-module.exports = function(app, chance, database, io, self) {
+module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const COMMAND_TIMEOUT = ms(config.get('app.servers.commandTimeout'));
     const GAME_SERVER_POOL = config.get('app.servers.pool');

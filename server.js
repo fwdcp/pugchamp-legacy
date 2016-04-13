@@ -19,6 +19,7 @@ const socketIO = require('socket.io');
 const MongoStore = require('connect-mongo')(session);
 
 var app = express();
+var cache = require('./cache');
 var chance = new Chance(crypto.randomBytes(4).readInt32LE());
 var database = require('./database');
 var server = http.Server(app);
@@ -51,7 +52,7 @@ app.use(passport.session());
 app.use('/', serveStatic(path.resolve(__dirname, 'public')));
 app.use('/components', serveStatic(path.resolve(__dirname, 'bower_components')));
 
-require('./modules')(app, chance, database, io, self);
+require('./modules')(app, cache, chance, database, io, self);
 
 app.use(function(err, req, res, next) {
     console.error(err.stack);

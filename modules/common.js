@@ -6,7 +6,7 @@ const hbs = require('hbs');
 const math = require('mathjs');
 const moment = require('moment');
 
-module.exports = function(app, chance, database, io, self) {
+module.exports = function(app, cache, chance, database, io, self) {
     const HIDE_CAPTAINS = config.get('app.games.hideCaptains');
     const HIDE_DRAFT_STATS = config.get('app.users.hideDraftStats');
     const HIDE_RATINGS = config.get('app.users.hideRatings');

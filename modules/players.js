@@ -9,7 +9,7 @@ const HttpStatus = require('http-status-codes');
 const humanize = require('humanize');
 const math = require('mathjs');
 
-module.exports = function(app, chance, database, io, self) {
+module.exports = function(app, cache, chance, database, io, self) {
     const ONE_DEVIATION_LOWER_BOUND = 0.16;
     const ONE_DEVIATION_UPPER_BOUND = 0.84;
 

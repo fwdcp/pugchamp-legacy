@@ -13,7 +13,7 @@ const rp = require('request-promise');
 const socketioJwt = require('socketio-jwt');
 const url = require('url');
 
-module.exports = function(app, chance, database, io, self) {
+module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const CAPTAIN_GAME_REQUIREMENT = config.get('app.users.captainGameRequirement');
     const HIDE_DRAFT_STATS = config.get('app.users.hideDraftStats');

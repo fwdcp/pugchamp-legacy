@@ -7,7 +7,7 @@ const config = require('config');
 const moment = require('moment');
 const ms = require('ms');
 
-module.exports = function(app, chance, database, io, self) {
+module.exports = function(app, cache, chance, database, io, self) {
     const AUTO_READY_THRESHOLD = ms(config.get('app.launch.autoReadyThreshold'));
     const GET_LAUNCH_HOLD_DEBOUNCE_MAX_WAIT = 5000;
     const GET_LAUNCH_HOLD_DEBOUNCE_WAIT = 1000;
