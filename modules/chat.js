@@ -102,37 +102,52 @@ module.exports = function(app, chance, database, io, self) {
     function onUserSendChatMessage(message) {
         let userID = this.decoded_token.user;
 
-        self.markUserActivity(userID);
+        return co(function*() {
+            self.markUserActivity(userID);
 
-        let userRestrictions = self.getUserRestrictions(userID);
+            let userRestrictions = self.getUserRestrictions(userID);
 
-        if (!_.includes(userRestrictions.aspects, 'chat')) {
-            let trimmedMessage = _.chain(message).trim().truncate({
-                length: 140
-            }).deburr().value();
+            if (!_.includes(userRestrictions.aspects, 'chat')) {
+                let trimmedMessage = _.chain(message).trim().truncate({
+                    length: 140
+                }).deburr().value();
 
-            if (trimmedMessage.length > 0) {
-                let highlighted = false;
+                if (trimmedMessage.length > 0) {
+                    let highlighted = false;
 
-                if (/@everyone@/i.test(message)) {
-                    let user = self.getCachedUser(userID);
+                    if (/@everyone@/i.test(message)) {
+                        let user = self.getCachedUser(userID);
 
-                    if (user.admin) {
-                        highlighted = true;
+                        if (user.admin) {
+                            highlighted = true;
+                        }
                     }
+
+                    let mentionedAliases = _.uniqWith(twitter.extractMentions(trimmedMessage), (alias1, alias2) => (alias1.localeCompare(alias2, 'en', {
+                        usage: 'search',
+                        sensitivity: 'base'
+                    }) === 0));
+                    let mentions = [];
+
+                    for (let alias of mentionedAliases) {
+                        let user = yield self.getUserByAlias(alias);
+
+                        if (user) {
+                            mentions.push(user);
+                        }
+                    }
+
+                    mentions = _(mentions).uniqBy(user => user.id).map(user => user.toObject()).value();
+
+                    self.sendMessage({
+                        user: userID,
+                        body: trimmedMessage,
+                        highlighted,
+                        mentions
+                    });
                 }
-
-                let mentionedAliases = twitter.extractMentions(trimmedMessage);
-                let mentions = _.filter(self.getCachedUsers(), user => _.some(mentionedAliases, alias => alias.localeCompare(user.alias, 'en', {usage: 'search', sensitivity: 'base'}) === 0));
-
-                self.sendMessage({
-                    user: userID,
-                    body: trimmedMessage,
-                    highlighted,
-                    mentions
-                });
             }
-        }
+        });
     }
 
     function onUserPurgeUser(victimID) {

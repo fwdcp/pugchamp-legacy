@@ -69,6 +69,7 @@ var userSchema = new mongoose.Schema({
         }]
     }
 });
+userSchema.index({alias: 'text'}, {default_language: 'none'});
 userSchema.virtual('admin').get(function() {
     return _.includes(ADMINS, this.steamID);
 });

@@ -67,10 +67,6 @@ module.exports = function(app, chance, database, io, self) {
         });
     }
 
-    self.getCachedUsers = function getCachedUsers() {
-        return [...userCache.values()];
-    };
-
     self.getCachedUser = function getCachedUser(userID) {
         return userCache.get(userID);
     };
@@ -81,6 +77,27 @@ module.exports = function(app, chance, database, io, self) {
         userCache.set(userID, user.toObject());
 
         self.emit('cachedUserUpdated', userID);
+    });
+
+    self.getUserByAlias = co.wrap(function* getUserByAlias(alias) {
+        let user = yield database.User.findOne({
+            $text: {
+                $search: `"${alias}"`,
+                $language: 'none',
+                $caseSensitive: false,
+                $diacriticSensitive: false
+            }
+        }, {
+            aliasMatch: {
+                $meta: 'textScore'
+            }
+        }).sort({
+            aliasMatch: {
+                $meta: 'textScore'
+            }
+        }).exec();
+
+        return user;
     });
 
     self.getOnlineUsers = function getOnlineUsers() {
@@ -457,9 +474,7 @@ module.exports = function(app, chance, database, io, self) {
 
             if (req.body.alias && !req.user.alias) {
                 if (/^[A-Za-z0-9_]{1,15}$/.test(req.body.alias)) {
-                    let existingUser = yield database.User.findOne({
-                        alias: req.body.alias
-                    });
+                    let existingUser = yield self.getUserByAlias(req.body.alias);
 
                     if (!existingUser) {
                         req.user.alias = req.body.alias;

@@ -55,14 +55,14 @@ module.exports = function(app, chance, database, io, self) {
 
         if (req.body.type === 'changeSettings') {
             if (req.body.alias !== user.alias) {
-                let existingUser = yield database.User.findOne({
-                    alias: req.body.alias
-                });
+                if (/^[A-Za-z0-9_]{1,15}$/.test(req.body.alias)) {
+                    let existingUser = yield self.getUserByAlias(req.body.alias);
 
-                if (!existingUser) {
-                    self.postToAdminLog(req.user.id, `changed the alias of \`<${BASE_URL}/player/${user.steamID}|${req.body.alias}>\` from \`${user.alias}\``);
+                    if (!existingUser) {
+                        self.postToAdminLog(req.user.id, `changed the alias of \`<${BASE_URL}/player/${user.steamID}|${req.body.alias}>\` from \`${user.alias}\``);
 
-                    user.alias = req.body.alias;
+                        user.alias = req.body.alias;
+                    }
                 }
             }
 
