@@ -71,7 +71,7 @@ module.exports = function(app, chance, database, io, self) {
         return userCache.get(userID);
     };
 
-    self.updateCachedUser = co.wrap(function*(userID) {
+    self.updateCachedUser = co.wrap(function* updateCachedUser(userID) {
         let user = yield database.User.findById(userID);
 
         userCache.set(userID, user.toObject());
