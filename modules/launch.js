@@ -131,39 +131,41 @@ module.exports = function(app, cache, chance, database, io, self) {
     }
 
     function updateStatusInfo() {
-        currentStatusInfo = {
-            roles: ROLES,
-            playersAvailable: _.mapValues(playersAvailable, function(available) {
-                return _.map([...available], function(userID) {
-                    return self.getCachedUser(userID);
-                });
-            }),
-            allPlayersAvailable: _.chain(playersAvailable).reduce(function(allPlayers, players) {
-                return _.union(allPlayers, [...players]);
-            }, []).map(function(userID) {
-                return self.getCachedUser(userID);
-            }).value(),
-            captainsAvailable: SEPARATE_CAPTAIN_POOL ? _.map([...captainsAvailable], function(userID) {
-                return self.getCachedUser(userID);
-            }) : undefined,
-            rolesNeeded: calculateRolesNeeded(playersAvailable),
-            teamSize: TEAM_SIZE,
-            launchHolds: currentLaunchHolds,
-            active: launchAttemptActive
-        };
+        // TODO: update for caching
+        // currentStatusInfo = {
+        //     roles: ROLES,
+        //     playersAvailable: _.mapValues(playersAvailable, function(available) {
+        //         return _.map([...available], function(userID) {
+        //             return self.getCachedUser(userID);
+        //         });
+        //     }),
+        //     allPlayersAvailable: _.chain(playersAvailable).reduce(function(allPlayers, players) {
+        //         return _.union(allPlayers, [...players]);
+        //     }, []).map(function(userID) {
+        //         return self.getCachedUser(userID);
+        //     }).value(),
+        //     captainsAvailable: SEPARATE_CAPTAIN_POOL ? _.map([...captainsAvailable], function(userID) {
+        //         return self.getCachedUser(userID);
+        //     }) : undefined,
+        //     rolesNeeded: calculateRolesNeeded(playersAvailable),
+        //     teamSize: TEAM_SIZE,
+        //     launchHolds: currentLaunchHolds,
+        //     active: launchAttemptActive
+        // };
     }
 
     function getCurrentStatusMessage() {
-        if (launchAttemptActive) {
-            currentStatusInfo.timeElapsed = Date.now() - launchAttemptStart;
-            currentStatusInfo.timeTotal = READY_PERIOD;
-        }
-        else {
-            delete currentStatusInfo.timeElapsed;
-            delete currentStatusInfo.timeTotal;
-        }
-
-        return currentStatusInfo;
+        // TODO: update for caching
+        // if (launchAttemptActive) {
+        //     currentStatusInfo.timeElapsed = Date.now() - launchAttemptStart;
+        //     currentStatusInfo.timeTotal = READY_PERIOD;
+        // }
+        // else {
+        //     delete currentStatusInfo.timeElapsed;
+        //     delete currentStatusInfo.timeTotal;
+        // }
+        //
+        // return currentStatusInfo;
     }
 
     function attemptLaunch() {

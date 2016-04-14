@@ -25,7 +25,6 @@ module.exports = function(app, cache, chance, database, io, self) {
     const USER_AUTHORIZATIONS = config.has('app.users.authorizations') ? config.get('app.users.authorizations') : [];
     const USER_AUTHORIZATION_DEFAULT = config.has('app.users.authorizationDefault') ? config.get('app.users.authorizationDefault') : true;
     const USER_AUTHORIZATION_APIS = config.has('app.users.authorizationAPIs') ? config.get('app.users.authorizationAPIs') : [];
-    var userCache = new Map();
     var userRestrictions = new Map();
     var userSockets = new Map();
 
@@ -67,14 +66,21 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
-    self.getCachedUser = function getCachedUser(userID) {
-        return userCache.get(userID);
-    };
+    self.getCachedUser = co.wrap(function* getCachedUser(userID) {
+        let cacheResponse = yield cache.getAsync(`user-${userID}`);
+
+        if (!cacheResponse) {
+            yield self.updateCachedUser(userID);
+            cacheResponse = yield cache.getAsync(`user-${userID}`);
+        }
+
+        return JSON.parse(cacheResponse);
+    });
 
     self.updateCachedUser = co.wrap(function* updateCachedUser(userID) {
         let user = yield database.User.findById(userID);
 
-        userCache.set(userID, user.toObject());
+        yield cache.setAsync(`user-${userID}`, JSON.stringify(user.toObject()));
 
         self.emit('cachedUserUpdated', userID);
     });
@@ -158,7 +164,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         };
         user.authorized = yield checkUserAuthorization(user);
         yield user.save();
-        self.updateCachedUser(user.id);
+        yield self.updateCachedUser(user.id);
         if (!user.authorized) {
             if (!user.admin) {
                 restrictions.push(UNAUTHORIZED_USER_RESTRICTIONS);
@@ -429,9 +435,8 @@ module.exports = function(app, cache, chance, database, io, self) {
     io.sockets.on('authenticated', co.wrap(function*(socket) {
         let userID = socket.decoded_token.user;
 
-        yield self.updateCachedUser(userID);
-
-        socket.emit('userInfoUpdated', self.getCachedUser(userID));
+        let user = yield self.getCachedUser(userID);
+        socket.emit('userInfoUpdated', user);
 
         if (!userSockets.has(userID)) {
             userSockets.set(userID, new Set([socket.id]));
@@ -519,15 +524,4 @@ module.exports = function(app, cache, chance, database, io, self) {
             res.redirect('/user/login');
         }
     }));
-
-    co(function*() {
-        let users = yield database.User.find({}, '_id steamID').exec();
-
-        for (let user of users) {
-            user.authorized = yield checkUserAuthorization(user);
-            yield user.save();
-
-            yield self.updateCachedUser(user.id);
-        }
-    });
 };

@@ -12,7 +12,9 @@ module.exports = function(app, cache, chance, database, io, self) {
     var onlineUsers = new Set();
 
     self.getOnlineUserList = function() {
-        return _([...onlineUsers]).map(userID => self.getCachedUser(userID)).filter(user => (user.setUp && (user.authorized || user.admin))).sortBy('alias').value();
+        // TODO: cache and update
+        // return _([...onlineUsers]).map(userID => self.getCachedUser(userID)).filter(user => (user.setUp && (user.authorized || user.admin))).sortBy('alias').value();
+        return [];
     };
 
     function postToMessageLog(message) {
@@ -41,17 +43,17 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
-    self.sendMessageToUser = function sendMessageToUser(userID, message) {
+    self.sendMessageToUser = co.wrap(function* sendMessageToUser(userID, message) {
         if (message.user) {
-            message.user = self.getCachedUser(message.user);
+            message.user = yield self.getCachedUser(message.user);
         }
 
         self.emitToUser(userID, 'messageReceived', [message]);
-    };
+    });
 
-    self.sendMessage = function sendMessage(message) {
+    self.sendMessage = co.wrap(function* sendMessage(message) {
         if (message.user) {
-            message.user = self.getCachedUser(message.user);
+            message.user = yield self.getCachedUser(message.user);
         }
 
         if (message.body) {
@@ -59,13 +61,13 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
 
         io.sockets.emit('messageReceived', message);
-    };
+    });
 
-    self.on('userConnected', function(userID) {
+    self.on('userConnected', co.wrap(function*(userID) {
         onlineUsers.add(userID);
 
         if (SHOW_CONNECTION_MESSAGES) {
-            let user = self.getCachedUser(userID);
+            let user = yield self.getCachedUser(userID);
 
             if (user.setUp && (user.authorized || user.admin)) {
                 self.sendMessage({
@@ -75,11 +77,12 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         }
 
-        io.sockets.emit('onlineUserListUpdated', self.getOnlineUserList());
-    });
+        // TODO: update cache
+        // io.sockets.emit('onlineUserListUpdated', self.getOnlineUserList());
+    }));
 
-    self.on('userDisconnected', function(userID) {
-        let user = self.getCachedUser(userID);
+    self.on('userDisconnected', co.wrap(function*(userID) {
+        let user = yield self.getCachedUser(userID);
 
         if (SHOW_CONNECTION_MESSAGES) {
             if (user.setUp && (user.authorized || user.admin)) {
@@ -92,8 +95,9 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         onlineUsers.delete(userID);
 
-        io.sockets.emit('onlineUserListUpdated', self.getOnlineUserList());
-    });
+        // TODO: update cache
+        // io.sockets.emit('onlineUserListUpdated', self.getOnlineUserList());
+    }));
 
     io.sockets.on('connection', function(socket) {
         socket.emit('onlineUserListUpdated', self.getOnlineUserList());
@@ -116,11 +120,12 @@ module.exports = function(app, cache, chance, database, io, self) {
                     let highlighted = false;
 
                     if (/@everyone@/i.test(message)) {
-                        let user = self.getCachedUser(userID);
-
-                        if (user.admin) {
-                            highlighted = true;
-                        }
+                        // TODO: use new admin checks
+                        // let user = self.getCachedUser(userID);
+                        //
+                        // if (user.admin) {
+                        //     highlighted = true;
+                        // }
                     }
 
                     let mentionedAliases = _.uniqWith(twitter.extractMentions(trimmedMessage), (alias1, alias2) => (alias1.localeCompare(alias2, 'en', {
@@ -153,15 +158,18 @@ module.exports = function(app, cache, chance, database, io, self) {
     function onUserPurgeUser(victimID) {
         let userID = this.decoded_token.user;
 
-        let user = self.getCachedUser(userID);
+        return co(function*() {
+            // TODO: use new admin check
+            // let user = self.getCachedUser(userID);
 
-        if (user.admin) {
-            let victim = self.getCachedUser(victimID);
+            // if (user.admin) {
+                let victim = yield self.getCachedUser(victimID);
 
-            self.postToAdminLog(user.id, `purged the chat messages of \`<${BASE_URL}/player/${victim.steamID}|${victim.alias}>\``);
+                self.postToAdminLog(userID, `purged the chat messages of \`<${BASE_URL}/player/${victim.steamID}|${victim.alias}>\``);
 
-            io.sockets.emit('userPurged', victimID);
-        }
+                io.sockets.emit('userPurged', victimID);
+            // }
+        });
     }
 
     io.sockets.on('authenticated', function(socket) {

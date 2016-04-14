@@ -167,71 +167,73 @@ module.exports = function(app, cache, chance, database, io, self) {
     }
 
     function updateStatusInfo() {
-        currentStatusInfo = {
-            roles: ROLES,
-            teamSize: TEAM_SIZE,
-            draftTurns: _.map(DRAFT_ORDER, function(turn, index) {
-                let completeTurn = _.defaults({}, turn, draftChoices[index]);
-
-                if (completeTurn.player) {
-                    completeTurn.player = self.getCachedUser(completeTurn.player);
-                }
-
-                if (completeTurn.captain) {
-                    completeTurn.captain = self.getCachedUser(completeTurn.captain);
-                }
-
-                return completeTurn;
-            }),
-            playerPool: _.mapValues(playerPool, function(rolePool) {
-                return _.map(rolePool, function(userID) {
-                    return self.getCachedUser(userID);
-                });
-            }),
-            captainPool: _.map(captainPool, function(userID) {
-                return self.getCachedUser(userID);
-            }),
-            fullPlayerList: _.map(fullPlayerList, function(userID) {
-                return self.getCachedUser(userID);
-            }),
-            mapPool: MAP_POOL,
-            currentDraftTurn,
-            draftTeams: _.map(draftTeams, function(team) {
-                let formattedTeam = _.cloneDeep(team);
-
-                if (formattedTeam.captain) {
-                    formattedTeam.captain = self.getCachedUser(formattedTeam.captain);
-                }
-
-                formattedTeam.players = _.map(formattedTeam.players, function(player) {
-                    player.user = self.getCachedUser(player.user);
-
-                    return player;
-                });
-
-                return formattedTeam;
-            }),
-            unavailablePlayers,
-            pickedMap,
-            remainingMaps,
-            allowedRoles,
-            overrideRoles,
-            active: draftActive,
-            complete: draftComplete
-        };
+        // TODO: update for caching
+        // currentStatusInfo = {
+        //     roles: ROLES,
+        //     teamSize: TEAM_SIZE,
+        //     draftTurns: _.map(DRAFT_ORDER, function(turn, index) {
+        //         let completeTurn = _.defaults({}, turn, draftChoices[index]);
+        //
+        //         if (completeTurn.player) {
+        //             completeTurn.player = self.getCachedUser(completeTurn.player);
+        //         }
+        //
+        //         if (completeTurn.captain) {
+        //             completeTurn.captain = self.getCachedUser(completeTurn.captain);
+        //         }
+        //
+        //         return completeTurn;
+        //     }),
+        //     playerPool: _.mapValues(playerPool, function(rolePool) {
+        //         return _.map(rolePool, function(userID) {
+        //             return self.getCachedUser(userID);
+        //         });
+        //     }),
+        //     captainPool: _.map(captainPool, function(userID) {
+        //         return self.getCachedUser(userID);
+        //     }),
+        //     fullPlayerList: _.map(fullPlayerList, function(userID) {
+        //         return self.getCachedUser(userID);
+        //     }),
+        //     mapPool: MAP_POOL,
+        //     currentDraftTurn,
+        //     draftTeams: _.map(draftTeams, function(team) {
+        //         let formattedTeam = _.cloneDeep(team);
+        //
+        //         if (formattedTeam.captain) {
+        //             formattedTeam.captain = self.getCachedUser(formattedTeam.captain);
+        //         }
+        //
+        //         formattedTeam.players = _.map(formattedTeam.players, function(player) {
+        //             player.user = self.getCachedUser(player.user);
+        //
+        //             return player;
+        //         });
+        //
+        //         return formattedTeam;
+        //     }),
+        //     unavailablePlayers,
+        //     pickedMap,
+        //     remainingMaps,
+        //     allowedRoles,
+        //     overrideRoles,
+        //     active: draftActive,
+        //     complete: draftComplete
+        // };
     }
 
     function getCurrentStatusMessage() {
-        if (draftActive && !draftComplete) {
-            currentStatusInfo.timeElapsed = Date.now() - currentDraftTurnStartTime;
-            currentStatusInfo.timeTotal = TURN_TIME_LIMIT;
-        }
-        else {
-            delete currentStatusInfo.timeElapsed;
-            delete currentStatusInfo.timeTotal;
-        }
-
-        return currentStatusInfo;
+        // TODO: update for caching
+        // if (draftActive && !draftComplete) {
+        //     currentStatusInfo.timeElapsed = Date.now() - currentDraftTurnStartTime;
+        //     currentStatusInfo.timeTotal = TURN_TIME_LIMIT;
+        // }
+        // else {
+        //     delete currentStatusInfo.timeElapsed;
+        //     delete currentStatusInfo.timeTotal;
+        // }
+        //
+        // return currentStatusInfo;
     }
 
     self.cleanUpDraft = function cleanUpDraft() {
@@ -630,15 +632,17 @@ module.exports = function(app, cache, chance, database, io, self) {
                         supported = true;
                     }
                     else if (turnDefinition.method === 'experience') {
-                        choice.captain = _.maxBy(turnCaptainPool, function(captain) {
-                            let user = self.getCachedUser(captain);
-
-                            if (user.stats.roles) {
-                                return _.reduce(user.stats.roles, (sum, stat) => sum + stat.count, 0);
-                            }
-
-                            return 0;
-                        });
+                        // TODO: update for caching
+                        // choice.captain = _.maxBy(turnCaptainPool, function(captain) {
+                        //     let user = self.getCachedUser(captain);
+                        //
+                        //     // TODO: use new total games stat
+                        //     // if (user.stats.roles) {
+                        //     //     return _.reduce(user.stats.roles, (sum, stat) => sum + stat.count, 0);
+                        //     // }
+                        //
+                        //     return 0;
+                        // });
 
                         supported = true;
                     }

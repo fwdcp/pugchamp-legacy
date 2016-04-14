@@ -55,24 +55,25 @@ module.exports = function(app, cache, chance, database, io, self) {
     }
 
     function formatCurrentGameInfo(game) {
-        if (!game || game.status === 'aborted' || game.status === 'completed') {
-            return null;
-        }
-
-        let gameInfo = _.omit(game.toObject(), 'draft');
-        gameInfo.roles = ROLES;
-
-        _.each(gameInfo.teams, function(team) {
-            team.captain = self.getCachedUser(self.getDocumentID(team.captain));
-
-            _.each(team.composition, function(role) {
-                _.each(role.players, function(player) {
-                    player.user = self.getCachedUser(self.getDocumentID(player.user));
-                });
-            });
-        });
-
-        return gameInfo;
+        // TODO: update for caching
+        // if (!game || game.status === 'aborted' || game.status === 'completed') {
+        //     return null;
+        // }
+        //
+        // let gameInfo = _.omit(game.toObject(), 'draft');
+        // gameInfo.roles = ROLES;
+        //
+        // _.each(gameInfo.teams, function(team) {
+        //     team.captain = self.getCachedUser(self.getDocumentID(team.captain));
+        //
+        //     _.each(team.composition, function(role) {
+        //         _.each(role.players, function(player) {
+        //             player.user = self.getCachedUser(self.getDocumentID(player.user));
+        //         });
+        //     });
+        // });
+        //
+        // return gameInfo;
     }
 
     function processGameUpdate(game) {
@@ -84,25 +85,26 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         }
 
-        let gameInfo = formatCurrentGameInfo(game);
-
-        _.each(game.teams, function(team) {
-            let captainID = self.getDocumentID(team.captain);
-
-            currentGameCache.set(captainID, gameInfo);
-            self.emitToUser(captainID, 'currentGameUpdated', [gameInfo]);
-            self.updateUserRestrictions(captainID);
-
-            _.each(team.composition, function(role) {
-                _.each(role.players, function(player) {
-                    let userID = self.getDocumentID(player.user);
-
-                    currentGameCache.set(userID, gameInfo);
-                    self.emitToUser(userID, 'currentGameUpdated', [gameInfo]);
-                    self.updateUserRestrictions(userID);
-                });
-            });
-        });
+        // TODO: update for caching
+        // let gameInfo = formatCurrentGameInfo(game);
+        //
+        // _.each(game.teams, function(team) {
+        //     let captainID = self.getDocumentID(team.captain);
+        //
+        //     currentGameCache.set(captainID, gameInfo);
+        //     self.emitToUser(captainID, 'currentGameUpdated', [gameInfo]);
+        //     self.updateUserRestrictions(captainID);
+        //
+        //     _.each(team.composition, function(role) {
+        //         _.each(role.players, function(player) {
+        //             let userID = self.getDocumentID(player.user);
+        //
+        //             currentGameCache.set(userID, gameInfo);
+        //             self.emitToUser(userID, 'currentGameUpdated', [gameInfo]);
+        //             self.updateUserRestrictions(userID);
+        //         });
+        //     });
+        // });
     }
 
     var currentSubstituteRequests = new Map();
@@ -113,17 +115,18 @@ module.exports = function(app, cache, chance, database, io, self) {
     };
 
     function updateSubstituteRequestsInfo() {
-        currentSubstituteRequestsInfo = {
-            roles: ROLES,
-            requests: _([...currentSubstituteRequests.entries()]).fromPairs().map((request, id) => ({
-                id,
-                game: request.game,
-                role: request.role,
-                captain: request.captain,
-                player: self.getCachedUser(request.player),
-                candidates: [...request.candidates]
-            })).value()
-        };
+        // TODO: update for caching
+        // currentSubstituteRequestsInfo = {
+        //     roles: ROLES,
+        //     requests: _([...currentSubstituteRequests.entries()]).fromPairs().map((request, id) => ({
+        //         id,
+        //         game: request.game,
+        //         role: request.role,
+        //         captain: request.captain,
+        //         player: self.getCachedUser(request.player),
+        //         candidates: [...request.candidates]
+        //     })).value()
+        // };
     }
 
     function getCurrentSubstituteRequestsMessage() {
@@ -422,17 +425,18 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
 
             if (info.time) {
-                _.each(game.teams, function(team) {
-                    _.each(team.composition, function(role) {
-                        _.each(role.players, function(player) {
-                            let user = self.getCachedUser(self.getDocumentID(player.user));
+                for (let team in game.teams) {
+                    for (let role in team.composition) {
+                        for (let player in role.players) {
+                            let userID = self.getDocumentID(player.user);
+                            let user = yield database.User.findById(userID);
 
                             if (user && _.has(info.time, user.steamID)) {
                                 player.time = info.time[user.steamID];
                             }
-                        });
-                    });
-                });
+                        }
+                    }
+                }
             }
 
             yield game.save();
@@ -461,17 +465,18 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
 
             if (info.time) {
-                _.each(game.teams, function(team) {
-                    _.each(team.composition, function(role) {
-                        _.each(role.players, function(player) {
-                            let user = self.getCachedUser(self.getDocumentID(player.user));
+                for (let team in game.teams) {
+                    for (let role in team.composition) {
+                        for (let player in role.players) {
+                            let userID = self.getDocumentID(player.user);
+                            let user = yield database.User.findById(userID);
 
-                            if (_.has(info.time, user.steamID)) {
+                            if (user && _.has(info.time, user.steamID)) {
                                 player.time = info.time[user.steamID];
                             }
-                        });
-                    });
-                });
+                        }
+                    }
+                }
             }
 
             yield game.save();
@@ -534,29 +539,30 @@ module.exports = function(app, cache, chance, database, io, self) {
     });
 
     function getUserCurrentGame(userID) {
-        return co(function*() {
-            if (!currentGameCache.has(userID)) {
-                let game = yield database.Game.findOne({
-                    $or: [{
-                        'teams.captain': userID
-                    }, {
-                        'teams.composition.players': {
-                            $elemMatch: {
-                                user: userID,
-                                replaced: false
-                            }
-                        }
-                    }],
-                    status: {
-                        $in: ['launching', 'live']
-                    }
-                });
-
-                currentGameCache.set(userID, formatCurrentGameInfo(game));
-            }
-
-            return currentGameCache.get(userID);
-        });
+        // TODO: update for caching
+        // return co(function*() {
+        //     if (!currentGameCache.has(userID)) {
+        //         let game = yield database.Game.findOne({
+        //             $or: [{
+        //                 'teams.captain': userID
+        //             }, {
+        //                 'teams.composition.players': {
+        //                     $elemMatch: {
+        //                         user: userID,
+        //                         replaced: false
+        //                     }
+        //                 }
+        //             }],
+        //             status: {
+        //                 $in: ['launching', 'live']
+        //             }
+        //         });
+        //
+        //         currentGameCache.set(userID, formatCurrentGameInfo(game));
+        //     }
+        //
+        //     return currentGameCache.get(userID);
+        // });
     }
 
     io.sockets.on('connection', function(socket) {
@@ -650,56 +656,57 @@ module.exports = function(app, cache, chance, database, io, self) {
     });
 
     app.get('/game/:id', co.wrap(function*(req, res) {
-        let game = yield database.Game.findById(req.params.id).exec();
-
-        if (!game) {
-            res.sendStatus(HttpStatus.NOT_FOUND);
-            return;
-        }
-
-        game = game.toObject();
-
-        let ratings = {};
-
-        if (!HIDE_RATINGS) {
-            ratings = _.keyBy(yield database.Rating.find({
-                game: game.id
-            }).exec(), rating => self.getDocumentID(rating.user));
-        }
-
-        _.each(game.teams, function(team) {
-            team.captain = self.getCachedUser(self.getDocumentID(team.captain));
-
-            team.composition = _.sortBy(team.composition, function(role) {
-                return _(ROLES).keys().indexOf(role.role);
-            });
-
-            _.each(team.composition, function(role) {
-                role.role = _.assign({
-                    id: role.role
-                }, ROLES[role.role]);
-
-                _.each(role.players, function(player) {
-                    player.user = self.getCachedUser(self.getDocumentID(player.user));
-
-                    if (!HIDE_RATINGS) {
-                        let rating = ratings[self.getDocumentID(player.user)];
-
-                        if (rating) {
-                            player.rating = {
-                                rating: rating.after.mean,
-                                deviation: rating.after.deviation,
-                                change: rating.after.mean - rating.before.mean
-                            };
-                        }
-                    }
-                });
-            });
-        });
-
-        res.render('game', {
-            game
-        });
+        // TODO: update for caching
+        // let game = yield database.Game.findById(req.params.id).exec();
+        //
+        // if (!game) {
+        //     res.sendStatus(HttpStatus.NOT_FOUND);
+        //     return;
+        // }
+        //
+        // game = game.toObject();
+        //
+        // let ratings = {};
+        //
+        // if (!HIDE_RATINGS) {
+        //     ratings = _.keyBy(yield database.Rating.find({
+        //         game: game.id
+        //     }).exec(), rating => self.getDocumentID(rating.user));
+        // }
+        //
+        // _.each(game.teams, function(team) {
+        //     team.captain = self.getCachedUser(self.getDocumentID(team.captain));
+        //
+        //     team.composition = _.sortBy(team.composition, function(role) {
+        //         return _(ROLES).keys().indexOf(role.role);
+        //     });
+        //
+        //     _.each(team.composition, function(role) {
+        //         role.role = _.assign({
+        //             id: role.role
+        //         }, ROLES[role.role]);
+        //
+        //         _.each(role.players, function(player) {
+        //             player.user = self.getCachedUser(self.getDocumentID(player.user));
+        //
+        //             if (!HIDE_RATINGS) {
+        //                 let rating = ratings[self.getDocumentID(player.user)];
+        //
+        //                 if (rating) {
+        //                     player.rating = {
+        //                         rating: rating.after.mean,
+        //                         deviation: rating.after.deviation,
+        //                         change: rating.after.mean - rating.before.mean
+        //                     };
+        //                 }
+        //             }
+        //         });
+        //     });
+        // });
+        //
+        // res.render('game', {
+        //     game
+        // });
     }));
 
     app.get('/games/all', function(req, res) {
