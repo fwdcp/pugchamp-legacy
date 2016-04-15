@@ -162,11 +162,14 @@ module.exports = function(app, cache, chance, database, io, self) {
             aspects: ['sub', 'start', 'captain'],
             reasons: ['You are not authorized to play in this system.']
         };
-        user.authorized = yield checkUserAuthorization(user);
-        yield user.save();
-        yield self.updateCachedUser(user.id);
+        let authorized = yield checkUserAuthorization(user);
+        if (user.authorized !== authorized) {
+            user.authorized = authorized;
+            yield user.save();
+            yield self.updateCachedUser(user.id);
+        }
         if (!user.authorized) {
-            if (!user.admin) {
+            if (!self.isUserAdmin(user)) {
                 restrictions.push(UNAUTHORIZED_USER_RESTRICTIONS);
             }
             else {

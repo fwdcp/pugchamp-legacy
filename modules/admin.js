@@ -10,22 +10,19 @@ const moment = require('moment');
 const ms = require('ms');
 
 module.exports = function(app, cache, chance, database, io, self) {
+    const ADMINS = config.get('app.users.admins');
     const BASE_URL = config.get('server.baseURL');
     const GAME_SERVER_POOL = config.get('app.servers.pool');
     const HIDE_DRAFT_STATS = config.get('app.users.hideDraftStats');
     const RESTRICTION_DURATIONS = config.get('app.users.restrictionDurations');
 
-    var router = express.Router();
+    var adminUserIDs = [];
 
-    router.use('/', function(req, res, next) {
-        if (!req.user || !req.user.admin) {
-            res.status(HttpStatus.FORBIDDEN).render('unauthorized');
-        }
-        else {
-            next();
-            return;
-        }
-    });
+    self.isUserAdmin = function isUserAdmin(user) {
+        let userID = self.getDocumentID(user);
+
+        return _.includes(adminUserIDs, userID);
+    };
 
     self.postToAdminLog = co.wrap(function* postToAdminLog(user, action) {
         let userID = self.getDocumentID(user);
@@ -42,6 +39,18 @@ module.exports = function(app, cache, chance, database, io, self) {
         };
 
         yield self.postToSlack(message);
+    });
+
+    var router = express.Router();
+
+    router.use('/', function(req, res, next) {
+        if (!self.isUserAdmin(req.user)) {
+            res.status(HttpStatus.FORBIDDEN).render('unauthorized');
+        }
+        else {
+            next();
+            return;
+        }
     });
 
     router.post('/user/:id', bodyParser.urlencoded({
@@ -401,5 +410,15 @@ module.exports = function(app, cache, chance, database, io, self) {
     io.sockets.on('authenticated', function(socket) {
         socket.removeAllListeners('requestAdmin');
         socket.on('requestAdmin', onRequestAdmin);
+    });
+
+    co(function*() {
+        let admins = yield database.User.find({
+            'steamID': {
+                $in: ADMINS
+            }
+        }).exec();
+
+        adminUserIDs = _.map(admins, user => self.getDocumentID(user));
     });
 };

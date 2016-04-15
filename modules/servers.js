@@ -376,7 +376,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     app.get('/servers', co.wrap(function*(req, res) {
         let servers;
 
-        if (req.user && req.user.admin) {
+        if (self.isUserAdmin(req.user)) {
             servers = yield self.getServerStatuses();
         }
         else {

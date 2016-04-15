@@ -69,7 +69,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         if (SHOW_CONNECTION_MESSAGES) {
             let user = yield self.getCachedUser(userID);
 
-            if (user.setUp && (user.authorized || user.admin)) {
+            if (user.setUp && (user.authorized || self.isUserAdmin(user))) {
                 self.sendMessage({
                     user: userID,
                     action: 'connected'
@@ -85,7 +85,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         let user = yield self.getCachedUser(userID);
 
         if (SHOW_CONNECTION_MESSAGES) {
-            if (user.setUp && (user.authorized || user.admin)) {
+            if (user.setUp && (user.authorized || self.isUserAdmin(user))) {
                 self.sendMessage({
                     user: userID,
                     action: 'disconnected'
@@ -120,12 +120,9 @@ module.exports = function(app, cache, chance, database, io, self) {
                     let highlighted = false;
 
                     if (/@everyone@/i.test(message)) {
-                        // TODO: use new admin checks
-                        // let user = self.getCachedUser(userID);
-                        //
-                        // if (user.admin) {
-                        //     highlighted = true;
-                        // }
+                        if (self.isUserAdmin(userID)) {
+                            highlighted = true;
+                        }
                     }
 
                     let mentionedAliases = _.uniqWith(twitter.extractMentions(trimmedMessage), (alias1, alias2) => (alias1.localeCompare(alias2, 'en', {
@@ -159,16 +156,13 @@ module.exports = function(app, cache, chance, database, io, self) {
         let userID = this.decoded_token.user;
 
         return co(function*() {
-            // TODO: use new admin check
-            // let user = self.getCachedUser(userID);
-
-            // if (user.admin) {
+            if (self.isUserAdmin(userID)) {
                 let victim = yield self.getCachedUser(victimID);
 
                 self.postToAdminLog(userID, `purged the chat messages of \`<${BASE_URL}/player/${victim.steamID}|${victim.alias}>\``);
 
                 io.sockets.emit('userPurged', victimID);
-            // }
+            }
         });
     }
 
