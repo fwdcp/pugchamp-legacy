@@ -318,8 +318,8 @@
 
                     this.async(function() {
                         var progress = Polymer.dom(this.$.draftTurns).querySelector('.draft-turn[data-status=current] .turn-time');
-                        progress.value = status.timeElapsed / 1000;
-                        progress.max = status.timeTotal / 1000;
+                        progress.value = (status.currentTime - status.turnStartTime) / 1000;
+                        progress.max = (status.turnEndTime - status.turnStartTime) / 1000;
 
                         this.currentTimer = this.async(this.incrementTurnTimer, 1000);
                     });
