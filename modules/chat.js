@@ -17,7 +17,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         yield cache.setAsync('onlineUsers', JSON.stringify(onlineList));
 
-        io.sockets.emit('onlineUserListUpdated', onlineList);
+        io.sockets.emit('onlineUserListUpdated', yield getOnlineUserList());
     }), UPDATE_ONLINE_USER_LIST_DEBOUNCE_WAIT, {
         maxWait: UPDATE_ONLINE_USER_LIST_DEBOUNCE_MAX_WAIT
     });
@@ -183,4 +183,6 @@ module.exports = function(app, cache, chance, database, io, self) {
         socket.on('sendChatMessage', onUserSendChatMessage);
         socket.on('purgeUser', onUserPurgeUser);
     });
+
+    updateOnlineUserList();
 };
