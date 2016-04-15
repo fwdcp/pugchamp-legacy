@@ -66,7 +66,11 @@ var userSchema = new mongoose.Schema({
         roles: [{
             role: String,
             count: Number
-        }]
+        }],
+        total: {
+            captain: Number,
+            player: Number
+        }
     }
 });
 userSchema.index({alias: 'text'}, {default_language: 'none'});

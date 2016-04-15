@@ -61,20 +61,8 @@ module.exports = function(app, cache, chance, database, io, self) {
             return false;
         }
 
-        if (player.stats.roles) {
-            for (let stat of player.stats.roles) {
-                if (stat.count > 0) {
-                    return true;
-                }
-            }
-        }
-
-        if (player.stats.draft) {
-            for (let stat of player.stats.draft) {
-                if (stat.type === 'captain' && stat.count > 0) {
-                    return true;
-                }
-            }
+        if (player.stats.total.captain > 0 || player.stats.total.player > 0) {
+            return true;
         }
 
         return false;
@@ -286,6 +274,13 @@ module.exports = function(app, cache, chance, database, io, self) {
             role,
             count
         }))).value();
+
+        player.stats.total.captain = yield database.Game.count({
+            'teams.captain': player.id
+        }).count().exec();
+        player.stats.total.player = yield database.Game.count({
+            'teams.composition.players.user': player.id
+        }).count().exec();
 
         yield player.save();
 

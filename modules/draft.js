@@ -632,17 +632,15 @@ module.exports = function(app, cache, chance, database, io, self) {
                         supported = true;
                     }
                     else if (turnDefinition.method === 'experience') {
-                        // TODO: update for caching
-                        // choice.captain = _.maxBy(turnCaptainPool, function(captain) {
-                        //     let user = self.getCachedUser(captain);
-                        //
-                        //     // TODO: use new total games stat
-                        //     // if (user.stats.roles) {
-                        //     //     return _.reduce(user.stats.roles, (sum, stat) => sum + stat.count, 0);
-                        //     // }
-                        //
-                        //     return 0;
-                        // });
+                        let fullCaptains = yield database.User.find({
+                            '_id': {
+                                $in: turnCaptainPool
+                            }
+                        }).exec();
+
+                        choice.captain = _.maxBy(fullCaptains, function(captain) {
+                            return captain.stats.total.player;
+                        });
 
                         supported = true;
                     }

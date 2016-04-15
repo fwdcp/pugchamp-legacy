@@ -218,12 +218,8 @@ module.exports = function(app, cache, chance, database, io, self) {
             aspects: ['captain'],
             reasons: ['You cannot captain because you do not meet the requirement for games played.']
         };
-        if (user.stats.roles) {
-            let gamesPlayed = _.reduce(user.stats.roles, (sum, stat) => sum + stat.count, 0);
-
-            if (gamesPlayed < CAPTAIN_GAME_REQUIREMENT) {
-                restrictions.push(MIN_GAME_RESTRICTIONS);
-            }
+        if (user.stats.total.player < CAPTAIN_GAME_REQUIREMENT) {
+            restrictions.push(MIN_GAME_RESTRICTIONS);
         }
         else {
             restrictions.push(MIN_GAME_RESTRICTIONS);
