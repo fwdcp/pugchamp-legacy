@@ -8,14 +8,32 @@ const twitter = require('twitter-text');
 module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const SHOW_CONNECTION_MESSAGES = config.get('app.chat.showConnectionMessages');
+    const UPDATE_ONLINE_USER_LIST_DEBOUNCE_MAX_WAIT = 5000;
+    const UPDATE_ONLINE_USER_LIST_DEBOUNCE_WAIT = 1000;
 
-    var onlineUsers = new Set();
+    const updateOnlineUserList = _.debounce(co.wrap(function* updateOnlineUserList() {
+        let users = yield _.map(self.getOnlineUsers(), user => self.getCachedUser(user));
+        let onlineList = _(users).filter(user => (user.setUp && (user.authorized || self.isUserAdmin(user)))).sortBy('alias').value();
 
-    self.getOnlineUserList = function() {
-        // TODO: cache and update
-        // return _([...onlineUsers]).map(userID => self.getCachedUser(userID)).filter(user => (user.setUp && (user.authorized || user.admin))).sortBy('alias').value();
-        return [];
-    };
+        yield cache.setAsync('onlineUsers', JSON.stringify(onlineList));
+
+        io.sockets.emit('onlineUserListUpdated', onlineList);
+    }), UPDATE_ONLINE_USER_LIST_DEBOUNCE_WAIT, {
+        maxWait: UPDATE_ONLINE_USER_LIST_DEBOUNCE_MAX_WAIT
+    });
+
+    function getOnlineUserList() {
+        return co(function*() {
+            let cacheResponse = yield cache.getAsync('onlineUsers');
+
+            if (!cacheResponse) {
+                yield updateOnlineUserList();
+                cacheResponse = yield cache.getAsync('onlineUsers');
+            }
+
+            return JSON.parse(cacheResponse);
+        });
+    }
 
     function postToMessageLog(message) {
         return co(function*() {
@@ -64,8 +82,6 @@ module.exports = function(app, cache, chance, database, io, self) {
     });
 
     self.on('userConnected', co.wrap(function*(userID) {
-        onlineUsers.add(userID);
-
         if (SHOW_CONNECTION_MESSAGES) {
             let user = yield self.getCachedUser(userID);
 
@@ -77,14 +93,13 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         }
 
-        // TODO: update cache
-        // io.sockets.emit('onlineUserListUpdated', self.getOnlineUserList());
+        updateOnlineUserList();
     }));
 
     self.on('userDisconnected', co.wrap(function*(userID) {
-        let user = yield self.getCachedUser(userID);
-
         if (SHOW_CONNECTION_MESSAGES) {
+            let user = yield self.getCachedUser(userID);
+
             if (user.setUp && (user.authorized || self.isUserAdmin(user))) {
                 self.sendMessage({
                     user: userID,
@@ -93,15 +108,12 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         }
 
-        onlineUsers.delete(userID);
-
-        // TODO: update cache
-        // io.sockets.emit('onlineUserListUpdated', self.getOnlineUserList());
+        updateOnlineUserList();
     }));
 
-    io.sockets.on('connection', function(socket) {
-        socket.emit('onlineUserListUpdated', self.getOnlineUserList());
-    });
+    io.sockets.on('connection', co.wrap(function*(socket) {
+        socket.emit('onlineUserListUpdated', yield getOnlineUserList());
+    }));
 
     function onUserSendChatMessage(message) {
         let userID = this.decoded_token.user;
