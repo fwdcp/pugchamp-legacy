@@ -89,8 +89,6 @@ module.exports = function(app, cache, chance, database, io, self) {
 
     var currentDraftGame = null;
 
-    var currentStatusInfo;
-
     self.isDraftActive = function isDraftActive() {
         return draftActive;
     };
@@ -166,74 +164,78 @@ module.exports = function(app, cache, chance, database, io, self) {
         return true;
     }
 
-    function updateStatusInfo() {
-        // TODO: update for caching
-        // currentStatusInfo = {
-        //     roles: ROLES,
-        //     teamSize: TEAM_SIZE,
-        //     draftTurns: _.map(DRAFT_ORDER, function(turn, index) {
-        //         let completeTurn = _.defaults({}, turn, draftChoices[index]);
-        //
-        //         if (completeTurn.player) {
-        //             completeTurn.player = self.getCachedUser(completeTurn.player);
-        //         }
-        //
-        //         if (completeTurn.captain) {
-        //             completeTurn.captain = self.getCachedUser(completeTurn.captain);
-        //         }
-        //
-        //         return completeTurn;
-        //     }),
-        //     playerPool: _.mapValues(playerPool, function(rolePool) {
-        //         return _.map(rolePool, function(userID) {
-        //             return self.getCachedUser(userID);
-        //         });
-        //     }),
-        //     captainPool: _.map(captainPool, function(userID) {
-        //         return self.getCachedUser(userID);
-        //     }),
-        //     fullPlayerList: _.map(fullPlayerList, function(userID) {
-        //         return self.getCachedUser(userID);
-        //     }),
-        //     mapPool: MAP_POOL,
-        //     currentDraftTurn,
-        //     draftTeams: _.map(draftTeams, function(team) {
-        //         let formattedTeam = _.cloneDeep(team);
-        //
-        //         if (formattedTeam.captain) {
-        //             formattedTeam.captain = self.getCachedUser(formattedTeam.captain);
-        //         }
-        //
-        //         formattedTeam.players = _.map(formattedTeam.players, function(player) {
-        //             player.user = self.getCachedUser(player.user);
-        //
-        //             return player;
-        //         });
-        //
-        //         return formattedTeam;
-        //     }),
-        //     unavailablePlayers,
-        //     pickedMap,
-        //     remainingMaps,
-        //     allowedRoles,
-        //     overrideRoles,
-        //     active: draftActive,
-        //     complete: draftComplete
-        // };
+    function updateDraftStatusMessage() {
+        return co(function*() {
+            let draftStatusMessage = {
+                active: draftActive,
+                complete: draftComplete,
+                draftTurns: _.map(DRAFT_ORDER, (turn, index) => _.merge({}, turn, draftChoices[index])),
+                currentDraftTurn,
+                turnStartTime: currentDraftTurnStartTime,
+                turnEndTime: currentDraftTurnStartTime + TURN_TIME_LIMIT,
+                roles: ROLES,
+                teamSize: TEAM_SIZE,
+                draftTeams: _.cloneDeep(draftTeams),
+                playerPool: _.cloneDeep(playerPool),
+                captainPool: _.cloneDeep(captainPool),
+                fullPlayerList: _.cloneDeep(fullPlayerList),
+                unavailablePlayers,
+                mapPool: MAP_POOL,
+                pickedMap,
+                remainingMaps,
+                allowedRoles,
+                overrideRoles
+            };
+
+            for (let turn of draftStatusMessage.draftTurns) {
+                if (turn.player) {
+                    turn.player = yield self.getCachedUser(turn.player);
+                }
+
+                if (turn.captain) {
+                    turn.captain = yield self.getCachedUser(turn.captain);
+                }
+            }
+
+            for (let team of draftStatusMessage.draftTeams) {
+                if (team.captain) {
+                    team.captain = yield self.getCachedUser(team.captain);
+                }
+
+                for (let player of team.players) {
+                    player.user = yield self.getCachedUser(player.user);
+                }
+            }
+
+            for (let role of _.keys(ROLES)) {
+                draftStatusMessage.playerPool[role] = yield _.map(draftStatusMessage.playerPool[role], user => self.getCachedUser(user));
+            }
+
+            draftStatusMessage.captainPool = yield _.map(draftStatusMessage.captainPool, user => self.getCachedUser(user));
+
+            draftStatusMessage.fullPlayerList = yield _.map(draftStatusMessage.fullPlayerList, user => self.getCachedUser(user));
+
+            yield cache.setAsync('draftStatus', JSON.stringify(draftStatusMessage));
+
+            io.sockets.emit('draftStatusUpdated', yield getDraftStatusMessage());
+        });
     }
 
-    function getCurrentStatusMessage() {
-        // TODO: update for caching
-        // if (draftActive && !draftComplete) {
-        //     currentStatusInfo.timeElapsed = Date.now() - currentDraftTurnStartTime;
-        //     currentStatusInfo.timeTotal = TURN_TIME_LIMIT;
-        // }
-        // else {
-        //     delete currentStatusInfo.timeElapsed;
-        //     delete currentStatusInfo.timeTotal;
-        // }
-        //
-        // return currentStatusInfo;
+    function getDraftStatusMessage() {
+        return co(function*() {
+            let cacheResponse = yield cache.getAsync('draftStatus');
+
+            if (!cacheResponse) {
+                yield updateDraftStatusMessage();
+                cacheResponse = yield cache.getAsync('draftStatus');
+            }
+
+            let draftStatusMessage = JSON.parse(cacheResponse);
+
+            draftStatusMessage.currentTime = Date.now();
+
+            return draftStatusMessage;
+        });
     }
 
     self.cleanUpDraft = function cleanUpDraft() {
@@ -266,8 +268,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         currentDraftGame = null;
 
-        updateStatusInfo();
-        io.sockets.emit('draftStatusUpdated', getCurrentStatusMessage());
+        updateDraftStatusMessage();
 
         // NOTE: hacks with previous draft info - clear draft restrictions and mark activity to prevent players from getting removed
         _.each(previousDraftCaptains, function(captain) {
@@ -382,8 +383,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             currentDraftTurnStartTime = Date.now();
 
-            updateStatusInfo();
-            io.sockets.emit('draftStatusUpdated', getCurrentStatusMessage());
+            updateDraftStatusMessage();
 
             yield launchGameFromDraft();
         });
@@ -871,8 +871,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         currentDraftTurnStartTime = Date.now();
         currentDraftTurnExpireTimeout = setTimeout(expireTime, TURN_TIME_LIMIT);
 
-        updateStatusInfo();
-        io.sockets.emit('draftStatusUpdated', getCurrentStatusMessage());
+        updateDraftStatusMessage();
 
         if (turnDefinition.method === 'captain') {
             if (!draftTeams[turnDefinition.team].captain) {
@@ -938,9 +937,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         beginDraftTurn(0);
     };
 
-    io.sockets.on('connection', function(socket) {
-        socket.emit('draftStatusUpdated', getCurrentStatusMessage());
-    });
+    io.sockets.on('connection', co.wrap(function*(socket) {
+        socket.emit('draftStatusUpdated', yield getDraftStatusMessage());
+    }));
 
     function onUserMakeDraftChoice(choice) {
         let userID = this.decoded_token.user;
@@ -955,5 +954,5 @@ module.exports = function(app, cache, chance, database, io, self) {
         socket.on('makeDraftChoice', onUserMakeDraftChoice);
     });
 
-    updateStatusInfo();
+    updateDraftStatusMessage();
 };
