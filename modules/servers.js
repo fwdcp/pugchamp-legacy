@@ -154,15 +154,19 @@ module.exports = function(app, cache, chance, database, io, self) {
     self.throttledGetAvailableServers = _.throttle(self.getAvailableServers, QUERY_INTERVAL);
 
     self.sendRCONCommands = co.wrap(function* sendRCONCommands(server, commands) {
-        let rcon = yield connectToRCON(server);
+        let rcon;
 
         try {
+            rcon = yield connectToRCON(server);
+
             let result = yield sendCommandsToServer(rcon, commands);
 
             return result;
         }
         finally {
-            yield disconnectFromRCON(rcon);
+            if (rcon) {
+                yield disconnectFromRCON(rcon);
+            }
         }
     });
 
@@ -275,9 +279,11 @@ module.exports = function(app, cache, chance, database, io, self) {
         game.status = 'initializing';
         yield game.save();
 
-        let rcon = yield connectToRCON(game.server);
+        let rcon;
 
         try {
+            rcon = yield connectToRCON(game.server);
+
             yield sendCommandsToServer(rcon, ['pugchamp_game_reset']);
 
             let gameServerInfo = GAME_SERVER_POOL[game.server];
@@ -303,7 +309,9 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         }
         finally {
-            yield disconnectFromRCON(rcon);
+            if (rcon) {
+                yield disconnectFromRCON(rcon);
+            }
         }
     });
 
