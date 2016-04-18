@@ -89,6 +89,10 @@ module.exports = function(app, cache, chance, database, io, self) {
                 }
             }
 
+            if (user.alias) {
+                user.setUp = true;
+            }
+
             try {
                 yield user.save();
 
