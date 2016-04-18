@@ -48,9 +48,9 @@
                 <paper-material class="request">
                     <h2>Substitute Request</h2>
 
-                    <p>A substitute has been requested for <strong>{{item.player.alias}}</strong> (with role <strong>{{_getProperty(roles, item.role, 'name')}}</strong>).</p>
+                    <p>A substitute has been requested for <strong>{{item.player.alias}}</strong> (with role <strong>{{item.role.name}}</strong>).</p>
 
-                    <p><paper-progress class="period transiting" data-start$="{{item.start}}" data-end$="{{item.end}}" min="0" value="{{item.timeElapsed}}" max="{{item.timeTotal}}"></paper-progress></p>
+                    <p><paper-progress class="period transiting" min="0" value="{{difference(currentTime, item.startTime)}}" max="{{difference(currentTime, item.endTime)}}"></paper-progress></p>
 
                     <p hidden$={{!user}}>
                         <a class="button" href="/game/{{item.game}}" target="_blank"><paper-button class="view" raised>View Game Info</paper-button></a>
@@ -78,21 +78,20 @@
                 this._listenToEvent('substituteRequestsUpdated', 'onSubstituteRequestsUpdated');
 
                 this.set('requests', []);
+                this.set('currentTime', 0);
 
                 this.async(this.updateTimers, 1000);
             },
             onSubstituteRequestsUpdated: function(info) {
                 if (this.requests.length < info.requests.length) {
-                    this.playRequestSound();
+                    this.notifyRequest();
                 }
 
-                this.set('roles', info.roles);
                 this.set('requests', info.requests);
+                this.set('currentTime', info.currentTime);
             },
             updateTimers: function() {
-                Polymer.dom(this.$.requests).querySelectorAll('.request .period').forEach(function(progress) {
-                    progress.value += 1000;
-                });
+                this.set('currentTime', this.currentTime + 1000);
 
                 this.async(this.updateTimers, 1000);
             },
@@ -105,11 +104,14 @@
             retractSubstituteRequest: function(event) {
                 socket.emit('retractSubstituteRequest', event.target.dataset.request);
             },
-            playRequestSound: function() {
+            notifyRequest: function() {
                 if (!this.isRestricted(this.restrictions, 'sub')) {
                     this.$.substituteNotification.notify();
                     this.$.substituteRequestedSound.play();
                 }
+            },
+            difference: function(a, b) {
+                return a - b;
             }
         });
     </script>
