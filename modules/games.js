@@ -14,6 +14,7 @@ const path = require('path');
 require('moment-duration-format');
 
 module.exports = function(app, cache, chance, database, io, self) {
+    const GAME_SERVER_POOL = config.get('app.servers.pool');
     const HIDE_RATINGS = config.get('app.users.hideRatings');
     const POST_GAME_RESET_DELAY = ms(config.get('app.games.postGameResetDelay'));
     const ROLES = config.get('app.games.roles');
@@ -61,7 +62,42 @@ module.exports = function(app, cache, chance, database, io, self) {
     function updateCurrentGame(game, user) {
         return co(function*() {
             if (game.status === 'launching' || game.status === 'live') {
-                // TODO: format and save to cache
+                let gameUserInfo = self.getGameUserInfo(game);
+
+                let currentGameInfo = {
+                    game: self.getDocumentID(game),
+                    team: _.omit(gameUserInfo.team, 'composition'),
+                    user: yield self.getCachedUser(user)
+                };
+
+                currentGameInfo.team.captain = yield self.getCachedUser(currentGameInfo.team.captain);
+
+                if (gameUserInfo.player) {
+                    currentGameInfo.role = gameUserInfo.role.role;
+                    currentGameInfo.replaced = gameUserInfo.player.replaced;
+
+                    if (!currentGameInfo.replaced && game.server) {
+                        currentGameInfo.server = _.omit(GAME_SERVER_POOL[game.server], 'rcon', 'salt');
+                        currentGameInfo.server.id = game.server;
+                    }
+                }
+
+                if (self.getDocumentID(gameUserInfo.team.captain) === self.getDocumentID(user)) {
+                    currentGameInfo.activeTeamPlayers = [];
+
+                    for (let role in gameUserInfo.team.composition) {
+                        for (let player in role.players) {
+                            if (!player.replaced) {
+                                currentGameInfo.activeTeamPlayers.push({
+                                    user: yield self.getCachedUser(player.user),
+                                    role: ROLES[role.role]
+                                });
+                            }
+                        }
+                    }
+                }
+
+                yield cache.setAsync(`currentGame-${self.getDocumentID(user)}`, currentGameInfo);
             }
             else {
                 yield cache.delAsync(`currentGame-${self.getDocumentID(user)}`);
