@@ -229,60 +229,72 @@ module.exports = function(app, cache, chance, database, io, self) {
             throw new Error('server not assigned to game');
         }
 
-        let populatedGame = yield game.populate('teams.composition.players.user').execPopulate();
+        let commands = [];
+        for (let user of self.getGameUsers(game)) {
+            user = yield self.getCachedUser(user);
+            let gameUserInfo = self.getGameUserInfo(game, user);
 
-        let commands = _(populatedGame.teams).map(function(team) {
-            return _.map(team.composition, function(role) {
-                return _.map(role.players, function(player) {
-                    if (!player.replaced) {
-                        let className = ROLES[role.role].class;
+            if (gameUserInfo.player) {
+                if (!gameUserInfo.player.replaced) {
+                    let className = ROLES[gameUserInfo.role.role].class;
 
-                        let gameTeam = 1;
-                        let gameClass = 0;
+                    let gameTeam = 1;
+                    let gameClass = 0;
 
-                        if (team.faction === 'RED') {
-                            gameTeam = 2;
-                        }
-                        else if (team.faction === 'BLU') {
-                            gameTeam = 3;
-                        }
-
-                        if (className === 'scout') {
-                            gameClass = 1;
-                        }
-                        else if (className === 'soldier') {
-                            gameClass = 3;
-                        }
-                        else if (className === 'pyro') {
-                            gameClass = 7;
-                        }
-                        else if (className === 'demoman') {
-                            gameClass = 4;
-                        }
-                        else if (className === 'heavy') {
-                            gameClass = 6;
-                        }
-                        else if (className === 'engineer') {
-                            gameClass = 9;
-                        }
-                        else if (className === 'medic') {
-                            gameClass = 5;
-                        }
-                        else if (className === 'sniper') {
-                            gameClass = 2;
-                        }
-                        else if (className === 'spy') {
-                            gameClass = 8;
-                        }
-
-                        return `pugchamp_game_player_add "${player.user.steamID}" "${player.user.alias}" ${gameTeam} ${gameClass}`;
+                    if (gameUserInfo.team.faction === 'RED') {
+                        gameTeam = 2;
                     }
-                    else {
-                        return `pugchamp_game_player_remove "${player.user.steamID}"`;
+                    else if (gameUserInfo.team.faction === 'BLU') {
+                        gameTeam = 3;
                     }
-                });
-            });
-        }).flattenDeep().compact().value();
+
+                    if (className === 'scout') {
+                        gameClass = 1;
+                    }
+                    else if (className === 'soldier') {
+                        gameClass = 3;
+                    }
+                    else if (className === 'pyro') {
+                        gameClass = 7;
+                    }
+                    else if (className === 'demoman') {
+                        gameClass = 4;
+                    }
+                    else if (className === 'heavy') {
+                        gameClass = 6;
+                    }
+                    else if (className === 'engineer') {
+                        gameClass = 9;
+                    }
+                    else if (className === 'medic') {
+                        gameClass = 5;
+                    }
+                    else if (className === 'sniper') {
+                        gameClass = 2;
+                    }
+                    else if (className === 'spy') {
+                        gameClass = 8;
+                    }
+
+                    commands.push(`pugchamp_game_player_add "${user.steamID}" "${user.alias}" ${gameTeam} ${gameClass}`);
+                }
+                else {
+                    commands.push(`pugchamp_game_player_remove "${user.steamID}"`);
+                }
+            }
+            else {
+                let gameTeam = 1;
+
+                if (gameUserInfo.team.faction === 'RED') {
+                    gameTeam = 2;
+                }
+                else if (gameUserInfo.team.faction === 'BLU') {
+                    gameTeam = 3;
+                }
+
+                commands.push(`pugchamp_game_player_add "${user.steamID}" "${user.alias}" ${gameTeam} 0`);
+            }
+        }
 
         yield self.sendRCONCommands(game.server, commands);
     });

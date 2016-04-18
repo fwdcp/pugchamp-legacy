@@ -199,9 +199,9 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            let gamePlayerInfo = self.getGameUserInfo(game, request.player);
+            let gameUserInfo = self.getGameUserInfo(game, request.player);
 
-            if (!gamePlayerInfo || !gamePlayerInfo.player || gamePlayerInfo.player.replaced) {
+            if (!gameUserInfo || !gameUserInfo.player || gameUserInfo.player.replaced) {
                 self.removeSubstituteRequest(id);
                 return;
             }
@@ -294,24 +294,24 @@ module.exports = function(app, cache, chance, database, io, self) {
             return;
         }
 
-        let gamePlayerInfo = self.getGameUserInfo(game, player);
+        let gameUserInfo = self.getGameUserInfo(game, player);
 
-        if (!gamePlayerInfo || !gamePlayerInfo.player || gamePlayerInfo.player.replaced) {
+        if (!gameUserInfo || !gameUserInfo.player || gameUserInfo.player.replaced) {
             return;
         }
 
-        if (currentSubstituteRequests.has(gamePlayerInfo.player.id)) {
+        if (currentSubstituteRequests.has(gameUserInfo.player.id)) {
             return;
         }
 
-        currentSubstituteRequests.set(self.getDocumentID(gamePlayerInfo.player), {
+        currentSubstituteRequests.set(self.getDocumentID(gameUserInfo.player), {
             game: self.getDocumentID(game),
-            role: gamePlayerInfo.role.role,
-            captain: self.getDocumentID(gamePlayerInfo.team.captain),
-            player: playerID,
+            role: gameUserInfo.role.role,
+            captain: self.getDocumentID(gameUserInfo.team.captain),
+            player: self.getDocumentID(player),
             opened: Date.now(),
             candidates: new Set(),
-            timeout: setTimeout(attemptSubstitution, SUBSTITUTE_REQUEST_PERIOD, self.getDocumentID(gamePlayerInfo.player))
+            timeout: setTimeout(attemptSubstitution, SUBSTITUTE_REQUEST_PERIOD, self.getDocumentID(gameUserInfo.player))
         });
 
         updateSubstituteRequestsInfo();
@@ -427,9 +427,9 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
 
             if (info.time) {
-                for (let team in game.teams) {
-                    for (let role in team.composition) {
-                        for (let player in role.players) {
+                for (let team of game.teams) {
+                    for (let role of team.composition) {
+                        for (let player of role.players) {
                             let userID = self.getDocumentID(player.user);
                             let user = yield database.User.findById(userID);
 
@@ -467,9 +467,9 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
 
             if (info.time) {
-                for (let team in game.teams) {
-                    for (let role in team.composition) {
-                        for (let player in role.players) {
+                for (let team of game.teams) {
+                    for (let role of team.composition) {
+                        for (let player of role.players) {
                             let userID = self.getDocumentID(player.user);
                             let user = yield database.User.findById(userID);
 
@@ -491,11 +491,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             try {
                 yield rateGame(game);
 
-                yield _(game.teams).map(function(team) {
-                    return _.map(team.composition, function(role) {
-                        return _.map(role.players, player => player.user);
-                    });
-                }).flattenDeep().map(user => self.updatePlayerStats(user)).value();
+                yield _.map(self.getGameUsers(game), user => self.updatePlayerStats(user));
             }
             catch (err) {
                 self.postToLog({

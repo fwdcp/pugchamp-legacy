@@ -292,9 +292,9 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            let gamePlayerInfo = self.getGameUserInfo(game, player);
+            let gameUserInfo = self.getGameUserInfo(game, player);
 
-            if (!gamePlayerInfo || !gamePlayerInfo.player || gamePlayerInfo.player.replaced) {
+            if (!gameUserInfo || !gameUserInfo.player || gameUserInfo.player.replaced) {
                 res.sendStatus(HttpStatus.BAD_REQUEST);
                 return;
             }
