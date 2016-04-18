@@ -79,18 +79,10 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         }
 
-        for (let team in game.teams) {
-            yield updateCurrentGame(game, team.captain);
-            self.emitToUser(team.captain, 'currentGameUpdated', [yield getCurrentGame(team.captain)]);
-            self.updateUserRestrictions(team.captain);
-
-            for (let role in team.composition) {
-                for (let player in role.players) {
-                    yield updateCurrentGame(game, player.user);
-                    self.emitToUser(player.user, 'currentGameUpdated', [yield getCurrentGame(player.user)]);
-                    self.updateUserRestrictions(player.user);
-                }
-            }
+        for (let user of self.getGameUsers(game)) {
+            yield updateCurrentGame(game, user);
+            self.emitToUser(user, 'currentGameUpdated', [yield getCurrentGame(user)]);
+            self.updateUserRestrictions(user);
         }
     });
 
@@ -134,6 +126,22 @@ module.exports = function(app, cache, chance, database, io, self) {
     }
 
     updateSubstituteRequestsInfo();
+
+    self.getGameUsers = function getGameUsers(game) {
+        let users = [];
+
+        for (let team of game.teams) {
+            users.push(team.captain);
+
+            for (let role of team.composition) {
+                for (let player of role.players) {
+                    users.push(player.user);
+                }
+            }
+        }
+
+        return _.uniqBy(users, user => self.getDocumentID(user));
+    };
 
     self.getGameUserInfo = function getGameUserInfo(game, user) {
         let userID = self.getDocumentID(user);
