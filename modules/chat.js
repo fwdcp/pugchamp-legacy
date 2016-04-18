@@ -118,7 +118,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     function onUserSendChatMessage(message) {
         let userID = this.decoded_token.user;
 
-        return co(function*() {
+        co(function*() {
             self.markUserActivity(userID);
 
             let userRestrictions = self.getUserRestrictions(userID);
@@ -167,7 +167,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     function onUserPurgeUser(victim) {
         let userID = this.decoded_token.user;
 
-        return co(function*() {
+        co(function*() {
             if (self.isUserAdmin(userID)) {
                 let victimID = self.getDocumentID(victim);
                 victim = yield self.getCachedUser(victim);

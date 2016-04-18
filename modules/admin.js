@@ -394,7 +394,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     function onRequestAdmin(message) {
         let userID = this.decoded_token.user;
 
-        return co(function*() {
+        co(function*() {
             let userRestrictions = self.getUserRestrictions(userID);
 
             if (!_.includes(userRestrictions, 'support')) {
