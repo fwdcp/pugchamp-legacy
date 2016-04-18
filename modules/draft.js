@@ -328,7 +328,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             try {
                 yield game.save();
 
-                self.emit('gameUpdated', game.id);
+                yield self.processGameUpdate(game);
 
                 _.each(captainPool, function(captain) {
                     self.updateUserRestrictions(captain);

@@ -42,10 +42,6 @@ module.exports = function(app, cache, chance, database, io, self) {
         updateGameCache();
     });
 
-    updateGameCache();
-
-    var currentGameCache = new Map();
-
     function rateGame(game) {
         return co(function*() {
             yield child_process.exec(`python rate_game.py ${game.id}`, {
@@ -54,30 +50,28 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
-    function formatCurrentGameInfo(game) {
-        // TODO: update for caching
-        // if (!game || game.status === 'aborted' || game.status === 'completed') {
-        //     return null;
-        // }
-        //
-        // let gameInfo = _.omit(game.toObject(), 'draft');
-        // gameInfo.roles = ROLES;
-        //
-        // _.each(gameInfo.teams, function(team) {
-        //     team.captain = self.getCachedUser(self.getDocumentID(team.captain));
-        //
-        //     _.each(team.composition, function(role) {
-        //         _.each(role.players, function(player) {
-        //             player.user = self.getCachedUser(self.getDocumentID(player.user));
-        //         });
-        //     });
-        // });
-        //
-        // return gameInfo;
+    function getCurrentGame(user) {
+        return co(function*() {
+            let cacheResponse = yield cache.getAsync(`currentGame-${self.getDocumentID(user)}`);
+
+            return cacheResponse;
+        });
     }
 
-    function processGameUpdate(game) {
-        self.emit('gameUpdated', game.id);
+    function updateCurrentGame(game, user) {
+        return co(function*() {
+            if (game.status === 'launching' || game.status === 'live') {
+                // TODO: format and save to cache
+            }
+            else {
+                yield cache.delAsync(`currentGame-${self.getDocumentID(user)}`);
+            }
+        });
+    }
+
+    self.processGameUpdate = co.wrap(function*(game) {
+        let gameID = self.getDocumentID(game);
+        game = yield database.Game.findById(gameID);
 
         if (game.status !== 'initializing') {
             if (self.getDocumentID(game) === self.getCurrentDraftGame()) {
@@ -85,27 +79,20 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         }
 
-        // TODO: update for caching
-        // let gameInfo = formatCurrentGameInfo(game);
-        //
-        // _.each(game.teams, function(team) {
-        //     let captainID = self.getDocumentID(team.captain);
-        //
-        //     currentGameCache.set(captainID, gameInfo);
-        //     self.emitToUser(captainID, 'currentGameUpdated', [gameInfo]);
-        //     self.updateUserRestrictions(captainID);
-        //
-        //     _.each(team.composition, function(role) {
-        //         _.each(role.players, function(player) {
-        //             let userID = self.getDocumentID(player.user);
-        //
-        //             currentGameCache.set(userID, gameInfo);
-        //             self.emitToUser(userID, 'currentGameUpdated', [gameInfo]);
-        //             self.updateUserRestrictions(userID);
-        //         });
-        //     });
-        // });
-    }
+        for (let team in game.teams) {
+            yield updateCurrentGame(game, team.captain);
+            self.emitToUser(team.captain, 'currentGameUpdated', [yield getCurrentGame(team.captain)]);
+            self.updateUserRestrictions(team.captain);
+
+            for (let role in team.composition) {
+                for (let player in role.players) {
+                    yield updateCurrentGame(game, player.user);
+                    self.emitToUser(player.user, 'currentGameUpdated', [yield getCurrentGame(player.user)]);
+                    self.updateUserRestrictions(player.user);
+                }
+            }
+        }
+    });
 
     var currentSubstituteRequests = new Map();
     var currentSubstituteRequestsInfo;
@@ -340,7 +327,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         yield game.save();
 
-        processGameUpdate(game);
+        yield self.processGameUpdate(game);
 
         yield self.updateServerPlayers(game);
     });
@@ -358,7 +345,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         yield game.save();
 
-        processGameUpdate(game);
+        yield self.processGameUpdate(game);
 
         self.removeGameSubstituteRequests(game.id);
         self.updateLaunchStatus();
@@ -401,7 +388,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             yield game.save();
 
-            processGameUpdate(game);
+            yield self.processGameUpdate(game);
         }
         else if (info.status === 'live') {
             if (game.status === 'aborted' || game.status === 'completed') {
@@ -441,7 +428,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             yield game.save();
 
-            processGameUpdate(game);
+            yield self.processGameUpdate(game);
         }
         else if (info.status === 'completed') {
             if (game.status === 'aborted' || game.status === 'completed') {
@@ -481,7 +468,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             yield game.save();
 
-            processGameUpdate(game);
+            yield self.processGameUpdate(game);
             setTimeout(self.shutdownGame, POST_GAME_RESET_DELAY, game);
             self.removeGameSubstituteRequests(game.id);
             self.updateLaunchStatus();
@@ -538,33 +525,6 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
     });
 
-    function getUserCurrentGame(userID) {
-        // TODO: update for caching
-        // return co(function*() {
-        //     if (!currentGameCache.has(userID)) {
-        //         let game = yield database.Game.findOne({
-        //             $or: [{
-        //                 'teams.captain': userID
-        //             }, {
-        //                 'teams.composition.players': {
-        //                     $elemMatch: {
-        //                         user: userID,
-        //                         replaced: false
-        //                     }
-        //                 }
-        //             }],
-        //             status: {
-        //                 $in: ['launching', 'live']
-        //             }
-        //         });
-        //
-        //         currentGameCache.set(userID, formatCurrentGameInfo(game));
-        //     }
-        //
-        //     return currentGameCache.get(userID);
-        // });
-    }
-
     io.sockets.on('connection', function(socket) {
         socket.emit('substituteRequestsUpdated', getCurrentSubstituteRequestsMessage());
     });
@@ -615,7 +575,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     io.sockets.on('authenticated', co.wrap(function*(socket) {
         let userID = socket.decoded_token.user;
 
-        socket.emit('currentGameUpdated', yield getUserCurrentGame(userID));
+        socket.emit('currentGameUpdated', yield getCurrentGame(userID));
 
         socket.removeAllListeners('requestSubstitute');
         socket.on('requestSubstitute', onUserRequestSubstitute);
@@ -720,4 +680,6 @@ module.exports = function(app, cache, chance, database, io, self) {
             games: !req.user || !req.user.admin ? recentFilteredGameListCache : recentGameListCache
         });
     });
+
+    updateGameCache();
 };
