@@ -17,6 +17,9 @@
             #dialog {
                 width: 50%;
             }
+			#admin-dismiss, #admin-confirm {
+				color:var(--dark-theme-text-color);
+			}
         </style>
 
         <paper-icon-button on-tap="openDialog" data-dialog="modal" icon="help" hidden="{{!user}}" disabled="{{isRestricted(restrictions, 'support')}}" id="trigger"></paper-icon-button>
@@ -28,8 +31,8 @@
             <paper-textarea id="message" maxlength="300" char-counter placeholder="issue description" disabled="{{isRestricted(restrictions, 'support')}}" value="{{message}}"></paper-textarea>
 
             <div class="buttons">
-                <paper-button dialog-dismiss>Cancel</paper-button>
-                <paper-button dialog-confirm autofocus on-tap="sendRequest" disabled="{{isRestricted(restrictions, 'support')}}">Request Admin</paper-button>
+                <paper-button id="admin-dismiss" dialog-dismiss>Cancel</paper-button>
+                <paper-button id="admin-confirm"dialog-confirm autofocus on-tap="sendRequest" disabled="{{isRestricted(restrictions, 'support')}}">Request Admin</paper-button>
             </div>
         </paper-dialog>
     </template>
