@@ -162,7 +162,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
 
         let playerScores = _.map(playerGames, function(game) {
-            let gamePlayerInfo = self.getGamePlayerInfo(game, player);
+            let gamePlayerInfo = self.getGameUserInfo(game, player);
             let teamIndex = _.indexOf(game.teams, gamePlayerInfo.team);
 
             let differential = 0;
@@ -351,7 +351,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     revisedGame.reverseTeams = true;
                 }
                 else {
-                    let gamePlayerInfo = self.getGamePlayerInfo(game, user);
+                    let gamePlayerInfo = self.getGameUserInfo(game, user);
                     let team = _.indexOf(game.teams, gamePlayerInfo.team);
 
                     revisedGame.reverseTeams = team !== 0;

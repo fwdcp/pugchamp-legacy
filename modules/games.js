@@ -135,7 +135,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
     updateSubstituteRequestsInfo();
 
-    self.getGamePlayerInfo = function getGamePlayerInfo(game, user) {
+    self.getGameUserInfo = function getGameUserInfo(game, user) {
         let userID = self.getDocumentID(user);
 
         let team;
@@ -155,14 +155,14 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return false;
             });
 
-            if (role) {
+            if (role || userID === self.getDocumentID(currentTeam.captain)) {
                 return true;
             }
 
             return false;
         });
 
-        if (player) {
+        if (team) {
             return {
                 game,
                 team,
@@ -191,9 +191,9 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            let gamePlayerInfo = self.getGamePlayerInfo(game, request.player);
+            let gamePlayerInfo = self.getGameUserInfo(game, request.player);
 
-            if (!gamePlayerInfo || gamePlayerInfo.player.replaced) {
+            if (!gamePlayerInfo || !gamePlayerInfo.player || gamePlayerInfo.player.replaced) {
                 self.removeSubstituteRequest(id);
                 return;
             }
@@ -286,9 +286,9 @@ module.exports = function(app, cache, chance, database, io, self) {
             return;
         }
 
-        let gamePlayerInfo = self.getGamePlayerInfo(game, player);
+        let gamePlayerInfo = self.getGameUserInfo(game, player);
 
-        if (!gamePlayerInfo || gamePlayerInfo.player.replaced) {
+        if (!gamePlayerInfo || !gamePlayerInfo.player || gamePlayerInfo.player.replaced) {
             return;
         }
 
@@ -542,7 +542,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         return co(function*() {
             let game = yield database.Game.findById(info.game);
 
-            let playerInfo = self.getGamePlayerInfo(game, info.player);
+            let playerInfo = self.getGameUserInfo(game, info.player);
 
             if (userID !== self.getDocumentID(playerInfo.team.captain)) {
                 return;
@@ -569,7 +569,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             let request = currentSubstituteRequests.get(requestID);
             let game = yield database.Game.findById(request.game);
 
-            let playerInfo = self.getGamePlayerInfo(game, request.player);
+            let playerInfo = self.getGameUserInfo(game, request.player);
 
             if (userID !== self.getDocumentID(playerInfo.team.captain)) {
                 return;
