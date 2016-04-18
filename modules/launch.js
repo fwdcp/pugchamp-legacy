@@ -65,8 +65,9 @@ module.exports = function(app, cache, chance, database, io, self) {
     var launchAttemptStart = null;
     var readiesReceived = new Set();
 
-    var currentStatusInfo;
-
+    /**
+     * @async
+     */
     function getLaunchHolds(forceUpdate) {
         return co(function*() {
             let launchHolds = [];
@@ -124,44 +125,64 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
-    function updateStatusInfo() {
-        // TODO: update for caching
-        // currentStatusInfo = {
-        //     roles: ROLES,
-        //     playersAvailable: _.mapValues(playersAvailable, function(available) {
-        //         return _.map([...available], function(userID) {
-        //             return self.getCachedUser(userID);
-        //         });
-        //     }),
-        //     allPlayersAvailable: _.chain(playersAvailable).reduce(function(allPlayers, players) {
-        //         return _.union(allPlayers, [...players]);
-        //     }, []).map(function(userID) {
-        //         return self.getCachedUser(userID);
-        //     }).value(),
-        //     captainsAvailable: SEPARATE_CAPTAIN_POOL ? _.map([...captainsAvailable], function(userID) {
-        //         return self.getCachedUser(userID);
-        //     }) : undefined,
-        //     rolesNeeded: calculateRolesNeeded(playersAvailable),
-        //     teamSize: TEAM_SIZE,
-        //     launchHolds: currentLaunchHolds,
-        //     active: launchAttemptActive
-        // };
+    /**
+     * @async
+     */
+    function updateLaunchStatusMessage() {
+        return co(function*() {
+            let launchStatusMessage = {
+                roles: ROLES,
+                rolesNeeded: calculateRolesNeeded(playersAvailable),
+                teamSize: TEAM_SIZE,
+                launchHolds: currentLaunchHolds,
+                active: launchAttemptActive
+            };
+
+            if (launchAttemptActive) {
+                launchStatusMessage.startTime = launchAttemptStart;
+                launchStatusMessage.endTime = launchAttemptStart + READY_PERIOD;
+            }
+
+            launchStatusMessage.playersAvailable = {};
+            for (let role of _.keys(ROLES)) {
+                launchStatusMessage.playersAvailable[role] = yield _.map([...playersAvailable[role]], user => self.getCachedUser(user));
+            }
+
+            launchStatusMessage.allPlayersAvailable = _.unionBy(..._.values(launchStatusMessage.playersAvailable), user => self.getDocumentID(user));
+
+            if (SEPARATE_CAPTAIN_POOL) {
+                launchStatusMessage.captainsAvailable = yield _.map([...captainsAvailable], user => self.getCachedUser(user));
+            }
+
+            yield cache.setAsync('launchStatus', JSON.stringify(launchStatusMessage));
+
+            io.sockets.emit('launchStatusMessage', yield getLaunchStatusMessage());
+        });
     }
 
-    function getCurrentStatusMessage() {
-        // TODO: update for caching
-        // if (launchAttemptActive) {
-        //     currentStatusInfo.timeElapsed = Date.now() - launchAttemptStart;
-        //     currentStatusInfo.timeTotal = READY_PERIOD;
-        // }
-        // else {
-        //     delete currentStatusInfo.timeElapsed;
-        //     delete currentStatusInfo.timeTotal;
-        // }
-        //
-        // return currentStatusInfo;
+    /**
+     * @async
+     */
+    function getLaunchStatusMessage() {
+        return co(function*() {
+            let cacheResponse = yield cache.getAsync('launchStatus');
+
+            if (!cacheResponse) {
+                yield updateLaunchStatusMessage();
+                cacheResponse = yield cache.getAsync('launchStatus');
+            }
+
+            let launchStatusMessage = JSON.parse(cacheResponse);
+
+            launchStatusMessage.currentTime = Date.now();
+
+            return launchStatusMessage;
+        });
     }
 
+    /**
+     * @async
+     */
     function attemptLaunch() {
         return co(function*() {
             try {
@@ -188,7 +209,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 launchAttemptActive = false;
                 launchAttemptStart = null;
 
-                self.updateLaunchStatus();
+                yield self.updateLaunchStatus();
 
                 return;
             }
@@ -212,7 +233,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                         action: 'failed to launch draft due to internal error'
                     });
 
-                    self.cleanUpDraft();
+                    yield self.cleanUpDraft();
                 }
             }
             else {
@@ -224,7 +245,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             launchAttemptActive = false;
             launchAttemptStart = null;
 
-            self.updateLaunchStatus();
+            yield self.updateLaunchStatus();
         });
     }
 
@@ -239,62 +260,78 @@ module.exports = function(app, cache, chance, database, io, self) {
         }]);
     }
 
+    /**
+     * @async
+     */
     function updateUserAvailability(user, availability) {
-        let userID = self.getDocumentID(user);
-        let userRestrictions = self.getUserRestrictions(user);
+        co(function*() {
+            let userID = self.getDocumentID(user);
+            let userRestrictions = self.getUserRestrictions(user);
 
-        if (!_.includes(userRestrictions.aspects, 'start')) {
-            _.forEach(playersAvailable, function(players, role) {
-                if (_.includes(availability.roles, role)) {
-                    players.add(userID);
-                }
-                else {
-                    players.delete(userID);
-                }
-            });
-        }
-
-        if (SEPARATE_CAPTAIN_POOL) {
-            if (!_.includes(userRestrictions.aspects, 'captain')) {
-                if (availability.captain) {
-                    captainsAvailable.add(userID);
-                }
-                else {
-                    captainsAvailable.delete(userID);
-                }
-            }
-        }
-
-        syncUserAvailability(user);
-
-        self.updateLaunchStatus();
-    }
-
-    function updateUserReadyStatus(user, ready) {
-        let userID = self.getDocumentID(user);
-
-        if (launchAttemptActive) {
-            if (ready) {
-                readiesReceived.add(userID);
-            }
-            else {
-                readiesReceived.delete(userID);
+            if (!_.includes(userRestrictions.aspects, 'start')) {
+                _.forEach(playersAvailable, function(players, role) {
+                    if (_.includes(availability.roles, role)) {
+                        players.add(userID);
+                    }
+                    else {
+                        players.delete(userID);
+                    }
+                });
             }
 
-            self.emitToUser(user, 'userReadyStatusUpdated', [ready]);
-        }
-
-        self.updateLaunchStatus();
-    }
-
-    function autoReadyRecentlyActiveUsers() {
-        lastActivity.forEach(function(time, userID) {
-            if (moment().diff(time) < AUTO_READY_THRESHOLD) {
-                updateUserReadyStatus(userID, true);
+            if (SEPARATE_CAPTAIN_POOL) {
+                if (!_.includes(userRestrictions.aspects, 'captain')) {
+                    if (availability.captain) {
+                        captainsAvailable.add(userID);
+                    }
+                    else {
+                        captainsAvailable.delete(userID);
+                    }
+                }
             }
+
+            syncUserAvailability(user);
+
+            yield self.updateLaunchStatus();
         });
     }
 
+    /**
+     * @async
+     */
+    function updateUserReadyStatus(user, ready) {
+        co(function*() {
+            let userID = self.getDocumentID(user);
+
+            if (launchAttemptActive) {
+                if (ready) {
+                    readiesReceived.add(userID);
+                }
+                else {
+                    readiesReceived.delete(userID);
+                }
+
+                self.emitToUser(user, 'userReadyStatusUpdated', [ready]);
+            }
+
+            yield self.updateLaunchStatus();
+        });
+    }
+
+    /**
+     * @async
+     */
+    function autoReadyRecentlyActiveUsers() {
+        return co(function*() {
+            let activeUsers = _.filter([...lastActivity.keys()], userID => (moment().diff(lastActivity.get(userID)) < AUTO_READY_THRESHOLD));
+
+            yield _.map(activeUsers, userID => updateUserReadyStatus(userID, true));
+        });
+    }
+
+    /**
+     * @async
+     */
     function beginLaunchAttempt() {
         return co(function*() {
             if (!launchAttemptActive) {
@@ -312,13 +349,11 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                     io.sockets.emit('userReadyStatusUpdated', false);
 
-                    autoReadyRecentlyActiveUsers();
+                    yield autoReadyRecentlyActiveUsers();
 
                     currentLaunchHolds = yield getLaunchHolds(false);
 
-                    updateStatusInfo();
-
-                    io.sockets.emit('launchStatusUpdated', getCurrentStatusMessage());
+                    yield updateLaunchStatusMessage();
                 }
                 catch (err) {
                     self.postToLog({
@@ -333,20 +368,21 @@ module.exports = function(app, cache, chance, database, io, self) {
                     launchAttemptActive = false;
                     launchAttemptStart = null;
 
-                    self.updateLaunchStatus();
+                    yield self.updateLaunchStatus();
                 }
             }
         });
     }
 
+    /**
+     * @async
+     */
     const updateLaunchHolds = _.debounce(co.wrap(function* updateLaunchHolds() {
         let shouldAttemptLaunch = !launchAttemptActive;
 
         currentLaunchHolds = yield getLaunchHolds(false);
 
-        updateStatusInfo();
-
-        io.sockets.emit('launchStatusUpdated', getCurrentStatusMessage());
+        yield updateLaunchStatusMessage();
 
         if (shouldAttemptLaunch && _.size(currentLaunchHolds) === 0) {
             yield beginLaunchAttempt();
@@ -361,38 +397,41 @@ module.exports = function(app, cache, chance, database, io, self) {
         lastActivity.set(userID, new Date());
     };
 
-    self.updateLaunchStatus = function updateLaunchStatus() {
-        updateStatusInfo();
+    /**
+     * @async
+     */
+    self.updateLaunchStatus = co.wrap(function* updateLaunchStatus() {
+        yield updateLaunchStatusMessage();
 
-        io.sockets.emit('launchStatusUpdated', getCurrentStatusMessage());
-
-        updateLaunchHolds();
-    };
-
-    self.updateLaunchStatus();
-
-    io.sockets.on('connection', function(socket) {
-        socket.emit('launchStatusUpdated', getCurrentStatusMessage());
+        yield updateLaunchHolds();
     });
+
+    io.sockets.on('connection', co.wrap(function*(socket) {
+        socket.emit('launchStatusUpdated', yield getLaunchStatusMessage());
+    }));
 
     function onUserUpdateAvailability(availability) {
         let userID = this.decoded_token.user;
 
-        self.markUserActivity(userID);
+        co(function*() {
+            self.markUserActivity(userID);
 
-        updateUserAvailability(userID, availability);
+            yield updateUserAvailability(userID, availability);
 
-        if (launchAttemptActive) {
-            updateUserReadyStatus(userID, true);
-        }
+            if (launchAttemptActive) {
+                yield updateUserReadyStatus(userID, true);
+            }
+        });
     }
 
     function onUserUpdateReadyStatus(ready) {
         let userID = this.decoded_token.user;
 
-        self.markUserActivity(userID);
+        co(function*() {
+            self.markUserActivity(userID);
 
-        updateUserReadyStatus(userID, ready);
+            yield updateUserReadyStatus(userID, ready);
+        });
     }
 
     io.sockets.on('authenticated', function(socket) {
@@ -412,16 +451,16 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     });
 
-    self.on('userDisconnected', function(userID) {
-        updateUserAvailability(userID, {
+    self.on('userDisconnected', co.wrap(function*(userID) {
+        yield updateUserAvailability(userID, {
             roles: [],
             captain: SEPARATE_CAPTAIN_POOL ? false : undefined
         });
 
-        updateUserReadyStatus(userID, false);
-    });
+        yield updateUserReadyStatus(userID, false);
+    }));
 
-    self.on('userRestrictionsUpdated', function(userID) {
+    self.on('userRestrictionsUpdated', co.wrap(function*(userID) {
         let userRestrictions = self.getUserRestrictions(userID);
 
         if (_.includes(userRestrictions.aspects, 'start')) {
@@ -438,8 +477,10 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         syncUserAvailability(userID);
 
-        self.updateLaunchStatus();
-    });
+        yield self.updateLaunchStatus();
+    }));
 
-    self.updateLaunchStatus();
+    co(function*() {
+        yield self.updateLaunchStatus();
+    });
 };
