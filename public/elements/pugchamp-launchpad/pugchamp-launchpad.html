@@ -279,7 +279,7 @@
                 this.set('holds', status.launchHolds);
 
                 if (!this.launchActive && status.active) {
-                    this.startReady({elapsed: status.timeElapsed, total: status.timeTotal});
+                    this.startReady({elapsed: status.currentTime - status.startTime, total: status.endTime - status.startTime});
                 }
                 else if (this.launchActive && !status.active) {
                     this.resetReady();
