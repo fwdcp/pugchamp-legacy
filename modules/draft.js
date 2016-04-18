@@ -57,14 +57,18 @@ module.exports = function(app, cache, chance, database, io, self) {
 
     var currentDraftExpireCooldowns = new Set();
 
-    self.isOnDraftExpireCooldown = function isOnDraftExpireCooldown(userID) {
+    self.isOnDraftExpireCooldown = function isOnDraftExpireCooldown(user) {
+        let userID = self.getDocumentID(user);
+
         return currentDraftExpireCooldowns.has(userID);
     };
 
-    function removeDraftExpireCooldown(userID) {
+    function removeDraftExpireCooldown(user) {
+        let userID = self.getDocumentID(user);
+
         currentDraftExpireCooldowns.delete(userID);
 
-        self.updateUserRestrictions(userID);
+        self.updateUserRestrictions(user);
     }
 
     var draftActive = false;
@@ -574,7 +578,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                             }
                         }).exec();
 
-                        let candidates = _.map(fullCaptains, captain => captain.id);
+                        let candidates = _.map(fullCaptains, captain => self.getDocumentID(captain));
                         let weights = _.map(fullCaptains, function(captain) {
                             return _.isNumber(captain.stats.captainScore.center) ? captain.stats.captainScore.center : 0;
                         });
@@ -600,7 +604,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                             }
                         }).exec();
 
-                        let candidates = _.map(fullCaptains, captain => captain.id);
+                        let candidates = _.map(fullCaptains, captain => self.getDocumentID(captain));
                         let weights = _.map(fullCaptains, function(captain) {
                             return _.isNumber(captain.stats.captainScore.center) ? captain.stats.captainScore.center : 0;
                         });

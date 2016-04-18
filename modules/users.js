@@ -66,23 +66,26 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
-    self.getCachedUser = co.wrap(function* getCachedUser(userID) {
-        let cacheResponse = yield cache.getAsync(`user-${userID}`);
-
-        if (!cacheResponse) {
-            yield self.updateCachedUser(userID);
-            cacheResponse = yield cache.getAsync(`user-${userID}`);
-        }
-
-        return JSON.parse(cacheResponse);
-    });
-
-    self.updateCachedUser = co.wrap(function* updateCachedUser(userID) {
-        let user = yield database.User.findById(userID);
+    self.updateCachedUser = co.wrap(function* updateCachedUser(user) {
+        let userID = self.getDocumentID(user);
+        user = yield database.User.findById(userID);
 
         yield cache.setAsync(`user-${userID}`, JSON.stringify(user.toObject()));
 
         self.emit('cachedUserUpdated', userID);
+    });
+
+    self.getCachedUser = co.wrap(function* getCachedUser(user) {
+        let userID = self.getDocumentID(user);
+
+        let cacheResponse = yield cache.getAsync(`user-${userID}`);
+
+        if (!cacheResponse) {
+            yield self.updateCachedUser(user);
+            cacheResponse = yield cache.getAsync(`user-${userID}`);
+        }
+
+        return JSON.parse(cacheResponse);
     });
 
     self.getUserByAlias = co.wrap(function* getUserByAlias(alias) {
@@ -110,7 +113,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         return [...userSockets.keys()];
     };
 
-    self.emitToUser = function emitToUser(userID, name, args) {
+    self.emitToUser = function emitToUser(user, name, args) {
+        let userID = self.getDocumentID(user);
+
         if (userSockets.has(userID)) {
             for (let socketID of userSockets.get(userID)) {
                 let socket = io.sockets.connected[socketID];
@@ -122,7 +127,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
     };
 
-    self.getUserRestrictions = function getUserRestrictions(userID) {
+    self.getUserRestrictions = function getUserRestrictions(user) {
+        let userID = self.getDocumentID(user);
+
         const UNKNOWN_RESTRICTIONS = {
             aspects: ['sub', 'start', 'captain', 'chat', 'support'],
             reasons: ['There was an error retrieving your current restrictions.']
@@ -133,17 +140,19 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return userRestrictions.get(userID);
             }
             else {
-                self.updateUserRestrictions(userID);
+                self.updateUserRestrictions(user);
 
                 return UNKNOWN_RESTRICTIONS;
             }
         }
-
-        return UNAUTHENTICATED_RESTRICTIONS;
+        else {
+            return UNAUTHENTICATED_RESTRICTIONS;
+        }
     };
 
-    self.updateUserRestrictions = co.wrap(function* updateUserRestrictions(userID) {
-        let user = yield database.User.findById(userID);
+    self.updateUserRestrictions = co.wrap(function* updateUserRestrictions(user) {
+        let userID = self.getDocumentID(user);
+        user = yield database.User.findById(userID);
         let restrictions = [];
 
         const NOT_READY_RESTRICTIONS = {
@@ -166,7 +175,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         if (user.authorized !== authorized) {
             user.authorized = authorized;
             yield user.save();
-            yield self.updateCachedUser(user.id);
+            yield self.updateCachedUser(user);
         }
         if (!user.authorized) {
             if (!self.isUserAdmin(user)) {
@@ -229,7 +238,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             aspects: ['captain'],
             reasons: ['You are currently on a captain cooldown for allowing a draft to expire.']
         };
-        if (self.isOnDraftExpireCooldown(userID)) {
+        if (self.isOnDraftExpireCooldown(user)) {
             restrictions.push(DRAFT_EXPIRE_COOLDOWN_RESTRICTIONS);
         }
 
@@ -359,7 +368,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
     })));
     passport.serializeUser(function(user, done) {
-        done(null, user._id);
+        done(null, self.getDocumentID(user));
     });
     passport.deserializeUser(function(id, done) {
         database.User.findById(id, done);

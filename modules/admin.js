@@ -25,15 +25,14 @@ module.exports = function(app, cache, chance, database, io, self) {
     };
 
     self.postToAdminLog = co.wrap(function* postToAdminLog(user, action) {
-        let userID = self.getDocumentID(user);
-        let cachedUser = yield self.getCachedUser(userID);
+        user = yield self.getCachedUser(user);
 
         let message = {
             channel: '#admin-log',
             attachments: [{
-                fallback: `${cachedUser.alias} ${action}`,
-                author_name: cachedUser.alias,
-                author_link: `${BASE_URL}/player/${cachedUser.steamID}`,
+                fallback: `${user.alias} ${action}`,
+                author_name: user.alias,
+                author_link: `${BASE_URL}/player/${user.steamID}`,
                 text: action
             }]
         };
@@ -127,7 +126,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
 
             let restriction = new database.Restriction({
-                user: user.id,
+                user: self.getDocumentID(user),
                 active: true,
                 aspects,
                 reason,
@@ -141,7 +140,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             try {
                 yield restriction.save();
-                yield self.updateUserRestrictions(user.id);
+                yield self.updateUserRestrictions(user);
 
                 res.sendStatus(HttpStatus.OK);
             }
@@ -162,7 +161,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            if (user.id === self.getDocumentID(restriction.user) && restriction.active) {
+            if (self.getDocumentID(user) === self.getDocumentID(restriction.user) && restriction.active) {
                 let formattedAspects = _.size(restriction.aspects) > 0 ? ` (aspects: ${restriction.aspects.join(', ')})` : '';
                 let formattedExpiration = restriction.expires ? ` (expires: ${moment(restriction.expires).format('llll')})` : ' (expires: never)';
                 let formattedReason = restriction.reason ? ` (reason: ${restriction.reason})` : '';
@@ -172,7 +171,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                 try {
                     yield restriction.save();
-                    yield self.updateUserRestrictions(user.id);
+                    yield self.updateUserRestrictions(user);
 
                     res.sendStatus(HttpStatus.OK);
                 }
@@ -293,7 +292,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            let gamePlayerInfo = self.getGamePlayerInfo(game, player.id);
+            let gamePlayerInfo = self.getGamePlayerInfo(game, player);
 
             if (!gamePlayerInfo || gamePlayerInfo.player.replaced) {
                 res.sendStatus(HttpStatus.BAD_REQUEST);
@@ -302,7 +301,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             self.postToAdminLog(req.user, `requested substitute for player \`<${BASE_URL}/player/${player.steamID}|${player.alias}>\` for game \`<${BASE_URL}/game/${game.id}|${game.id}>\``);
 
-            self.requestSubstitute(game, player.id);
+            self.requestSubstitute(game, player);
 
             res.sendStatus(HttpStatus.OK);
         }
@@ -372,8 +371,8 @@ module.exports = function(app, cache, chance, database, io, self) {
 
     app.use('/admin', router);
 
-    self.requestAdmin = co.wrap(function* requestHelp(userID, message) {
-        let user = yield self.getCachedUser(userID);
+    self.requestAdmin = co.wrap(function* requestAdmin(user, message) {
+        user = yield self.getCachedUser(user);
         let trimmedMessage = _.trim(message);
 
         yield self.postToSlack({

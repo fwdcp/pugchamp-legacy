@@ -135,7 +135,9 @@ module.exports = function(app, cache, chance, database, io, self) {
 
     updateSubstituteRequestsInfo();
 
-    self.getGamePlayerInfo = function getGamePlayerInfo(game, playerID) {
+    self.getGamePlayerInfo = function getGamePlayerInfo(game, user) {
+        let userID = self.getDocumentID(user);
+
         let team;
         let role;
         let player;
@@ -143,7 +145,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         team = _.find(game.teams, function(currentTeam) {
             role = _.find(currentTeam.composition, function(currentRole) {
                 player = _.find(currentRole.players, function(currentPlayer) {
-                    return playerID === self.getDocumentID(currentPlayer.user);
+                    return userID === self.getDocumentID(currentPlayer.user);
                 });
 
                 if (player) {
@@ -263,26 +265,28 @@ module.exports = function(app, cache, chance, database, io, self) {
         io.sockets.emit('substituteRequestsUpdated', getCurrentSubstituteRequestsMessage());
 
         if (!request.timeout) {
-            attemptSubstitution(requestID);
+            attemptSubstitution(request);
         }
     }
 
-    self.removeGameSubstituteRequests = function removeGameSubstituteRequests(gameID) {
+    self.removeGameSubstituteRequests = function removeGameSubstituteRequests(game) {
+        let gameID = self.getDocumentID(game);
+
         for (let requestID of currentSubstituteRequests.keys()) {
             let request = currentSubstituteRequests.get(requestID);
 
-            if (request.game === gameID) {
+            if (self.getDocumentID(request.game) === gameID) {
                 self.removeSubstituteRequest(requestID);
             }
         }
     };
 
-    self.requestSubstitute = function requestSubstitute(game, playerID) {
+    self.requestSubstitute = function requestSubstitute(game, player) {
         if (!game || game.status === 'completed' || game.status === 'aborted') {
             return;
         }
 
-        let gamePlayerInfo = self.getGamePlayerInfo(game, playerID);
+        let gamePlayerInfo = self.getGamePlayerInfo(game, player);
 
         if (!gamePlayerInfo || gamePlayerInfo.player.replaced) {
             return;
@@ -292,24 +296,27 @@ module.exports = function(app, cache, chance, database, io, self) {
             return;
         }
 
-        currentSubstituteRequests.set(gamePlayerInfo.player.id, {
-            game: game.id,
+        currentSubstituteRequests.set(self.getDocumentID(gamePlayerInfo.player), {
+            game: self.getDocumentID(game),
             role: gamePlayerInfo.role.role,
             captain: self.getDocumentID(gamePlayerInfo.team.captain),
             player: playerID,
             opened: Date.now(),
             candidates: new Set(),
-            timeout: setTimeout(attemptSubstitution, SUBSTITUTE_REQUEST_PERIOD, gamePlayerInfo.player.id)
+            timeout: setTimeout(attemptSubstitution, SUBSTITUTE_REQUEST_PERIOD, self.getDocumentID(gamePlayerInfo.player))
         });
 
         updateSubstituteRequestsInfo();
         io.sockets.emit('substituteRequestsUpdated', getCurrentSubstituteRequestsMessage());
     };
 
-    self.performSubstitution = co.wrap(function* performSubstitution(game, oldPlayerID, newPlayerID) {
-        if (!game || !oldPlayerID || !newPlayerID) {
+    self.performSubstitution = co.wrap(function* performSubstitution(game, oldPlayer, newPlayer) {
+        if (!game || !oldPlayer || !newPlayer) {
             return;
         }
+
+        let oldPlayerID = self.getDocumentID(oldPlayer);
+        let newPlayerID = self.getDocumentID(newPlayer);
 
         _(game.teams).map(team => team.composition).flatten().forEach(function(role) {
             let player = _.find(role.players, function(currentPlayer) {
@@ -480,7 +487,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     return _.map(team.composition, function(role) {
                         return _.map(role.players, player => player.user);
                     });
-                }).flattenDeep().map(user => self.updatePlayerStats(self.getDocumentID(user))).value();
+                }).flattenDeep().map(user => self.updatePlayerStats(user)).value();
             }
             catch (err) {
                 self.postToLog({
@@ -635,7 +642,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         // }
         //
         // _.each(game.teams, function(team) {
-        //     team.captain = self.getCachedUser(self.getDocumentID(team.captain));
+        //     team.captain = self.getCachedUser(team.captain);
         //
         //     team.composition = _.sortBy(team.composition, function(role) {
         //         return _(ROLES).keys().indexOf(role.role);
@@ -647,7 +654,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         //         }, ROLES[role.role]);
         //
         //         _.each(role.players, function(player) {
-        //             player.user = self.getCachedUser(self.getDocumentID(player.user));
+        //             player.user = self.getCachedUser(player.user);
         //
         //             if (!HIDE_RATINGS) {
         //                 let rating = ratings[self.getDocumentID(player.user)];

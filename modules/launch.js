@@ -228,7 +228,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
-    function syncUserAvailability(userID) {
+    function syncUserAvailability(user) {
+        let userID = self.getDocumentID(user);
+
         self.emitToUser(userID, 'userAvailabilityUpdated', [{
             roles: _.mapValues(playersAvailable, function(players) {
                 return players.has(userID);
@@ -237,8 +239,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         }]);
     }
 
-    function updateUserAvailability(userID, availability) {
-        let userRestrictions = self.getUserRestrictions(userID);
+    function updateUserAvailability(user, availability) {
+        let userID = self.getDocumentID(user);
+        let userRestrictions = self.getUserRestrictions(user);
 
         if (!_.includes(userRestrictions.aspects, 'start')) {
             _.forEach(playersAvailable, function(players, role) {
@@ -262,12 +265,14 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         }
 
-        syncUserAvailability(userID);
+        syncUserAvailability(user);
 
         self.updateLaunchStatus();
     }
 
-    function updateUserReadyStatus(userID, ready) {
+    function updateUserReadyStatus(user, ready) {
+        let userID = self.getDocumentID(user);
+
         if (launchAttemptActive) {
             if (ready) {
                 readiesReceived.add(userID);
@@ -276,7 +281,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 readiesReceived.delete(userID);
             }
 
-            self.emitToUser(userID, 'userReadyStatusUpdated', [ready]);
+            self.emitToUser(user, 'userReadyStatusUpdated', [ready]);
         }
 
         self.updateLaunchStatus();
@@ -350,7 +355,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         maxWait: GET_LAUNCH_HOLD_DEBOUNCE_MAX_WAIT
     });
 
-    self.markUserActivity = function markUserActivity(userID) {
+    self.markUserActivity = function markUserActivity(user) {
+        let userID = self.getDocumentID(user);
+
         lastActivity.set(userID, new Date());
     };
 

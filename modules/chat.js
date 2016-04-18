@@ -61,12 +61,12 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
-    self.sendMessageToUser = co.wrap(function* sendMessageToUser(userID, message) {
+    self.sendMessageToUser = co.wrap(function* sendMessageToUser(user, message) {
         if (message.user) {
             message.user = yield self.getCachedUser(message.user);
         }
 
-        self.emitToUser(userID, 'messageReceived', [message]);
+        self.emitToUser(user, 'messageReceived', [message]);
     });
 
     self.sendMessage = co.wrap(function* sendMessage(message) {
@@ -151,7 +151,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                         }
                     }
 
-                    mentions = _(mentions).uniqBy(user => user.id).map(user => user.toObject()).value();
+                    mentions = yield _(mentions).uniqBy(user => self.getDocumentID(user)).map(user => self.getCachedUser(user)).value();
 
                     self.sendMessage({
                         user: userID,
@@ -164,12 +164,13 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
-    function onUserPurgeUser(victimID) {
+    function onUserPurgeUser(victim) {
         let userID = this.decoded_token.user;
 
         return co(function*() {
             if (self.isUserAdmin(userID)) {
-                let victim = yield self.getCachedUser(victimID);
+                let victimID = self.getDocumentID(victim);
+                victim = yield self.getCachedUser(victim);
 
                 self.postToAdminLog(userID, `purged the chat messages of \`<${BASE_URL}/player/${victim.steamID}|${victim.alias}>\``);
 

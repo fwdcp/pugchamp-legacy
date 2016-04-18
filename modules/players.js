@@ -120,8 +120,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         updatePlayerCache();
     });
 
-    self.updatePlayerStats = co.wrap(function*(playerID) {
-        let player = yield database.User.findById(playerID);
+    self.updatePlayerStats = co.wrap(function*(player) {
+        let playerID = self.getDocumentID(player);
+        player = yield database.User.findById(playerID);
 
         let captainGames = yield database.Game.find({
             'teams.captain': player.id,
@@ -161,7 +162,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
 
         let playerScores = _.map(playerGames, function(game) {
-            let gamePlayerInfo = self.getGamePlayerInfo(game, player.id);
+            let gamePlayerInfo = self.getGamePlayerInfo(game, player);
             let teamIndex = _.indexOf(game.teams, gamePlayerInfo.team);
 
             let differential = 0;
@@ -214,7 +215,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 if (choice.type === 'playerPick') {
                     position++;
 
-                    if (self.getDocumentID(choice.player) === self.getDocumentID(player.id)) {
+                    if (self.getDocumentID(choice.player) === self.getDocumentID(player)) {
                         break;
                     }
                 }
@@ -284,7 +285,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         yield player.save();
 
-        yield self.updateCachedUser(player.id);
+        yield self.updateCachedUser(player);
     });
 
     hbs.registerHelper('draftStatToRow', function(stat) {
@@ -350,7 +351,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     revisedGame.reverseTeams = true;
                 }
                 else {
-                    let gamePlayerInfo = self.getGamePlayerInfo(game, user.id);
+                    let gamePlayerInfo = self.getGamePlayerInfo(game, user);
                     let team = _.indexOf(game.teams, gamePlayerInfo.team);
 
                     revisedGame.reverseTeams = team !== 0;
@@ -374,7 +375,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         let users = yield database.User.find({}, '_id').exec();
 
         for (let user of users) {
-            yield self.updatePlayerStats(user.id);
+            yield self.updatePlayerStats(user);
         }
     });
 };
