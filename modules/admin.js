@@ -210,7 +210,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            let availableServers = yield self.getAvailableServers();
+            let availableServers = yield self.getAvailableServers(true);
 
             if (_.size(availableServers) === 0) {
                 res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR);

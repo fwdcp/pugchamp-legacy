@@ -71,13 +71,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         return co(function*() {
             let launchHolds = [];
 
-            let availableServers;
-            if (forceUpdate) {
-                availableServers = yield self.getAvailableServers();
-            }
-            else {
-                availableServers = yield self.throttledGetAvailableServers();
-            }
+            let availableServers = yield self.getAvailableServers(forceUpdate);
             if (_.size(availableServers) === 0) {
                 launchHolds.push('availableServers');
             }

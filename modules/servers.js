@@ -6,6 +6,7 @@ const config = require('config');
 const crypto = require('crypto');
 const HttpStatus = require('http-status-codes');
 const ms = require('ms');
+const RateLimiter = require('limiter').RateLimiter;
 const RCON = require('srcds-rcon');
 
 module.exports = function(app, cache, chance, database, io, self) {
@@ -125,16 +126,33 @@ module.exports = function(app, cache, chance, database, io, self) {
         }, false)]);
     }
 
-    self.getServerStatuses = co.wrap(function* getServerStatuses() {
-        let statuses = yield _.map(GAME_SERVER_POOL, (gameServerInfo, gameServer) => getServerStatus(gameServer));
+    var serverUpdateLimiter = new RateLimiter(1, QUERY_INTERVAL);
 
-        return _.zipObject(_.keys(GAME_SERVER_POOL), statuses);
+    self.getServerStatuses = co.wrap(function* getServerStatuses(forceUpdate) {
+        let serverStatuses;
+
+        if (serverUpdateLimiter.tryRemoveTokens(1) || forceUpdate) {
+            let updatedStatuses = yield _.map(_.keys(GAME_SERVER_POOL), gameServer => getServerStatus(gameServer));
+            serverStatuses = _.zipObject(_.keys(GAME_SERVER_POOL), updatedStatuses);
+
+            yield cache.setAsync('serverStatuses', JSON.stringify(serverStatuses));
+        }
+        else {
+            let cacheResponse = yield cache.getAsync('serverStatuses');
+
+            if (!cacheResponse) {
+                yield self.getServerStatuses(true);
+                cacheResponse = yield cache.getAsync('serverStatuses');
+            }
+
+            serverStatuses = JSON.parse(cacheResponse);
+        }
+
+        return serverStatuses;
     });
 
-    self.throttledGetServerStatuses = _.throttle(self.getServerStatuses, QUERY_INTERVAL);
-
-    self.getAvailableServers = co.wrap(function* getAvailableServers() {
-        let statuses = yield self.getServerStatuses();
+    self.getAvailableServers = co.wrap(function* getAvailableServers(forceUpdate) {
+        let statuses = yield self.getServerStatuses(forceUpdate);
 
         return _(statuses).pickBy(function(status) {
             if (status.status === 'free') {
@@ -150,8 +168,6 @@ module.exports = function(app, cache, chance, database, io, self) {
             return false;
         }).keys().value();
     });
-
-    self.throttledGetAvailableServers = _.throttle(self.getAvailableServers, QUERY_INTERVAL);
 
     self.sendRCONCommands = co.wrap(function* sendRCONCommands(server, commands) {
         let rcon;
@@ -320,13 +336,13 @@ module.exports = function(app, cache, chance, database, io, self) {
         yield game.save();
 
         if (!server) {
-            let availableServers = yield self.getAvailableServers();
+            let availableServers = yield self.getAvailableServers(true);
 
             if (_.size(availableServers) === 0) {
                 for (let delay of RETRY_ATTEMPTS) {
                     yield self.promiseDelay(delay, null, false);
 
-                    availableServers = yield self.getAvailableServers();
+                    availableServers = yield self.getAvailableServers(true);
 
                     if (_.size(availableServers) !== 0) {
                         break;
@@ -382,14 +398,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     });
 
     app.get('/servers', co.wrap(function*(req, res) {
-        let servers;
-
-        if (self.isUserAdmin(req.user)) {
-            servers = yield self.getServerStatuses();
-        }
-        else {
-            servers = yield self.throttledGetServerStatuses();
-        }
+        let servers = yield self.getServerStatuses(self.isUserAdmin(req.user));
 
         res.render('servers', {
             servers: _(servers).mapValues((status, name) => ({server: _.omit(GAME_SERVER_POOL[name], 'rcon', 'salt'), status: status})).value()
