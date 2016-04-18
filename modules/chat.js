@@ -93,7 +93,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         }
 
-        updateOnlineUserList();
+        yield updateOnlineUserList();
     }));
 
     self.on('userDisconnected', co.wrap(function*(userID) {
@@ -108,7 +108,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         }
 
-        updateOnlineUserList();
+        yield updateOnlineUserList();
     }));
 
     io.sockets.on('connection', co.wrap(function*(socket) {
@@ -185,5 +185,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         socket.on('purgeUser', onUserPurgeUser);
     });
 
-    updateOnlineUserList();
+    co(function*() {
+        yield updateOnlineUserList();
+    });
 };

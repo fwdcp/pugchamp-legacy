@@ -242,7 +242,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
-    self.cleanUpDraft = function cleanUpDraft() {
+    self.cleanUpDraft = co.wrap(function* cleanUpDraft() {
         // NOTE: we need to save these to perform operations once draft is cleared
         let previousDraftCaptains = captainPool;
         let previousDraftPlayers = fullPlayerList;
@@ -272,7 +272,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         currentDraftGame = null;
 
-        updateDraftStatusMessage();
+        yield updateDraftStatusMessage();
 
         // NOTE: hacks with previous draft info - clear draft restrictions and mark activity to prevent players from getting removed
         _.each(previousDraftCaptains, function(captain) {
@@ -285,7 +285,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
 
         self.updateLaunchStatus();
-    };
+    });
 
     function launchGameFromDraft() {
         return co(function*() {
@@ -358,7 +358,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     action: 'failed to set up drafted game due to internal error'
                 });
 
-                self.cleanUpDraft();
+                yield self.cleanUpDraft();
             }
         });
     }
@@ -387,152 +387,154 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             currentDraftTurnStartTime = Date.now();
 
-            updateDraftStatusMessage();
+            yield updateDraftStatusMessage();
 
             yield launchGameFromDraft();
         });
     }
 
     function commitDraftChoice(choice) {
-        if (!draftActive || draftComplete) {
-            return;
-        }
-
-        try {
-            let turnDefinition = DRAFT_ORDER[currentDraftTurn];
-
-            if (turnDefinition.method === 'captain' && choice.user !== draftTeams[turnDefinition.team].captain) {
-                return;
-            }
-            else if (turnDefinition.method !== 'captain' && choice.user) {
+        return co(function*() {
+            if (!draftActive || draftComplete) {
                 return;
             }
 
-            if (turnDefinition.type !== choice.type) {
-                return;
-            }
+            try {
+                let turnDefinition = DRAFT_ORDER[currentDraftTurn];
 
-            let newTeams = _.cloneDeep(draftTeams);
-            let newPickedMap = pickedMap;
-            let newRemainingMaps = _.cloneDeep(remainingMaps);
-
-            if (turnDefinition.type === 'factionSelect') {
-                if (choice.faction !== 'RED' && choice.faction !== 'BLU') {
+                if (turnDefinition.method === 'captain' && choice.user !== draftTeams[turnDefinition.team].captain) {
+                    return;
+                }
+                else if (turnDefinition.method !== 'captain' && choice.user) {
                     return;
                 }
 
-                let allyTeam = turnDefinition.team === 0 ? 0 : 1;
-                let enemyTeam = turnDefinition.team === 0 ? 1 : 0;
-
-                if (choice.faction === 'RED') {
-                    newTeams[allyTeam].faction = 'RED';
-                    newTeams[enemyTeam].faction = 'BLU';
-                }
-                else if (choice.faction === 'BLU') {
-                    newTeams[allyTeam].faction = 'BLU';
-                    newTeams[enemyTeam].faction = 'RED';
-                }
-            }
-            else if (turnDefinition.type === 'captainSelect') {
-                if (_.some(unavailablePlayers, choice.captain) && !_.some(draftTeams[turnDefinition.team].players, player => player.user === choice.captain)) {
+                if (turnDefinition.type !== choice.type) {
                     return;
                 }
 
-                newTeams[turnDefinition.team].captain = choice.captain;
-            }
-            else if (turnDefinition.type === 'playerPick') {
-                if (_.includes(unavailablePlayers, choice.player)) {
-                    return;
-                }
+                let newTeams = _.cloneDeep(draftTeams);
+                let newPickedMap = pickedMap;
+                let newRemainingMaps = _.cloneDeep(remainingMaps);
 
-                if (!_.includes(allowedRoles, choice.role)) {
-                    return;
-                }
-
-                if (choice.override) {
-                    if (!_.includes(overrideRoles, choice.role)) {
+                if (turnDefinition.type === 'factionSelect') {
+                    if (choice.faction !== 'RED' && choice.faction !== 'BLU') {
                         return;
                     }
+
+                    let allyTeam = turnDefinition.team === 0 ? 0 : 1;
+                    let enemyTeam = turnDefinition.team === 0 ? 1 : 0;
+
+                    if (choice.faction === 'RED') {
+                        newTeams[allyTeam].faction = 'RED';
+                        newTeams[enemyTeam].faction = 'BLU';
+                    }
+                    else if (choice.faction === 'BLU') {
+                        newTeams[allyTeam].faction = 'BLU';
+                        newTeams[enemyTeam].faction = 'RED';
+                    }
+                }
+                else if (turnDefinition.type === 'captainSelect') {
+                    if (_.some(unavailablePlayers, choice.captain) && !_.some(draftTeams[turnDefinition.team].players, player => player.user === choice.captain)) {
+                        return;
+                    }
+
+                    newTeams[turnDefinition.team].captain = choice.captain;
+                }
+                else if (turnDefinition.type === 'playerPick') {
+                    if (_.includes(unavailablePlayers, choice.player)) {
+                        return;
+                    }
+
+                    if (!_.includes(allowedRoles, choice.role)) {
+                        return;
+                    }
+
+                    if (choice.override) {
+                        if (!_.includes(overrideRoles, choice.role)) {
+                            return;
+                        }
+                    }
+                    else {
+                        if (!_.includes(playerPool[choice.role], choice.player)) {
+                            return;
+                        }
+                    }
+
+                    newTeams[turnDefinition.team].players.push({
+                        user: choice.player,
+                        role: choice.role
+                    });
+                }
+                else if (turnDefinition.type === 'captainRole') {
+                    if (!_.includes(allowedRoles, choice.role)) {
+                        return;
+                    }
+
+                    if (!draftTeams[turnDefinition.team].captain) {
+                        return;
+                    }
+
+                    newTeams[turnDefinition.team].players.push({
+                        user: draftTeams[turnDefinition.team].captain,
+                        role: choice.role
+                    });
+                }
+                else if (turnDefinition.type === 'mapBan') {
+                    if (!_.includes(remainingMaps, choice.map)) {
+                        return;
+                    }
+
+                    newRemainingMaps = _.without(remainingMaps, choice.map);
+                }
+                else if (turnDefinition.type === 'mapPick') {
+                    if (!_.includes(remainingMaps, choice.map)) {
+                        return;
+                    }
+
+                    newPickedMap = choice.map;
+                    newRemainingMaps = _.without(remainingMaps, choice.map);
+                }
+
+                let legalNewState = checkIfLegalState(newTeams, {
+                    picked: newPickedMap,
+                    remaining: newRemainingMaps
+                }, false);
+
+                if (!legalNewState) {
+                    throw new Error('invalid state after committing choice');
+                }
+
+                draftTeams = newTeams;
+                pickedMap = newPickedMap;
+                remainingMaps = newRemainingMaps;
+
+                draftChoices.push(choice);
+
+                if (currentDraftTurnExpireTimeout) {
+                    clearTimeout(currentDraftTurnExpireTimeout);
+                }
+
+                if (currentDraftTurn + 1 === _.size(DRAFT_ORDER)) {
+                    completeDraft();
                 }
                 else {
-                    if (!_.includes(playerPool[choice.role], choice.player)) {
-                        return;
-                    }
+                    beginDraftTurn(++currentDraftTurn);
                 }
-
-                newTeams[turnDefinition.team].players.push({
-                    user: choice.player,
-                    role: choice.role
+            }
+            catch (err) {
+                self.postToLog({
+                    description: `error in committing draft choice: \`${JSON.stringify(choice)}\``,
+                    error: err
                 });
-            }
-            else if (turnDefinition.type === 'captainRole') {
-                if (!_.includes(allowedRoles, choice.role)) {
-                    return;
-                }
 
-                if (!draftTeams[turnDefinition.team].captain) {
-                    return;
-                }
-
-                newTeams[turnDefinition.team].players.push({
-                    user: draftTeams[turnDefinition.team].captain,
-                    role: choice.role
+                self.sendMessage({
+                    action: 'game draft aborted due to internal error'
                 });
+
+                yield self.cleanUpDraft();
             }
-            else if (turnDefinition.type === 'mapBan') {
-                if (!_.includes(remainingMaps, choice.map)) {
-                    return;
-                }
-
-                newRemainingMaps = _.without(remainingMaps, choice.map);
-            }
-            else if (turnDefinition.type === 'mapPick') {
-                if (!_.includes(remainingMaps, choice.map)) {
-                    return;
-                }
-
-                newPickedMap = choice.map;
-                newRemainingMaps = _.without(remainingMaps, choice.map);
-            }
-
-            let legalNewState = checkIfLegalState(newTeams, {
-                picked: newPickedMap,
-                remaining: newRemainingMaps
-            }, false);
-
-            if (!legalNewState) {
-                throw new Error('invalid state after committing choice');
-            }
-
-            draftTeams = newTeams;
-            pickedMap = newPickedMap;
-            remainingMaps = newRemainingMaps;
-
-            draftChoices.push(choice);
-
-            if (currentDraftTurnExpireTimeout) {
-                clearTimeout(currentDraftTurnExpireTimeout);
-            }
-
-            if (currentDraftTurn + 1 === _.size(DRAFT_ORDER)) {
-                completeDraft();
-            }
-            else {
-                beginDraftTurn(++currentDraftTurn);
-            }
-        }
-        catch (err) {
-            self.postToLog({
-                description: `error in committing draft choice: \`${JSON.stringify(choice)}\``,
-                error: err
-            });
-
-            self.sendMessage({
-                action: 'game draft aborted due to internal error'
-            });
-
-            self.cleanUpDraft();
-        }
+        });
     }
 
     function makeAutomatedChoice() {
@@ -802,7 +804,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     throw new Error('unsupported turn type');
                 }
 
-                commitDraftChoice(choice);
+                yield commitDraftChoice(choice);
             }
             catch (err) {
                 self.postToLog({
@@ -814,75 +816,79 @@ module.exports = function(app, cache, chance, database, io, self) {
                     action: 'game draft aborted due to internal error'
                 });
 
-                self.cleanUpDraft();
+                yield self.cleanUpDraft();
             }
         });
     }
 
     function expireTime() {
-        let turnDefinition = DRAFT_ORDER[currentDraftTurn];
+        return co(function*() {
+            let turnDefinition = DRAFT_ORDER[currentDraftTurn];
 
-        if (turnDefinition.method === 'captain') {
-            let captain = draftTeams[turnDefinition.team].captain;
+            if (turnDefinition.method === 'captain') {
+                let captain = draftTeams[turnDefinition.team].captain;
 
-            if (captain) {
-                currentDraftExpireCooldowns.add(captain);
+                if (captain) {
+                    currentDraftExpireCooldowns.add(captain);
 
-                self.updateUserRestrictions(captain);
+                    yield self.updateUserRestrictions(captain);
 
-                setTimeout(removeDraftExpireCooldown, CAPTAIN_DRAFT_EXPIRE_COOLDOWN, captain);
+                    setTimeout(removeDraftExpireCooldown, CAPTAIN_DRAFT_EXPIRE_COOLDOWN, captain);
+                }
             }
-        }
 
-        self.sendMessage({
-            action: 'game draft aborted due to turn expiration'
+            self.sendMessage({
+                action: 'game draft aborted due to turn expiration'
+            });
+
+            yield self.cleanUpDraft();
         });
-
-        self.cleanUpDraft();
     }
 
     function beginDraftTurn(turn) {
-        currentDraftTurn = turn;
+        return co(function*() {
+            currentDraftTurn = turn;
 
-        unavailablePlayers = _(draftTeams).map(function(team) {
-            return _(team.players).map(player => player.user).concat(team.captain).value();
-        }).flatten().uniq().value();
+            unavailablePlayers = _(draftTeams).map(function(team) {
+                return _(team.players).map(player => player.user).concat(team.captain).value();
+            }).flatten().uniq().value();
 
-        let turnDefinition = DRAFT_ORDER[turn];
+            let turnDefinition = DRAFT_ORDER[turn];
 
-        if (turnDefinition.type === 'playerPick' || turnDefinition.type === 'captainRole') {
-            let team = draftTeams[turnDefinition.team].players;
-            let teamState = calculateCurrentTeamState(team);
+            if (turnDefinition.type === 'playerPick' || turnDefinition.type === 'captainRole') {
+                let team = draftTeams[turnDefinition.team].players;
+                let teamState = calculateCurrentTeamState(team);
 
-            if (teamState.remaining > teamState.underfilledTotal) {
-                allowedRoles = _.difference(_.keys(ROLES), teamState.filledRoles);
+                if (teamState.remaining > teamState.underfilledTotal) {
+                    allowedRoles = _.difference(_.keys(ROLES), teamState.filledRoles);
+                }
+                else {
+                    allowedRoles = teamState.underfilledRoles;
+                }
+
+                overrideRoles = _.filter(teamState.underfilledRoles, function(role) {
+                    return !ROLES[role].overrideImmune && _(playerPool[role]).difference(unavailablePlayers).size() === 0;
+                });
             }
             else {
-                allowedRoles = teamState.underfilledRoles;
+                allowedRoles = [];
+                overrideRoles = [];
             }
 
-            overrideRoles = _.filter(teamState.underfilledRoles, function(role) {
-                return !ROLES[role].overrideImmune && _(playerPool[role]).difference(unavailablePlayers).size() === 0;
-            });
-        }
-        else {
-            allowedRoles = [];
-            overrideRoles = [];
-        }
+            currentDraftTurnStartTime = Date.now();
+            currentDraftTurnExpireTimeout = setTimeout(expireTime, TURN_TIME_LIMIT);
 
-        currentDraftTurnStartTime = Date.now();
-        currentDraftTurnExpireTimeout = setTimeout(expireTime, TURN_TIME_LIMIT);
+            yield updateDraftStatusMessage();
 
-        updateDraftStatusMessage();
-
-        if (turnDefinition.method === 'captain') {
-            if (!draftTeams[turnDefinition.team].captain) {
-                throw new Error('no captain to perform selection');
+            if (turnDefinition.method === 'captain') {
+                if (!draftTeams[turnDefinition.team].captain) {
+                    throw new Error('no captain to perform selection');
+                }
             }
-        }
-        else {
-            makeAutomatedChoice();
-        }
+            else {
+                yield makeAutomatedChoice();
+            }
+        });
     }
 
     self.launchDraft = function launchDraft(draftInfo) {
@@ -946,9 +952,11 @@ module.exports = function(app, cache, chance, database, io, self) {
     function onUserMakeDraftChoice(choice) {
         let userID = this.decoded_token.user;
 
-        choice.user = userID;
+        return co(function*() {
+            choice.user = userID;
 
-        commitDraftChoice(choice);
+            yield commitDraftChoice(choice);
+        });
     }
 
     io.sockets.on('authenticated', function(socket) {
@@ -956,5 +964,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         socket.on('makeDraftChoice', onUserMakeDraftChoice);
     });
 
-    updateDraftStatusMessage();
+    co(function*() {
+        yield updateDraftStatusMessage();
+    });
 };
