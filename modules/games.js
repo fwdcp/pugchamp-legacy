@@ -90,17 +90,6 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    function getCurrentGame(user) {
-        return co(function*() {
-            let cacheResponse = yield cache.getAsync(`currentGame-${self.getDocumentID(user)}`);
-
-            return cacheResponse;
-        });
-    }
-
-    /**
-     * @async
-     */
     function updateCurrentGame(game, user) {
         return co(function*() {
             if (game.status === 'launching' || game.status === 'live') {
@@ -143,6 +132,17 @@ module.exports = function(app, cache, chance, database, io, self) {
             else {
                 yield cache.delAsync(`currentGame-${self.getDocumentID(user)}`);
             }
+        });
+    }
+
+    /**
+     * @async
+     */
+    function getCurrentGame(user) {
+        return co(function*() {
+            let cacheResponse = yield cache.getAsync(`currentGame-${self.getDocumentID(user)}`);
+
+            return cacheResponse;
         });
     }
 
@@ -198,7 +198,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.processGameUpdate = co.wrap(function*(game) {
+    self.processGameUpdate = co.wrap(function* processGameUpdate(game) {
         let gameID = self.getDocumentID(game);
         game = yield database.Game.findById(gameID);
 
@@ -213,6 +213,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         yield self.invalidateGamePage(game);
         yield updateGameList();
+        yield _.map(self.getGameUsers(game), user => self.invalidatePlayerPage(game, user));
     });
 
     var currentSubstituteRequests = new Map();
@@ -351,7 +352,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            let userRestrictions = self.getUserRestrictions(player);
+            let userRestrictions = yield self.getUserRestrictions(player);
             let request = currentSubstituteRequests.get(requestID);
 
             if (!_.includes(userRestrictions.aspects, 'sub')) {
@@ -368,7 +369,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             yield updateSubstituteRequestsMessage();
 
             if (!request.timeout) {
-                attemptSubstitution(request);
+                yield attemptSubstitution(request);
             }
         });
     }
@@ -463,7 +464,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         yield self.processGameUpdate(game);
         yield self.removeGameSubstituteRequests(game);
-        self.updateLaunchStatus();
+        yield self.updateLaunchStatus();
 
         yield self.shutdownGame(game);
     });
@@ -599,7 +600,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             yield self.processGameUpdate(game);
             setTimeout(self.shutdownGame, POST_GAME_RESET_DELAY, game);
             yield self.removeGameSubstituteRequests(self.getDocumentID(game));
-            self.updateLaunchStatus();
+            yield self.updateLaunchStatus();
 
             try {
                 yield rateGame(game);
@@ -630,6 +631,8 @@ module.exports = function(app, cache, chance, database, io, self) {
                 }
 
                 yield game.save();
+
+                yield self.invalidateGamePage(game);
             }
         }
         else if (info.status === 'demoavailable') {
@@ -647,6 +650,8 @@ module.exports = function(app, cache, chance, database, io, self) {
                 }
 
                 yield game.save();
+
+                yield self.invalidateGamePage(game);
             }
         }
     });
@@ -716,7 +721,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     }));
 
     self.on('userRestrictionsUpdated', co.wrap(function*(userID) {
-        let userRestrictions = self.getUserRestrictions(userID);
+        let userRestrictions = yield self.getUserRestrictions(userID);
 
         if (_.includes(userRestrictions.aspects, 'sub')) {
             for (let request of currentSubstituteRequests.values()) {
@@ -745,14 +750,35 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.invalidateGamePage = co.wrap(function*(game) {
+    self.invalidateGamePage = co.wrap(function* invalidateGamePage(game) {
         yield cache.delAsync(`gamePage-${self.getDocumentID(game)}`);
     });
 
     /**
      * @async
      */
-    self.getGamePage = co.wrap(function*(game) {
+    self.invalidateUserGamePages = co.wrap(function* invalidateUserGamePages(user) {
+        let userID = self.getDocumentID(user);
+
+        let games = yield database.Game.find({
+            $or: [{
+                'teams.captain': userID
+            }, {
+                'teams.composition.players': {
+                    $elemMatch: {
+                        user: userID
+                    }
+                }
+            }]
+        }).exec();
+
+        yield _.map(games, game => self.invalidateGamePage(game));
+    });
+
+    /**
+     * @async
+     */
+    self.getGamePage = co.wrap(function* getGamePage(game) {
         let cacheResponse = yield cache.getAsync(`gamePage-${self.getDocumentID(game)}`);
 
         let gamePage;
@@ -779,7 +805,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 game: game.id
             }).exec(), rating => self.getDocumentID(rating.user));
 
-            _.each(game.teams, function(team) {
+            _.each(gamePage.teams, function(team) {
                 team.captain = gameUsers[self.getDocumentID(team.captain)];
 
                 team.composition = _.sortBy(team.composition, function(role) {
@@ -809,7 +835,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 });
             });
 
-            yield cache.setAsync(`gamePage-${self.getDocumentID(game)}`);
+            yield cache.setAsync(`gamePage-${self.getDocumentID(game)}`, gamePage);
         }
 
         return gamePage;

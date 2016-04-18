@@ -24,6 +24,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         return _.includes(adminUserIDs, userID);
     };
 
+    /**
+     * @async
+     */
     self.postToAdminLog = co.wrap(function* postToAdminLog(user, action) {
         user = yield self.getCachedUser(user);
 
@@ -63,6 +66,8 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
 
         if (req.body.type === 'changeSettings') {
+            let majorChange = false;
+
             if (req.body.alias !== user.alias) {
                 if (/^[A-Za-z0-9_]{1,15}$/.test(req.body.alias)) {
                     let existingUser = yield self.getUserByAlias(req.body.alias);
@@ -71,6 +76,8 @@ module.exports = function(app, cache, chance, database, io, self) {
                         self.postToAdminLog(req.user, `changed the alias of \`<${BASE_URL}/player/${user.steamID}|${req.body.alias}>\` from \`${user.alias}\``);
 
                         user.alias = req.body.alias;
+
+                        majorChange = true;
                     }
                 }
             }
@@ -95,6 +102,10 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             try {
                 yield user.save();
+
+                if (majorChange) {
+                    yield self.invalidateUserGamePages(req.user);
+                }
 
                 res.sendStatus(HttpStatus.OK);
             }
@@ -305,7 +316,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             self.postToAdminLog(req.user, `requested substitute for player \`<${BASE_URL}/player/${player.steamID}|${player.alias}>\` for game \`<${BASE_URL}/game/${game.id}|${game.id}>\``);
 
-            self.requestSubstitute(game, player);
+            yield self.requestSubstitute(game, player);
 
             res.sendStatus(HttpStatus.OK);
         }
@@ -375,6 +386,9 @@ module.exports = function(app, cache, chance, database, io, self) {
 
     app.use('/admin', router);
 
+    /**
+     * @async
+     */
     self.requestAdmin = co.wrap(function* requestAdmin(user, message) {
         user = yield self.getCachedUser(user);
         let trimmedMessage = _.trim(message);
@@ -395,7 +409,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         let userID = this.decoded_token.user;
 
         co(function*() {
-            let userRestrictions = self.getUserRestrictions(userID);
+            let userRestrictions = yield self.getUserRestrictions(userID);
 
             if (!_.includes(userRestrictions, 'support')) {
                 try {

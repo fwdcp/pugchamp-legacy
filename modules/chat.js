@@ -11,17 +11,23 @@ module.exports = function(app, cache, chance, database, io, self) {
     const UPDATE_ONLINE_USER_LIST_DEBOUNCE_MAX_WAIT = 5000;
     const UPDATE_ONLINE_USER_LIST_DEBOUNCE_WAIT = 1000;
 
+    /**
+     * @async
+     */
     const updateOnlineUserList = _.debounce(co.wrap(function* updateOnlineUserList() {
         let users = yield _.map(self.getOnlineUsers(), user => self.getCachedUser(user));
         let onlineList = _(users).filter(user => (user.setUp && (user.authorized || self.isUserAdmin(user)))).sortBy('alias').value();
 
         yield cache.setAsync('onlineUsers', JSON.stringify(onlineList));
 
-        io.sockets.emit('onlineUserListUpdated', yield getOnlineUserList());
+        io.sockets.emit('onlineUserListUpdated', onlineList);
     }), UPDATE_ONLINE_USER_LIST_DEBOUNCE_WAIT, {
         maxWait: UPDATE_ONLINE_USER_LIST_DEBOUNCE_MAX_WAIT
     });
 
+    /**
+     * @async
+     */
     function getOnlineUserList() {
         return co(function*() {
             let cacheResponse = yield cache.getAsync('onlineUsers');
@@ -35,6 +41,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
+    /**
+     * @async
+     */
     function postToMessageLog(message) {
         return co(function*() {
             let attachment;
@@ -61,6 +70,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
+    /**
+     * @async
+     */
     self.sendMessageToUser = co.wrap(function* sendMessageToUser(user, message) {
         if (message.user) {
             message.user = yield self.getCachedUser(message.user);
@@ -69,6 +81,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         self.emitToUser(user, 'messageReceived', [message]);
     });
 
+    /**
+     * @async
+     */
     self.sendMessage = co.wrap(function* sendMessage(message) {
         if (message.user) {
             message.user = yield self.getCachedUser(message.user);
@@ -121,7 +136,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         co(function*() {
             self.markUserActivity(userID);
 
-            let userRestrictions = self.getUserRestrictions(userID);
+            let userRestrictions = yield self.getUserRestrictions(userID);
 
             if (!_.includes(userRestrictions.aspects, 'chat')) {
                 let trimmedMessage = _.chain(message).trim().truncate({
@@ -141,17 +156,9 @@ module.exports = function(app, cache, chance, database, io, self) {
                         usage: 'search',
                         sensitivity: 'base'
                     }) === 0));
-                    let mentions = [];
 
-                    for (let alias of mentionedAliases) {
-                        let user = yield self.getUserByAlias(alias);
-
-                        if (user) {
-                            mentions.push(user);
-                        }
-                    }
-
-                    mentions = yield _(mentions).uniqBy(user => self.getDocumentID(user)).map(user => self.getCachedUser(user)).value();
+                    let mentions = yield _.map(mentionedAliases, alias => self.getUserByAlias(alias));
+                    mentions = yield _(mentions).compact().uniqBy(user => self.getDocumentID(user)).map(user => self.getCachedUser(user)).value();
 
                     self.sendMessage({
                         user: userID,

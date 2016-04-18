@@ -216,7 +216,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             if (_.size(currentLaunchHolds) === 0) {
                 try {
-                    self.launchDraft({
+                    yield self.launchDraft({
                         players: _.mapValues(playersAvailable, function(available) {
                             return [...available];
                         }),
@@ -264,9 +264,9 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     function updateUserAvailability(user, availability) {
-        co(function*() {
+        return co(function*() {
             let userID = self.getDocumentID(user);
-            let userRestrictions = self.getUserRestrictions(user);
+            let userRestrictions = yield self.getUserRestrictions(user);
 
             if (!_.includes(userRestrictions.aspects, 'start')) {
                 _.forEach(playersAvailable, function(players, role) {
@@ -300,7 +300,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     function updateUserReadyStatus(user, ready) {
-        co(function*() {
+        return co(function*() {
             let userID = self.getDocumentID(user);
 
             if (launchAttemptActive) {
@@ -461,7 +461,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     }));
 
     self.on('userRestrictionsUpdated', co.wrap(function*(userID) {
-        let userRestrictions = self.getUserRestrictions(userID);
+        let userRestrictions = yield self.getUserRestrictions(userID);
 
         if (_.includes(userRestrictions.aspects, 'start')) {
             _.forEach(playersAvailable, function(players) {

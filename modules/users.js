@@ -28,6 +28,9 @@ module.exports = function(app, cache, chance, database, io, self) {
     var userRestrictions = new Map();
     var userSockets = new Map();
 
+    /**
+     * @async
+     */
     function checkUserAuthorization(user) {
         return co(function*() {
             for (let authorization of USER_AUTHORIZATIONS) {
@@ -66,6 +69,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
+    /**
+     * @async
+     */
     self.updateCachedUser = co.wrap(function* updateCachedUser(user) {
         let userID = self.getDocumentID(user);
         user = yield database.User.findById(userID);
@@ -75,6 +81,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         self.emit('cachedUserUpdated', userID);
     });
 
+    /**
+     * @async
+     */
     self.getCachedUser = co.wrap(function* getCachedUser(user) {
         let userID = self.getDocumentID(user);
 
@@ -88,6 +97,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         return JSON.parse(cacheResponse);
     });
 
+    /**
+     * @async
+     */
     self.getUserByAlias = co.wrap(function* getUserByAlias(alias) {
         let user = yield database.User.findOne({
             $text: {
@@ -127,29 +139,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
     };
 
-    self.getUserRestrictions = function getUserRestrictions(user) {
-        let userID = self.getDocumentID(user);
-
-        const UNKNOWN_RESTRICTIONS = {
-            aspects: ['sub', 'start', 'captain', 'chat', 'support'],
-            reasons: ['There was an error retrieving your current restrictions.']
-        };
-
-        if (userID) {
-            if (userRestrictions.has(userID)) {
-                return userRestrictions.get(userID);
-            }
-            else {
-                self.updateUserRestrictions(user);
-
-                return UNKNOWN_RESTRICTIONS;
-            }
-        }
-        else {
-            return UNAUTHENTICATED_RESTRICTIONS;
-        }
-    };
-
+    /**
+     * @async
+     */
     self.updateUserRestrictions = co.wrap(function* updateUserRestrictions(user) {
         let userID = self.getDocumentID(user);
         user = yield database.User.findById(userID);
@@ -243,8 +235,8 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
 
         let activeRestrictions = yield database.Restriction.find({
-            user: userID,
-            active: true
+            'user': userID,
+            'active': true
         });
 
         for (let restriction of activeRestrictions) {
@@ -288,12 +280,30 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         self.emit('userRestrictionsUpdated', userID);
 
-        return combinedRestrictions;
+        yield self.invalidatePlayerPage(user);
     });
 
-    self.on('userRestrictionsUpdated', function(userID) {
-        self.emitToUser(userID, 'restrictionsUpdated', [self.getUserRestrictions(userID)]);
+    /**
+     * @async
+     */
+    self.getUserRestrictions = co.wrap(function* getUserRestrictions(user) {
+        let userID = self.getDocumentID(user);
+
+        if (userID) {
+            if (!userRestrictions.has(userID)) {
+                yield self.updateUserRestrictions(user);
+            }
+
+            return userRestrictions.get(userID);
+        }
+        else {
+            return UNAUTHENTICATED_RESTRICTIONS;
+        }
     });
+
+    self.on('userRestrictionsUpdated', co.wrap(function*(userID) {
+        self.emitToUser(userID, 'restrictionsUpdated', [yield self.getUserRestrictions(userID)]);
+    }));
 
     passport.use(new OpenIDStrategy({
         providerURL: 'http://steamcommunity.com/openid',
@@ -316,7 +326,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         try {
             let user = yield database.User.findOne({
-                steamID: id
+                'steamID': id
             });
 
             if (!user) {
@@ -456,7 +466,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         else {
             userSockets.get(userID).add(socket.id);
 
-            socket.emit('restrictionsUpdated', self.getUserRestrictions(userID));
+            socket.emit('restrictionsUpdated', yield self.getUserRestrictions(userID));
         }
 
         socket.removeAllListeners('disconnect');
@@ -485,12 +495,16 @@ module.exports = function(app, cache, chance, database, io, self) {
         if (req.user) {
             let errors = [];
 
+            let majorChange = false;
+
             if (req.body.alias && !req.user.alias) {
                 if (/^[A-Za-z0-9_]{1,15}$/.test(req.body.alias)) {
                     let existingUser = yield self.getUserByAlias(req.body.alias);
 
                     if (!existingUser) {
                         req.user.alias = req.body.alias;
+
+                        majorChange = true;
                     }
                     else {
                         errors.push('The alias you selected is not available.');
@@ -514,6 +528,10 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             try {
                 yield req.user.save();
+
+                if (majorChange) {
+                    yield self.invalidateUserGamePages(req.user);
+                }
             }
             catch (err) {
                 self.postToLog({

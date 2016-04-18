@@ -21,6 +21,9 @@ module.exports = function(app, cache, chance, database, io, self) {
     const ROLES = config.get('app.games.roles');
     const SERVER_TIMEOUT = ms(config.get('app.servers.serverTimeout'));
 
+    /**
+     * @async
+     */
     function connectToRCON(gameServer) {
         return co(function*() {
             let gameServerInfo = GAME_SERVER_POOL[gameServer];
@@ -33,6 +36,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
+    /**
+     * @async
+     */
     function sendCommandsToServer(rcon, commands, timeout) {
         return co(function*() {
             let condensedCommands = [];
@@ -63,12 +69,18 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
+    /**
+     * @async
+     */
     function disconnectFromRCON(rcon) {
         return co(function*() {
             yield rcon.disconnect();
         });
     }
 
+    /**
+     * @async
+     */
     function getServerStatus(gameServer) {
         return Promise.race([co(function*() {
             try {
@@ -128,6 +140,9 @@ module.exports = function(app, cache, chance, database, io, self) {
 
     var serverUpdateLimiter = new RateLimiter(1, QUERY_INTERVAL);
 
+    /**
+     * @async
+     */
     self.getServerStatuses = co.wrap(function* getServerStatuses(forceUpdate) {
         let serverStatuses;
 
@@ -151,6 +166,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         return serverStatuses;
     });
 
+    /**
+     * @async
+     */
     self.getAvailableServers = co.wrap(function* getAvailableServers(forceUpdate) {
         let statuses = yield self.getServerStatuses(forceUpdate);
 
@@ -169,6 +187,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         }).keys().value();
     });
 
+    /**
+     * @async
+     */
     self.sendRCONCommands = co.wrap(function* sendRCONCommands(server, commands) {
         let rcon;
 
@@ -186,6 +207,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
     });
 
+    /**
+     * @async
+     */
     self.shutdownGame = co.wrap(function* shutdownGame(game) {
         yield _.map(GAME_SERVER_POOL, function(serverInfo, server) {
             return co(function*() {
@@ -210,6 +234,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     });
 
+    /**
+     * @async
+     */
     self.updateServerPlayers = co.wrap(function* updateServerPlayers(game) {
         let serverStatus = yield getServerStatus(game.server);
 
@@ -229,9 +256,8 @@ module.exports = function(app, cache, chance, database, io, self) {
             throw new Error('server not assigned to game');
         }
 
-        let commands = [];
-        for (let user of self.getGameUsers(game)) {
-            user = yield self.getCachedUser(user);
+        let gameUsers = yield _.map(self.getGameUsers(game), user => self.getCachedUser(user));
+        let commands = _.map(gameUsers, function(user) {
             let gameUserInfo = self.getGameUserInfo(game, user);
 
             if (gameUserInfo.player) {
@@ -276,10 +302,10 @@ module.exports = function(app, cache, chance, database, io, self) {
                         gameClass = 8;
                     }
 
-                    commands.push(`pugchamp_game_player_add "${user.steamID}" "${user.alias}" ${gameTeam} ${gameClass}`);
+                    return `pugchamp_game_player_add "${user.steamID}" "${user.alias}" ${gameTeam} ${gameClass}`;
                 }
                 else {
-                    commands.push(`pugchamp_game_player_remove "${user.steamID}"`);
+                    return `pugchamp_game_player_remove "${user.steamID}"`;
                 }
             }
             else {
@@ -292,13 +318,16 @@ module.exports = function(app, cache, chance, database, io, self) {
                     gameTeam = 3;
                 }
 
-                commands.push(`pugchamp_game_player_add "${user.steamID}" "${user.alias}" ${gameTeam} 0`);
+                return `pugchamp_game_player_add "${user.steamID}" "${user.alias}" ${gameTeam} 0`;
             }
-        }
+        });
 
         yield self.sendRCONCommands(game.server, commands);
     });
 
+    /**
+     * @async
+     */
     self.initializeServer = co.wrap(function* initializeServer(game) {
         if (!game.server) {
             throw new Error('no server is currently assigned to this game');
@@ -306,6 +335,8 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         game.status = 'initializing';
         yield game.save();
+
+        yield self.processGameUpdate(game);
 
         let rcon;
 
@@ -343,9 +374,15 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
     });
 
+    /**
+     * @async
+     */
     self.assignGameToServer = co.wrap(function* assignGameToServer(game, server) {
         game.status = 'initializing';
+        game.server = null;
         yield game.save();
+
+        yield self.processGameUpdate(game);
 
         if (!server) {
             let availableServers = yield self.getAvailableServers(true);
@@ -371,6 +408,8 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         game.server = server;
         yield game.save();
+
+        yield self.processGameUpdate(game);
 
         try {
             yield self.initializeServer(game);

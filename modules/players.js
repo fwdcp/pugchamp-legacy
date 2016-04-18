@@ -136,14 +136,15 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
-    self.on('cachedUserUpdated', function() {
-        updatePlayerList();
-    });
+    self.on('cachedUserUpdated', co.wrap(function*(user) {
+        yield self.invalidatePlayerPage(user);
+        yield updatePlayerList();
+    }));
 
     /**
      * @async
      */
-    self.updatePlayerStats = co.wrap(function*(player) {
+    self.updatePlayerStats = co.wrap(function* updatePlayerStats(player) {
         let playerID = self.getDocumentID(player);
         player = yield database.User.findById(playerID);
 
@@ -332,14 +333,14 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.invalidatePlayerPage = co.wrap(function*(player) {
+    self.invalidatePlayerPage = co.wrap(function* invalidatePlayerPage(player) {
         yield cache.delAsync(`playerPage-${self.getDocumentID(player)}`);
     });
 
     /**
      * @async
      */
-    self.getPlayerPage = co.wrap(function*(player) {
+    self.getPlayerPage = co.wrap(function* getPlayerPage(player) {
         let cacheResponse = yield cache.getAsync(`playerPage-${self.getDocumentID(player)}`);
 
         let playerPage;

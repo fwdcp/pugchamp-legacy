@@ -63,12 +63,17 @@ module.exports = function(app, cache, chance, database, io, self) {
         return currentDraftExpireCooldowns.has(userID);
     };
 
+    /**
+     * @async
+     */
     function removeDraftExpireCooldown(user) {
-        let userID = self.getDocumentID(user);
+        return co(function*() {
+            let userID = self.getDocumentID(user);
 
-        currentDraftExpireCooldowns.delete(userID);
+            currentDraftExpireCooldowns.delete(userID);
 
-        self.updateUserRestrictions(user);
+            yield self.updateUserRestrictions(user);
+        });
     }
 
     var draftActive = false;
@@ -103,7 +108,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
     self.getDraftPlayers = function getDraftPlayers() {
         if (draftActive && !draftComplete) {
-            return _.set(captainPool, fullPlayerList);
+            return _.union(captainPool, fullPlayerList);
         }
         else {
             return [];
@@ -168,21 +173,17 @@ module.exports = function(app, cache, chance, database, io, self) {
         return true;
     }
 
+    /**
+     * @async
+     */
     function updateDraftStatusMessage() {
         return co(function*() {
             let draftStatusMessage = {
                 active: draftActive,
                 complete: draftComplete,
-                draftTurns: _.map(DRAFT_ORDER, (turn, index) => _.merge({}, turn, draftChoices[index])),
                 currentDraftTurn,
-                turnStartTime: currentDraftTurnStartTime,
-                turnEndTime: currentDraftTurnStartTime + TURN_TIME_LIMIT,
                 roles: ROLES,
                 teamSize: TEAM_SIZE,
-                draftTeams: _.cloneDeep(draftTeams),
-                playerPool: _.cloneDeep(playerPool),
-                captainPool: _.cloneDeep(captainPool),
-                fullPlayerList: _.cloneDeep(fullPlayerList),
                 unavailablePlayers,
                 mapPool: MAP_POOL,
                 pickedMap,
@@ -191,33 +192,41 @@ module.exports = function(app, cache, chance, database, io, self) {
                 overrideRoles
             };
 
+            if (draftActive && !draftComplete) {
+                draftStatusMessage.turnStartTime = currentDraftTurnStartTime;
+                draftStatusMessage.turnEndTime = currentDraftTurnStartTime + TURN_TIME_LIMIT;
+            }
+
+            draftStatusMessage.captainPool = yield _.map(captainPool, user => self.getCachedUser(user));
+
+            draftStatusMessage.fullPlayerList = yield _.map(fullPlayerList, user => self.getCachedUser(user));
+
+            draftStatusMessage.playerPool = {};
+            for (let role of _.keys(ROLES)) {
+                draftStatusMessage.playerPool[role] = _.map(playerPool[role], player => _.find(draftStatusMessage.fullPlayerList, user => (self.getDocumentID(player) === self.getDocumentID(user))));
+            }
+
+            draftStatusMessage.draftTurns = _.map(DRAFT_ORDER, (turn, index) => _.merge({}, turn, draftChoices[index]));
             for (let turn of draftStatusMessage.draftTurns) {
                 if (turn.player) {
-                    turn.player = yield self.getCachedUser(turn.player);
+                    turn.player = _.find(draftStatusMessage.fullPlayerList, user => (self.getDocumentID(turn.player) === self.getDocumentID(user)));
                 }
 
                 if (turn.captain) {
-                    turn.captain = yield self.getCachedUser(turn.captain);
+                    turn.captain = _.find(draftStatusMessage.captainPool, user => (self.getDocumentID(turn.captain) === self.getDocumentID(user)));
                 }
             }
 
+            draftStatusMessage.draftTeams = _.cloneDeep(draftTeams);
             for (let team of draftStatusMessage.draftTeams) {
                 if (team.captain) {
-                    team.captain = yield self.getCachedUser(team.captain);
+                    team.captain = _.find(draftStatusMessage.captainPool, user => (self.getDocumentID(team.captain) === self.getDocumentID(user)));
                 }
 
                 for (let player of team.players) {
-                    player.user = yield self.getCachedUser(player.user);
+                    player.user = _.find(draftStatusMessage.fullPlayerList, user => (self.getDocumentID(player.user) === self.getDocumentID(user)));
                 }
             }
-
-            for (let role of _.keys(ROLES)) {
-                draftStatusMessage.playerPool[role] = yield _.map(draftStatusMessage.playerPool[role], user => self.getCachedUser(user));
-            }
-
-            draftStatusMessage.captainPool = yield _.map(draftStatusMessage.captainPool, user => self.getCachedUser(user));
-
-            draftStatusMessage.fullPlayerList = yield _.map(draftStatusMessage.fullPlayerList, user => self.getCachedUser(user));
 
             yield cache.setAsync('draftStatus', JSON.stringify(draftStatusMessage));
 
@@ -225,6 +234,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
+    /**
+     * @async
+     */
     function getDraftStatusMessage() {
         return co(function*() {
             let cacheResponse = yield cache.getAsync('draftStatus');
@@ -242,6 +254,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
+    /**
+     * @async
+     */
     self.cleanUpDraft = co.wrap(function* cleanUpDraft() {
         // NOTE: we need to save these to perform operations once draft is cleared
         let previousDraftCaptains = captainPool;
@@ -275,18 +290,15 @@ module.exports = function(app, cache, chance, database, io, self) {
         yield updateDraftStatusMessage();
 
         // NOTE: hacks with previous draft info - clear draft restrictions and mark activity to prevent players from getting removed
-        _.each(previousDraftCaptains, function(captain) {
-            self.markUserActivity(captain);
-            self.updateUserRestrictions(captain);
-        });
-        _.each(previousDraftPlayers, function(player) {
-            self.markUserActivity(player);
-            self.updateUserRestrictions(player);
-        });
+        yield _.map(_.unionBy(previousDraftCaptains, previousDraftPlayers, user => self.getDocumentID(user)), user => self.updateUserRestrictions(user));
+        yield _.map(_.unionBy(previousDraftCaptains, previousDraftPlayers, user => self.getDocumentID(user)), user => self.markUserActivity(user));
 
-        self.updateLaunchStatus();
+        yield self.updateLaunchStatus();
     });
 
+    /**
+     * @async
+     */
     function launchGameFromDraft() {
         return co(function*() {
             let game = new database.Game();
@@ -334,15 +346,8 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                 yield self.processGameUpdate(game);
 
-                _.each(captainPool, function(captain) {
-                    self.updateUserRestrictions(captain);
-                    self.updatePlayerStats(captain);
-                });
-
-                _.each(fullPlayerList, function(player) {
-                    self.updateUserRestrictions(player);
-                    self.updatePlayerStats(player);
-                });
+                yield _.map(_.unionBy(captainPool, fullPlayerList, user => self.getDocumentID(user)), user => self.updateUserRestrictions(user));
+                yield _.map(_.unionBy(captainPool, fullPlayerList, user => self.getDocumentID(user)), user => self.updatePlayerStats(user));
 
                 currentDraftGame = game.id;
 
@@ -363,6 +368,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
+    /**
+     * @async
+     */
     function completeDraft() {
         return co(function*() {
             draftComplete = true;
@@ -393,6 +401,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
+    /**
+     * @async
+     */
     function commitDraftChoice(choice) {
         return co(function*() {
             if (!draftActive || draftComplete) {
@@ -537,6 +548,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
+    /**
+     * @async
+     */
     function makeAutomatedChoice() {
         return co(function*() {
             let turnDefinition = DRAFT_ORDER[currentDraftTurn];
@@ -575,7 +589,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     }
                     else if (turnDefinition.method === 'success') {
                         let fullCaptains = yield database.User.find({
-                            _id: {
+                            '_id': {
                                 $in: turnCaptainPool
                             }
                         }).exec();
@@ -601,7 +615,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     }
                     else if (turnDefinition.method === 'success-random') {
                         let fullCaptains = yield database.User.find({
-                            _id: {
+                            '_id': {
                                 $in: turnCaptainPool
                             }
                         }).exec();
@@ -673,7 +687,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                         choice.override = _.includes(overrideRoles, choice.role);
 
                         let choicePool = yield database.User.find({
-                            _id: {
+                            '_id': {
                                 $in: choice.override ? _.difference(fullPlayerList, unavailablePlayers) : _.difference(playerPool[choice.role], unavailablePlayers)
                             }
                         }).exec();
@@ -688,7 +702,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                         let enemyTeam = turnDefinition.team === 0 ? 1 : 0;
                         if (_.size(draftTeams[allyTeam].players) < _.size(draftTeams[enemyTeam].players)) {
                             let allyPlayers = yield database.User.find({
-                                _id: {
+                                '_id': {
                                     $in: _.map(draftTeams[allyTeam].players, player => player.user)
                                 }
                             }).exec();
@@ -698,7 +712,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                             });
 
                             let enemyPlayers = yield database.User.find({
-                                _id: {
+                                '_id': {
                                     $in: _.map(draftTeams[enemyTeam].players, player => player.user)
                                 }
                             }).exec();
@@ -821,6 +835,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
+    /**
+     * @async
+     */
     function expireTime() {
         return co(function*() {
             let turnDefinition = DRAFT_ORDER[currentDraftTurn];
@@ -845,6 +862,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
+    /**
+     * @async
+     */
     function beginDraftTurn(turn) {
         return co(function*() {
             currentDraftTurn = turn;
@@ -891,7 +911,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
-    self.launchDraft = function launchDraft(draftInfo) {
+    self.launchDraft = co.wrap(function* launchDraft(draftInfo) {
         draftActive = true;
         draftComplete = false;
 
@@ -903,11 +923,9 @@ module.exports = function(app, cache, chance, database, io, self) {
             captainPool = draftInfo.captains;
         }
         else {
-            captainPool = _.filter(fullPlayerList, function(player) {
-                let userRestrictions = self.getUserRestrictions(player);
+            let userRestrictions = _.zipObject(fullPlayerList, yield _.map(fullPlayerList, user => self.getUserRestrictions(user)));
 
-                return !_.includes(userRestrictions.aspects, 'captain');
-            });
+            captainPool = _.reject(fullPlayerList, player => _.includes(userRestrictions[player].aspects, 'captain'));
         }
 
         remainingMaps = _.keys(MAP_POOL);
@@ -934,16 +952,10 @@ module.exports = function(app, cache, chance, database, io, self) {
             throw new Error('invalid state before draft start');
         }
 
-        _.each(captainPool, function(captain) {
-            self.updateUserRestrictions(captain);
-        });
-
-        _.each(fullPlayerList, function(player) {
-            self.updateUserRestrictions(player);
-        });
+        yield _.map(_.unionBy(captainPool, fullPlayerList, user => self.getDocumentID(user)), user => self.updateUserRestrictions(user));
 
         beginDraftTurn(0);
-    };
+    });
 
     io.sockets.on('connection', co.wrap(function*(socket) {
         socket.emit('draftStatusUpdated', yield getDraftStatusMessage());
@@ -952,7 +964,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     function onUserMakeDraftChoice(choice) {
         let userID = this.decoded_token.user;
 
-        return co(function*() {
+        co(function*() {
             choice.user = userID;
 
             yield commitDraftChoice(choice);

@@ -18,10 +18,16 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         });
 
+        /**
+         * @async
+         */
         self.postToSlack = co.wrap(function* postToSlack(message) {
             yield Q.ninvoke(bot, 'sendWebhook', _.defaultsDeep(message, SLACK_MESSAGE_DEFAULTS));
         });
 
+        /**
+         * @async
+         */
         self.postToLog = co.wrap(function* postToLog(info) {
             let message = {
                 channel: '#app-log',
