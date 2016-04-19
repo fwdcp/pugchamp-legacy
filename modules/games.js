@@ -14,6 +14,7 @@ const path = require('path');
 require('moment-duration-format');
 
 module.exports = function(app, cache, chance, database, io, self) {
+    const BASE_URL = config.get('server.baseURL');
     const GAME_SERVER_POOL = config.get('app.servers.pool');
     const HIDE_RATINGS = config.get('app.users.hideRatings');
     const POST_GAME_RESET_DELAY = ms(config.get('app.games.postGameResetDelay'));
@@ -703,7 +704,14 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let playerInfo = self.getGameUserInfo(game, request.player);
 
-            if (userID === self.getDocumentID(playerInfo.team.captain) || self.isUserAdmin(userID)) {
+            if (userID === self.getDocumentID(playerInfo.team.captain)) {
+                yield self.removeSubstituteRequest(requestID);
+            }
+            else if (self.isUserAdmin(userID)) {
+                let player = yield self.getCachedUser(request.player);
+
+                self.postToAdminLog(userID, `retracted substitute request for player \`<${BASE_URL}/player/${player.steamID}|${player.alias}>\` for game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``);
+
                 yield self.removeSubstituteRequest(requestID);
             }
         });
