@@ -5,6 +5,7 @@
             "captainGameRequirement": 5,
             "hideDraftStats": false,
             "hideRatings": false,
+            "ratingBase": 1500,
             "restrictionDurations": [{
                 "name": "1 hour",
                 "type": "temporary",

@@ -17,7 +17,9 @@ module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const GAME_SERVER_POOL = config.get('app.servers.pool');
     const HIDE_RATINGS = config.get('app.users.hideRatings');
+    const MONGODB_URL = config.get('server.mongodb');
     const POST_GAME_RESET_DELAY = ms(config.get('app.games.postGameResetDelay'));
+    const RATING_BASE = config.get('app.users.ratingBase');
     const ROLES = config.get('app.games.roles');
     const SUBSTITUTE_REQUEST_PERIOD = ms(config.get('app.games.substituteRequestPeriod'));
     const SUBSTITUTE_SELECTION_METHOD = config.get('app.games.substituteSelectionMethod');
@@ -880,5 +882,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
     co(function*() {
         yield updateSubstituteRequestsMessage();
+
+        fs.writeFileSync(path.resolve(__dirname, '../ratings/settings.cfg'), `[config]\nconnect: ${MONGODB_URL}\ndb: ${database.Rating.db.name}\nratingBase: ${RATING_BASE}`);
     });
 };
