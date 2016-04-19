@@ -74,7 +74,7 @@
         },
         "servers": {
             "commandTimeout": "5s",
-            "mapChangeTimeout": "60s",
+            "mapChangeTimeout": "15s",
             "queryInterval": "15s",
             "retryAttempts": ["5s", "10s", "15s"],
             "serverTimeout": "10s"
