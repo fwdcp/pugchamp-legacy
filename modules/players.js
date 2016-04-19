@@ -434,9 +434,6 @@ module.exports = function(app, cache, chance, database, io, self) {
     }));
 
     co(function*() {
-        let users = yield database.User.find({}, '_id').exec();
-        yield _.map(users, user => self.updatePlayerStats(user));
-
         yield updatePlayerList();
     });
 };
