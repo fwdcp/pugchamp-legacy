@@ -286,9 +286,12 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let request = currentSubstituteRequests.get(requestID);
 
-            request.timeout = null;
+            if (request.timeout) {
+                clearTimeout(request.timeout);
+                request.timeout = null;
+            }
 
-            let game = yield database.Game.findById(request.game);
+            let game = yield database.Game.findById(self.getDocumentID(request.game));
 
             if (!game || game.status === 'completed' || game.status === 'aborted') {
                 yield self.removeSubstituteRequest(requestID);
@@ -313,10 +316,10 @@ module.exports = function(app, cache, chance, database, io, self) {
                 selectedCandidate = _.head(candidates);
             }
             else if (SUBSTITUTE_SELECTION_METHOD === 'closest') {
-                let player = yield database.User.findById(request.player).exec();
+                let player = yield database.User.findById(self.getDocumentID(request.player)).exec();
                 let candidatePlayers = yield database.User.find({
                     '_id': {
-                        $in: [...request.candidates]
+                        $in: candidates
                     }
                 }).exec();
 
@@ -372,7 +375,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             yield updateSubstituteRequestsMessage();
 
             if (!request.timeout) {
-                yield attemptSubstitution(request);
+                yield attemptSubstitution(requestID);
             }
         });
     }
@@ -700,11 +703,9 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let playerInfo = self.getGameUserInfo(game, request.player);
 
-            if (userID !== self.getDocumentID(playerInfo.team.captain)) {
-                return;
+            if (userID === self.getDocumentID(playerInfo.team.captain) || self.isUserAdmin(userID)) {
+                yield self.removeSubstituteRequest(requestID);
             }
-
-            yield self.removeSubstituteRequest(requestID);
         });
     }
 

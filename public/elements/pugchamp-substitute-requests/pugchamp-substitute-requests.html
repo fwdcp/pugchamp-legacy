@@ -58,7 +58,7 @@
                         <paper-button class="respond" data-status="apply" data-request$="{{item.id}}" hidden$="{{_includes(item.candidates, user.id)}}" disabled="{{isRestricted(restrictions, 'sub')}}" on-tap="updateSubstituteApplication">Apply to Substitute</paper-button>
                         <paper-button class="respond" data-status="retract" data-request$="{{item.id}}" hidden$="{{!_includes(item.candidates, user.id)}}" on-tap="updateSubstituteApplication">Retract Substitute Application</paper-button>
 
-                        <paper-button class="remove" data-request$="{{item.id}}" hidden$="{{!_isCurrentUser(user, item.captain)}}" disabled="{{!_isCurrentUser(user, item.captain)}}" on-tap="retractSubstituteRequest" raised>Retract Substitute Request</paper-button>
+                        <paper-button class="remove" data-request$="{{item.id}}" hidden$="{{!canRetractRequest(user, item.captain)}}" disabled="{{!canRetractRequest(user, item.captain)}}" on-tap="retractSubstituteRequest" raised>Retract Substitute Request</paper-button>
                     </p>
                 </paper-material>
             </template>
@@ -109,6 +109,9 @@
                     this.$.substituteNotification.notify();
                     this.$.substituteRequestedSound.play();
                 }
+            },
+            canRetractRequest: function(user, captainID) {
+                return this._isAdmin(user) || this._isCurrentUser(user, captainID);
             },
             difference: function(a, b) {
                 return a - b;

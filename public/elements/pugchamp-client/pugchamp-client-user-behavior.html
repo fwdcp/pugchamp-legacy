@@ -10,6 +10,9 @@
         },
         _isCurrentUser: function(self, user) {
             return self && self.id === user;
+        },
+        _isAdmin: function(self) {
+            return self && self.admin;
         }
     };
 
