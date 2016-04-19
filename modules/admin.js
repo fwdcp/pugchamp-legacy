@@ -11,8 +11,8 @@ const ms = require('ms');
 
 module.exports = function(app, cache, chance, database, io, self) {
     const ADMINS = config.get('app.users.admins');
-    const ADMIN_LOG_CHANNEL = config.has('slack.channels.adminLog') ? config.get('slack.channels.adminLog') : '#admin-log';
-    const ADMIN_REQUEST_CHANNEL = config.has('slack.channels.adminRequest') ? config.get('slack.channels.adminRequest') : '#admin-request';
+    const ADMIN_LOG_CHANNEL = config.has('server.slack.channels.adminLog') ? config.get('server.slack.channels.adminLog') : '#admin-log';
+    const ADMIN_REQUEST_CHANNEL = config.has('server.slack.channels.adminRequest') ? config.get('server.slack.channels.adminRequest') : '#admin-request';
     const BASE_URL = config.get('server.baseURL');
     const GAME_SERVER_POOL = config.get('app.servers.pool');
     const HIDE_DRAFT_STATS = config.get('app.users.hideDraftStats');

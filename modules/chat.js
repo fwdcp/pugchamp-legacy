@@ -9,7 +9,7 @@ const twitter = require('twitter-text');
 
 module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
-    const CHAT_LOG_CHANNEL = config.has('slack.channels.chatLog') ? config.get('slack.channels.chatLog') : '#chat-log';
+    const CHAT_LOG_CHANNEL = config.has('server.slack.channels.chatLog') ? config.get('server.slack.channels.chatLog') : '#chat-log';
     const RATE_LIMIT = ms(config.get('app.chat.rateLimit'));
     const SHOW_CONNECTION_MESSAGES = config.get('app.chat.showConnectionMessages');
     const UPDATE_ONLINE_USER_LIST_DEBOUNCE_MAX_WAIT = 5000;
