@@ -59,6 +59,13 @@ app.use(function(err, req, res, next) {
     res.render('error');
 });
 
+try {
+    fs.unlinkSync(config.get('server.listen'));
+}
+catch (err) {
+    // ignore
+}
+
 server.listen(config.get('server.listen'));
 
 try {
