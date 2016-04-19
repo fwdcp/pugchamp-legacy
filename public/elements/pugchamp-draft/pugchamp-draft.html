@@ -398,9 +398,9 @@
                     else if (teams[team].faction) {
                         return teams[team].faction;
                     }
-                }
 
-                return team === 0 ? 'A' : 'B';
+                    return team === 0 ? 'A' : 'B';
+                }
             },
             fullTurnChoiceInfo: function(choice) {
                 if (choice.type === 'factionSelect') {
