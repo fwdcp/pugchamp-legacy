@@ -80,6 +80,7 @@
             "serverTimeout": "10s"
         },
         "chat": {
+            "rateLimit": "1s",
             "showConnectionMessages": false
         }
     },

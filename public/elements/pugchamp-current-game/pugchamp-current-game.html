@@ -41,31 +41,31 @@
             }
         </style>
 
-        <paper-material id="game" hidden$="{{!game}}">
+        <paper-material id="game" hidden$="{{!info}}">
             <h2>Current Game</h2>
 
             <p>
-                <a class="button" href="/game/{{game.id}}" target="_blank">
+                <a class="button" href="/game/{{info.game}}" target="_blank">
                     <paper-button raised>View Game Info</paper-button>
                 </a>
             </p>
 
-            <div hidden$="{{!player}}">
+            <div hidden$="{{!info.player}}">
                 <h3>Player</h3>
 
                 <p>
-                    <strong>Role</strong>: {{_getProperty(game.roles, player.role, 'name')}}
+                    <strong>Role</strong>: {{info.role.name}}
                     <br>
-                    <strong>Faction</strong>: {{team.faction}}
+                    <strong>Faction</strong>: {{info.team.faction}}
                     <br>
-                    <strong>Captain</strong>: {{team.captain.alias}}
+                    <strong>Captain</strong>: {{info.team.captain.alias}}
                 </p>
 
-                <p>
-                    <strong>Server</strong>: {{game.server.id}}
+                <p hidden$="{{!info.server}}">
+                    <strong>Server</strong>: {{info.server.id}}
                     <br>
                     <iframe id="gameServerConnect" width="0" height="0" hidden></iframe>
-                    <paper-button class="connect" on-tap="connectToGameServer" hidden$="{{!game.server.game}}" raised id="gameConnect">Connect to Game</paper-button>
+                    <paper-button class="connect" on-tap="connectToGameServer" hidden$="{{!info.server.game}}" raised id="gameConnect">Connect to Game</paper-button>
                     <paper-button hidden$="{{!connectCommand(gameServerURI)}}" data-clipboard-text$="{{connectCommand(gameServerURI)}}" raised id="gameConnectCommand">Copy Game Connect Command</paper-button>
                     <template is="dom-if" if="{{isSteamServer(gameServerURI)}}">
                         <paper-tooltip for="gameConnect">
@@ -78,7 +78,7 @@
                     </template>
                     <br>
                     <iframe id="voiceServerConnect" width="0" height="0" hidden></iframe>
-                    <paper-button class="connect" on-tap="connectToVoiceServer" hidden$="{{!game.server.voice}}" raised id="voiceConnect">Connect to Voice</paper-button>
+                    <paper-button class="connect" on-tap="connectToVoiceServer" hidden$="{{!info.server.voice}}" raised id="voiceConnect">Connect to Voice</paper-button>
                     <template is="dom-if" if="{{isMumbleServer(voiceServerURI)}}">
                         <paper-tooltip for="voiceConnect">
                             <strong>Address</strong>: {{_callMethod(voiceServerURI, 'hostname')}}
@@ -101,20 +101,20 @@
                         </paper-tooltip>
                     </template>
                 </p>
+
+                <p hidden$="{{!info.replaced}}">
+                    You have been substituted out of this game.
+                </p>
             </div>
 
-            <div hidden$="{{!captain}}">
+            <div hidden$="{{!info.captain}}">
                 <h3>Captain</h3>
 
                 <p>
                     <paper-dropdown-menu id="replacedPlayer" label="Player to Replace">
                         <paper-menu class="dropdown-content">
-                            <template is="dom-repeat" items="{{team.composition}}" as="role">
-                                <template is="dom-repeat" items="{{role.players}}">
-                                    <template is="dom-if" if="{{!item.replaced}}">
-                                        <paper-item data-player$="{{item.user.id}}">{{item.user.alias}} ({{_getProperty(game.roles, role.role, 'name')}})</paper-item>
-                                    </template>
-                                </template>
+                            <template is="dom-repeat" items="{{info.activeTeamPlayers}}">
+                                <paper-item data-player$="{{item.user.id}}">{{item.user.alias}} ({{item.role.name}})</paper-item>
                             </template>
                         </paper-menu>
                     </paper-dropdown-menu>
@@ -123,7 +123,7 @@
             </div>
         </paper-material>
 
-        <hr hidden$="{{!game}}">
+        <hr hidden$="{{!info}}">
 
         <pugchamp-notification id="gameNotification" body="Game details are now available!" tag="gameDetails"></pugchamp-notification>
         <pugchamp-sound id="gameDetailsAvailableSound" src="/assets/snd/game/details_available.wav"></pugchamp-sound>
@@ -133,9 +133,7 @@
             is: 'pugchamp-current-game',
             behaviors: [PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.UserBehavior, PugChampPolymerHelperBehaviors],
             ready: function() {
-                this.set('game', null);
-                this.set('player', null);
-                this.set('captain', null);
+                this.set('info', null);
 
                 this.set('gameServerURI', null);
                 this.set('voiceServerURI', null);
@@ -146,75 +144,51 @@
                 new Clipboard(this.$.gameConnectCommand);
             },
             onCurrentGameUpdated: function(info) {
-                if (!this.game && info) {
+                if (!this.info && info) {
                     this.$.gameNotification.notify();
 
                     this.$.gameDetailsAvailableSound.play();
                 }
 
-                this.set('game', info);
+                this.set('info', info);
 
                 if (info) {
-                    this.set('team', _.find(this.game.teams, _.bind(function(team) {
-                        this.set('captain', this._isCurrentUser(this.user, team.captain.id));
-
-                        this.set('player', _.find(team.composition, _.bind(function(role) {
-                            return _.some(role.players, _.bind(function(player) {
-                                return this._isCurrentUser(this.user, player.user.id) && !player.replaced;
-                            }, this));
-                        }, this)));
-
-                        return this.captain || this.player;
-                    }, this)));
+                    try {
+                        this.set('gameServerURI', URI(format(info.server.game, info)));
+                    }
+                    catch (err) {
+                        this.set('gameServerURI', undefined);
+                    }
 
                     try {
-                        this.set('gameServerURI', URI(format(this.game.server.game, {
-                            user: this.user,
-                            game: this.game,
-                            team: this.team,
-                            player: this.player,
-                            role: this.player ? this.game.roles[this.player.role] : undefined
-                        })));
+                        this.set('voiceServerURI', URI(format(info.server.voice, info)));
                     }
-                    catch (err) {}
-
-                    try {
-                        this.set('voiceServerURI', URI(format(this.game.server.voice, {
-                            user: this.user,
-                            game: this.game,
-                            team: this.team,
-                            player: this.player,
-                            role: this.player ? this.game.roles[this.player.role] : undefined
-                        })));
+                    catch (err) {
+                        this.set('voiceServerURI', undefined);
                     }
-                    catch (err) {}
-                } else {
-                    this.set('team', null);
-                    this.set('captain', null);
-                    this.set('player', null);
                 }
             },
             onUserInfoUpdated: function() {
-                // NOTE: there appears to be a race condition between the user info and currenet game info, so run that function again just in case
+                // NOTE: there appears to be a race condition between the user info and current game info, so run that function again just in case
 
-                if (this.game) {
-                    this.onCurrentGameUpdated(this.game);
+                if (this.info) {
+                    this.onCurrentGameUpdated(this.info);
                 }
             },
             requestSubstitute: function(event) {
                 this.socket.emit('requestSubstitute', {
-                    game: this.game.id,
+                    game: this.info.game,
                     player: this.$.replacedPlayer.selectedItem.dataset.player
                 });
             },
             connectToGameServer: function() {
-                if (this.game) {
+                if (this.info.server.game) {
                     this.$.gameServerConnect.src = '';
                     this.$.gameServerConnect.src = this.gameServerURI.href();
                 }
             },
             connectToVoiceServer: function() {
-                if (this.game && this.game.server.voice) {
+                if (this.info.server.voice) {
                     this.$.voiceServerConnect.src = '';
                     this.$.voiceServerConnect.src = this.voiceServerURI.href();
                 }

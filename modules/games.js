@@ -13,139 +13,33 @@ const path = require('path');
 
 require('moment-duration-format');
 
-module.exports = function(app, chance, database, io, self) {
+module.exports = function(app, cache, chance, database, io, self) {
+    const GAME_SERVER_POOL = config.get('app.servers.pool');
     const HIDE_RATINGS = config.get('app.users.hideRatings');
     const POST_GAME_RESET_DELAY = ms(config.get('app.games.postGameResetDelay'));
     const ROLES = config.get('app.games.roles');
     const SUBSTITUTE_REQUEST_PERIOD = ms(config.get('app.games.substituteRequestPeriod'));
     const SUBSTITUTE_SELECTION_METHOD = config.get('app.games.substituteSelectionMethod');
-    const UPDATE_GAME_CACHE_DEBOUNCE_MAX_WAIT = 5000;
-    const UPDATE_GAME_CACHE_DEBOUNCE_WAIT = 1000;
 
-    var fullGameListCache;
-    var fullFilteredGameListCache;
-    var recentGameListCache;
-    var recentFilteredGameListCache;
+    self.getGameUsers = function getGameUsers(game) {
+        let users = [];
 
-    var updateGameCache = _.debounce(co.wrap(function* updateGameCache() {
-        let games = yield database.Game.find({}).sort('-date').select('date status teams.faction teams.captain score map duration').populate('teams.captain', 'alias steamID').exec();
+        for (let team of game.teams) {
+            users.push(team.captain);
 
-        fullGameListCache = _.map(games, game => game.toObject());
-        fullFilteredGameListCache = _.filter(fullGameListCache, game => game.status !== 'initializing' && game.status !== 'aborted');
-        recentGameListCache = _.takeWhile(fullGameListCache, game => moment().diff(game.date, 'days') < 1);
-        recentFilteredGameListCache = _.takeWhile(fullFilteredGameListCache, game => moment().diff(game.date, 'days') < 1);
-    }), UPDATE_GAME_CACHE_DEBOUNCE_WAIT, {
-        maxWait: UPDATE_GAME_CACHE_DEBOUNCE_MAX_WAIT
-    });
-
-    self.on('gameUpdated', function() {
-        updateGameCache();
-    });
-
-    updateGameCache();
-
-    var currentGameCache = new Map();
-
-    function rateGame(game) {
-        return co(function*() {
-            yield child_process.exec(`python rate_game.py ${game.id}`, {
-                cwd: path.resolve(__dirname, '../ratings')
-            });
-        });
-    }
-
-    function formatCurrentGameInfo(game) {
-        if (!game || game.status === 'aborted' || game.status === 'completed') {
-            return null;
-        }
-
-        let gameInfo = _.omit(game.toObject(), 'draft');
-        gameInfo.roles = ROLES;
-
-        _.each(gameInfo.teams, function(team) {
-            team.captain = self.getCachedUser(self.getDocumentID(team.captain));
-
-            _.each(team.composition, function(role) {
-                _.each(role.players, function(player) {
-                    player.user = self.getCachedUser(self.getDocumentID(player.user));
-                });
-            });
-        });
-
-        return gameInfo;
-    }
-
-    function processGameUpdate(game) {
-        self.emit('gameUpdated', game.id);
-
-        if (game.status !== 'initializing') {
-            if (self.getDocumentID(game) === self.getCurrentDraftGame()) {
-                self.cleanUpDraft();
+            for (let role of team.composition) {
+                for (let player of role.players) {
+                    users.push(player.user);
+                }
             }
         }
 
-        let gameInfo = formatCurrentGameInfo(game);
-
-        _.each(game.teams, function(team) {
-            let captainID = self.getDocumentID(team.captain);
-
-            currentGameCache.set(captainID, gameInfo);
-            self.emitToUser(captainID, 'currentGameUpdated', [gameInfo]);
-            self.updateUserRestrictions(captainID);
-
-            _.each(team.composition, function(role) {
-                _.each(role.players, function(player) {
-                    let userID = self.getDocumentID(player.user);
-
-                    currentGameCache.set(userID, gameInfo);
-                    self.emitToUser(userID, 'currentGameUpdated', [gameInfo]);
-                    self.updateUserRestrictions(userID);
-                });
-            });
-        });
-    }
-
-    var currentSubstituteRequests = new Map();
-    var currentSubstituteRequestsInfo;
-
-    self.getCurrentSubstituteRequests = function getCurrentSubstituteRequests() {
-        return [...currentSubstituteRequests.values()];
+        return _.uniqBy(users, user => self.getDocumentID(user));
     };
 
-    function updateSubstituteRequestsInfo() {
-        currentSubstituteRequestsInfo = {
-            roles: ROLES,
-            requests: _([...currentSubstituteRequests.entries()]).fromPairs().map((request, id) => ({
-                id,
-                game: request.game,
-                role: request.role,
-                captain: request.captain,
-                player: self.getCachedUser(request.player),
-                candidates: [...request.candidates]
-            })).value()
-        };
-    }
+    self.getGameUserInfo = function getGameUserInfo(game, user) {
+        let userID = self.getDocumentID(user);
 
-    function getCurrentSubstituteRequestsMessage() {
-        let message = _.clone(currentSubstituteRequestsInfo);
-
-        message.requests = _.map(message.requests, function(request) {
-            let requestMessage = {
-                timeElapsed: Date.now() - currentSubstituteRequests.get(request.id).opened,
-                timeTotal: SUBSTITUTE_REQUEST_PERIOD
-            };
-
-            _.assign(requestMessage, request);
-
-            return requestMessage;
-        });
-
-        return message;
-    }
-
-    updateSubstituteRequestsInfo();
-
-    self.getGamePlayerInfo = function getGamePlayerInfo(game, playerID) {
         let team;
         let role;
         let player;
@@ -153,7 +47,7 @@ module.exports = function(app, chance, database, io, self) {
         team = _.find(game.teams, function(currentTeam) {
             role = _.find(currentTeam.composition, function(currentRole) {
                 player = _.find(currentRole.players, function(currentPlayer) {
-                    return playerID === self.getDocumentID(currentPlayer.user);
+                    return userID === self.getDocumentID(currentPlayer.user);
                 });
 
                 if (player) {
@@ -163,14 +57,14 @@ module.exports = function(app, chance, database, io, self) {
                 return false;
             });
 
-            if (role) {
+            if (role || userID === self.getDocumentID(currentTeam.captain)) {
                 return true;
             }
 
             return false;
         });
 
-        if (player) {
+        if (team) {
             return {
                 game,
                 team,
@@ -182,27 +76,229 @@ module.exports = function(app, chance, database, io, self) {
         return null;
     };
 
-    function attemptSubstitution(id) {
+    /**
+     * @async
+     */
+    function rateGame(game) {
         return co(function*() {
-            if (!currentSubstituteRequests.has(id)) {
+            yield child_process.exec(`python rate_game.py ${self.getDocumentID(game)}`, {
+                cwd: path.resolve(__dirname, '../ratings')
+            });
+        });
+    }
+
+    /**
+     * @async
+     */
+    function updateCurrentGame(game, user) {
+        return co(function*() {
+            if (game.status === 'launching' || game.status === 'live') {
+                let gameUserInfo = self.getGameUserInfo(game.toObject(), user);
+
+                let currentGameInfo = {
+                    game: self.getDocumentID(game),
+                    team: _.omit(gameUserInfo.team, 'composition'),
+                    user: yield self.getCachedUser(user)
+                };
+
+                currentGameInfo.team.captain = yield self.getCachedUser(gameUserInfo.team.captain);
+
+                currentGameInfo.player = gameUserInfo.role && gameUserInfo.player;
+                if (currentGameInfo.player) {
+                    currentGameInfo.role = ROLES[gameUserInfo.role.role];
+                    currentGameInfo.replaced = gameUserInfo.player.replaced;
+
+                    if (!currentGameInfo.replaced && game.server) {
+                        currentGameInfo.server = _.omit(GAME_SERVER_POOL[game.server], 'rcon', 'salt');
+                        currentGameInfo.server.id = game.server;
+                    }
+                }
+
+                currentGameInfo.captain = self.getDocumentID(gameUserInfo.team.captain) === self.getDocumentID(user);
+                if (currentGameInfo.captain) {
+                    currentGameInfo.activeTeamPlayers = yield _(gameUserInfo.team.composition).map(role => _(role.players).reject(player => player.replaced).map(player => ({
+                        user: player.user,
+                        role: ROLES[role.role]
+                    })).value()).flattenDeep().map(co.wrap(function*(player) {
+                        player.user = yield self.getCachedUser(player.user);
+
+                        return player;
+                    })).value();
+                }
+
+                yield cache.setAsync(`currentGame-${self.getDocumentID(user)}`, JSON.stringify(currentGameInfo));
+
+                self.emitToUser(user, 'currentGameUpdated', [currentGameInfo]);
+            }
+            else {
+                yield cache.delAsync(`currentGame-${self.getDocumentID(user)}`);
+
+                self.emitToUser(user, 'currentGameUpdated', [null]);
+            }
+        });
+    }
+
+    /**
+     * @async
+     */
+    function getCurrentGame(user) {
+        return co(function*() {
+            let cacheResponse = yield cache.getAsync(`currentGame-${self.getDocumentID(user)}`);
+
+            return JSON.parse(cacheResponse);
+        });
+    }
+
+    /**
+     * @async
+     */
+    function updateGameList() {
+        return co(function*() {
+            let games = yield database.Game.find({}).sort('-date').select('date status teams.faction teams.captain score map duration').populate('teams.captain', 'alias steamID').exec();
+
+            yield cache.setAsync('allGameList', JSON.stringify(_.map(games, game => game.toObject())));
+            yield cache.setAsync('allVisibleGameList', JSON.stringify(_(games).filter(game => game.status !== 'initializing' && game.status !== 'aborted').map(game => game.toObject()).value()));
+            yield cache.setAsync('recentGameList', JSON.stringify(_(games).takeWhile(game => moment().diff(game.date, 'days') < 1).map(game => game.toObject()).value()));
+            yield cache.setAsync('recentVisibleGameList', JSON.stringify(_(games).takeWhile(game => moment().diff(game.date, 'days') < 1).filter(game => game.status !== 'initializing' && game.status !== 'aborted').map(game => game.toObject()).value()));
+        });
+    }
+
+    /**
+     * @async
+     */
+    function getGameList(old, invisible) {
+        return co(function*() {
+            let keyName;
+
+            if (old) {
+                if (invisible) {
+                    keyName = 'allGameList';
+                }
+                else {
+                    keyName = 'allVisibleGameList';
+                }
+            }
+            else {
+                if (invisible) {
+                    keyName = 'recentGameList';
+                }
+                else {
+                    keyName = 'recentVisibleGameList';
+                }
+            }
+
+            let cacheResponse = yield cache.getAsync(keyName);
+
+            if (!cacheResponse) {
+                yield updateGameList();
+                cacheResponse = yield cache.getAsync(keyName);
+            }
+
+            return JSON.parse(cacheResponse);
+        });
+    }
+
+    /**
+     * @async
+     */
+    self.processGameUpdate = co.wrap(function* processGameUpdate(game) {
+        let gameID = self.getDocumentID(game);
+        game = yield database.Game.findById(gameID);
+
+        if (game.status !== 'initializing') {
+            if (self.getDocumentID(game) === self.getCurrentDraftGame()) {
+                yield self.cleanUpDraft();
+            }
+        }
+
+        yield _.map(self.getGameUsers(game), user => self.updateUserRestrictions(user));
+        yield _.map(self.getGameUsers(game), user => updateCurrentGame(game, user));
+
+        yield self.invalidateGamePage(game);
+        yield updateGameList();
+        yield _.map(self.getGameUsers(game), user => self.invalidatePlayerPage(game, user));
+    });
+
+    var currentSubstituteRequests = new Map();
+
+    self.getCurrentSubstituteRequests = function getCurrentSubstituteRequests() {
+        return [...currentSubstituteRequests.values()];
+    };
+
+    /**
+     * @async
+     */
+    function updateSubstituteRequestsMessage() {
+        return co(function*() {
+            let substituteRequestsMessage = {
+                requests: []
+            };
+
+            let outgoingPlayers = _.keyBy(yield _.map([...currentSubstituteRequests.values()], request => self.getCachedUser(request.player)), user => self.getDocumentID(user));
+
+            for (let request of currentSubstituteRequests.entries()) {
+                substituteRequestsMessage.requests.push({
+                    id: request[0],
+                    game: request[1].game,
+                    role: ROLES[request[1].role],
+                    captain: self.getDocumentID(request[1].captain),
+                    player: outgoingPlayers[self.getDocumentID(request[1].player)],
+                    candidates: [...request[1].candidates],
+                    startTime: request[1].opened,
+                    endTime: request[1].opened + SUBSTITUTE_REQUEST_PERIOD
+                });
+            }
+
+            yield cache.setAsync('substituteRequests', JSON.stringify(substituteRequestsMessage));
+
+            io.sockets.emit('substituteRequestsUpdated', yield getSubstituteRequestsMessage());
+        });
+    }
+
+    /**
+     * @async
+     */
+    function getSubstituteRequestsMessage() {
+        return co(function*() {
+            let cacheResponse = yield cache.getAsync('substituteRequests');
+
+            if (!cacheResponse) {
+                yield updateSubstituteRequestsMessage();
+                cacheResponse = yield cache.getAsync('substituteRequests');
+            }
+
+            let substituteRequestsMessage = JSON.parse(cacheResponse);
+
+            substituteRequestsMessage.currentTime = Date.now();
+
+            return substituteRequestsMessage;
+        });
+    }
+
+    /**
+     * @async
+     */
+    function attemptSubstitution(requestID) {
+        return co(function*() {
+            if (!currentSubstituteRequests.has(requestID)) {
                 return;
             }
 
-            let request = currentSubstituteRequests.get(id);
+            let request = currentSubstituteRequests.get(requestID);
 
             request.timeout = null;
 
             let game = yield database.Game.findById(request.game);
 
             if (!game || game.status === 'completed' || game.status === 'aborted') {
-                self.removeSubstituteRequest(id);
+                yield self.removeSubstituteRequest(requestID);
                 return;
             }
 
-            let gamePlayerInfo = self.getGamePlayerInfo(game, request.player);
+            let gameUserInfo = self.getGameUserInfo(game, request.player);
 
-            if (!gamePlayerInfo || gamePlayerInfo.player.replaced) {
-                self.removeSubstituteRequest(id);
+            if (!gameUserInfo || !gameUserInfo.player || gameUserInfo.player.replaced) {
+                yield self.removeSubstituteRequest(requestID);
                 return;
             }
 
@@ -219,7 +315,7 @@ module.exports = function(app, chance, database, io, self) {
             else if (SUBSTITUTE_SELECTION_METHOD === 'closest') {
                 let player = yield database.User.findById(request.player).exec();
                 let candidatePlayers = yield database.User.find({
-                    _id: {
+                    '_id': {
                         $in: [...request.candidates]
                     }
                 }).exec();
@@ -237,7 +333,7 @@ module.exports = function(app, chance, database, io, self) {
             }
             catch (err) {
                 self.postToLog({
-                    description: `error in making substitution for game \`${game.id}\``,
+                    description: `error in making substitution for game \`${self.getDocumentID(game)}\``,
                     error: err
                 });
 
@@ -246,80 +342,91 @@ module.exports = function(app, chance, database, io, self) {
                 });
             }
 
-            self.removeSubstituteRequest(id);
+            yield self.removeSubstituteRequest(requestID);
         });
     }
 
+    /**
+     * @async
+     */
     function updateSubstituteApplication(requestID, player, active) {
-        if (!currentSubstituteRequests.has(requestID)) {
-            return;
-        }
-
-        let userRestrictions = self.getUserRestrictions(player);
-        let request = currentSubstituteRequests.get(requestID);
-
-        if (!_.includes(userRestrictions.aspects, 'sub')) {
-            if (active) {
-                request.candidates.add(player);
+        return co(function*() {
+            if (!currentSubstituteRequests.has(requestID)) {
+                return;
             }
-            else {
-                request.candidates.delete(player);
-            }
-        }
 
-        self.updateUserRestrictions(player);
-
-        updateSubstituteRequestsInfo();
-        io.sockets.emit('substituteRequestsUpdated', getCurrentSubstituteRequestsMessage());
-
-        if (!request.timeout) {
-            attemptSubstitution(requestID);
-        }
-    }
-
-    self.removeGameSubstituteRequests = function removeGameSubstituteRequests(gameID) {
-        for (let requestID of currentSubstituteRequests.keys()) {
+            let userRestrictions = yield self.getUserRestrictions(player);
             let request = currentSubstituteRequests.get(requestID);
 
-            if (request.game === gameID) {
-                self.removeSubstituteRequest(requestID);
+            if (!_.includes(userRestrictions.aspects, 'sub')) {
+                if (active) {
+                    request.candidates.add(player);
+                }
+                else {
+                    request.candidates.delete(player);
+                }
             }
-        }
-    };
 
-    self.requestSubstitute = function requestSubstitute(game, playerID) {
+            yield self.updateUserRestrictions(player);
+
+            yield updateSubstituteRequestsMessage();
+
+            if (!request.timeout) {
+                yield attemptSubstitution(request);
+            }
+        });
+    }
+
+    /**
+     * @async
+     */
+    self.removeGameSubstituteRequests = co.wrap(function* removeGameSubstituteRequests(game) {
+        let gameID = self.getDocumentID(game);
+
+        yield _([...currentSubstituteRequests.entries()]).filter(request => (self.getDocumentID(request[1].game) === gameID)).map(request => self.removeSubstituteRequest(request[0])).value();
+    });
+
+    /**
+     * @async
+     */
+    self.requestSubstitute = co.wrap(function* requestSubstitute(game, player) {
         if (!game || game.status === 'completed' || game.status === 'aborted') {
             return;
         }
 
-        let gamePlayerInfo = self.getGamePlayerInfo(game, playerID);
+        let gameUserInfo = self.getGameUserInfo(game, player);
 
-        if (!gamePlayerInfo || gamePlayerInfo.player.replaced) {
+        if (!gameUserInfo || !gameUserInfo.player || gameUserInfo.player.replaced) {
             return;
         }
 
-        if (currentSubstituteRequests.has(gamePlayerInfo.player.id)) {
+        if (currentSubstituteRequests.has(self.getDocumentID(gameUserInfo.player))) {
             return;
         }
 
-        currentSubstituteRequests.set(gamePlayerInfo.player.id, {
-            game: game.id,
-            role: gamePlayerInfo.role.role,
-            captain: self.getDocumentID(gamePlayerInfo.team.captain),
-            player: playerID,
+        currentSubstituteRequests.set(self.getDocumentID(gameUserInfo.player), {
+            game: self.getDocumentID(game),
+            role: gameUserInfo.role.role,
+            captain: self.getDocumentID(gameUserInfo.team.captain),
+            player: self.getDocumentID(player),
             opened: Date.now(),
             candidates: new Set(),
-            timeout: setTimeout(attemptSubstitution, SUBSTITUTE_REQUEST_PERIOD, gamePlayerInfo.player.id)
+            timeout: setTimeout(attemptSubstitution, SUBSTITUTE_REQUEST_PERIOD, self.getDocumentID(gameUserInfo.player))
         });
 
-        updateSubstituteRequestsInfo();
-        io.sockets.emit('substituteRequestsUpdated', getCurrentSubstituteRequestsMessage());
-    };
+        yield updateSubstituteRequestsMessage();
+    });
 
-    self.performSubstitution = co.wrap(function* performSubstitution(game, oldPlayerID, newPlayerID) {
-        if (!game || !oldPlayerID || !newPlayerID) {
+    /**
+     * @async
+     */
+    self.performSubstitution = co.wrap(function* performSubstitution(game, oldPlayer, newPlayer) {
+        if (!game || !oldPlayer || !newPlayer) {
             return;
         }
+
+        let oldPlayerID = self.getDocumentID(oldPlayer);
+        let newPlayerID = self.getDocumentID(newPlayer);
 
         _(game.teams).map(team => team.composition).flatten().forEach(function(role) {
             let player = _.find(role.players, function(currentPlayer) {
@@ -337,11 +444,14 @@ module.exports = function(app, chance, database, io, self) {
 
         yield game.save();
 
-        processGameUpdate(game);
+        yield self.processGameUpdate(game);
 
         yield self.updateServerPlayers(game);
     });
 
+    /**
+     * @async
+     */
     self.abortGame = co.wrap(function* abortGame(game) {
         if (!game) {
             return;
@@ -355,40 +465,42 @@ module.exports = function(app, chance, database, io, self) {
 
         yield game.save();
 
-        processGameUpdate(game);
-
-        self.removeGameSubstituteRequests(game.id);
-        self.updateLaunchStatus();
+        yield self.processGameUpdate(game);
+        yield self.removeGameSubstituteRequests(game);
+        yield self.updateLaunchStatus();
 
         yield self.shutdownGame(game);
     });
 
-    self.removeSubstituteRequest = function removeSubstituteRequest(id) {
-        if (currentSubstituteRequests.has(id)) {
-            let request = currentSubstituteRequests.get(id);
+    /**
+     * @async
+     */
+    self.removeSubstituteRequest = co.wrap(function* removeSubstituteRequest(requestID) {
+        if (currentSubstituteRequests.has(requestID)) {
+            let request = currentSubstituteRequests.get(requestID);
 
             if (request.timeout) {
                 clearTimeout(request.timeout);
             }
 
-            for (let candidate of request.candidates) {
-                self.updateUserRestrictions(candidate);
-            }
+            currentSubstituteRequests.delete(requestID);
 
-            currentSubstituteRequests.delete(id);
+            yield _.map(request.candidates, candidate => self.updateUserRestrictions(candidate));
 
-            updateSubstituteRequestsInfo();
-            io.sockets.emit('substituteRequestsUpdated', getCurrentSubstituteRequestsMessage());
+            yield updateSubstituteRequestsMessage();
         }
-    };
+    });
 
+    /**
+     * @async
+     */
     self.handleGameServerUpdate = co.wrap(function* handleGameServerUpdate(info) {
         let game = yield database.Game.findById(info.game);
 
         if (info.status === 'setup') {
             if (game.status !== 'initializing' && game.status !== 'launching') {
                 self.postToLog({
-                    description: `game \`${game.id}\` was ${game.status} but is being reported as set up`
+                    description: `game \`${self.getDocumentID(game)}\` was ${game.status} but is being reported as set up`
                 });
 
                 return;
@@ -398,12 +510,12 @@ module.exports = function(app, chance, database, io, self) {
 
             yield game.save();
 
-            processGameUpdate(game);
+            yield self.processGameUpdate(game);
         }
         else if (info.status === 'live') {
             if (game.status === 'aborted' || game.status === 'completed') {
                 self.postToLog({
-                    description: `game \`${game.id}\` was ${game.status} but is being reported as live`
+                    description: `game \`${self.getDocumentID(game)}\` was ${game.status} but is being reported as live`
                 });
 
                 return;
@@ -422,27 +534,33 @@ module.exports = function(app, chance, database, io, self) {
             }
 
             if (info.time) {
-                _.each(game.teams, function(team) {
-                    _.each(team.composition, function(role) {
-                        _.each(role.players, function(player) {
-                            let user = self.getCachedUser(self.getDocumentID(player.user));
+                let gameUsers = _.keyBy(yield database.User.find({
+                    '_id': {
+                        $in: _.map(self.getGameUsers(game), user => self.getDocumentID(user))
+                    }
+                }), user => self.getDocumentID(user));
+
+                for (let team of game.teams) {
+                    for (let role of team.composition) {
+                        for (let player of role.players) {
+                            let user = gameUsers[self.getDocumentID(player.user)];
 
                             if (user && _.has(info.time, user.steamID)) {
                                 player.time = info.time[user.steamID];
                             }
-                        });
-                    });
-                });
+                        }
+                    }
+                }
             }
 
             yield game.save();
 
-            processGameUpdate(game);
+            yield self.processGameUpdate(game);
         }
         else if (info.status === 'completed') {
             if (game.status === 'aborted' || game.status === 'completed') {
                 self.postToLog({
-                    description: `game \`${game.id}\` was ${game.status} but is being reported as completed`
+                    description: `game \`${self.getDocumentID(game)}\` was ${game.status} but is being reported as completed`
                 });
 
                 return;
@@ -461,38 +579,42 @@ module.exports = function(app, chance, database, io, self) {
             }
 
             if (info.time) {
-                _.each(game.teams, function(team) {
-                    _.each(team.composition, function(role) {
-                        _.each(role.players, function(player) {
-                            let user = self.getCachedUser(self.getDocumentID(player.user));
+                let gameUsers = _.keyBy(yield database.User.find({
+                    '_id': {
+                        $in: _.map(self.getGameUsers(game), user => self.getDocumentID(user))
+                    }
+                }), user => self.getDocumentID(user));
 
-                            if (_.has(info.time, user.steamID)) {
+                for (let team of game.teams) {
+                    for (let role of team.composition) {
+                        for (let player of role.players) {
+                            let user = gameUsers[self.getDocumentID(player.user)];
+
+                            if (user && _.has(info.time, user.steamID)) {
                                 player.time = info.time[user.steamID];
                             }
-                        });
-                    });
-                });
+                        }
+                    }
+                }
             }
 
             yield game.save();
 
-            processGameUpdate(game);
+            yield self.processGameUpdate(game);
             setTimeout(self.shutdownGame, POST_GAME_RESET_DELAY, game);
-            self.removeGameSubstituteRequests(game.id);
-            self.updateLaunchStatus();
+            yield self.removeGameSubstituteRequests(self.getDocumentID(game));
+            yield self.updateLaunchStatus();
 
             try {
                 yield rateGame(game);
 
-                yield _(game.teams).map(function(team) {
-                    return _.map(team.composition, function(role) {
-                        return _.map(role.players, player => player.user);
-                    });
-                }).flattenDeep().map(user => self.updatePlayerStats(self.getDocumentID(user))).value();
+                yield _.map(self.getGameUsers(game), user => self.updatePlayerStats(user));
+
+                yield self.invalidateGamePage(game);
             }
             catch (err) {
                 self.postToLog({
-                    description: `failed to update stats for game \`${game.id}\``,
+                    description: `failed to update stats for game \`${self.getDocumentID(game)}\``,
                     error: err
                 });
             }
@@ -512,6 +634,8 @@ module.exports = function(app, chance, database, io, self) {
                 }
 
                 yield game.save();
+
+                yield self.invalidateGamePage(game);
             }
         }
         else if (info.status === 'demoavailable') {
@@ -529,66 +653,44 @@ module.exports = function(app, chance, database, io, self) {
                 }
 
                 yield game.save();
+
+                yield self.invalidateGamePage(game);
             }
         }
     });
 
-    function getUserCurrentGame(userID) {
-        return co(function*() {
-            if (!currentGameCache.has(userID)) {
-                let game = yield database.Game.findOne({
-                    $or: [{
-                        'teams.captain': userID
-                    }, {
-                        'teams.composition.players': {
-                            $elemMatch: {
-                                user: userID,
-                                replaced: false
-                            }
-                        }
-                    }],
-                    status: {
-                        $in: ['launching', 'live']
-                    }
-                });
-
-                currentGameCache.set(userID, formatCurrentGameInfo(game));
-            }
-
-            return currentGameCache.get(userID);
-        });
-    }
-
-    io.sockets.on('connection', function(socket) {
-        socket.emit('substituteRequestsUpdated', getCurrentSubstituteRequestsMessage());
-    });
+    io.sockets.on('connection', co.wrap(function*(socket) {
+        socket.emit('substituteRequestsUpdated', yield getSubstituteRequestsMessage());
+    }));
 
     function onUserRequestSubstitute(info) {
         let userID = this.decoded_token.user;
 
-        return co(function*() {
+        co(function*() {
             let game = yield database.Game.findById(info.game);
 
-            let playerInfo = self.getGamePlayerInfo(game, info.player);
+            let playerInfo = self.getGameUserInfo(game, info.player);
 
             if (userID !== self.getDocumentID(playerInfo.team.captain)) {
                 return;
             }
 
-            self.requestSubstitute(game, info.player);
+            yield self.requestSubstitute(game, info.player);
         });
     }
 
     function onUserUpdateSubstituteApplication(info) {
         let userID = this.decoded_token.user;
 
-        updateSubstituteApplication(info.request, userID, info.status);
+        co(function*() {
+            yield updateSubstituteApplication(info.request, userID, info.status);
+        });
     }
 
     function onUserRetractSubstituteRequest(requestID) {
         let userID = this.decoded_token.user;
 
-        return co(function*() {
+        co(function*() {
             if (!currentSubstituteRequests.has(requestID)) {
                 return;
             }
@@ -596,20 +698,20 @@ module.exports = function(app, chance, database, io, self) {
             let request = currentSubstituteRequests.get(requestID);
             let game = yield database.Game.findById(request.game);
 
-            let playerInfo = self.getGamePlayerInfo(game, request.player);
+            let playerInfo = self.getGameUserInfo(game, request.player);
 
             if (userID !== self.getDocumentID(playerInfo.team.captain)) {
                 return;
             }
 
-            self.removeSubstituteRequest(requestID);
+            yield self.removeSubstituteRequest(requestID);
         });
     }
 
     io.sockets.on('authenticated', co.wrap(function*(socket) {
         let userID = socket.decoded_token.user;
 
-        socket.emit('currentGameUpdated', yield getUserCurrentGame(userID));
+        socket.emit('currentGameUpdated', yield getCurrentGame(userID));
 
         socket.removeAllListeners('requestSubstitute');
         socket.on('requestSubstitute', onUserRequestSubstitute);
@@ -621,18 +723,17 @@ module.exports = function(app, chance, database, io, self) {
         socket.on('retractSubstituteRequest', onUserRetractSubstituteRequest);
     }));
 
-    self.on('userRestrictionsUpdated', function(userID) {
-        let userRestrictions = self.getUserRestrictions(userID);
+    self.on('userRestrictionsUpdated', co.wrap(function*(userID) {
+        let userRestrictions = yield self.getUserRestrictions(userID);
 
         if (_.includes(userRestrictions.aspects, 'sub')) {
-            for (let request of currentSubstituteRequests) {
+            for (let request of currentSubstituteRequests.values()) {
                 request.candidates.delete(userID);
             }
         }
 
-        updateSubstituteRequestsInfo();
-        io.sockets.emit('substituteRequestsUpdated', getCurrentSubstituteRequestsMessage());
-    });
+        yield updateSubstituteRequestsMessage();
+    }));
 
     hbs.registerHelper('ratingChange', function(change) {
         if (change > 0) {
@@ -649,68 +750,126 @@ module.exports = function(app, chance, database, io, self) {
         return moment.duration(duration, 'seconds').format('m:ss', {trim: false});
     });
 
-    app.get('/game/:id', co.wrap(function*(req, res) {
-        let game = yield database.Game.findById(req.params.id).exec();
+    /**
+     * @async
+     */
+    self.invalidateGamePage = co.wrap(function* invalidateGamePage(game) {
+        yield cache.delAsync(`gamePage-${self.getDocumentID(game)}`);
+    });
 
-        if (!game) {
-            res.sendStatus(HttpStatus.NOT_FOUND);
-            return;
-        }
+    /**
+     * @async
+     */
+    self.invalidateUserGamePages = co.wrap(function* invalidateUserGamePages(user) {
+        let userID = self.getDocumentID(user);
 
-        game = game.toObject();
-
-        let ratings = {};
-
-        if (!HIDE_RATINGS) {
-            ratings = _.keyBy(yield database.Rating.find({
-                game: game.id
-            }).exec(), rating => self.getDocumentID(rating.user));
-        }
-
-        _.each(game.teams, function(team) {
-            team.captain = self.getCachedUser(self.getDocumentID(team.captain));
-
-            team.composition = _.sortBy(team.composition, function(role) {
-                return _(ROLES).keys().indexOf(role.role);
-            });
-
-            _.each(team.composition, function(role) {
-                role.role = _.assign({
-                    id: role.role
-                }, ROLES[role.role]);
-
-                _.each(role.players, function(player) {
-                    player.user = self.getCachedUser(self.getDocumentID(player.user));
-
-                    if (!HIDE_RATINGS) {
-                        let rating = ratings[self.getDocumentID(player.user)];
-
-                        if (rating) {
-                            player.rating = {
-                                rating: rating.after.mean,
-                                deviation: rating.after.deviation,
-                                change: rating.after.mean - rating.before.mean
-                            };
-                        }
+        let games = yield database.Game.find({
+            $or: [{
+                'teams.captain': userID
+            }, {
+                'teams.composition.players': {
+                    $elemMatch: {
+                        user: userID
                     }
+                }
+            }]
+        }).exec();
+
+        yield _.map(games, game => self.invalidateGamePage(game));
+    });
+
+    /**
+     * @async
+     */
+    self.getGamePage = co.wrap(function* getGamePage(game) {
+        let cacheResponse = yield cache.getAsync(`gamePage-${self.getDocumentID(game)}`);
+
+        let gamePage;
+
+        if (cacheResponse) {
+            gamePage = JSON.parse(cacheResponse);
+        }
+        else {
+            game = yield database.Game.findById(self.getDocumentID(game));
+
+            if (!game) {
+                return null;
+            }
+
+            gamePage = {
+                game: game.toObject()
+            };
+
+            let gameUsers = _.keyBy(yield database.User.find({
+                '_id': {
+                    $in: _.map(self.getGameUsers(game), user => self.getDocumentID(user))
+                }
+            }), user => self.getDocumentID(user));
+
+            let ratings = HIDE_RATINGS ? {} : _.keyBy(yield database.Rating.find({
+                game: self.getDocumentID(game)
+            }).exec(), rating => self.getDocumentID(rating.user));
+
+            _.each(gamePage.game.teams, function(team) {
+                team.captain = gameUsers[self.getDocumentID(team.captain)];
+
+                team.composition = _.sortBy(team.composition, function(role) {
+                    return _(ROLES).keys().indexOf(role.role);
+                });
+
+                _.each(team.composition, function(role) {
+                    role.role = _.assign({
+                        id: role.role
+                    }, ROLES[role.role]);
+
+                    _.each(role.players, function(player) {
+                        player.user = gameUsers[self.getDocumentID(player.user)];
+
+                        if (!HIDE_RATINGS) {
+                            let rating = ratings[self.getDocumentID(player.user)];
+
+                            if (rating) {
+                                player.rating = {
+                                    rating: rating.after.mean,
+                                    deviation: rating.after.deviation,
+                                    change: rating.after.mean - rating.before.mean
+                                };
+                            }
+                        }
+                    });
                 });
             });
-        });
 
-        res.render('game', {
-            game
+            yield cache.setAsync(`gamePage-${self.getDocumentID(game)}`, JSON.stringify(gamePage));
+        }
+
+        return gamePage;
+    });
+
+    app.get('/game/:id', co.wrap(function*(req, res) {
+        let gamePage = yield self.getGamePage(req.params.id);
+
+        if (gamePage) {
+            res.render('game', gamePage);
+        }
+        else {
+            res.status(HttpStatus.NOT_FOUND).render('notFound');
+        }
+    }));
+
+    app.get('/games/all', co.wrap(function*(req, res) {
+        res.render('fullGamesList', {
+            games: yield getGameList(true, self.isUserAdmin(req.user))
         });
     }));
 
-    app.get('/games/all', function(req, res) {
-        res.render('fullGamesList', {
-            games: !req.user || !req.user.admin ? fullFilteredGameListCache : fullGameListCache
-        });
-    });
-
-    app.get('/games', function(req, res) {
+    app.get('/games', co.wrap(function*(req, res) {
         res.render('recentGamesList', {
-            games: !req.user || !req.user.admin ? recentFilteredGameListCache : recentGameListCache
+            games: yield getGameList(false, self.isUserAdmin(req.user))
         });
+    }));
+
+    co(function*() {
+        yield updateSubstituteRequestsMessage();
     });
 };

@@ -3,18 +3,53 @@
 const _ = require('lodash');
 const co = require('co');
 const config = require('config');
+const ms = require('ms');
+const RateLimiter = require('limiter').RateLimiter;
 const twitter = require('twitter-text');
 
-module.exports = function(app, chance, database, io, self) {
+module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
+    const CHAT_LOG_CHANNEL = config.has('slack.channels.chatLog') ? config.get('slack.channels.chatLog') : '#chat-log';
+    const RATE_LIMIT = ms(config.get('app.chat.rateLimit'));
     const SHOW_CONNECTION_MESSAGES = config.get('app.chat.showConnectionMessages');
+    const UPDATE_ONLINE_USER_LIST_DEBOUNCE_MAX_WAIT = 5000;
+    const UPDATE_ONLINE_USER_LIST_DEBOUNCE_WAIT = 1000;
 
-    var onlineUsers = new Set();
+    var userChatLimiters = new Map();
 
-    self.getOnlineUserList = function() {
-        return _([...onlineUsers]).map(userID => self.getCachedUser(userID)).filter(user => (user.setUp && (user.authorized || user.admin))).sortBy('alias').value();
-    };
+    /**
+     * @async
+     */
+    const updateOnlineUserList = _.debounce(co.wrap(function* updateOnlineUserList() {
+        let users = yield _.map(self.getOnlineUsers(), user => self.getCachedUser(user));
+        let onlineList = _(users).filter(user => (user.setUp && (user.authorized || self.isUserAdmin(user)))).sortBy('alias').value();
 
+        yield cache.setAsync('onlineUsers', JSON.stringify(onlineList));
+
+        io.sockets.emit('onlineUserListUpdated', onlineList);
+    }), UPDATE_ONLINE_USER_LIST_DEBOUNCE_WAIT, {
+        maxWait: UPDATE_ONLINE_USER_LIST_DEBOUNCE_MAX_WAIT
+    });
+
+    /**
+     * @async
+     */
+    function getOnlineUserList() {
+        return co(function*() {
+            let cacheResponse = yield cache.getAsync('onlineUsers');
+
+            if (!cacheResponse) {
+                yield updateOnlineUserList();
+                cacheResponse = yield cache.getAsync('onlineUsers');
+            }
+
+            return JSON.parse(cacheResponse);
+        });
+    }
+
+    /**
+     * @async
+     */
     function postToMessageLog(message) {
         return co(function*() {
             let attachment;
@@ -23,7 +58,7 @@ module.exports = function(app, chance, database, io, self) {
                 attachment = {
                     fallback: `${message.user.alias}: ${message.body}`,
                     author_name: message.user.alias,
-                    author_link: `${BASE_URL}/user/${message.user.id}`,
+                    author_link: `${BASE_URL}/user/${self.getDocumentID(message.user)}`,
                     text: message.body
                 };
             }
@@ -35,23 +70,29 @@ module.exports = function(app, chance, database, io, self) {
             }
 
             yield self.postToSlack({
-                channel: '#chat-log',
+                channel: CHAT_LOG_CHANNEL,
                 attachments: [attachment]
             });
         });
     }
 
-    self.sendMessageToUser = function sendMessageToUser(userID, message) {
+    /**
+     * @async
+     */
+    self.sendMessageToUser = co.wrap(function* sendMessageToUser(user, message) {
         if (message.user) {
-            message.user = self.getCachedUser(message.user);
+            message.user = yield self.getCachedUser(message.user);
         }
 
-        self.emitToUser(userID, 'messageReceived', [message]);
-    };
+        self.emitToUser(user, 'messageReceived', [message]);
+    });
 
-    self.sendMessage = function sendMessage(message) {
+    /**
+     * @async
+     */
+    self.sendMessage = co.wrap(function* sendMessage(message) {
         if (message.user) {
-            message.user = self.getCachedUser(message.user);
+            message.user = yield self.getCachedUser(message.user);
         }
 
         if (message.body) {
@@ -59,15 +100,13 @@ module.exports = function(app, chance, database, io, self) {
         }
 
         io.sockets.emit('messageReceived', message);
-    };
+    });
 
-    self.on('userConnected', function(userID) {
-        onlineUsers.add(userID);
-
+    self.on('userConnected', co.wrap(function*(userID) {
         if (SHOW_CONNECTION_MESSAGES) {
-            let user = self.getCachedUser(userID);
+            let user = yield self.getCachedUser(userID);
 
-            if (user.setUp && (user.authorized || user.admin)) {
+            if (user.setUp && (user.authorized || self.isUserAdmin(user))) {
                 self.sendMessage({
                     user: userID,
                     action: 'connected'
@@ -75,14 +114,18 @@ module.exports = function(app, chance, database, io, self) {
             }
         }
 
-        io.sockets.emit('onlineUserListUpdated', self.getOnlineUserList());
-    });
+        if (!userChatLimiters.has(userID)) {
+            userChatLimiters.set(userID, new RateLimiter(1, RATE_LIMIT));
+        }
 
-    self.on('userDisconnected', function(userID) {
-        let user = self.getCachedUser(userID);
+        yield updateOnlineUserList();
+    }));
 
+    self.on('userDisconnected', co.wrap(function*(userID) {
         if (SHOW_CONNECTION_MESSAGES) {
-            if (user.setUp && (user.authorized || user.admin)) {
+            let user = yield self.getCachedUser(userID);
+
+            if (user.setUp && (user.authorized || self.isUserAdmin(user))) {
                 self.sendMessage({
                     user: userID,
                     action: 'disconnected'
@@ -90,22 +133,26 @@ module.exports = function(app, chance, database, io, self) {
             }
         }
 
-        onlineUsers.delete(userID);
+        yield updateOnlineUserList();
+    }));
 
-        io.sockets.emit('onlineUserListUpdated', self.getOnlineUserList());
-    });
-
-    io.sockets.on('connection', function(socket) {
-        socket.emit('onlineUserListUpdated', self.getOnlineUserList());
-    });
+    io.sockets.on('connection', co.wrap(function*(socket) {
+        socket.emit('onlineUserListUpdated', yield getOnlineUserList());
+    }));
 
     function onUserSendChatMessage(message) {
         let userID = this.decoded_token.user;
 
-        return co(function*() {
+        co(function*() {
+            let userChatLimiter = userChatLimiters.get(userID);
+
+            if (!userChatLimiter.tryRemoveTokens(1) && !self.isUserAdmin(userID)) {
+                return;
+            }
+
             self.markUserActivity(userID);
 
-            let userRestrictions = self.getUserRestrictions(userID);
+            let userRestrictions = yield self.getUserRestrictions(userID);
 
             if (!_.includes(userRestrictions.aspects, 'chat')) {
                 let trimmedMessage = _.chain(message).trim().truncate({
@@ -116,9 +163,7 @@ module.exports = function(app, chance, database, io, self) {
                     let highlighted = false;
 
                     if (/@everyone@/i.test(message)) {
-                        let user = self.getCachedUser(userID);
-
-                        if (user.admin) {
+                        if (self.isUserAdmin(userID)) {
                             highlighted = true;
                         }
                     }
@@ -127,17 +172,9 @@ module.exports = function(app, chance, database, io, self) {
                         usage: 'search',
                         sensitivity: 'base'
                     }) === 0));
-                    let mentions = [];
 
-                    for (let alias of mentionedAliases) {
-                        let user = yield self.getUserByAlias(alias);
-
-                        if (user) {
-                            mentions.push(user);
-                        }
-                    }
-
-                    mentions = _(mentions).uniqBy(user => user.id).map(user => user.toObject()).value();
+                    let mentions = yield _.map(mentionedAliases, alias => self.getUserByAlias(alias));
+                    mentions = yield _(mentions).compact().uniqBy(user => self.getDocumentID(user)).map(user => self.getCachedUser(user)).value();
 
                     self.sendMessage({
                         user: userID,
@@ -150,23 +187,28 @@ module.exports = function(app, chance, database, io, self) {
         });
     }
 
-    function onUserPurgeUser(victimID) {
+    function onUserPurgeUser(victim) {
         let userID = this.decoded_token.user;
 
-        let user = self.getCachedUser(userID);
+        co(function*() {
+            if (self.isUserAdmin(userID)) {
+                let victimID = self.getDocumentID(victim);
+                victim = yield self.getCachedUser(victim);
 
-        if (user.admin) {
-            let victim = self.getCachedUser(victimID);
+                self.postToAdminLog(userID, `purged the chat messages of \`<${BASE_URL}/player/${victim.steamID}|${victim.alias}>\``);
 
-            self.postToAdminLog(user.id, `purged the chat messages of \`<${BASE_URL}/player/${victim.steamID}|${victim.alias}>\``);
-
-            io.sockets.emit('userPurged', victimID);
-        }
+                io.sockets.emit('userPurged', victimID);
+            }
+        });
     }
 
     io.sockets.on('authenticated', function(socket) {
         socket.removeAllListeners('sendChatMessage');
         socket.on('sendChatMessage', onUserSendChatMessage);
         socket.on('purgeUser', onUserPurgeUser);
+    });
+
+    co(function*() {
+        yield updateOnlineUserList();
     });
 };

@@ -6,9 +6,10 @@ const config = require('config');
 const crypto = require('crypto');
 const HttpStatus = require('http-status-codes');
 const ms = require('ms');
+const RateLimiter = require('limiter').RateLimiter;
 const RCON = require('srcds-rcon');
 
-module.exports = function(app, chance, database, io, self) {
+module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const COMMAND_TIMEOUT = ms(config.get('app.servers.commandTimeout'));
     const GAME_SERVER_POOL = config.get('app.servers.pool');
@@ -20,6 +21,9 @@ module.exports = function(app, chance, database, io, self) {
     const ROLES = config.get('app.games.roles');
     const SERVER_TIMEOUT = ms(config.get('app.servers.serverTimeout'));
 
+    /**
+     * @async
+     */
     function connectToRCON(gameServer) {
         return co(function*() {
             let gameServerInfo = GAME_SERVER_POOL[gameServer];
@@ -32,6 +36,9 @@ module.exports = function(app, chance, database, io, self) {
         });
     }
 
+    /**
+     * @async
+     */
     function sendCommandsToServer(rcon, commands, timeout) {
         return co(function*() {
             let condensedCommands = [];
@@ -62,12 +69,18 @@ module.exports = function(app, chance, database, io, self) {
         });
     }
 
+    /**
+     * @async
+     */
     function disconnectFromRCON(rcon) {
         return co(function*() {
             yield rcon.disconnect();
         });
     }
 
+    /**
+     * @async
+     */
     function getServerStatus(gameServer) {
         return Promise.race([co(function*() {
             try {
@@ -125,16 +138,39 @@ module.exports = function(app, chance, database, io, self) {
         }, false)]);
     }
 
-    self.getServerStatuses = co.wrap(function* getServerStatuses() {
-        let statuses = yield _.map(GAME_SERVER_POOL, (gameServerInfo, gameServer) => getServerStatus(gameServer));
+    var serverUpdateLimiter = new RateLimiter(1, QUERY_INTERVAL);
 
-        return _.zipObject(_.keys(GAME_SERVER_POOL), statuses);
+    /**
+     * @async
+     */
+    self.getServerStatuses = co.wrap(function* getServerStatuses(forceUpdate) {
+        let serverStatuses;
+
+        if (serverUpdateLimiter.tryRemoveTokens(1) || forceUpdate) {
+            let updatedStatuses = yield _.map(_.keys(GAME_SERVER_POOL), gameServer => getServerStatus(gameServer));
+            serverStatuses = _.zipObject(_.keys(GAME_SERVER_POOL), updatedStatuses);
+
+            yield cache.setAsync('serverStatuses', JSON.stringify(serverStatuses));
+        }
+        else {
+            let cacheResponse = yield cache.getAsync('serverStatuses');
+
+            if (!cacheResponse) {
+                yield self.getServerStatuses(true);
+                cacheResponse = yield cache.getAsync('serverStatuses');
+            }
+
+            serverStatuses = JSON.parse(cacheResponse);
+        }
+
+        return serverStatuses;
     });
 
-    self.throttledGetServerStatuses = _.throttle(self.getServerStatuses, QUERY_INTERVAL);
-
-    self.getAvailableServers = co.wrap(function* getAvailableServers() {
-        let statuses = yield self.getServerStatuses();
+    /**
+     * @async
+     */
+    self.getAvailableServers = co.wrap(function* getAvailableServers(forceUpdate) {
+        let statuses = yield self.getServerStatuses(forceUpdate);
 
         return _(statuses).pickBy(function(status) {
             if (status.status === 'free') {
@@ -151,21 +187,29 @@ module.exports = function(app, chance, database, io, self) {
         }).keys().value();
     });
 
-    self.throttledGetAvailableServers = _.throttle(self.getAvailableServers, QUERY_INTERVAL);
-
+    /**
+     * @async
+     */
     self.sendRCONCommands = co.wrap(function* sendRCONCommands(server, commands) {
-        let rcon = yield connectToRCON(server);
+        let rcon;
 
         try {
+            rcon = yield connectToRCON(server);
+
             let result = yield sendCommandsToServer(rcon, commands);
 
             return result;
         }
         finally {
-            yield disconnectFromRCON(rcon);
+            if (rcon) {
+                yield disconnectFromRCON(rcon);
+            }
         }
     });
 
+    /**
+     * @async
+     */
     self.shutdownGame = co.wrap(function* shutdownGame(game) {
         yield _.map(GAME_SERVER_POOL, function(serverInfo, server) {
             return co(function*() {
@@ -190,6 +234,9 @@ module.exports = function(app, chance, database, io, self) {
         });
     });
 
+    /**
+     * @async
+     */
     self.updateServerPlayers = co.wrap(function* updateServerPlayers(game) {
         let serverStatus = yield getServerStatus(game.server);
 
@@ -209,64 +256,78 @@ module.exports = function(app, chance, database, io, self) {
             throw new Error('server not assigned to game');
         }
 
-        let populatedGame = yield game.populate('teams.composition.players.user').execPopulate();
+        let gameUsers = yield _.map(self.getGameUsers(game), user => self.getCachedUser(user));
+        let commands = _.map(gameUsers, function(user) {
+            let gameUserInfo = self.getGameUserInfo(game, user);
 
-        let commands = _(populatedGame.teams).map(function(team) {
-            return _.map(team.composition, function(role) {
-                return _.map(role.players, function(player) {
-                    if (!player.replaced) {
-                        let className = ROLES[role.role].class;
+            if (gameUserInfo.player) {
+                if (!gameUserInfo.player.replaced) {
+                    let className = ROLES[gameUserInfo.role.role].class;
 
-                        let gameTeam = 1;
-                        let gameClass = 0;
+                    let gameTeam = 1;
+                    let gameClass = 0;
 
-                        if (team.faction === 'RED') {
-                            gameTeam = 2;
-                        }
-                        else if (team.faction === 'BLU') {
-                            gameTeam = 3;
-                        }
-
-                        if (className === 'scout') {
-                            gameClass = 1;
-                        }
-                        else if (className === 'soldier') {
-                            gameClass = 3;
-                        }
-                        else if (className === 'pyro') {
-                            gameClass = 7;
-                        }
-                        else if (className === 'demoman') {
-                            gameClass = 4;
-                        }
-                        else if (className === 'heavy') {
-                            gameClass = 6;
-                        }
-                        else if (className === 'engineer') {
-                            gameClass = 9;
-                        }
-                        else if (className === 'medic') {
-                            gameClass = 5;
-                        }
-                        else if (className === 'sniper') {
-                            gameClass = 2;
-                        }
-                        else if (className === 'spy') {
-                            gameClass = 8;
-                        }
-
-                        return `pugchamp_game_player_add "${player.user.steamID}" "${player.user.alias}" ${gameTeam} ${gameClass}`;
+                    if (gameUserInfo.team.faction === 'RED') {
+                        gameTeam = 2;
                     }
-                    else {
-                        return `pugchamp_game_player_remove "${player.user.steamID}"`;
+                    else if (gameUserInfo.team.faction === 'BLU') {
+                        gameTeam = 3;
                     }
-                });
-            });
-        }).flattenDeep().compact().value();
+
+                    if (className === 'scout') {
+                        gameClass = 1;
+                    }
+                    else if (className === 'soldier') {
+                        gameClass = 3;
+                    }
+                    else if (className === 'pyro') {
+                        gameClass = 7;
+                    }
+                    else if (className === 'demoman') {
+                        gameClass = 4;
+                    }
+                    else if (className === 'heavy') {
+                        gameClass = 6;
+                    }
+                    else if (className === 'engineer') {
+                        gameClass = 9;
+                    }
+                    else if (className === 'medic') {
+                        gameClass = 5;
+                    }
+                    else if (className === 'sniper') {
+                        gameClass = 2;
+                    }
+                    else if (className === 'spy') {
+                        gameClass = 8;
+                    }
+
+                    return `pugchamp_game_player_add "${user.steamID}" "${user.alias}" ${gameTeam} ${gameClass}`;
+                }
+                else {
+                    return `pugchamp_game_player_remove "${user.steamID}"`;
+                }
+            }
+            else {
+                let gameTeam = 1;
+
+                if (gameUserInfo.team.faction === 'RED') {
+                    gameTeam = 2;
+                }
+                else if (gameUserInfo.team.faction === 'BLU') {
+                    gameTeam = 3;
+                }
+
+                return `pugchamp_game_player_add "${user.steamID}" "${user.alias}" ${gameTeam} 0`;
+            }
+        });
 
         yield self.sendRCONCommands(game.server, commands);
     });
 
+    /**
+     * @async
+     */
     self.initializeServer = co.wrap(function* initializeServer(game) {
         if (!game.server) {
             throw new Error('no server is currently assigned to this game');
@@ -275,19 +336,23 @@ module.exports = function(app, chance, database, io, self) {
         game.status = 'initializing';
         yield game.save();
 
-        let rcon = yield connectToRCON(game.server);
+        yield self.processGameUpdate(game);
+
+        let rcon;
 
         try {
+            rcon = yield connectToRCON(game.server);
+
             yield sendCommandsToServer(rcon, ['pugchamp_game_reset']);
 
             let gameServerInfo = GAME_SERVER_POOL[game.server];
             let hash = crypto.createHash('sha256');
-            hash.update(`${game.id}|${gameServerInfo.salt}`);
+            hash.update(`${self.getDocumentID(game)}|${gameServerInfo.salt}`);
             let key = hash.digest('hex');
 
             let mapInfo = MAPS[game.map];
 
-            yield sendCommandsToServer(rcon, [`pugchamp_api_url "${BASE_URL}/api/servers/${key}"`, `pugchamp_game_id "${game.id}"`, `pugchamp_game_map "${mapInfo.file}"`, `pugchamp_game_config "${mapInfo.config}"`]);
+            yield sendCommandsToServer(rcon, [`pugchamp_api_url "${BASE_URL}/api/servers/${key}"`, `pugchamp_game_id "${self.getDocumentID(game)}"`, `pugchamp_game_map "${mapInfo.file}"`, `pugchamp_game_config "${mapInfo.config}"`]);
 
             yield self.updateServerPlayers(game);
 
@@ -303,22 +368,30 @@ module.exports = function(app, chance, database, io, self) {
             }
         }
         finally {
-            yield disconnectFromRCON(rcon);
+            if (rcon) {
+                yield disconnectFromRCON(rcon);
+            }
         }
     });
 
+    /**
+     * @async
+     */
     self.assignGameToServer = co.wrap(function* assignGameToServer(game, server) {
         game.status = 'initializing';
+        game.server = null;
         yield game.save();
 
+        yield self.processGameUpdate(game);
+
         if (!server) {
-            let availableServers = yield self.getAvailableServers();
+            let availableServers = yield self.getAvailableServers(true);
 
             if (_.size(availableServers) === 0) {
                 for (let delay of RETRY_ATTEMPTS) {
                     yield self.promiseDelay(delay, null, false);
 
-                    availableServers = yield self.getAvailableServers();
+                    availableServers = yield self.getAvailableServers(true);
 
                     if (_.size(availableServers) !== 0) {
                         break;
@@ -336,12 +409,14 @@ module.exports = function(app, chance, database, io, self) {
         game.server = server;
         yield game.save();
 
+        yield self.processGameUpdate(game);
+
         try {
             yield self.initializeServer(game);
         }
         catch (err) {
             self.postToLog({
-                description: `encountered error while trying to initialize server \`${server}\` for game \`${game.id}\``,
+                description: `encountered error while trying to initialize server \`${server}\` for game \`${self.getDocumentID(game)}\``,
                 error: err
             });
 
@@ -358,7 +433,7 @@ module.exports = function(app, chance, database, io, self) {
                 }
                 catch (err) {
                     self.postToLog({
-                        description: `encountered error while trying to initialize server \`${server}\` for game \`${game.id}\``,
+                        description: `encountered error while trying to initialize server \`${server}\` for game \`${self.getDocumentID(game)}\``,
                         error: err
                     });
 
@@ -374,14 +449,7 @@ module.exports = function(app, chance, database, io, self) {
     });
 
     app.get('/servers', co.wrap(function*(req, res) {
-        let servers;
-
-        if (req.user && req.user.admin) {
-            servers = yield self.getServerStatuses();
-        }
-        else {
-            servers = yield self.throttledGetServerStatuses();
-        }
+        let servers = yield self.getServerStatuses(self.isUserAdmin(req.user));
 
         res.render('servers', {
             servers: _(servers).mapValues((status, name) => ({server: _.omit(GAME_SERVER_POOL[name], 'rcon', 'salt'), status: status})).value()
@@ -404,7 +472,7 @@ module.exports = function(app, chance, database, io, self) {
         let gameServer = GAME_SERVER_POOL[game.server];
 
         let hash = crypto.createHash('sha256');
-        hash.update(`${game.id}|${gameServer.salt}`);
+        hash.update(`${self.getDocumentID(game)}|${gameServer.salt}`);
         let key = hash.digest('hex');
 
         if (req.params.key !== key) {

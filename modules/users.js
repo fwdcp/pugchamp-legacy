@@ -13,7 +13,7 @@ const rp = require('request-promise');
 const socketioJwt = require('socketio-jwt');
 const url = require('url');
 
-module.exports = function(app, chance, database, io, self) {
+module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const CAPTAIN_GAME_REQUIREMENT = config.get('app.users.captainGameRequirement');
     const HIDE_DRAFT_STATS = config.get('app.users.hideDraftStats');
@@ -25,10 +25,13 @@ module.exports = function(app, chance, database, io, self) {
     const USER_AUTHORIZATIONS = config.has('app.users.authorizations') ? config.get('app.users.authorizations') : [];
     const USER_AUTHORIZATION_DEFAULT = config.has('app.users.authorizationDefault') ? config.get('app.users.authorizationDefault') : true;
     const USER_AUTHORIZATION_APIS = config.has('app.users.authorizationAPIs') ? config.get('app.users.authorizationAPIs') : [];
-    var userCache = new Map();
+
     var userRestrictions = new Map();
     var userSockets = new Map();
 
+    /**
+     * @async
+     */
     function checkUserAuthorization(user) {
         return co(function*() {
             for (let authorization of USER_AUTHORIZATIONS) {
@@ -67,18 +70,37 @@ module.exports = function(app, chance, database, io, self) {
         });
     }
 
-    self.getCachedUser = function getCachedUser(userID) {
-        return userCache.get(userID);
-    };
+    /**
+     * @async
+     */
+    self.updateCachedUser = co.wrap(function* updateCachedUser(user) {
+        let userID = self.getDocumentID(user);
+        user = yield database.User.findById(userID);
 
-    self.updateCachedUser = co.wrap(function* updateCachedUser(userID) {
-        let user = yield database.User.findById(userID);
-
-        userCache.set(userID, user.toObject());
+        yield cache.setAsync(`user-${userID}`, JSON.stringify(user.toObject()));
 
         self.emit('cachedUserUpdated', userID);
     });
 
+    /**
+     * @async
+     */
+    self.getCachedUser = co.wrap(function* getCachedUser(user) {
+        let userID = self.getDocumentID(user);
+
+        let cacheResponse = yield cache.getAsync(`user-${userID}`);
+
+        if (!cacheResponse) {
+            yield self.updateCachedUser(user);
+            cacheResponse = yield cache.getAsync(`user-${userID}`);
+        }
+
+        return JSON.parse(cacheResponse);
+    });
+
+    /**
+     * @async
+     */
     self.getUserByAlias = co.wrap(function* getUserByAlias(alias) {
         let user = yield database.User.findOne({
             $text: {
@@ -104,7 +126,9 @@ module.exports = function(app, chance, database, io, self) {
         return [...userSockets.keys()];
     };
 
-    self.emitToUser = function emitToUser(userID, name, args) {
+    self.emitToUser = function emitToUser(user, name, args) {
+        let userID = self.getDocumentID(user);
+
         if (userSockets.has(userID)) {
             for (let socketID of userSockets.get(userID)) {
                 let socket = io.sockets.connected[socketID];
@@ -116,28 +140,12 @@ module.exports = function(app, chance, database, io, self) {
         }
     };
 
-    self.getUserRestrictions = function getUserRestrictions(userID) {
-        const UNKNOWN_RESTRICTIONS = {
-            aspects: ['sub', 'start', 'captain', 'chat', 'support'],
-            reasons: ['There was an error retrieving your current restrictions.']
-        };
-
-        if (userID) {
-            if (userRestrictions.has(userID)) {
-                return userRestrictions.get(userID);
-            }
-            else {
-                self.updateUserRestrictions(userID);
-
-                return UNKNOWN_RESTRICTIONS;
-            }
-        }
-
-        return UNAUTHENTICATED_RESTRICTIONS;
-    };
-
-    self.updateUserRestrictions = co.wrap(function* updateUserRestrictions(userID) {
-        let user = yield database.User.findById(userID);
+    /**
+     * @async
+     */
+    self.updateUserRestrictions = co.wrap(function* updateUserRestrictions(user) {
+        let userID = self.getDocumentID(user);
+        user = yield database.User.findById(userID);
         let restrictions = [];
 
         const NOT_READY_RESTRICTIONS = {
@@ -156,11 +164,14 @@ module.exports = function(app, chance, database, io, self) {
             aspects: ['sub', 'start', 'captain'],
             reasons: ['You are not authorized to play in this system.']
         };
-        user.authorized = yield checkUserAuthorization(user);
-        yield user.save();
-        self.updateCachedUser(user.id);
+        let authorized = yield checkUserAuthorization(user);
+        if (user.authorized !== authorized) {
+            user.authorized = authorized;
+            yield user.save();
+            yield self.updateCachedUser(user);
+        }
         if (!user.authorized) {
-            if (!user.admin) {
+            if (!self.isUserAdmin(user)) {
                 restrictions.push(UNAUTHORIZED_USER_RESTRICTIONS);
             }
             else {
@@ -209,14 +220,7 @@ module.exports = function(app, chance, database, io, self) {
             aspects: ['captain'],
             reasons: ['You cannot captain because you do not meet the requirement for games played.']
         };
-        if (user.stats.roles) {
-            let gamesPlayed = _.reduce(user.stats.roles, (sum, stat) => sum + stat.count, 0);
-
-            if (gamesPlayed < CAPTAIN_GAME_REQUIREMENT) {
-                restrictions.push(MIN_GAME_RESTRICTIONS);
-            }
-        }
-        else {
+        if (user.stats.total.player < CAPTAIN_GAME_REQUIREMENT) {
             restrictions.push(MIN_GAME_RESTRICTIONS);
         }
 
@@ -224,13 +228,13 @@ module.exports = function(app, chance, database, io, self) {
             aspects: ['captain'],
             reasons: ['You are currently on a captain cooldown for allowing a draft to expire.']
         };
-        if (self.isOnDraftExpireCooldown(userID)) {
+        if (self.isOnDraftExpireCooldown(user)) {
             restrictions.push(DRAFT_EXPIRE_COOLDOWN_RESTRICTIONS);
         }
 
         let activeRestrictions = yield database.Restriction.find({
-            user: userID,
-            active: true
+            'user': userID,
+            'active': true
         });
 
         for (let restriction of activeRestrictions) {
@@ -274,12 +278,30 @@ module.exports = function(app, chance, database, io, self) {
 
         self.emit('userRestrictionsUpdated', userID);
 
-        return combinedRestrictions;
+        yield self.invalidatePlayerPage(user);
     });
 
-    self.on('userRestrictionsUpdated', function(userID) {
-        self.emitToUser(userID, 'restrictionsUpdated', [self.getUserRestrictions(userID)]);
+    /**
+     * @async
+     */
+    self.getUserRestrictions = co.wrap(function* getUserRestrictions(user) {
+        let userID = self.getDocumentID(user);
+
+        if (userID) {
+            if (!userRestrictions.has(userID)) {
+                yield self.updateUserRestrictions(user);
+            }
+
+            return userRestrictions.get(userID);
+        }
+        else {
+            return UNAUTHENTICATED_RESTRICTIONS;
+        }
     });
+
+    self.on('userRestrictionsUpdated', co.wrap(function*(userID) {
+        self.emitToUser(userID, 'restrictionsUpdated', [yield self.getUserRestrictions(userID)]);
+    }));
 
     passport.use(new OpenIDStrategy({
         providerURL: 'http://steamcommunity.com/openid',
@@ -302,7 +324,7 @@ module.exports = function(app, chance, database, io, self) {
 
         try {
             let user = yield database.User.findOne({
-                steamID: id
+                'steamID': id
             });
 
             if (!user) {
@@ -354,7 +376,7 @@ module.exports = function(app, chance, database, io, self) {
         }
     })));
     passport.serializeUser(function(user, done) {
-        done(null, user._id);
+        done(null, self.getDocumentID(user));
     });
     passport.deserializeUser(function(id, done) {
         database.User.findById(id, done);
@@ -429,9 +451,8 @@ module.exports = function(app, chance, database, io, self) {
     io.sockets.on('authenticated', co.wrap(function*(socket) {
         let userID = socket.decoded_token.user;
 
-        yield self.updateCachedUser(userID);
-
-        socket.emit('userInfoUpdated', self.getCachedUser(userID));
+        let user = yield self.getCachedUser(userID);
+        socket.emit('userInfoUpdated', user);
 
         if (!userSockets.has(userID)) {
             userSockets.set(userID, new Set([socket.id]));
@@ -443,7 +464,7 @@ module.exports = function(app, chance, database, io, self) {
         else {
             userSockets.get(userID).add(socket.id);
 
-            socket.emit('restrictionsUpdated', self.getUserRestrictions(userID));
+            socket.emit('restrictionsUpdated', yield self.getUserRestrictions(userID));
         }
 
         socket.removeAllListeners('disconnect');
@@ -472,12 +493,16 @@ module.exports = function(app, chance, database, io, self) {
         if (req.user) {
             let errors = [];
 
+            let majorChange = false;
+
             if (req.body.alias && !req.user.alias) {
                 if (/^[A-Za-z0-9_]{1,15}$/.test(req.body.alias)) {
                     let existingUser = yield self.getUserByAlias(req.body.alias);
 
                     if (!existingUser) {
                         req.user.alias = req.body.alias;
+
+                        majorChange = true;
                     }
                     else {
                         errors.push('The alias you selected is not available.');
@@ -501,6 +526,10 @@ module.exports = function(app, chance, database, io, self) {
 
             try {
                 yield req.user.save();
+
+                if (majorChange) {
+                    yield self.invalidateUserGamePages(req.user);
+                }
             }
             catch (err) {
                 self.postToLog({
@@ -519,15 +548,4 @@ module.exports = function(app, chance, database, io, self) {
             res.redirect('/user/login');
         }
     }));
-
-    co(function*() {
-        let users = yield database.User.find({}, '_id steamID').exec();
-
-        for (let user of users) {
-            user.authorized = yield checkUserAuthorization(user);
-            yield user.save();
-
-            yield self.updateCachedUser(user.id);
-        }
-    });
 };

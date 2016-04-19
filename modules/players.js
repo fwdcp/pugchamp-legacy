@@ -9,7 +9,7 @@ const HttpStatus = require('http-status-codes');
 const humanize = require('humanize');
 const math = require('mathjs');
 
-module.exports = function(app, chance, database, io, self) {
+module.exports = function(app, cache, chance, database, io, self) {
     const ONE_DEVIATION_LOWER_BOUND = 0.16;
     const ONE_DEVIATION_UPPER_BOUND = 0.84;
 
@@ -56,56 +56,45 @@ module.exports = function(app, chance, database, io, self) {
     const UPDATE_PLAYER_CACHE_DEBOUNCE_MAX_WAIT = 60000;
     const UPDATE_PLAYER_CACHE_DEBOUNCE_WAIT = 5000;
 
-    function shouldPubliclyListPlayer(player) {
+    function isActivePlayer(player) {
         if (!player.authorized) {
             return false;
         }
 
-        if (player.stats.roles) {
-            for (let stat of player.stats.roles) {
-                if (stat.count > 0) {
-                    return true;
-                }
-            }
-        }
-
-        if (player.stats.draft) {
-            for (let stat of player.stats.draft) {
-                if (stat.type === 'captain' && stat.count > 0) {
-                    return true;
-                }
-            }
+        if (player.stats.total.captain > 0 || player.stats.total.player > 0) {
+            return true;
         }
 
         return false;
     }
 
-    function formatCachedPlayerWithRating(player) {
-        return {
-            id: player.id,
-            alias: player.alias,
-            steamID: player.steamID,
-            ratingMean: math.round(player.stats.rating.mean),
-            ratingDeviation: math.round(player.stats.rating.deviation),
-            ratingLowerBound: math.round(player.stats.rating.low),
-            ratingUpperBound: math.round(player.stats.rating.high),
-            captainScore: player.stats.captainScore && _.isNumber(player.stats.captainScore.center) ? math.round(player.stats.captainScore.center, 3) : null,
-            playerScore: player.stats.playerScore && _.isNumber(player.stats.playerScore.center) ? math.round(player.stats.playerScore.center, 3) : null
-        };
+    function formatPlayerListing(player, includeRating) {
+        if (includeRating) {
+            return {
+                id: self.getDocumentID(player),
+                alias: player.alias,
+                steamID: player.steamID,
+                ratingMean: math.round(player.stats.rating.mean),
+                ratingDeviation: math.round(player.stats.rating.deviation),
+                ratingLowerBound: math.round(player.stats.rating.low),
+                ratingUpperBound: math.round(player.stats.rating.high),
+                captainScore: player.stats.captainScore && _.isNumber(player.stats.captainScore.center) ? math.round(player.stats.captainScore.center, 3) : null,
+                playerScore: player.stats.playerScore && _.isNumber(player.stats.playerScore.center) ? math.round(player.stats.playerScore.center, 3) : null
+            };
+        }
+        else {
+            return {
+                id: self.getDocumentID(player),
+                alias: player.alias,
+                steamID: player.steamID
+            };
+        }
     }
 
-    function formatCachedPlayerWithoutRating(player) {
-        return {
-            id: player.id,
-            alias: player.alias,
-            steamID: player.steamID
-        };
-    }
-
-    var playerListCache;
-    var playerListFilteredCache;
-
-    var updatePlayerCache = _.debounce(co.wrap(function* updatePlayerCache() {
+    /**
+     * @async
+     */
+    const updatePlayerList = _.debounce(co.wrap(function* updatePlayerCache() {
         let users = yield database.User.find({}).exec();
 
         let players = _.orderBy(users, [function(player) {
@@ -116,27 +105,51 @@ module.exports = function(app, chance, database, io, self) {
             return player.stats.captainScore ? player.stats.captainScore.center : null;
         }], ['desc', 'desc', 'desc']);
 
-        if (!HIDE_RATINGS) {
-            playerListCache = _.map(players, formatCachedPlayerWithRating);
-            playerListFilteredCache = _(players).filter(shouldPubliclyListPlayer).map(formatCachedPlayerWithRating).value();
-        }
-        else {
-            playerListCache = _.map(players, formatCachedPlayerWithoutRating);
-            playerListFilteredCache = _(players).filter(shouldPubliclyListPlayer).map(formatCachedPlayerWithoutRating).value();
-        }
+        yield cache.setAsync('allPlayerList', JSON.stringify(_.map(players, user => formatPlayerListing(user, !HIDE_RATINGS))));
+        yield cache.setAsync('activePlayerList', JSON.stringify(_(players).filter(user => isActivePlayer(user)).map(user => formatPlayerListing(user, !HIDE_RATINGS)).value()));
     }), UPDATE_PLAYER_CACHE_DEBOUNCE_WAIT, {
         maxWait: UPDATE_PLAYER_CACHE_DEBOUNCE_MAX_WAIT
     });
 
-    self.on('cachedUserUpdated', function() {
-        updatePlayerCache();
-    });
+    /**
+     * @async
+     */
+    function getPlayerList(inactive) {
+        return co(function*() {
+            let keyName;
 
-    self.updatePlayerStats = co.wrap(function*(playerID) {
-        let player = yield database.User.findById(playerID);
+            if (inactive) {
+                keyName = 'allPlayerList';
+            }
+            else {
+                keyName = 'activePlayerList';
+            }
+
+            let cacheResponse = yield cache.getAsync(keyName);
+
+            if (!cacheResponse) {
+                yield updatePlayerList();
+                cacheResponse = yield cache.getAsync(keyName);
+            }
+
+            return JSON.parse(cacheResponse);
+        });
+    }
+
+    self.on('cachedUserUpdated', co.wrap(function*(user) {
+        yield self.invalidatePlayerPage(user);
+        yield updatePlayerList();
+    }));
+
+    /**
+     * @async
+     */
+    self.updatePlayerStats = co.wrap(function* updatePlayerStats(player) {
+        let playerID = self.getDocumentID(player);
+        player = yield database.User.findById(playerID);
 
         let captainGames = yield database.Game.find({
-            'teams.captain': player.id,
+            'teams.captain': self.getDocumentID(player),
             'status': 'completed',
             'score': {
                 $exists: true
@@ -145,7 +158,7 @@ module.exports = function(app, chance, database, io, self) {
 
         let captainScores = _.map(captainGames, function(game) {
             let teamIndex = _.findIndex(game.teams, function(team) {
-                return self.getDocumentID(team.captain) === player.id;
+                return self.getDocumentID(team.captain) === self.getDocumentID(player);
             });
 
             let differential = 0;
@@ -165,7 +178,7 @@ module.exports = function(app, chance, database, io, self) {
         player.stats.captainScore = calculatePredictionInterval(captainScores);
 
         let playerGames = yield database.Game.find({
-            'teams.composition.players.user': player.id,
+            'teams.composition.players.user': self.getDocumentID(player),
             'status': 'completed',
             'score': {
                 $exists: true
@@ -173,8 +186,8 @@ module.exports = function(app, chance, database, io, self) {
         });
 
         let playerScores = _.map(playerGames, function(game) {
-            let gamePlayerInfo = self.getGamePlayerInfo(game, player.id);
-            let teamIndex = _.indexOf(game.teams, gamePlayerInfo.team);
+            let gameUserInfo = self.getGameUserInfo(game, player);
+            let teamIndex = _.indexOf(game.teams, gameUserInfo.team);
 
             let differential = 0;
 
@@ -195,7 +208,7 @@ module.exports = function(app, chance, database, io, self) {
         let draftStats = [];
 
         let captainGameCount = yield database.Game.count({
-            'teams.captain': player.id
+            'teams.captain': self.getDocumentID(player)
         }).count().exec();
         draftStats.push({
             type: 'captain',
@@ -215,7 +228,7 @@ module.exports = function(app, chance, database, io, self) {
             'draft.choices': {
                 $elemMatch: {
                     'type': 'playerPick',
-                    'player': player.id
+                    'player': self.getDocumentID(player)
                 }
             }
         }).exec();
@@ -226,7 +239,7 @@ module.exports = function(app, chance, database, io, self) {
                 if (choice.type === 'playerPick') {
                     position++;
 
-                    if (self.getDocumentID(choice.player) === self.getDocumentID(player.id)) {
+                    if (self.getDocumentID(choice.player) === self.getDocumentID(player)) {
                         break;
                     }
                 }
@@ -251,13 +264,13 @@ module.exports = function(app, chance, database, io, self) {
                 'draft.choices': {
                     $elemMatch: {
                         'type': 'playerPick',
-                        'player': player.id
+                        'player': self.getDocumentID(player)
                     }
                 }
             }, {
-                'teams.captain': player.id
+                'teams.captain': self.getDocumentID(player)
             }],
-            'draft.pool.players.user': player.id
+            'draft.pool.players.user': self.getDocumentID(player)
         }).count().exec();
         draftStats.push({
             type: 'undrafted',
@@ -267,7 +280,7 @@ module.exports = function(app, chance, database, io, self) {
         player.stats.draft = draftStats;
 
         let rating = yield database.Rating.findOne({
-            user: player.id
+            user: self.getDocumentID(player)
         }).sort('-date').exec();
 
         if (rating) {
@@ -279,7 +292,7 @@ module.exports = function(app, chance, database, io, self) {
             'teams.composition': {
                 $elemMatch: {
                     'role': role,
-                    'players.user': player.id
+                    'players.user': self.getDocumentID(player)
                 }
             }
         }).count().exec().then(count => ({
@@ -287,9 +300,16 @@ module.exports = function(app, chance, database, io, self) {
             count
         }))).value();
 
+        player.stats.total.captain = yield database.Game.count({
+            'teams.captain': self.getDocumentID(player)
+        }).count().exec();
+        player.stats.total.player = yield database.Game.count({
+            'teams.composition.players.user': self.getDocumentID(player)
+        }).count().exec();
+
         yield player.save();
 
-        yield self.updateCachedUser(player.id);
+        yield self.updateCachedUser(player);
     });
 
     hbs.registerHelper('draftStatToRow', function(stat) {
@@ -310,76 +330,110 @@ module.exports = function(app, chance, database, io, self) {
         return JSON.stringify([ROLES[stat.role].name, stat.count]);
     });
 
-    app.get('/player/:steam', co.wrap(function*(req, res) {
-        let user = yield database.User.findOne({
-            steamID: req.params.steam
-        }).exec();
+    /**
+     * @async
+     */
+    self.invalidatePlayerPage = co.wrap(function* invalidatePlayerPage(player) {
+        yield cache.delAsync(`playerPage-${self.getDocumentID(player)}`);
+    });
 
-        if (!user) {
-            res.sendStatus(HttpStatus.NOT_FOUND);
-            return;
+    /**
+     * @async
+     */
+    self.getPlayerPage = co.wrap(function* getPlayerPage(player) {
+        let cacheResponse = yield cache.getAsync(`playerPage-${self.getDocumentID(player)}`);
+
+        let playerPage;
+
+        if (cacheResponse) {
+            playerPage = JSON.parse(cacheResponse);
+        }
+        else {
+            let user = yield database.User.findById(self.getDocumentID(player));
+
+            if (!user) {
+                return null;
+            }
+
+            let games = yield database.Game.find({
+                $or: [{
+                    'teams.captain': self.getDocumentID(user)
+                }, {
+                    'teams.composition.players': {
+                        $elemMatch: {
+                            user: self.getDocumentID(user)
+                        }
+                    }
+                }],
+                status: {
+                    $in: ['launching', 'live', 'completed']
+                }
+            }).sort('-date').populate('teams.captain').exec();
+
+            let restrictions = yield database.Restriction.find({
+                'user': self.getDocumentID(user)
+            }).exec();
+
+            playerPage = {
+                user: user.toObject(),
+                games: _(games).map(function(game) {
+                    let revisedGame = _.omit(game.toObject(), 'draft', 'server', 'links');
+
+                    if (self.getDocumentID(user) === self.getDocumentID(game.teams[0].captain)) {
+                        revisedGame.reverseTeams = false;
+                    }
+                    else if (self.getDocumentID(user) === self.getDocumentID(game.teams[1].captain)) {
+                        revisedGame.reverseTeams = true;
+                    }
+                    else {
+                        let gameUserInfo = self.getGameUserInfo(game, user);
+                        let team = _.indexOf(game.teams, gameUserInfo.team);
+
+                        revisedGame.reverseTeams = team !== 0;
+                    }
+
+                    return revisedGame;
+                }).value(),
+                restrictions: _(restrictions).map(restriction => restriction.toObject()).orderBy(['active', 'expires'], ['desc', 'desc']).value(),
+                restrictionDurations: RESTRICTION_DURATIONS
+            };
+
+            if (!HIDE_RATINGS) {
+                let ratings = yield database.Rating.find({
+                    'user': self.getDocumentID(user)
+                }).exec();
+
+                playerPage.ratings = _(ratings).map(rating => rating.toObject()).sortBy('date').value();
+            }
+
+            yield cache.setAsync(`playerPage-${self.getDocumentID(user)}`, JSON.stringify(playerPage));
         }
 
-        let games = yield database.Game.find({
-            $or: [{
-                'teams.captain': user.id
-            }, {
-                'teams.composition.players': {
-                    $elemMatch: {
-                        user: user.id
-                    }
-                }
-            }],
-            status: {
-                $in: ['launching', 'live', 'completed']
-            }
-        }).sort('-date').populate('teams.captain').exec();
+        return playerPage;
+    });
 
-        let ratings = yield database.Rating.find({
-            'user': user.id
+    app.get('/player/:steam', co.wrap(function*(req, res) {
+        let user = yield database.User.findOne({
+            'steamID': req.params.steam
         }).exec();
 
-        let restrictions = yield database.Restriction.find({
-            user: user.id
-        }).exec();
+        let playerPage = yield self.getPlayerPage(user);
 
-        res.render('player', {
-            user: user.toObject(),
-            games: _(games).map(function(game) {
-                let revisedGame = _.omit(game.toObject(), 'draft', 'server', 'links');
+        if (playerPage) {
+            res.render('player', playerPage);
+        }
+        else {
+            res.status(HttpStatus.NOT_FOUND).render('notFound');
+        }
+    }));
 
-                if (self.getDocumentID(user) === self.getDocumentID(game.teams[0].captain)) {
-                    revisedGame.reverseTeams = false;
-                }
-                else if (self.getDocumentID(user) === self.getDocumentID(game.teams[1].captain)) {
-                    revisedGame.reverseTeams = true;
-                }
-                else {
-                    let gamePlayerInfo = self.getGamePlayerInfo(game, user.id);
-                    let team = _.indexOf(game.teams, gamePlayerInfo.team);
-
-                    revisedGame.reverseTeams = team !== 0;
-                }
-
-                return revisedGame;
-            }).value(),
-            ratings: !HIDE_RATINGS ? _(ratings).map(rating => rating.toObject()).sortBy('date').value() : undefined,
-            restrictions: _(restrictions).map(restriction => restriction.toObject()).orderBy(['active', 'expires'], ['desc', 'desc']).value(),
-            restrictionDurations: RESTRICTION_DURATIONS
+    app.get('/players', co.wrap(function*(req, res) {
+        res.render('playerList', {
+            players: yield getPlayerList(self.isUserAdmin(req.user))
         });
     }));
 
-    app.get('/players', function(req, res) {
-        res.render('playerList', {
-            players: !req.user || !req.user.admin ? playerListFilteredCache : playerListCache
-        });
-    });
-
     co(function*() {
-        let users = yield database.User.find({}, '_id').exec();
-
-        for (let user of users) {
-            yield self.updatePlayerStats(user.id);
-        }
+        yield updatePlayerList();
     });
 };

@@ -1,15 +1,15 @@
 'use strict';
 
-module.exports = function(app, chance, database, io, self) {
+module.exports = function(app, cache, chance, database, io, self) {
     /* eslint global-require: 0 */
-    require('./common')(app, chance, database, io, self);
-    require('./slack')(app, chance, database, io, self);
-    require('./users')(app, chance, database, io, self);
-    require('./chat')(app, chance, database, io, self);
-    require('./servers')(app, chance, database, io, self);
-    require('./games')(app, chance, database, io, self);
-    require('./draft')(app, chance, database, io, self);
-    require('./launch')(app, chance, database, io, self);
-    require('./players')(app, chance, database, io, self);
-    require('./admin')(app, chance, database, io, self);
+    require('./common')(app, cache, chance, database, io, self);
+    require('./slack')(app, cache, chance, database, io, self);
+    require('./users')(app, cache, chance, database, io, self);
+    require('./chat')(app, cache, chance, database, io, self);
+    require('./servers')(app, cache, chance, database, io, self);
+    require('./games')(app, cache, chance, database, io, self);
+    require('./draft')(app, cache, chance, database, io, self);
+    require('./launch')(app, cache, chance, database, io, self);
+    require('./players')(app, cache, chance, database, io, self);
+    require('./admin')(app, cache, chance, database, io, self);
 };
