@@ -125,7 +125,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     })).value();
                 }
 
-                yield cache.setAsync(`currentGame-${self.getDocumentID(user)}`, currentGameInfo);
+                yield cache.setAsync(`currentGame-${self.getDocumentID(user)}`, JSON.stringify(currentGameInfo));
 
                 self.emitToUser(user, 'currentGameUpdated', [currentGameInfo]);
             }
@@ -153,10 +153,10 @@ module.exports = function(app, cache, chance, database, io, self) {
         return co(function*() {
             let games = yield database.Game.find({}).sort('-date').select('date status teams.faction teams.captain score map duration').populate('teams.captain', 'alias steamID').exec();
 
-            yield cache.setAsync('allGameList', _.map(games, game => game.toObject()));
-            yield cache.setAsync('allVisibleGameList', _(games).filter(game => game.status !== 'initializing' && game.status !== 'aborted').map(game => game.toObject()).value());
-            yield cache.setAsync('recentGameList', _(games).takeWhile(game => moment().diff(game.date, 'days') < 1).map(game => game.toObject()).value());
-            yield cache.setAsync('recentVisibleGameList', _(games).takeWhile(game => moment().diff(game.date, 'days') < 1).filter(game => game.status !== 'initializing' && game.status !== 'aborted').map(game => game.toObject()).value());
+            yield cache.setAsync('allGameList', JSON.stringify(_.map(games, game => game.toObject())));
+            yield cache.setAsync('allVisibleGameList', JSON.stringify(_(games).filter(game => game.status !== 'initializing' && game.status !== 'aborted').map(game => game.toObject()).value()));
+            yield cache.setAsync('recentGameList', JSON.stringify(_(games).takeWhile(game => moment().diff(game.date, 'days') < 1).map(game => game.toObject()).value()));
+            yield cache.setAsync('recentVisibleGameList', JSON.stringify(_(games).takeWhile(game => moment().diff(game.date, 'days') < 1).filter(game => game.status !== 'initializing' && game.status !== 'aborted').map(game => game.toObject()).value()));
         });
     }
 
@@ -793,7 +793,9 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return null;
             }
 
-            gamePage = game.toObject();
+            gamePage = {
+                game: game.toObject()
+            };
 
             let gameUsers = _.keyBy(yield database.User.find({
                 '_id': {
@@ -805,7 +807,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 game: game.id
             }).exec(), rating => self.getDocumentID(rating.user));
 
-            _.each(gamePage.teams, function(team) {
+            _.each(gamePage.game.teams, function(team) {
                 team.captain = gameUsers[self.getDocumentID(team.captain)];
 
                 team.composition = _.sortBy(team.composition, function(role) {
@@ -835,7 +837,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 });
             });
 
-            yield cache.setAsync(`gamePage-${self.getDocumentID(game)}`, gamePage);
+            yield cache.setAsync(`gamePage-${self.getDocumentID(game)}`, JSON.stringify(gamePage));
         }
 
         return gamePage;

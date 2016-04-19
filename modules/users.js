@@ -25,6 +25,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     const USER_AUTHORIZATIONS = config.has('app.users.authorizations') ? config.get('app.users.authorizations') : [];
     const USER_AUTHORIZATION_DEFAULT = config.has('app.users.authorizationDefault') ? config.get('app.users.authorizationDefault') : true;
     const USER_AUTHORIZATION_APIS = config.has('app.users.authorizationAPIs') ? config.get('app.users.authorizationAPIs') : [];
+
     var userRestrictions = new Map();
     var userSockets = new Map();
 

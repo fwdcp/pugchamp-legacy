@@ -105,8 +105,8 @@ module.exports = function(app, cache, chance, database, io, self) {
             return player.stats.captainScore ? player.stats.captainScore.center : null;
         }], ['desc', 'desc', 'desc']);
 
-        yield cache.setAsync('allPlayerList', _.map(players, user => formatPlayerListing(user, !HIDE_RATINGS)));
-        yield cache.setAsync('activePlayerList', _(players).filter(user => isActivePlayer(user)).map(user => formatPlayerListing(user, !HIDE_RATINGS)).value());
+        yield cache.setAsync('allPlayerList', JSON.stringify(_.map(players, user => formatPlayerListing(user, !HIDE_RATINGS))));
+        yield cache.setAsync('activePlayerList', JSON.stringify(_(players).filter(user => isActivePlayer(user)).map(user => formatPlayerListing(user, !HIDE_RATINGS)).value()));
     }), UPDATE_PLAYER_CACHE_DEBOUNCE_WAIT, {
         maxWait: UPDATE_PLAYER_CACHE_DEBOUNCE_MAX_WAIT
     });
@@ -406,7 +406,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 playerPage.ratings = _(ratings).map(rating => rating.toObject()).sortBy('date').value();
             }
 
-            yield cache.setAsync(`playerPage-${self.getDocumentID(user)}`, playerPage);
+            yield cache.setAsync(`playerPage-${self.getDocumentID(user)}`, JSON.stringify(playerPage));
         }
 
         return playerPage;
