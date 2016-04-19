@@ -341,13 +341,14 @@ module.exports = function(app, cache, chance, database, io, self) {
             }).value();
             game.draft.pool.captains = captainPool;
 
+            let usersToUpdate = _.unionBy(captainPool, fullPlayerList, user => self.getDocumentID(user));
+
             try {
                 yield game.save();
 
                 yield self.processGameUpdate(game);
 
                 yield _.map(_.unionBy(captainPool, fullPlayerList, user => self.getDocumentID(user)), user => self.updateUserRestrictions(user));
-                yield _.map(_.unionBy(captainPool, fullPlayerList, user => self.getDocumentID(user)), user => self.updatePlayerStats(user));
 
                 currentDraftGame = self.getDocumentID(game);
 
@@ -365,6 +366,8 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                 yield self.cleanUpDraft();
             }
+
+            yield _.map(usersToUpdate, user => self.updatePlayerStats(user));
         });
     }
 
