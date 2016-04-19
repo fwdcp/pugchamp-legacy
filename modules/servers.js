@@ -338,6 +338,8 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         yield self.processGameUpdate(game);
 
+        yield self.shutdownGame(game);
+
         let rcon;
 
         try {
