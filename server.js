@@ -16,7 +16,13 @@ const path = require('path');
 const serveStatic = require('serve-static');
 const session = require('express-session');
 const socketIO = require('socket.io');
+const util = require('util');
 const MongoStore = require('connect-mongo')(session);
+
+var PugChamp = function() {
+    EventEmitter.call(this);
+};
+util.inherits(PugChamp, EventEmitter);
 
 var app = express();
 var cache = require('./cache');
@@ -27,7 +33,7 @@ var io = socketIO(server, {
     pingTimeout: 60000,
     pingInterval: 5000
 });
-var self = new EventEmitter();
+var self = new PugChamp();
 
 app.set('view engine', 'hbs');
 
