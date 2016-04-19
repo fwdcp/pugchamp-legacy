@@ -194,7 +194,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 }
                 catch (err) {
                     self.postToLog({
-                        description: `failed to revoke restriction \`${restriction.id}\` for <${BASE_URL}/player/${user.steamID}|${user.alias}>`,
+                        description: `failed to revoke restriction \`${self.getDocumentID(restriction)}\` for <${BASE_URL}/player/${user.steamID}|${user.alias}>`,
                         error: err
                     });
 
@@ -235,7 +235,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let server = chance.pick(availableServers);
 
-            self.postToAdminLog(req.user, `reassigned game \`<${BASE_URL}/game/${game.id}|${game.id}>\` to server \`${server}\``);
+            self.postToAdminLog(req.user, `reassigned game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\` to server \`${server}\``);
 
             try {
                 yield self.shutdownGame(game);
@@ -245,7 +245,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
             catch (err) {
                 self.postToLog({
-                    description: `failed to reassign game \`<${BASE_URL}/game/${game.id}|${game.id}>\` to server \`${game.server}\``,
+                    description: `failed to reassign game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\` to server \`${game.server}\``,
                     error: err
                 });
 
@@ -258,7 +258,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            self.postToAdminLog(req.user, `reinitialized server \`${game.server}\` for game \`<${BASE_URL}/game/${game.id}|${game.id}>\``);
+            self.postToAdminLog(req.user, `reinitialized server \`${game.server}\` for game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``);
 
             try {
                 yield self.initializeServer(game);
@@ -267,7 +267,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
             catch (err) {
                 self.postToLog({
-                    description: `failed to reinitialize server \`${game.server}\` for game \`<${BASE_URL}/game/${game.id}|${game.id}>\``,
+                    description: `failed to reinitialize server \`${game.server}\` for game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``,
                     error: err
                 });
 
@@ -280,7 +280,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            self.postToAdminLog(req.user, `updated players for server \`${game.server}\` for game \`<${BASE_URL}/game/${game.id}|${game.id}>\``);
+            self.postToAdminLog(req.user, `updated players for server \`${game.server}\` for game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``);
 
             try {
                 yield self.updateServerPlayers(game);
@@ -289,7 +289,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
             catch (err) {
                 self.postToLog({
-                    description: `failed to update players for server \`${game.server}\` for game \`<${BASE_URL}/game/${game.id}|${game.id}>\``,
+                    description: `failed to update players for server \`${game.server}\` for game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``,
                     error: err
                 });
 
@@ -316,7 +316,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            self.postToAdminLog(req.user, `requested substitute for player \`<${BASE_URL}/player/${player.steamID}|${player.alias}>\` for game \`<${BASE_URL}/game/${game.id}|${game.id}>\``);
+            self.postToAdminLog(req.user, `requested substitute for player \`<${BASE_URL}/player/${player.steamID}|${player.alias}>\` for game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``);
 
             yield self.requestSubstitute(game, player);
 
@@ -328,7 +328,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            self.postToAdminLog(req.user, `aborted game \`<${BASE_URL}/game/${game.id}|${game.id}>\``);
+            self.postToAdminLog(req.user, `aborted game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``);
 
             try {
                 yield self.abortGame(game);
@@ -337,7 +337,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
             catch (err) {
                 self.postToLog({
-                    description: `failed to abort game \`<${BASE_URL}/game/${game.id}|${game.id}>\``,
+                    description: `failed to abort game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``,
                     error: err
                 });
 

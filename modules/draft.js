@@ -349,7 +349,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 yield _.map(_.unionBy(captainPool, fullPlayerList, user => self.getDocumentID(user)), user => self.updateUserRestrictions(user));
                 yield _.map(_.unionBy(captainPool, fullPlayerList, user => self.getDocumentID(user)), user => self.updatePlayerStats(user));
 
-                currentDraftGame = game.id;
+                currentDraftGame = self.getDocumentID(game);
 
                 yield self.assignGameToServer(game);
             }

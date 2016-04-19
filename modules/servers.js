@@ -347,12 +347,12 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let gameServerInfo = GAME_SERVER_POOL[game.server];
             let hash = crypto.createHash('sha256');
-            hash.update(`${game.id}|${gameServerInfo.salt}`);
+            hash.update(`${self.getDocumentID(game)}|${gameServerInfo.salt}`);
             let key = hash.digest('hex');
 
             let mapInfo = MAPS[game.map];
 
-            yield sendCommandsToServer(rcon, [`pugchamp_api_url "${BASE_URL}/api/servers/${key}"`, `pugchamp_game_id "${game.id}"`, `pugchamp_game_map "${mapInfo.file}"`, `pugchamp_game_config "${mapInfo.config}"`]);
+            yield sendCommandsToServer(rcon, [`pugchamp_api_url "${BASE_URL}/api/servers/${key}"`, `pugchamp_game_id "${self.getDocumentID(game)}"`, `pugchamp_game_map "${mapInfo.file}"`, `pugchamp_game_config "${mapInfo.config}"`]);
 
             yield self.updateServerPlayers(game);
 
@@ -416,7 +416,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
         catch (err) {
             self.postToLog({
-                description: `encountered error while trying to initialize server \`${server}\` for game \`${game.id}\``,
+                description: `encountered error while trying to initialize server \`${server}\` for game \`${self.getDocumentID(game)}\``,
                 error: err
             });
 
@@ -433,7 +433,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 }
                 catch (err) {
                     self.postToLog({
-                        description: `encountered error while trying to initialize server \`${server}\` for game \`${game.id}\``,
+                        description: `encountered error while trying to initialize server \`${server}\` for game \`${self.getDocumentID(game)}\``,
                         error: err
                     });
 
@@ -472,7 +472,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         let gameServer = GAME_SERVER_POOL[game.server];
 
         let hash = crypto.createHash('sha256');
-        hash.update(`${game.id}|${gameServer.salt}`);
+        hash.update(`${self.getDocumentID(game)}|${gameServer.salt}`);
         let key = hash.digest('hex');
 
         if (req.params.key !== key) {

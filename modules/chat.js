@@ -58,7 +58,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 attachment = {
                     fallback: `${message.user.alias}: ${message.body}`,
                     author_name: message.user.alias,
-                    author_link: `${BASE_URL}/user/${message.user.id}`,
+                    author_link: `${BASE_URL}/user/${self.getDocumentID(message.user)}`,
                     text: message.body
                 };
             }

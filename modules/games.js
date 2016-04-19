@@ -93,7 +93,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     function updateCurrentGame(game, user) {
         return co(function*() {
             if (game.status === 'launching' || game.status === 'live') {
-                let gameUserInfo = self.getGameUserInfo(game);
+                let gameUserInfo = self.getGameUserInfo(game.toObject(), user);
 
                 let currentGameInfo = {
                     game: self.getDocumentID(game),
@@ -101,10 +101,11 @@ module.exports = function(app, cache, chance, database, io, self) {
                     user: yield self.getCachedUser(user)
                 };
 
-                currentGameInfo.team.captain = yield self.getCachedUser(currentGameInfo.team.captain);
+                currentGameInfo.team.captain = yield self.getCachedUser(gameUserInfo.team.captain);
 
-                if (gameUserInfo.player) {
-                    currentGameInfo.role = gameUserInfo.role.role;
+                currentGameInfo.player = gameUserInfo.role && gameUserInfo.player;
+                if (currentGameInfo.player) {
+                    currentGameInfo.role = ROLES[gameUserInfo.role.role];
                     currentGameInfo.replaced = gameUserInfo.player.replaced;
 
                     if (!currentGameInfo.replaced && game.server) {
@@ -118,7 +119,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     currentGameInfo.activeTeamPlayers = yield _(gameUserInfo.team.composition).map(role => _(role.players).reject(player => player.replaced).map(player => ({
                         user: player.user,
                         role: ROLES[role.role]
-                    }))).flattenDeep().map(player => co(function*() {
+                    })).value()).flattenDeep().map(co.wrap(function*(player) {
                         player.user = yield self.getCachedUser(player.user);
 
                         return player;
@@ -131,6 +132,8 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
             else {
                 yield cache.delAsync(`currentGame-${self.getDocumentID(user)}`);
+
+                self.emitToUser(user, 'currentGameUpdated', [null]);
             }
         });
     }
@@ -142,7 +145,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         return co(function*() {
             let cacheResponse = yield cache.getAsync(`currentGame-${self.getDocumentID(user)}`);
 
-            return cacheResponse;
+            return JSON.parse(cacheResponse);
         });
     }
 
@@ -804,7 +807,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }), user => self.getDocumentID(user));
 
             let ratings = HIDE_RATINGS ? {} : _.keyBy(yield database.Rating.find({
-                game: game.id
+                game: self.getDocumentID(game)
             }).exec(), rating => self.getDocumentID(rating.user));
 
             _.each(gamePage.game.teams, function(team) {

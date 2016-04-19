@@ -266,6 +266,8 @@
                 this._listenToEvent('launchStatusUpdated', 'onLaunchStatusUpdated');
                 this._listenToEvent('userAvailabilityUpdated', 'onUserAvailabilityUpdated');
                 this._listenToEvent('userReadyStatusUpdated', 'onUserReadyStatusUpdated');
+
+                this.async(this.incrementReadyTimer, 1000);
             },
             onLaunchStatusUpdated: function(status) {
                 this.set('roles', status.roles);
@@ -279,10 +281,14 @@
                 this.set('holds', status.launchHolds);
 
                 if (!this.launchActive && status.active) {
-                    this.startReady({elapsed: status.currentTime - status.startTime, total: status.endTime - status.startTime});
+                    this.startReady();
                 }
                 else if (this.launchActive && !status.active) {
                     this.resetReady();
+                }
+
+                if (this.launchActive) {
+                    this.updateTime({elapsed: status.currentTime - status.startTime, total: status.endTime - status.startTime});
                 }
             },
             updateAvailability: function() {
@@ -324,9 +330,7 @@
 
                 this.playLaunchAlert();
 
-                if (this.$.readyTime.ratio < 100) {
-                    this.async(this.incrementReadyTimer, 1000);
-                }
+                this.async(this.incrementReadyTimer, 1000);
             },
             updateReadyStatus: function(event) {
                 socket.emit('updateReadyStatus', event.target.dataset.status === 'ready');
@@ -334,18 +338,13 @@
             onUserReadyStatusUpdated: function(ready) {
                 this.set('readyToPlay', ready);
             },
-            startReady: function(time) {
+            startReady: function() {
                 this.set('launchActive', true);
 
                 if (!this.user || (!this.isRestricted(this.restrictions, 'start') || !this.isRestricted(this.restrictions, 'captain'))) {
                     this.$.launchNotification.notify();
                     this.$.launchStartSound.play();
                 }
-
-                this.$.readyTime.value = time.elapsed / 1000;
-                this.$.readyTime.max = time.total / 1000;
-
-                this.async(this.incrementReadyTimer, 1000);
             },
             resetReady: function() {
                 this.set('launchActive', false);
@@ -362,6 +361,10 @@
                 }
 
                 this.set('readyToPlay', false);
+            },
+            updateTime: function(time) {
+                this.$.readyTime.value = time.elapsed / 1000;
+                this.$.readyTime.max = time.total / 1000;
             },
             playLaunchAlert: function() {
                 if (this.launchActive && Math.round(this.$.readyTime.max - this.$.readyTime.value) === 10) {

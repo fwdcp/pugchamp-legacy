@@ -71,7 +71,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     function formatPlayerListing(player, includeRating) {
         if (includeRating) {
             return {
-                id: player.id,
+                id: self.getDocumentID(player),
                 alias: player.alias,
                 steamID: player.steamID,
                 ratingMean: math.round(player.stats.rating.mean),
@@ -84,7 +84,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
         else {
             return {
-                id: player.id,
+                id: self.getDocumentID(player),
                 alias: player.alias,
                 steamID: player.steamID
             };
@@ -149,7 +149,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         player = yield database.User.findById(playerID);
 
         let captainGames = yield database.Game.find({
-            'teams.captain': player.id,
+            'teams.captain': self.getDocumentID(player),
             'status': 'completed',
             'score': {
                 $exists: true
@@ -158,7 +158,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         let captainScores = _.map(captainGames, function(game) {
             let teamIndex = _.findIndex(game.teams, function(team) {
-                return self.getDocumentID(team.captain) === player.id;
+                return self.getDocumentID(team.captain) === self.getDocumentID(player);
             });
 
             let differential = 0;
@@ -178,7 +178,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         player.stats.captainScore = calculatePredictionInterval(captainScores);
 
         let playerGames = yield database.Game.find({
-            'teams.composition.players.user': player.id,
+            'teams.composition.players.user': self.getDocumentID(player),
             'status': 'completed',
             'score': {
                 $exists: true
@@ -208,7 +208,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         let draftStats = [];
 
         let captainGameCount = yield database.Game.count({
-            'teams.captain': player.id
+            'teams.captain': self.getDocumentID(player)
         }).count().exec();
         draftStats.push({
             type: 'captain',
@@ -228,7 +228,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             'draft.choices': {
                 $elemMatch: {
                     'type': 'playerPick',
-                    'player': player.id
+                    'player': self.getDocumentID(player)
                 }
             }
         }).exec();
@@ -264,13 +264,13 @@ module.exports = function(app, cache, chance, database, io, self) {
                 'draft.choices': {
                     $elemMatch: {
                         'type': 'playerPick',
-                        'player': player.id
+                        'player': self.getDocumentID(player)
                     }
                 }
             }, {
-                'teams.captain': player.id
+                'teams.captain': self.getDocumentID(player)
             }],
-            'draft.pool.players.user': player.id
+            'draft.pool.players.user': self.getDocumentID(player)
         }).count().exec();
         draftStats.push({
             type: 'undrafted',
@@ -280,7 +280,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         player.stats.draft = draftStats;
 
         let rating = yield database.Rating.findOne({
-            user: player.id
+            user: self.getDocumentID(player)
         }).sort('-date').exec();
 
         if (rating) {
@@ -292,7 +292,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             'teams.composition': {
                 $elemMatch: {
                     'role': role,
-                    'players.user': player.id
+                    'players.user': self.getDocumentID(player)
                 }
             }
         }).count().exec().then(count => ({
@@ -301,10 +301,10 @@ module.exports = function(app, cache, chance, database, io, self) {
         }))).value();
 
         player.stats.total.captain = yield database.Game.count({
-            'teams.captain': player.id
+            'teams.captain': self.getDocumentID(player)
         }).count().exec();
         player.stats.total.player = yield database.Game.count({
-            'teams.composition.players.user': player.id
+            'teams.composition.players.user': self.getDocumentID(player)
         }).count().exec();
 
         yield player.save();
@@ -357,11 +357,11 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let games = yield database.Game.find({
                 $or: [{
-                    'teams.captain': user.id
+                    'teams.captain': self.getDocumentID(user)
                 }, {
                     'teams.composition.players': {
                         $elemMatch: {
-                            user: user.id
+                            user: self.getDocumentID(user)
                         }
                     }
                 }],
@@ -371,7 +371,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }).sort('-date').populate('teams.captain').exec();
 
             let restrictions = yield database.Restriction.find({
-                'user': user.id
+                'user': self.getDocumentID(user)
             }).exec();
 
             playerPage = {
@@ -400,7 +400,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             if (!HIDE_RATINGS) {
                 let ratings = yield database.Rating.find({
-                    'user': user.id
+                    'user': self.getDocumentID(user)
                 }).exec();
 
                 playerPage.ratings = _(ratings).map(rating => rating.toObject()).sortBy('date').value();
