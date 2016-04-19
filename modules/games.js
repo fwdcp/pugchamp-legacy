@@ -884,6 +884,6 @@ module.exports = function(app, cache, chance, database, io, self) {
     co(function*() {
         yield updateSubstituteRequestsMessage();
 
-        fs.writeFileSync(path.resolve(__dirname, '../ratings/settings.cfg'), `[config]\nconnect: ${MONGODB_URL}\ndb: ${database.Rating.db.name}\nratingBase: ${RATING_BASE}`);
+        fs.writeFileSync(path.resolve(__dirname, '../ratings/settings.cfg'), `[config]\nconnect: ${MONGODB_URL}\ndb: ${database.Rating.db.name}\nratingBase: ${RATING_BASE}\n`);
     });
 };
