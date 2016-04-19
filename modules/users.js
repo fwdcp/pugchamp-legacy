@@ -499,7 +499,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 if (/^[A-Za-z0-9_]{1,15}$/.test(req.body.alias)) {
                     let existingUser = yield self.getUserByAlias(req.body.alias);
 
-                    if (!existingUser) {
+                    if (!existingUser || self.getDocumentID(existingUser) === self.getDocumentID(req.user)) {
                         req.user.alias = req.body.alias;
 
                         majorChange = true;

@@ -74,7 +74,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 if (/^[A-Za-z0-9_]{1,15}$/.test(req.body.alias)) {
                     let existingUser = yield self.getUserByAlias(req.body.alias);
 
-                    if (!existingUser) {
+                    if (!existingUser || self.getDocumentID(existingUser) === self.getDocumentID(user)) {
                         self.postToAdminLog(req.user, `changed the alias of \`<${BASE_URL}/player/${user.steamID}|${req.body.alias}>\` from \`${user.alias}\``);
 
                         user.alias = req.body.alias;
