@@ -45,7 +45,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let partialCondensedCommand = '';
             for (let command of commands) {
-                if (_.size(partialCondensedCommand) + 1 + _.size(command) > MAXIMUM_SERVER_COMMAND_LENGTH) {
+                if (_.size(partialCondensedCommand) + _.size(command) > MAXIMUM_SERVER_COMMAND_LENGTH) {
                     condensedCommands.push(partialCondensedCommand);
                     partialCondensedCommand = command;
                 }
@@ -54,7 +54,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 }
             }
             if (_.size(partialCondensedCommand) > 0) {
-                condensedCommands.push(partialCondensedCommand);
+                condensedCommands.push(_.trim(partialCondensedCommand, ';'));
             }
 
             let results = [];
