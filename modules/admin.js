@@ -105,6 +105,9 @@ module.exports = function(app, cache, chance, database, io, self) {
             try {
                 yield user.save();
 
+                yield self.updateCachedUser(user);
+                yield self.updateUserRestrictions(user);
+
                 if (majorChange) {
                     yield self.invalidateUserGamePages(req.user);
                 }
