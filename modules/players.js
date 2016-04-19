@@ -148,164 +148,176 @@ module.exports = function(app, cache, chance, database, io, self) {
         let playerID = self.getDocumentID(player);
         player = yield database.User.findById(playerID);
 
-        let captainGames = yield database.Game.find({
-            'teams.captain': self.getDocumentID(player),
-            'status': 'completed',
-            'score': {
-                $exists: true
-            }
-        });
-
-        let captainScores = _.map(captainGames, function(game) {
-            let teamIndex = _.findIndex(game.teams, function(team) {
-                return self.getDocumentID(team.captain) === self.getDocumentID(player);
+        {
+            let captainGames = yield database.Game.find({
+                'teams.captain': self.getDocumentID(player),
+                'status': 'completed',
+                'score': {
+                    $exists: true
+                }
             });
 
-            let differential = 0;
+            let captainScores = _.map(captainGames, function(game) {
+                let teamIndex = _.findIndex(game.teams, function(team) {
+                    return self.getDocumentID(team.captain) === self.getDocumentID(player);
+                });
 
-            if (teamIndex === 0) {
-                differential = (game.score[0] - game.score[1]) / 5;
-            }
-            else if (teamIndex === 1) {
-                differential = (game.score[1] - game.score[0]) / 5;
-            }
+                let differential = 0;
 
-            let duration = game.duration ? game.duration / 1800 : 1;
+                if (teamIndex === 0) {
+                    differential = (game.score[0] - game.score[1]) / 5;
+                }
+                else if (teamIndex === 1) {
+                    differential = (game.score[1] - game.score[0]) / 5;
+                }
 
-            return differential / duration;
-        });
+                let duration = game.duration ? game.duration / 1800 : 1;
 
-        player.stats.captainScore = calculatePredictionInterval(captainScores);
+                return differential / duration;
+            });
 
-        let playerGames = yield database.Game.find({
-            'teams.composition.players.user': self.getDocumentID(player),
-            'status': 'completed',
-            'score': {
-                $exists: true
-            }
-        });
-
-        let playerScores = _.map(playerGames, function(game) {
-            let gameUserInfo = self.getGameUserInfo(game, player);
-            let teamIndex = _.indexOf(game.teams, gameUserInfo.team);
-
-            let differential = 0;
-
-            if (teamIndex === 0) {
-                differential = (game.score[0] - game.score[1]) / 5;
-            }
-            else if (teamIndex === 1) {
-                differential = (game.score[1] - game.score[0]) / 5;
-            }
-
-            let duration = game.duration ? game.duration / 1800 : 1;
-
-            return differential / duration;
-        });
-
-        player.stats.playerScore = calculatePredictionInterval(playerScores);
-
-        let draftStats = [];
-
-        let captainGameCount = yield database.Game.count({
-            'teams.captain': self.getDocumentID(player)
-        }).count().exec();
-        draftStats.push({
-            type: 'captain',
-            count: captainGameCount
-        });
-
-        let draftPositions = {};
-
-        let playersPicked = _(DRAFT_ORDER).filter(function(turn) {
-            return turn.type === 'playerPick';
-        }).size();
-        for (let i = 1; i <= playersPicked; i++) {
-            draftPositions[i] = 0;
+            player.stats.captainScore = calculatePredictionInterval(captainScores);
         }
 
-        let draftedGames = yield database.Game.find({
-            'draft.choices': {
-                $elemMatch: {
-                    'type': 'playerPick',
-                    'player': self.getDocumentID(player)
+        {
+            let playerGames = yield database.Game.find({
+                'teams.composition.players.user': self.getDocumentID(player),
+                'status': 'completed',
+                'score': {
+                    $exists: true
                 }
-            }
-        }).exec();
-        for (let game of draftedGames) {
-            let position = 0;
+            });
 
-            for (let choice of game.draft.choices) {
-                if (choice.type === 'playerPick') {
-                    position++;
+            let playerScores = _.map(playerGames, function(game) {
+                let gameUserInfo = self.getGameUserInfo(game, player);
+                let teamIndex = _.indexOf(game.teams, gameUserInfo.team);
 
-                    if (self.getDocumentID(choice.player) === self.getDocumentID(player)) {
-                        break;
-                    }
+                let differential = 0;
+
+                if (teamIndex === 0) {
+                    differential = (game.score[0] - game.score[1]) / 5;
                 }
-            }
+                else if (teamIndex === 1) {
+                    differential = (game.score[1] - game.score[0]) / 5;
+                }
 
-            if (!draftPositions[position]) {
-                draftPositions[position] = 0;
-            }
-            draftPositions[position]++;
+                let duration = game.duration ? game.duration / 1800 : 1;
+
+                return differential / duration;
+            });
+
+            player.stats.playerScore = calculatePredictionInterval(playerScores);
         }
 
-        _.each(draftPositions, function(count, position) {
+        {
+            let draftStats = [];
+
+            let captainGameCount = yield database.Game.count({
+                'teams.captain': self.getDocumentID(player)
+            }).count().exec();
             draftStats.push({
-                type: 'picked',
-                position,
-                count
+                type: 'captain',
+                count: captainGameCount
             });
-        });
 
-        let undraftedCount = yield database.Game.find({
-            $nor: [{
+            let draftPositions = {};
+
+            let playersPicked = _(DRAFT_ORDER).filter(function(turn) {
+                return turn.type === 'playerPick';
+            }).size();
+            for (let i = 1; i <= playersPicked; i++) {
+                draftPositions[i] = 0;
+            }
+
+            let draftedGames = yield database.Game.find({
                 'draft.choices': {
                     $elemMatch: {
                         'type': 'playerPick',
                         'player': self.getDocumentID(player)
                     }
                 }
-            }, {
-                'teams.captain': self.getDocumentID(player)
-            }],
-            'draft.pool.players.user': self.getDocumentID(player)
-        }).count().exec();
-        draftStats.push({
-            type: 'undrafted',
-            count: undraftedCount
-        });
+            }).exec();
+            for (let game of draftedGames) {
+                let position = 0;
 
-        player.stats.draft = draftStats;
+                for (let choice of game.draft.choices) {
+                    if (choice.type === 'playerPick') {
+                        position++;
 
-        let rating = yield database.Rating.findOne({
-            user: self.getDocumentID(player)
-        }).sort('-date').exec();
+                        if (self.getDocumentID(choice.player) === self.getDocumentID(player)) {
+                            break;
+                        }
+                    }
+                }
 
-        if (rating) {
-            player.stats.rating.mean = rating.after.mean;
-            player.stats.rating.deviation = rating.after.deviation;
+                if (!draftPositions[position]) {
+                    draftPositions[position] = 0;
+                }
+                draftPositions[position]++;
+            }
+
+            _.each(draftPositions, function(count, position) {
+                draftStats.push({
+                    type: 'picked',
+                    position,
+                    count
+                });
+            });
+
+            let undraftedCount = yield database.Game.find({
+                $nor: [{
+                    'draft.choices': {
+                        $elemMatch: {
+                            'type': 'playerPick',
+                            'player': self.getDocumentID(player)
+                        }
+                    }
+                }, {
+                    'teams.captain': self.getDocumentID(player)
+                }],
+                'draft.pool.players.user': self.getDocumentID(player)
+            }).count().exec();
+            draftStats.push({
+                type: 'undrafted',
+                count: undraftedCount
+            });
+
+            player.stats.draft = draftStats;
         }
 
-        player.stats.roles = yield _(ROLES).keys().map(role => database.Game.find({
-            'teams.composition': {
-                $elemMatch: {
-                    'role': role,
-                    'players.user': self.getDocumentID(player)
-                }
-            }
-        }).count().exec().then(count => ({
-            role,
-            count
-        }))).value();
+        {
+            let rating = yield database.Rating.findOne({
+                user: self.getDocumentID(player)
+            }).sort('-date').exec();
 
-        player.stats.total.captain = yield database.Game.count({
-            'teams.captain': self.getDocumentID(player)
-        }).count().exec();
-        player.stats.total.player = yield database.Game.count({
-            'teams.composition.players.user': self.getDocumentID(player)
-        }).count().exec();
+            if (rating) {
+                player.stats.rating.mean = rating.after.mean;
+                player.stats.rating.deviation = rating.after.deviation;
+            }
+        }
+
+        {
+            player.stats.roles = yield _(ROLES).keys().map(role => database.Game.find({
+                'teams.composition': {
+                    $elemMatch: {
+                        'role': role,
+                        'players.user': self.getDocumentID(player)
+                    }
+                }
+            }).count().exec().then(count => ({
+                role,
+                count
+            }))).value();
+        }
+
+        {
+            player.stats.total.captain = yield database.Game.count({
+                'teams.captain': self.getDocumentID(player)
+            }).count().exec();
+            player.stats.total.player = yield database.Game.count({
+                'teams.composition.players.user': self.getDocumentID(player)
+            }).count().exec();
+        }
 
         yield player.save();
 
