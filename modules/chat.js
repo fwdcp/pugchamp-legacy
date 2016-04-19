@@ -7,6 +7,7 @@ const twitter = require('twitter-text');
 
 module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
+    const CHAT_LOG_CHANNEL = config.has('slack.channels.chatLog') ? config.get('slack.channels.chatLog') : '#chat-log';
     const SHOW_CONNECTION_MESSAGES = config.get('app.chat.showConnectionMessages');
     const UPDATE_ONLINE_USER_LIST_DEBOUNCE_MAX_WAIT = 5000;
     const UPDATE_ONLINE_USER_LIST_DEBOUNCE_WAIT = 1000;
@@ -64,7 +65,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
 
             yield self.postToSlack({
-                channel: '#chat-log',
+                channel: CHAT_LOG_CHANNEL,
                 attachments: [attachment]
             });
         });

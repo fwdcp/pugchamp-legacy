@@ -8,6 +8,7 @@ const Q = require('q');
 
 module.exports = function(app, cache, chance, database, io, self) {
     if (config.has('server.slack')) {
+        const APP_LOG_CHANNEL = config.has('slack.channels.appLog') ? config.get('slack.channels.appLog') : '#app-log';
         const SLACK_INCOMING_WEBHOOK_URL = config.get('server.slack.incomingWebhook');
         const SLACK_MESSAGE_DEFAULTS = config.get('server.slack.messageDefaults');
 
@@ -30,7 +31,7 @@ module.exports = function(app, cache, chance, database, io, self) {
          */
         self.postToLog = co.wrap(function* postToLog(info) {
             let message = {
-                channel: '#app-log',
+                channel: APP_LOG_CHANNEL,
                 attachments: []
             };
 

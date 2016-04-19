@@ -11,6 +11,8 @@ const ms = require('ms');
 
 module.exports = function(app, cache, chance, database, io, self) {
     const ADMINS = config.get('app.users.admins');
+    const ADMIN_LOG_CHANNEL = config.has('slack.channels.adminLog') ? config.get('slack.channels.adminLog') : '#admin-log';
+    const ADMIN_REQUEST_CHANNEL = config.has('slack.channels.adminRequest') ? config.get('slack.channels.adminRequest') : '#admin-request';
     const BASE_URL = config.get('server.baseURL');
     const GAME_SERVER_POOL = config.get('app.servers.pool');
     const HIDE_DRAFT_STATS = config.get('app.users.hideDraftStats');
@@ -31,7 +33,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         user = yield self.getCachedUser(user);
 
         let message = {
-            channel: '#admin-log',
+            channel: ADMIN_LOG_CHANNEL,
             attachments: [{
                 fallback: `${user.alias} ${action}`,
                 author_name: user.alias,
@@ -394,7 +396,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         let trimmedMessage = _.trim(message);
 
         yield self.postToSlack({
-            channel: '#admin-request',
+            channel: ADMIN_REQUEST_CHANNEL,
             attachments: [{
                 fallback: trimmedMessage ? `${user.alias} requested help: ${trimmedMessage}` : `${user.alias} requested help`,
                 color: 'warning',

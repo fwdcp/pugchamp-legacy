@@ -224,6 +224,12 @@
         "redis": "redis://localhost",
         "sessionSecret": "pickup winner",
         "slack": {
+            "channels": {
+                "adminLog": "#admin-log",
+                "adminRequest": "#admin-request",
+                "appLog": "#app-log",
+                "chatLog": "#chat-log"
+            },
             "incomingWebhook": "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX",
             "messageDefaults": {
                 "username": "champbot",
