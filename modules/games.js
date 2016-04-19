@@ -4,6 +4,7 @@ const _ = require('lodash');
 const child_process = require('mz/child_process');
 const co = require('co');
 const config = require('config');
+const fs = require('fs');
 const hbs = require('hbs');
 const HttpStatus = require('http-status-codes');
 const math = require('mathjs');
