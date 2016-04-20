@@ -435,11 +435,13 @@ module.exports = function(app, cache, chance, database, io, self) {
     });
 
     co(function*() {
+        /* eslint-disable lodash/prefer-lodash-method */
         let admins = yield database.User.find({
             'steamID': {
                 $in: ADMINS
             }
         }).exec();
+        /* eslint-enable lodash/prefer-lodash-method */
 
         adminUserIDs = _.map(admins, user => self.getDocumentID(user));
     });

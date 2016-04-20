@@ -53,7 +53,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
     else {
-        self.postToSlack = function postToSlack() {};
-        self.postToLog = function postToLog() {};
+        self.postToSlack = co.wrap(_.noop);
+        self.postToLog = co.wrap(_.noop);
     }
 };

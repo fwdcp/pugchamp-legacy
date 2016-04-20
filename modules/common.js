@@ -94,12 +94,10 @@ module.exports = function(app, cache, chance, database, io, self) {
             next();
         });
 
-        _.forEach(PAGES, function(page) {
-            if (page.view) {
-                app.get(page.url, function(req, res) {
-                    res.render(page.view);
-                });
-            }
+        _(PAGES).filter(page => _.has(page, 'view')).forEach(function(page) {
+            app.get(page.url, function(req, res) {
+                res.render(page.view);
+            });
         });
     }
 

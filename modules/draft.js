@@ -20,9 +20,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             roles[player.role]++;
 
             return roles;
-        }, _.mapValues(ROLES, function() {
-            return 0;
-        }));
+        }, _.mapValues(ROLES, _.constant(0)));
     }
 
     function calculateCurrentTeamState(team) {
@@ -320,7 +318,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             game.draft.choices = _.map(draftChoices, (choice, index) => _.assign({}, choice, DRAFT_ORDER[index]));
             game.draft.pool.maps = _.keys(MAP_POOL);
             game.draft.pool.players = _(playerPool).transform(function(pool, players, role) {
-                _.each(players, function(player) {
+                _.forEach(players, function(player) {
                     if (!pool[player]) {
                         pool[player] = [];
                     }
@@ -386,9 +384,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             allowedRoles = [];
             overrideRoles = [];
 
-            unavailablePlayers = _(draftTeams).map(function(team) {
-                return _(team.players).map(player => player.user).concat(team.captain).value();
-            }).flatten().uniq().value();
+            unavailablePlayers = _(draftTeams).flatMap(team => _(team.players).map('user').concat(team.captain).value()).uniq().value();
 
             currentDraftTurnStartTime = Date.now();
 
@@ -443,7 +439,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     }
                 }
                 else if (turnDefinition.type === 'captainSelect') {
-                    if (_.some(unavailablePlayers, choice.captain) && !_.some(draftTeams[turnDefinition.team].players, player => player.user === choice.captain)) {
+                    if (_.some(unavailablePlayers, choice.captain) && !_.some(draftTeams[turnDefinition.team].players, ['user', choice.captain])) {
                         return;
                     }
 
@@ -572,7 +568,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                         turnCaptainPool = _.difference(captainPool, unavailablePlayers);
                     }
                     else if (turnDefinition.pool === 'team') {
-                        turnCaptainPool = _(draftTeams[turnDefinition.team].players).map(player => player.user).intersection(captainPool).value();
+                        turnCaptainPool = _(draftTeams[turnDefinition.team].players).map('user').intersection(captainPool).value();
                     }
 
                     if (_.size(turnCaptainPool) === 0) {
@@ -585,11 +581,13 @@ module.exports = function(app, cache, chance, database, io, self) {
                         supported = true;
                     }
                     else if (turnDefinition.method === 'success') {
+                        /* eslint-disable lodash/prefer-lodash-method */
                         let fullCaptains = yield database.User.find({
                             '_id': {
                                 $in: turnCaptainPool
                             }
                         }).exec();
+                        /* eslint-enable lodash/prefer-lodash-method */
 
                         let candidates = _.map(fullCaptains, captain => self.getDocumentID(captain));
                         let weights = _.map(fullCaptains, captain => (_.isNumber(captain.stats.captainScore.center) ? captain.stats.captainScore.center : 0));
@@ -607,11 +605,13 @@ module.exports = function(app, cache, chance, database, io, self) {
                         supported = true;
                     }
                     else if (turnDefinition.method === 'success-random') {
+                        /* eslint-disable lodash/prefer-lodash-method */
                         let fullCaptains = yield database.User.find({
                             '_id': {
                                 $in: turnCaptainPool
                             }
                         }).exec();
+                        /* eslint-enable lodash/prefer-lodash-method */
 
                         let candidates = _.map(fullCaptains, captain => self.getDocumentID(captain));
                         let weights = _.map(fullCaptains, captain => (_.isNumber(captain.stats.captainScore.center) ? captain.stats.captainScore.center : 0));
@@ -641,13 +641,15 @@ module.exports = function(app, cache, chance, database, io, self) {
                         supported = true;
                     }
                     else if (turnDefinition.method === 'experience') {
+                        /* eslint-disable lodash/prefer-lodash-method */
                         let fullCaptains = yield database.User.find({
                             '_id': {
                                 $in: turnCaptainPool
                             }
                         }).exec();
+                        /* eslint-enable lodash/prefer-lodash-method */
 
-                        let mostExperienced = _.maxBy(fullCaptains, captain => captain.stats.total.player);
+                        let mostExperienced = _.maxBy(fullCaptains, 'stats.total.player');
                         choice.captain = self.getDocumentID(mostExperienced);
 
                         supported = true;
@@ -674,11 +676,13 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                         choice.override = _.includes(overrideRoles, choice.role);
 
+                        /* eslint-disable lodash/prefer-lodash-method */
                         let choicePool = yield database.User.find({
                             '_id': {
                                 $in: choice.override ? _.difference(fullPlayerList, unavailablePlayers) : _.difference(playerPool[choice.role], unavailablePlayers)
                             }
                         }).exec();
+                        /* eslint-enable lodash/prefer-lodash-method */
 
                         if (_.size(choicePool) === 0) {
                             throw new Error('no players to choose from');
@@ -689,32 +693,30 @@ module.exports = function(app, cache, chance, database, io, self) {
                         let allyTeam = turnDefinition.team === 0 ? 0 : 1;
                         let enemyTeam = turnDefinition.team === 0 ? 1 : 0;
                         if (_.size(draftTeams[allyTeam].players) < _.size(draftTeams[enemyTeam].players)) {
+                            /* eslint-disable lodash/prefer-lodash-method */
                             let allyPlayers = yield database.User.find({
                                 '_id': {
-                                    $in: _.map(draftTeams[allyTeam].players, player => player.user)
+                                    $in: _.map(draftTeams[allyTeam].players, 'user')
                                 }
                             }).exec();
+                            /* eslint-enable lodash/prefer-lodash-method */
 
-                            let allyTotalRating = _.sumBy(allyPlayers, function(player) {
-                                return player.stats.rating.mean;
-                            });
+                            let allyTotalRating = _.sumBy(allyPlayers, 'stats.rating.mean');
 
+                            /* eslint-disable lodash/prefer-lodash-method */
                             let enemyPlayers = yield database.User.find({
                                 '_id': {
-                                    $in: _.map(draftTeams[enemyTeam].players, player => player.user)
+                                    $in: _.map(draftTeams[enemyTeam].players, 'user')
                                 }
                             }).exec();
+                            /* eslint-enable lodash/prefer-lodash-method */
 
-                            let enemyTotalRating = _.sumBy(enemyPlayers, function(player) {
-                                return player.stats.rating.mean;
-                            });
+                            let enemyTotalRating = _.sumBy(enemyPlayers, 'stats.rating.mean');
 
                             desiredRating = enemyTotalRating - allyTotalRating;
                         }
                         else {
-                            desiredRating = _.sumBy(choicePool, function(player) {
-                                return player.stats.rating.mean;
-                            }) / _.size(choicePool);
+                            desiredRating = _.sumBy(choicePool, 'stats.rating.mean') / _.size(choicePool);
                         }
 
                         let sortedChoicePool = _.sortBy(choicePool, function(player) {
@@ -742,7 +744,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                         supported = true;
                     }
                     else if (turnDefinition.method === 'fresh') {
-                        let recentGames = yield _(draftTeams).map(team => team.players).flatten().uniq().map(player => database.Game.findOne({'teams.composition.players.user': player.user}).sort({date: -1}).exec()).value();
+                        let recentGames = yield _(draftTeams).flatMap('players').uniq().map(player => database.Game.findOne({'teams.composition.players.user': player.user}).sort({date: -1}).exec()).value();
 
                         let recentlyPlayedMap = _.chain(recentGames).reduce(function(maps, game) {
                             if (!game || !_.includes(remainingMaps, game.map)) {
@@ -756,7 +758,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                             maps[game.map]++;
 
                             return maps;
-                        }, {}).toPairs().maxBy(pair => pair[1]).value();
+                        }, {}).toPairs().maxBy('1').value();
 
                         if (recentlyPlayedMap) {
                             choice.map = recentlyPlayedMap[0];
@@ -775,7 +777,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                         supported = true;
                     }
                     else if (turnDefinition.method === 'fresh') {
-                        let recentGames = yield _(draftTeams).map(team => team.players).flatten().uniq().map(player => database.Game.findOne({'teams.composition.players.user': player.user}).sort({date: -1}).exec()).value();
+                        let recentGames = yield _(draftTeams).flatMap('players').uniq().map(player => database.Game.findOne({'teams.composition.players.user': player.user}).sort({date: -1}).exec()).value();
 
                         let recentlyPlayedMap = _.chain(recentGames).reduce(function(maps, game) {
                             if (!game || !_.includes(remainingMaps, game.map)) {
@@ -789,7 +791,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                             maps[game.map]++;
 
                             return maps;
-                        }, {}).toPairs().minBy(pair => pair[1]).value();
+                        }, {}).toPairs().minBy('1').value();
 
                         if (recentlyPlayedMap) {
                             choice.map = recentlyPlayedMap[0];
@@ -857,9 +859,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         return co(function*() {
             currentDraftTurn = turn;
 
-            unavailablePlayers = _(draftTeams).map(function(team) {
-                return _(team.players).map(player => player.user).concat(team.captain).value();
-            }).flatten().uniq().value();
+            unavailablePlayers = _(draftTeams).flatMap(team => _(team.players).map('user').concat(team.captain).value()).flatten().uniq().value();
 
             let turnDefinition = DRAFT_ORDER[turn];
 

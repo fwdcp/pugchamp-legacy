@@ -232,10 +232,12 @@ module.exports = function(app, cache, chance, database, io, self) {
             restrictions.push(DRAFT_EXPIRE_COOLDOWN_RESTRICTIONS);
         }
 
+        /* eslint-disable lodash/prefer-lodash-method */
         let activeRestrictions = yield database.Restriction.find({
             'user': userID,
             'active': true
         });
+        /* eslint-enable lodash/prefer-lodash-method */
 
         for (let restriction of activeRestrictions) {
             if (!restriction.expires || moment().isBefore(restriction.expires)) {

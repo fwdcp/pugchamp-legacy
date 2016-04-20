@@ -95,7 +95,9 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     const updatePlayerList = _.debounce(co.wrap(function* updatePlayerCache() {
+        /* eslint-disable lodash/prefer-lodash-method */
         let users = yield database.User.find({}).exec();
+        /* eslint-enable lodash/prefer-lodash-method */
 
         let players = _.orderBy(users, [function(player) {
             return player.stats.rating.mean;
@@ -146,9 +148,11 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     self.updatePlayerStats = co.wrap(function* updatePlayerStats(player) {
         let playerID = self.getDocumentID(player);
+
         player = yield database.User.findById(playerID);
 
         {
+            /* eslint-disable lodash/prefer-lodash-method */
             let captainGames = yield database.Game.find({
                 'teams.captain': self.getDocumentID(player),
                 'status': 'completed',
@@ -156,6 +160,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     $exists: true
                 }
             });
+            /* eslint-enable lodash/prefer-lodash-method */
 
             let captainScores = _.map(captainGames, function(game) {
                 let teamIndex = _.findIndex(game.teams, function(team) {
@@ -180,6 +185,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
 
         {
+            /* eslint-disable lodash/prefer-lodash-method */
             let playerGames = yield database.Game.find({
                 'teams.composition.players.user': self.getDocumentID(player),
                 'status': 'completed',
@@ -187,6 +193,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     $exists: true
                 }
             });
+            /* eslint-enable lodash/prefer-lodash-method */
 
             let playerScores = _.map(playerGames, function(game) {
                 let gameUserInfo = self.getGameUserInfo(game, player);
@@ -222,13 +229,12 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let draftPositions = {};
 
-            let playersPicked = _(DRAFT_ORDER).filter(function(turn) {
-                return turn.type === 'playerPick';
-            }).size();
+            let playersPicked = _(DRAFT_ORDER).filter(['type', 'playerPick']).size();
             for (let i = 1; i <= playersPicked; i++) {
                 draftPositions[i] = 0;
             }
 
+            /* eslint-disable lodash/prefer-lodash-method */
             let draftedGames = yield database.Game.find({
                 'draft.choices': {
                     $elemMatch: {
@@ -237,6 +243,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     }
                 }
             }).exec();
+            /* eslint-enable lodash/prefer-lodash-method */
             for (let game of draftedGames) {
                 let position = 0;
 
@@ -256,7 +263,8 @@ module.exports = function(app, cache, chance, database, io, self) {
                 draftPositions[position]++;
             }
 
-            _.each(draftPositions, function(count, position) {
+
+            _.forEach(draftPositions, function(count, position) {
                 draftStats.push({
                     type: 'picked',
                     position,
@@ -264,6 +272,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 });
             });
 
+            /* eslint-disable lodash/prefer-lodash-method */
             let undraftedCount = yield database.Game.find({
                 $nor: [{
                     'draft.choices': {
@@ -277,6 +286,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 }],
                 'draft.pool.players.user': self.getDocumentID(player)
             }).count().exec();
+            /* eslint-enable lodash/prefer-lodash-method */
             draftStats.push({
                 type: 'undrafted',
                 count: undraftedCount
@@ -297,14 +307,19 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
 
         {
-            player.stats.roles = yield _(ROLES).keys().map(role => database.Game.find({
-                'teams.composition': {
-                    $elemMatch: {
-                        'role': role,
-                        'players.user': self.getDocumentID(player)
+
+            player.stats.roles = yield _(ROLES).keys().map(
+                /* eslint-disable lodash/prefer-lodash-method */
+                role => database.Game.find({
+                    'teams.composition': {
+                        $elemMatch: {
+                            'role': role,
+                            'players.user': self.getDocumentID(player)
+                        }
                     }
                 }
-            }).count().exec().then(count => ({
+                /* eslint-enable lodash/prefer-lodash-method */
+            ).count().exec().then(count => ({
                 role,
                 count
             }))).value();
@@ -367,6 +382,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return null;
             }
 
+            /* eslint-disable lodash/prefer-lodash-method */
             let games = yield database.Game.find({
                 $or: [{
                     'teams.captain': self.getDocumentID(user)
@@ -381,14 +397,17 @@ module.exports = function(app, cache, chance, database, io, self) {
                     $in: ['launching', 'live', 'completed']
                 }
             }).sort('-date').populate('teams.captain').exec();
+            /* eslint-enable lodash/prefer-lodash-method */
 
+            /* eslint-disable lodash/prefer-lodash-method */
             let restrictions = yield database.Restriction.find({
                 'user': self.getDocumentID(user)
             }).exec();
+            /* eslint-enable lodash/prefer-lodash-method */
 
             playerPage = {
                 user: user.toObject(),
-                games: _(games).map(function(game) {
+                games: _.map(games, function(game) {
                     let revisedGame = _.omit(game.toObject(), 'draft', 'server', 'links');
 
                     if (self.getDocumentID(user) === self.getDocumentID(game.teams[0].captain)) {
@@ -405,17 +424,19 @@ module.exports = function(app, cache, chance, database, io, self) {
                     }
 
                     return revisedGame;
-                }).value(),
-                restrictions: _(restrictions).map(restriction => restriction.toObject()).orderBy(['active', 'expires'], ['desc', 'desc']).value(),
+                }),
+                restrictions: _(restrictions).invokeMap('toObject').orderBy(['active', 'expires'], ['desc', 'desc']).value(),
                 restrictionDurations: RESTRICTION_DURATIONS
             };
 
             if (!HIDE_RATINGS) {
+                /* eslint-disable lodash/prefer-lodash-method */
                 let ratings = yield database.Rating.find({
                     'user': self.getDocumentID(user)
                 }).exec();
+                /* eslint-enable lodash/prefer-lodash-method */
 
-                playerPage.ratings = _(ratings).map(rating => rating.toObject()).sortBy('date').value();
+                playerPage.ratings = _(ratings).invokeMap('toObject').sortBy('date').value();
             }
 
             yield cache.setAsync(`playerPage-${self.getDocumentID(user)}`, JSON.stringify(playerPage));

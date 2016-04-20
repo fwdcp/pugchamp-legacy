@@ -158,12 +158,14 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     function updateGameList() {
         return co(function*() {
+            /* eslint-disable lodash/prefer-lodash-method */
             let games = yield database.Game.find({}).sort('-date').select('date status teams.faction teams.captain score map duration').populate('teams.captain', 'alias steamID').exec();
+            /* eslint-enable lodash/prefer-lodash-method */
 
-            yield cache.setAsync('allGameList', JSON.stringify(_.map(games, game => game.toObject())));
-            yield cache.setAsync('allVisibleGameList', JSON.stringify(_(games).filter(game => game.status !== 'initializing' && game.status !== 'aborted').map(game => game.toObject()).value()));
-            yield cache.setAsync('recentGameList', JSON.stringify(_(games).takeWhile(game => moment().diff(game.date, 'days') < 1).map(game => game.toObject()).value()));
-            yield cache.setAsync('recentVisibleGameList', JSON.stringify(_(games).takeWhile(game => moment().diff(game.date, 'days') < 1).filter(game => game.status !== 'initializing' && game.status !== 'aborted').map(game => game.toObject()).value()));
+            yield cache.setAsync('allGameList', JSON.stringify(_.invokeMap(games, 'toObject')));
+            yield cache.setAsync('allVisibleGameList', JSON.stringify(_(games).filter(game => game.status !== 'initializing' && game.status !== 'aborted').invokeMap('toObject').value()));
+            yield cache.setAsync('recentGameList', JSON.stringify(_(games).takeWhile(game => moment().diff(game.date, 'days') < 1).invokeMap('toObject').value()));
+            yield cache.setAsync('recentVisibleGameList', JSON.stringify(_(games).takeWhile(game => moment().diff(game.date, 'days') < 1).filter(game => game.status !== 'initializing' && game.status !== 'aborted').invokeMap('toObject').value()));
         });
     }
 
@@ -220,7 +222,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         yield self.invalidateGamePage(game);
         yield updateGameList();
-        yield _.map(self.getGameUsers(game), user => self.invalidatePlayerPage(game, user)); 
+        yield _.map(self.getGameUsers(game), user => self.invalidatePlayerPage(game, user));
     });
 
     var currentSubstituteRequests = new Map();
@@ -321,11 +323,13 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
             else if (SUBSTITUTE_SELECTION_METHOD === 'closest') {
                 let player = yield database.User.findById(self.getDocumentID(request.player)).exec();
+                /* eslint-disable lodash/prefer-lodash-method */
                 let candidatePlayers = yield database.User.find({
                     '_id': {
                         $in: candidates
                     }
                 }).exec();
+                /* eslint-enable lodash/prefer-lodash-method */
 
                 selectedCandidate = _(candidatePlayers).sortBy(function(candidate) {
                     return Math.abs(candidate.stats.rating.mean - player.stats.rating.mean);
@@ -435,7 +439,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         let oldPlayerID = self.getDocumentID(oldPlayer);
         let newPlayerID = self.getDocumentID(newPlayer);
 
-        _(game.teams).map(team => team.composition).flatten().forEach(function(role) {
+        _(game.teams).flatMap('composition').forEach(function(role) {
             let player = _.find(role.players, function(currentPlayer) {
                 return !currentPlayer.replaced && oldPlayerID === self.getDocumentID(currentPlayer.user);
             });
@@ -539,11 +543,13 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
 
             if (info.time) {
+                /* eslint-disable lodash/prefer-lodash-method */
                 let gameUsers = _.keyBy(yield database.User.find({
                     '_id': {
                         $in: _.map(self.getGameUsers(game), user => self.getDocumentID(user))
                     }
                 }), user => self.getDocumentID(user));
+                /* eslint-enable lodash/prefer-lodash-method */
 
                 for (let team of game.teams) {
                     for (let role of team.composition) {
@@ -582,11 +588,13 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
 
             if (info.time) {
+                /* eslint-disable lodash/prefer-lodash-method */
                 let gameUsers = _.keyBy(yield database.User.find({
                     '_id': {
                         $in: _.map(self.getGameUsers(game), user => self.getDocumentID(user))
                     }
                 }), user => self.getDocumentID(user));
+                /* eslint-enable lodash/prefer-lodash-method */
 
                 for (let team of game.teams) {
                     for (let role of team.composition) {
@@ -771,6 +779,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     self.invalidateUserGamePages = co.wrap(function* invalidateUserGamePages(user) {
         let userID = self.getDocumentID(user);
 
+        /* eslint-disable lodash/prefer-lodash-method */
         let games = yield database.Game.find({
             $or: [{
                 'teams.captain': userID
@@ -782,6 +791,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 }
             }]
         }).exec();
+        /* eslint-enable lodash/prefer-lodash-method */
 
         yield _.map(games, game => self.invalidateGamePage(game));
     });
@@ -810,23 +820,25 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let gameUsers = _.keyBy(yield _.map(self.getGameUsers(game), user => self.getCachedUser(user)), user => self.getDocumentID(user));
 
+            /* eslint-disable lodash/prefer-lodash-method */
             let ratings = HIDE_RATINGS ? {} : _.keyBy(yield database.Rating.find({
                 game: self.getDocumentID(game)
             }).exec(), rating => self.getDocumentID(rating.user));
+            /* eslint-enable lodash/prefer-lodash-method */
 
-            _.each(gamePage.game.teams, function(team) {
+            _.forEach(gamePage.game.teams, function(team) {
                 team.captain = gameUsers[self.getDocumentID(team.captain)];
 
                 team.composition = _.sortBy(team.composition, function(role) {
                     return _(ROLES).keys().indexOf(role.role);
                 });
 
-                _.each(team.composition, function(role) {
+                _.forEach(team.composition, function(role) {
                     role.role = _.assign({
                         id: role.role
                     }, ROLES[role.role]);
 
-                    _.each(role.players, function(player) {
+                    _.forEach(role.players, function(player) {
                         player.user = gameUsers[self.getDocumentID(player.user)];
 
                         if (!HIDE_RATINGS) {
