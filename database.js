@@ -11,7 +11,7 @@ const HIDE_DRAFT_STATS = config.get('app.users.hideDraftStats');
 const HIDE_RATINGS = config.get('app.users.hideRatings');
 const MAPS = config.get('app.games.maps');
 const SERVER_POOL = config.get('app.servers.pool');
-const USER_GROUPS = config.get('app.users.groups');
+const USER_GROUPS = config.has('app.users.groups') ? config.get('app.users.groups') : {};
 
 mongoose.connect(config.get('server.mongodb'));
 
