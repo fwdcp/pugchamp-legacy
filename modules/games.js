@@ -808,11 +808,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 game: game.toObject()
             };
 
-            let gameUsers = _.keyBy(yield database.User.find({
-                '_id': {
-                    $in: _.map(self.getGameUsers(game), user => self.getDocumentID(user))
-                }
-            }), user => self.getDocumentID(user));
+            let gameUsers = _.keyBy(yield _.map(self.getGameUsers(game), user => self.getCachedUser(user)), user => self.getDocumentID(user));
 
             let ratings = HIDE_RATINGS ? {} : _.keyBy(yield database.Rating.find({
                 game: self.getDocumentID(game)
