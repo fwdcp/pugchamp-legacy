@@ -365,9 +365,11 @@ module.exports = function(app, cache, chance, database, io, self) {
                         break;
                     }
                 }
-            }
 
-            yield user.save();
+                yield user.save();
+
+                yield self.updatePlayerStats(user);
+            }
 
             done(null, user);
         }
