@@ -22,7 +22,16 @@
     {{/unless}}
 
     <paper-datatable data="{{toJSON players}}" id="players">
-        <paper-datatable-column header="Player" property="alias" type="String" sortable></paper-datatable-column>
+        <paper-datatable-column header="Player" property="alias" type="String" sortable>
+            <template>
+                <template is="dom-repeat" items="\{{item.groups}}">
+                    <iron-icon icon="\{{item.icon}}">
+                        <paper-tooltip>\{{item.name}}</paper-tooltip>
+                    </iron-icon>
+                </template>
+                \{{value}}
+            </template>
+        </paper-datatable-column>
         <paper-datatable-column header="Steam ID" property="steamID" type="String"></paper-datatable-column>
         {{#unless hideRatings}}
         <paper-datatable-column header="Rating" property="ratingMean" type="Number" sortable>

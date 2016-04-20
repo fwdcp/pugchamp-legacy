@@ -74,6 +74,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 id: self.getDocumentID(player),
                 alias: player.alias,
                 steamID: player.steamID,
+                groups: _.get(player.toObject(), 'groups'),
                 ratingMean: math.round(player.stats.rating.mean),
                 ratingDeviation: math.round(player.stats.rating.deviation),
                 ratingLowerBound: math.round(player.stats.rating.low),
@@ -86,7 +87,8 @@ module.exports = function(app, cache, chance, database, io, self) {
             return {
                 id: self.getDocumentID(player),
                 alias: player.alias,
-                steamID: player.steamID
+                steamID: player.steamID,
+                groups: _.get(player.toObject(), 'groups')
             };
         }
     }

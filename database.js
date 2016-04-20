@@ -11,6 +11,7 @@ const HIDE_DRAFT_STATS = config.get('app.users.hideDraftStats');
 const HIDE_RATINGS = config.get('app.users.hideRatings');
 const MAPS = config.get('app.games.maps');
 const SERVER_POOL = config.get('app.servers.pool');
+const USER_GROUPS = config.get('app.users.groups');
 
 mongoose.connect(config.get('server.mongodb'));
 
@@ -28,6 +29,7 @@ var userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    groups: [String],
     options: {
         showDraftStats: {
             type: Boolean,
@@ -119,6 +121,8 @@ userSchema.set('toObject', {
             }
         }
 
+        ret.groups = _(doc.groups).intersection(_.keys(USER_GROUPS)).map(groupID => _.assign({}, _.pick(USER_GROUPS[groupID], 'icon', 'name'), {id: groupID}));
+
         delete ret.options;
     }
 });
@@ -203,12 +207,11 @@ gameSchema.set('toObject', {
     versionKey: false,
     transform(doc, ret) {
         if (doc.map) {
-            ret.map = MAPS[doc.map];
+            ret.map = _.assign({}, MAPS[doc.map], {id: doc.map});
         }
 
         if (doc.server) {
-            ret.server = _.omit(SERVER_POOL[doc.server], 'rcon', 'salt');
-            ret.server.id = doc.server;
+            ret.server = _.assign({}, _.omit(SERVER_POOL[doc.server], 'rcon', 'salt'), {id: doc.server});
         }
     }
 });

@@ -25,6 +25,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     const USER_AUTHORIZATIONS = config.has('app.users.authorizations') ? config.get('app.users.authorizations') : [];
     const USER_AUTHORIZATION_DEFAULT = config.has('app.users.authorizationDefault') ? config.get('app.users.authorizationDefault') : true;
     const USER_AUTHORIZATION_APIS = config.has('app.users.authorizationAPIs') ? config.get('app.users.authorizationAPIs') : [];
+    const USER_GROUPS = config.has('app.users.groups') ? config.get('app.users.groups') : {};
 
     var userRestrictions = new Map();
     var userSockets = new Map();
@@ -305,6 +306,57 @@ module.exports = function(app, cache, chance, database, io, self) {
         self.emitToUser(userID, 'restrictionsUpdated', [yield self.getUserRestrictions(userID)]);
     }));
 
+    /**
+     * @async
+     */
+    function updateUserGroups(user) {
+        return co(function*() {
+            user = database.User.findById(self.getDocumentID(user));
+            user.groups = [];
+
+            for (let groupID of _.keys(USER_GROUPS)) {
+                let groupInfo = USER_GROUPS[groupID];
+
+                let authorization = _.find(groupInfo.authorizations, ['user', user.steamID]);
+                if (authorization) {
+                    if (authorization.authorized) {
+                        user.groups.push(groupID);
+                    }
+
+                    continue;
+                }
+
+                try {
+                    let response = yield rp({
+                        resolveWithFullResponse: true,
+                        simple: false,
+                        qs: {
+                            user: user.steamID
+                        },
+                        uri: groupInfo.api
+                    });
+
+                    if (response.statusCode === HttpStatus.OK) {
+                        user.groups.push(groupID);
+                    }
+                    else if (response.statusCode === HttpStatus.FORBIDDEN) {
+                        continue;
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+
+                if (_.has(groupInfo, 'default') && groupInfo.default) {
+                    user.groups.push(groupID);
+                }
+            }
+
+            yield user.save();
+            yield self.updateCachedUser(user);
+        });
+    }
+
     passport.use(new OpenIDStrategy({
         providerURL: 'http://steamcommunity.com/openid',
         returnURL(req) {
@@ -462,6 +514,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             userSockets.set(userID, new Set([socket.id]));
 
             yield self.updateUserRestrictions(userID);
+            yield updateUserGroups(userID);
 
             self.emit('userConnected', userID);
         }

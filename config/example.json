@@ -14,6 +14,13 @@
                 "authorized": false
             }],
             "authorizationAPIs": ["http://localhost:8080/checkUser"],
+            "groups": {
+                "test": {
+                    "api": "http://localhost:8080/checkUser",
+                    "icon": "user",
+                    "name": "Tester"
+                }
+            },
             "initialRatings": [{
                 "api": "http://localhost:8080/checkUser",
                 "mean": 1800,

@@ -136,7 +136,17 @@
                                 <div class="message-time">{{formatTime(item.time)}}</div>
                                 <div class="flex message-contents">
                                     <template is="dom-if" if="{{item.user}}">
-                                        <span class="message-author"><iron-icon hidden$="{{!item.user.admin}}" icon="flag"></iron-icon> <a href="/player/{{item.user.steamID}}" target="_blank">{{item.user.alias}}</a></span>
+                                        <span class="message-author">
+                                            <iron-icon hidden$="{{!item.user.admin}}" icon="gavel">
+                                                <paper-tooltip>Admin</paper-tooltip>
+                                            </iron-icon>
+                                            <template is="dom-repeat" items="{{item.user.groups}}">
+                                                <iron-icon icon="{{item.icon}}">
+                                                    <paper-tooltip>{{item.name}}</paper-tooltip>
+                                                </iron-icon>
+                                            </template>
+                                            <a href="/player/{{item.user.steamID}}" target="_blank">{{item.user.alias}}</a>
+                                        </span>
                                     </template>
                                     <em class="message-action">{{item.action}}</em>
                                     <br>
@@ -157,8 +167,15 @@
                 <div id="online-users">
                     <template is="dom-repeat" items="{{onlineList}}">
                         <paper-icon-item class="user">
-                            <iron-icon icon="flag" hidden$="{{!item.admin}}" item-icon></iron-icon>
+                            <iron-icon icon="gavel" hidden$="{{!item.admin}}" item-icon>
+                                <paper-tooltip>Admin</paper-tooltip>
+                            </iron-icon>
                             <div class="flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></div>
+                            <template is="dom-repeat" items="{{item.user.groups}}">
+                                <iron-icon icon="{{item.icon}}">
+                                    <paper-tooltip>{{item.name}}</paper-tooltip>
+                                </iron-icon>
+                            </template>
                         </paper-icon-item>
                     </template>
                 </div>
