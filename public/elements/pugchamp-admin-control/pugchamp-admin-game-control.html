@@ -66,7 +66,7 @@
                 return server && status !== 'aborted' && status !== 'completed';
             },
             getActivePlayers: function(game) {
-                return _(game.teams)._map(function(team) {
+                return _(game.teams).map(function(team) {
                     return _.map(team.composition, function(role) {
                         return role.players;
                     });
