@@ -218,9 +218,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         yield _.map(self.getGameUsers(game), user => self.updateUserRestrictions(user));
         yield _.map(self.getGameUsers(game), user => updateCurrentGame(game, user));
 
-        self.invalidateGamePage(game);
-        updateGameList();
-        _.map(self.getGameUsers(game), user => self.invalidatePlayerPage(user));
+        yield self.invalidateGamePage(game);
+        yield updateGameList();
+        yield _.map(self.getGameUsers(game), user => self.invalidatePlayerPage(game, user)); 
     });
 
     var currentSubstituteRequests = new Map();

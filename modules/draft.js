@@ -361,7 +361,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 yield self.cleanUpDraft();
             }
 
-            _.map(usersToUpdate, user => self.updatePlayerStats(user));
+            yield _.map(usersToUpdate, user => self.updatePlayerStats(user));
         });
     }
 
