@@ -174,7 +174,7 @@
                                 <paper-tooltip>Admin</paper-tooltip>
                             </div>
                             <div class="flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></div>
-                            <template is="dom-repeat" items="{{item.user.groups}}">
+                            <template is="dom-repeat" items="{{item.groups}}">
                                 <span>
                                     <iron-icon icon="{{item.icon}}"></iron-icon>
                                     <paper-tooltip>{{item.name}}</paper-tooltip>
