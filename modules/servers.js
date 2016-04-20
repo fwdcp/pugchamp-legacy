@@ -211,27 +211,25 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.shutdownGame = co.wrap(function* shutdownGame(game) {
-        yield _.map(GAME_SERVER_POOL, function(serverInfo, server) {
-            return co(function*() {
-                let serverStatus = yield getServerStatus(server);
+        yield _.map(GAME_SERVER_POOL, co.wrap(function*(serverInfo, server) {
+            let serverStatus = yield getServerStatus(server);
 
-                if (serverStatus.status === 'unreachable' || serverStatus.status === 'unknown') {
-                    for (let delay of RETRY_ATTEMPTS) {
-                        yield self.promiseDelay(delay, null, false);
+            if (serverStatus.status === 'unreachable' || serverStatus.status === 'unknown') {
+                for (let delay of RETRY_ATTEMPTS) {
+                    yield self.promiseDelay(delay, null, false);
 
-                        serverStatus = yield getServerStatus(server);
+                    serverStatus = yield getServerStatus(server);
 
-                        if (serverStatus.status !== 'unreachable' && serverStatus.status !== 'unknown') {
-                            break;
-                        }
+                    if (serverStatus.status !== 'unreachable' && serverStatus.status !== 'unknown') {
+                        break;
                     }
                 }
+            }
 
-                if (serverStatus.status === 'assigned' && self.getDocumentID(serverStatus.game) === self.getDocumentID(game)) {
-                    yield self.sendRCONCommands(server, ['pugchamp_game_reset']);
-                }
-            });
-        });
+            if (serverStatus.status === 'assigned' && self.getDocumentID(serverStatus.game) === self.getDocumentID(game)) {
+                yield self.sendRCONCommands(server, ['pugchamp_game_reset']);
+            }
+        }));
     });
 
     /**

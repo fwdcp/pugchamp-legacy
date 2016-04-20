@@ -306,24 +306,18 @@ module.exports = function(app, cache, chance, database, io, self) {
             game.date = new Date();
             game.map = pickedMap;
 
-            game.teams = _.map(draftTeams, function(team) {
-                return {
-                    captain: team.captain,
-                    faction: team.faction,
-                    composition: _.map(team.players, function(player) {
-                        return {
-                            role: player.role,
-                            players: [{
-                                user: player.user
-                            }]
-                        };
-                    })
-                };
-            });
+            game.teams = _.map(draftTeams, team => ({
+                captain: team.captain,
+                faction: team.faction,
+                composition: _.map(team.players, player => ({
+                    role: player.role,
+                    players: [{
+                        user: player.user
+                    }]
+                }))
+            }));
 
-            game.draft.choices = _.map(draftChoices, function(choice, index) {
-                return _.assign({}, choice, DRAFT_ORDER[index]);
-            });
+            game.draft.choices = _.map(draftChoices, (choice, index) => _.assign({}, choice, DRAFT_ORDER[index]));
             game.draft.pool.maps = _.keys(MAP_POOL);
             game.draft.pool.players = _(playerPool).transform(function(pool, players, role) {
                 _.each(players, function(player) {
@@ -367,7 +361,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 yield self.cleanUpDraft();
             }
 
-            yield _.map(usersToUpdate, user => self.updatePlayerStats(user));
+            _.map(usersToUpdate, user => self.updatePlayerStats(user));
         });
     }
 
@@ -598,9 +592,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                         }).exec();
 
                         let candidates = _.map(fullCaptains, captain => self.getDocumentID(captain));
-                        let weights = _.map(fullCaptains, function(captain) {
-                            return _.isNumber(captain.stats.captainScore.center) ? captain.stats.captainScore.center : 0;
-                        });
+                        let weights = _.map(fullCaptains, captain => (_.isNumber(captain.stats.captainScore.center) ? captain.stats.captainScore.center : 0));
 
                         let boost = EPSILON;
                         let minWeight = _.min(weights);
@@ -608,9 +600,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                             boost += -1 * minWeight;
                         }
 
-                        weights = _.map(weights, function(weight) {
-                            return weight + boost;
-                        });
+                        weights = _.map(weights, weight => weight + boost);
 
                         choice.captain = chance.weighted(candidates, weights);
 
@@ -624,9 +614,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                         }).exec();
 
                         let candidates = _.map(fullCaptains, captain => self.getDocumentID(captain));
-                        let weights = _.map(fullCaptains, function(captain) {
-                            return _.isNumber(captain.stats.captainScore.center) ? captain.stats.captainScore.center : 0;
-                        });
+                        let weights = _.map(fullCaptains, captain => (_.isNumber(captain.stats.captainScore.center) ? captain.stats.captainScore.center : 0));
 
                         let boost = EPSILON;
                         let minWeight = _.min(weights);
@@ -634,9 +622,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                             boost += -1 * minWeight;
                         }
 
-                        weights = _.map(weights, function(weight) {
-                            return weight + boost;
-                        });
+                        weights = _.map(weights, weight => weight + boost);
 
                         let finalCandidates = [];
 
@@ -661,9 +647,8 @@ module.exports = function(app, cache, chance, database, io, self) {
                             }
                         }).exec();
 
-                        choice.captain = _.maxBy(fullCaptains, function(captain) {
-                            return captain.stats.total.player;
-                        });
+                        let mostExperienced = _.maxBy(fullCaptains, captain => captain.stats.total.player);
+                        choice.captain = self.getDocumentID(mostExperienced);
 
                         supported = true;
                     }

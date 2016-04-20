@@ -218,9 +218,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         yield _.map(self.getGameUsers(game), user => self.updateUserRestrictions(user));
         yield _.map(self.getGameUsers(game), user => updateCurrentGame(game, user));
 
-        yield self.invalidateGamePage(game);
-        yield updateGameList();
-        yield _.map(self.getGameUsers(game), user => self.invalidatePlayerPage(game, user));
+        self.invalidateGamePage(game);
+        updateGameList();
+        _.map(self.getGameUsers(game), user => self.invalidatePlayerPage(user));
     });
 
     var currentSubstituteRequests = new Map();
@@ -531,9 +531,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             game.status = 'live';
 
             if (info.score) {
-                game.score = _.map(game.teams, function(team) {
-                    return info.score[team.faction];
-                });
+                game.score = _.map(game.teams, team => info.score[team.faction]);
             }
 
             if (info.duration) {
@@ -576,9 +574,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             game.status = 'completed';
 
             if (info.score) {
-                game.score = _.map(game.teams, function(team) {
-                    return info.score[team.faction];
-                });
+                game.score = _.map(game.teams, team => info.score[team.faction]);
             }
 
             if (info.duration) {
