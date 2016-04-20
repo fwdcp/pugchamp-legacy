@@ -12,6 +12,8 @@
 <link rel="import" href="/components/paper-toggle-button/paper-toggle-button.html">
 <link rel="import" href="/components/paper-tooltip/paper-tooltip.html">
 
+<script src="/components/lodash/lodash.js"></script>
+
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
 <link rel="import" href="/elements/pugchamp-notification/pugchamp-notification.html">
@@ -403,7 +405,7 @@
                 }
             },
             classForHold: function(holds, hold) {
-                if (holds.includes(hold)) {
+                if (_.includes(holds, hold)) {
                     return 'hold-blocked';
                 }
                 else {

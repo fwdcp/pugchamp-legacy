@@ -1,20 +1,14 @@
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 
+<script src="/components/lodash/lodash.js"></script>
+
 <script>
     RestrictionsBehaviorImpl = {
         created: function() {
             this._listenToEvent('restrictionsUpdated', '_onRestrictionsUpdated');
         },
-        isRestricted: function(restrictions) {
-            var aspects = [];
-
-            for (var i = 1; i < arguments.length; i++) {
-                aspects.push(arguments[i]);
-            }
-
-            return aspects.some(function(aspect) {
-                return restrictions.aspects.includes(aspect);
-            });
+        isRestricted: function(restrictions, ...aspects) {
+            return _.size(_.union(aspects, restrictions.aspects)) > 0;
         },
         _onRestrictionsUpdated: function(restrictions) {
             this.set('restrictions', restrictions);

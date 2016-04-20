@@ -8,6 +8,8 @@
 <link rel="import" href="/components/paper-styles/typography.html">
 <link rel="import" href="/components/paper-tooltip/paper-tooltip.html">
 
+<script src="/components/lodash/lodash.js"></script>
+
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-user-behavior.html">
@@ -432,7 +434,7 @@
                     return 'picked';
                 }
 
-                if (!remaining.includes(map)) {
+                if (!_.includes(remaining, map)) {
                     return 'banned';
                 }
 
@@ -474,7 +476,7 @@
                     return false;
                 }
 
-                if (!remainingMaps.includes(map)) {
+                if (!_.includes(remainingMaps, map)) {
                     return false;
                 }
 
@@ -497,7 +499,7 @@
                     return false;
                 }
 
-                if (!allowedRoles.includes(role)) {
+                if (!_.includes(allowedRoles, role)) {
                     return false;
                 }
             },
@@ -518,11 +520,11 @@
                     return false;
                 }
 
-                if (!allowedRoles.includes(role)) {
+                if (!_.includes(allowedRoles, role)) {
                     return false;
                 }
 
-                if (unavailablePlayers.includes(player)) {
+                if (_.includes(unavailablePlayers, player)) {
                     return false;
                 }
 
