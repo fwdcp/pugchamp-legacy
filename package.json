@@ -46,56 +46,63 @@
       "es6": true,
       "node": true
     },
-    "extends": "eslint:recommended",
+    "extends": [
+      "eslint:recommended",
+      "plugin:lodash/recommended"
+    ],
     "parserOptions": {
       "ecmaVersion": 6
     },
+    "plugins": [
+      "lodash"
+    ],
     "rules": {
-      "array-callback-return": 2,
-      "arrow-body-style": 2,
+      "array-callback-return": "error",
+      "arrow-body-style": "error",
       "arrow-parens": [
-        2,
+        "error",
         "as-needed"
       ],
-      "arrow-spacing": 2,
-      "block-scoped-var": 2,
+      "arrow-spacing": "error",
+      "block-scoped-var": "error",
       "brace-style": [
-        2,
+        "error",
         "stroustrup"
       ],
-      "callback-return": 2,
-      "comma-style": 2,
-      "curly": 2,
-      "dot-location": 2,
-      "dot-notation": 2,
-      "eqeqeq": 2,
-      "generator-star-spacing": [
-        2,
-        "after"
+      "callback-return": "error",
+      "comma-style": "error",
+      "curly": "error",
+      "dot-location": "error",
+      "dot-notation": "error",
+      "eqeqeq": "error",
+      "global-require": "error",
+      "handle-callback-err": "error",
+      "key-spacing": "error",
+      "no-confusing-arrow": [
+        "error",
+        {
+          "allowParens": true
+        }
       ],
-      "global-require": 2,
-      "handle-callback-err": 2,
-      "key-spacing": 2,
-      "no-confusing-arrow": 2,
-      "no-mixed-requires": 2,
-      "no-new-require": 2,
-      "no-path-concat": 2,
-      "no-process-exit": 2,
-      "no-shadow": 2,
-      "no-throw-literal": 2,
-      "no-unneeded-ternary": 2,
-      "no-use-before-define": 2,
-      "object-shorthand": 2,
-      "operator-assignment": 2,
-      "prefer-spread": 2,
-      "prefer-template": 2,
-      "require-yield": 2,
+      "no-mixed-requires": "error",
+      "no-new-require": "error",
+      "no-path-concat": "error",
+      "no-process-exit": "error",
+      "no-shadow": "error",
+      "no-throw-literal": "error",
+      "no-unneeded-ternary": "error",
+      "no-use-before-define": "error",
+      "object-shorthand": "error",
+      "operator-assignment": "error",
+      "prefer-spread": "error",
+      "prefer-template": "error",
+      "require-yield": "error",
       "quotes": [
-        2,
+        "error",
         "single"
       ],
-      "template-curly-spacing": 2,
-      "yoda": 2
+      "template-curly-spacing": "error",
+      "yoda": "error"
     }
   }
 }
