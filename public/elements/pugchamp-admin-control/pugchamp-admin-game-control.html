@@ -6,6 +6,8 @@
 <link rel="import" href="/components/paper-item/paper-item.html">
 <link rel="import" href="/components/paper-menu/paper-menu.html">
 
+<script src="/components/lodash/lodash.js"></script>
+
 <dom-module id="pugchamp-admin-game-control">
     <template>
         <style is="custom-style">
@@ -32,14 +34,8 @@
             <input type="hidden" name="player" value="{{selectedPlayer}}">
             <paper-dropdown-menu hidden$="{{!isLive(game.status)}}" label="Player to Replace">
                 <paper-menu attr-for-selected="value" selected="{{selectedPlayer}}" class="dropdown-content">
-                    <template is="dom-repeat" items="{{game.teams}}">
-                        <template is="dom-repeat" items="{{item.composition}}">
-                            <template is="dom-repeat" items="{{item.players}}">
-                                <template is="dom-if" if="{{!item.replaced}}">
-                                    <paper-item value="{{item.user.id}}">{{item.user.alias}}</paper-item>
-                                </template>
-                            </template>
-                        </template>
+                    <template is="dom-repeat" items="{{getActivePlayers(game)}}">
+                        <paper-item value="{{item.user.id}}">{{item.user.alias}}</paper-item>
                     </template>
                 </paper-menu>
             </paper-dropdown-menu>
@@ -68,6 +64,15 @@
             },
             isLiveOnServer: function(server, status) {
                 return server && status !== 'aborted' && status !== 'completed';
+            },
+            getActivePlayers: function(game) {
+                return _(game.teams)._map(function(team) {
+                    return _.map(team.composition, function(role) {
+                        return role.players;
+                    });
+                }).flattenDeep().reject(function(player) {
+                    return player.replaced;
+                }).value();
             }
         });
 
