@@ -25,9 +25,10 @@
         <paper-datatable-column header="Player" property="alias" type="String" sortable>
             <template>
                 <template is="dom-repeat" items="\{{item.groups}}">
-                    <iron-icon icon="\{{item.icon}}">
+                    <span>
+                        <iron-icon icon="\{{item.icon}}"></iron-icon>
                         <paper-tooltip>\{{item.name}}</paper-tooltip>
-                    </iron-icon>
+                    </span>
                 </template>
                 \{{value}}
             </template>
