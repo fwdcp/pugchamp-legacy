@@ -61,7 +61,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             return false;
         }
 
-        if (player.stats.total.captain > 0 || player.stats.total.player > 0) {
+        if ((!_.isNil(player.stats.total.captain) && player.stats.total.captain > 0) || (!_.isNil(player.stats.total.player) && player.stats.total.player > 0)) {
             return true;
         }
 
