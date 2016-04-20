@@ -26,15 +26,15 @@ module.exports = function(app, cache, chance, database, io, self) {
         function checkCombination(combination) {
             let combinationInfo = _.reduce(combination, function(current, roleName) {
                 return {
-                    available: new Set([...current.available, ...playersAvailable[roleName]]),
+                    available: _.union(current.available, _.toArray(playersAvailable[roleName])),
                     required: current.required + (ROLES[roleName].min * 2)
                 };
             }, {
-                available: new Set(),
+                available: [],
                 required: 0
             });
 
-            let missing = combinationInfo.required - combinationInfo.available.size;
+            let missing = combinationInfo.required - _.size(combinationInfo.available);
 
             if (missing > 0) {
                 neededCombinations.push({
@@ -84,9 +84,9 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
 
             let allPlayersAvailable = _.reduce(playersAvailable, function(allPlayers, players) {
-                return new Set(_.union([...allPlayers], [...players]));
-            }, new Set());
-            if (allPlayersAvailable.size < 2 * TEAM_SIZE) {
+                return _.union(allPlayers, _.toArray(players));
+            }, []);
+            if (_.size(allPlayersAvailable) < 2 * TEAM_SIZE) {
                 launchHolds.push('availablePlayers');
             }
 
@@ -97,20 +97,18 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             if (launchAttemptActive) {
                 if (SEPARATE_CAPTAIN_POOL) {
-                    let captainsReady = new Set(_.intersection([...captainsAvailable], [...readiesReceived]));
-                    if (captainsReady.size < 2) {
+                    let captainsReady = _.intersection(_.toArray(captainsAvailable), _.toArray(readiesReceived));
+                    if (_.size(captainsReady) < 2) {
                         launchHolds.push('readyCaptains');
                     }
                 }
 
-                let allPlayersReady = new Set(_.intersection([...allPlayersAvailable], [...readiesReceived]));
-                if (allPlayersReady.size < 2 * TEAM_SIZE) {
+                let allPlayersReady = _.intersection(allPlayersAvailable, _.toArray(readiesReceived));
+                if (_.size(allPlayersReady) < 2 * TEAM_SIZE) {
                     launchHolds.push('readyPlayers');
                 }
 
-                let playersReady = _.mapValues(playersAvailable, function(available) {
-                    return new Set(_.intersection([...available], [...readiesReceived]));
-                });
+                let playersReady = _.mapValues(playersAvailable, available => new Set(_.intersection(_.toArray(available), _.toArray(readiesReceived))));
                 let readyPlayerRolesNeeded = calculateRolesNeeded(playersReady);
                 if (_.size(readyPlayerRolesNeeded) !== 0) {
                     launchHolds.push('readyPlayerRoles');
@@ -145,13 +143,13 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             launchStatusMessage.playersAvailable = {};
             for (let role of _.keys(ROLES)) {
-                launchStatusMessage.playersAvailable[role] = yield _.map([...playersAvailable[role]], user => self.getCachedUser(user));
+                launchStatusMessage.playersAvailable[role] = yield _(playersAvailable[role]).toArray().map(user => self.getCachedUser(user)).value();
             }
 
             launchStatusMessage.allPlayersAvailable = _.unionBy(..._.values(launchStatusMessage.playersAvailable), user => self.getDocumentID(user));
 
             if (SEPARATE_CAPTAIN_POOL) {
-                launchStatusMessage.captainsAvailable = yield _.map([...captainsAvailable], user => self.getCachedUser(user));
+                launchStatusMessage.captainsAvailable = yield _(captainsAvailable).toArray().map(user => self.getCachedUser(user)).value();
             }
 
             yield cache.setAsync('launchStatus', JSON.stringify(launchStatusMessage));
@@ -189,11 +187,11 @@ module.exports = function(app, cache, chance, database, io, self) {
                 currentLaunchHolds = yield getLaunchHolds(true);
 
                 playersAvailable = _.mapValues(playersAvailable, function(available) {
-                    return new Set(_.intersection([...available], [...readiesReceived]));
+                    return new Set(_.intersection(_.toArray(available), _.toArray(readiesReceived)));
                 });
 
                 if (SEPARATE_CAPTAIN_POOL) {
-                    captainsAvailable = new Set(_.intersection([...captainsAvailable], [...readiesReceived]));
+                    captainsAvailable = new Set(_.intersection(_.toArray(captainsAvailable), _.toArray(readiesReceived)));
                 }
             }
             catch (err) {
@@ -217,10 +215,8 @@ module.exports = function(app, cache, chance, database, io, self) {
             if (_.size(currentLaunchHolds) === 0) {
                 try {
                     yield self.launchDraft({
-                        players: _.mapValues(playersAvailable, function(available) {
-                            return [...available];
-                        }),
-                        captains: SEPARATE_CAPTAIN_POOL ? [...captainsAvailable] : undefined
+                        players: _.mapValues(playersAvailable, available => _.toArray(available)),
+                        captains: SEPARATE_CAPTAIN_POOL ? _.toArray(captainsAvailable) : undefined
                     });
                 }
                 catch (err) {
@@ -323,7 +319,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     function autoReadyRecentlyActiveUsers() {
         return co(function*() {
-            let activeUsers = _.filter([...lastActivity.keys()], userID => (moment().diff(lastActivity.get(userID)) < AUTO_READY_THRESHOLD));
+            let activeUsers = _(lastActivity.keys()).toArray().filter(userID => (moment().diff(lastActivity.get(userID)) < AUTO_READY_THRESHOLD)).value();
 
             yield _.map(activeUsers, userID => updateUserReadyStatus(userID, true));
         });

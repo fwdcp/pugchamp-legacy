@@ -120,7 +120,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                 currentGameInfo.captain = self.getDocumentID(gameUserInfo.team.captain) === self.getDocumentID(user);
                 if (currentGameInfo.captain) {
-                    currentGameInfo.activeTeamPlayers = yield _(gameUserInfo.team.composition).map(role => _(role.players).reject(player => player.replaced).map(player => ({
+                    currentGameInfo.activeTeamPlayers = yield _(gameUserInfo.team.composition).map(role => _(role.players).reject('replaced').map(player => ({
                         user: player.user,
                         role: ROLES[role.role]
                     })).value()).flattenDeep().map(co.wrap(function*(player) {
@@ -228,7 +228,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     var currentSubstituteRequests = new Map();
 
     self.getCurrentSubstituteRequests = function getCurrentSubstituteRequests() {
-        return [...currentSubstituteRequests.values()];
+        return _.toArray(currentSubstituteRequests.values());
     };
 
     /**
@@ -240,7 +240,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 requests: []
             };
 
-            let outgoingPlayers = _.keyBy(yield _.map([...currentSubstituteRequests.values()], request => self.getCachedUser(request.player)), user => self.getDocumentID(user));
+            let outgoingPlayers = _.keyBy(yield _(currentSubstituteRequests.values()).toArray().map(request => self.getCachedUser(request.player)).value(), user => self.getDocumentID(user));
 
             for (let request of currentSubstituteRequests.entries()) {
                 substituteRequestsMessage.requests.push({
@@ -249,7 +249,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     role: ROLES[request[1].role],
                     captain: self.getDocumentID(request[1].captain),
                     player: outgoingPlayers[self.getDocumentID(request[1].player)],
-                    candidates: [...request[1].candidates],
+                    candidates: _.toArray(request[1].candidates),
                     startTime: request[1].opened,
                     endTime: request[1].opened + SUBSTITUTE_REQUEST_PERIOD
                 });
@@ -315,7 +315,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            let candidates = [...request.candidates];
+            let candidates = _.toArray(request.candidates);
             let selectedCandidate;
 
             if (SUBSTITUTE_SELECTION_METHOD === 'first') {
@@ -394,7 +394,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     self.removeGameSubstituteRequests = co.wrap(function* removeGameSubstituteRequests(game) {
         let gameID = self.getDocumentID(game);
 
-        yield _([...currentSubstituteRequests.entries()]).filter(request => (self.getDocumentID(request[1].game) === gameID)).map(request => self.removeSubstituteRequest(request[0])).value();
+        yield _(currentSubstituteRequests.entries()).toArray().filter(request => (self.getDocumentID(request[1].game) === gameID)).map(request => self.removeSubstituteRequest(request[0])).value();
     });
 
     /**
@@ -496,7 +496,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             currentSubstituteRequests.delete(requestID);
 
-            yield _.map(request.candidates, candidate => self.updateUserRestrictions(candidate));
+            yield _(request.candidates).toArray().map(candidate => self.updateUserRestrictions(candidate)).value();
 
             yield updateSubstituteRequestsMessage();
         }

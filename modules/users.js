@@ -123,20 +123,20 @@ module.exports = function(app, cache, chance, database, io, self) {
     });
 
     self.getOnlineUsers = function getOnlineUsers() {
-        return [...userSockets.keys()];
+        return _.toArray(userSockets.keys());
     };
 
     self.emitToUser = function emitToUser(user, name, args) {
         let userID = self.getDocumentID(user);
 
         if (userSockets.has(userID)) {
-            for (let socketID of userSockets.get(userID)) {
+            _(userSockets.get(userID)).toArray().forEach(function(socketID) {
                 let socket = io.sockets.connected[socketID];
 
                 if (socket) {
                     socket.emit(name, ...args);
                 }
-            }
+            });
         }
     };
 
@@ -269,7 +269,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         let combinedRestrictions = _.reduce(restrictions, function(combined, restriction) {
             return {
                 aspects: _.union(combined.aspects, restriction.aspects),
-                reasons: [...combined.reasons, ...restriction.reasons]
+                reasons: _.concat(combined.reasons, restriction.reasons)
             };
         }, {
             aspects: [],
