@@ -311,7 +311,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     function updateUserGroups(user) {
         return co(function*() {
-            user = database.User.findById(self.getDocumentID(user));
+            user = yield database.User.findById(self.getDocumentID(user));
             user.groups = [];
 
             for (let groupID of _.keys(USER_GROUPS)) {
@@ -505,6 +505,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     }
 
     io.sockets.on('authenticated', co.wrap(function*(socket) {
+        try {
         let userID = socket.decoded_token.user;
 
         let user = yield self.getCachedUser(userID);
@@ -526,6 +527,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         socket.removeAllListeners('disconnect');
         socket.on('disconnect', onUserDisconnect);
+    } catch (err) { console.log(err.stack); }
     }));
 
     app.get('/user/settings', function(req, res) {
