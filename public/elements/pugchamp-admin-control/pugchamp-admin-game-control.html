@@ -4,7 +4,7 @@
 <link rel="import" href="/components/paper-button/paper-button.html">
 <link rel="import" href="/components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="/components/paper-item/paper-item.html">
-<link rel="import" href="/components/paper-menu/paper-menu.html">
+<link rel="import" href="/components/paper-listbox/paper-listbox.html">
 
 <script src="/components/lodash/lodash.js"></script>
 
@@ -33,11 +33,11 @@
             <input type="hidden" name="type" value="requestSubstitute">
             <input type="hidden" name="player" value="{{selectedPlayer}}">
             <paper-dropdown-menu hidden$="{{!isLive(game.status)}}" label="Player to Replace">
-                <paper-menu attr-for-selected="value" selected="{{selectedPlayer}}" class="dropdown-content">
+                <paper-listbox attr-for-selected="value" selected="{{selectedPlayer}}" class="dropdown-content">
                     <template is="dom-repeat" items="{{getActivePlayers(game)}}">
                         <paper-item value="{{item.user.id}}">{{item.user.alias}}</paper-item>
                     </template>
-                </paper-menu>
+                </paper-listbox>
             </paper-dropdown-menu>
             <paper-button class="action" hidden$="{{!isLive(game.status)}}" onclick="submit(event)" raised>Request Substitute</paper-button>
         </form>
