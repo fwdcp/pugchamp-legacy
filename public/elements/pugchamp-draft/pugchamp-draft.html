@@ -236,11 +236,23 @@
                 <template is="dom-repeat" items="{{_convertObjectToRepeatable(roles)}}" as="role">
                     <div class="flex role-column">
                         <div class="vertical layout">
-                            <paper-icon-item class="role" disabled="{{!_includes(allowedRoles, role.key)}}">
+                            <paper-icon-item class="role">
                                 <iron-icon icon="pugchamp-role:{{role.key}}" item-icon></iron-icon>
                                 <div class="role-name flex">
                                     <h3>{{role.value.name}}</h3>
                                 </div>
+                                <span hidden$="{{_includes(allowedRoles, role.key)}}">
+                                    <iron-icon icon="lock"></iron-icon>
+                                    <paper-tooltip>Max Reached</paper-tooltip>
+                                </span>
+                                <span hidden$="{{!_includes(overrideRoles, role.key)}}">
+                                    <iron-icon icon="warning"></iron-icon>
+                                    <paper-tooltip>Overrides Enabled</paper-tooltip>
+                                </span>
+                                <span hidden$="{{hasAvailablePlayers(players, role.key, unavailablePlayers)}}">
+                                    <iron-icon icon="hourglass-empty"></iron-icon>
+                                    <paper-tooltip>None Available</paper-tooltip>
+                                </span>
                                 <paper-button class="draft-choice" data-role$="{{role.key}}" hidden$="{{!roleChoiceAllowed(user, currentTurn, role.key, allowedRoles)}}" disabled="{{!roleChoiceAllowed(user, currentTurn, role.key, allowedRoles)}}" on-tap="chooseRole" raised>Select</paper-button>
                             </paper-icon-item>
                             <template is="dom-if" if="{{!_includes(overrideRoles, role.key)}}">
@@ -579,6 +591,9 @@
                 if (player === highlighted) {
                     return 'highlight';
                 }
+            },
+            hasAvailablePlayers: function(players, role, unavailablePlayers) {
+                return _(players[role]).map('id').difference(unavailablePlayers).size() > 0;
             },
             onPlayer: function(event) {
                 this.set('highlightedPlayer', event.model.item.id);
