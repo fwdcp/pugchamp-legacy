@@ -478,7 +478,6 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         yield self.processGameUpdate(game);
         yield self.removeGameSubstituteRequests(game);
-        yield self.updateLaunchStatus();
 
         yield self.shutdownGame(game);
     });
@@ -614,7 +613,6 @@ module.exports = function(app, cache, chance, database, io, self) {
             yield self.processGameUpdate(game);
             setTimeout(self.shutdownGame, POST_GAME_RESET_DELAY, game);
             yield self.removeGameSubstituteRequests(self.getDocumentID(game));
-            yield self.updateLaunchStatus();
 
             try {
                 yield rateGame(game);

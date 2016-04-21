@@ -291,7 +291,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         yield _.map(_.unionBy(previousDraftCaptains, previousDraftPlayers, user => self.getDocumentID(user)), user => self.updateUserRestrictions(user));
         yield _.map(_.unionBy(previousDraftCaptains, previousDraftPlayers, user => self.getDocumentID(user)), user => self.markUserActivity(user));
 
-        yield self.updateLaunchStatus();
+        self.emit('draftStatusChanged', draftActive);
     });
 
     /**
@@ -941,6 +941,8 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
 
         yield _.map(_.unionBy(captainPool, fullPlayerList, user => self.getDocumentID(user)), user => self.updateUserRestrictions(user));
+
+        self.emit('draftStatusChanged', draftActive);
 
         beginDraftTurn(0);
     });

@@ -383,6 +383,8 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                 res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR);
             }
+
+            yield self.updateServerStatuses();
         }
         else {
             res.sendStatus(HttpStatus.BAD_REQUEST);

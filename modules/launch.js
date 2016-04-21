@@ -387,6 +387,14 @@ module.exports = function(app, cache, chance, database, io, self) {
         maxWait: GET_LAUNCH_HOLD_DEBOUNCE_MAX_WAIT
     });
 
+    self.on('draftStatusChanged', co.wrap(function*() {
+        yield updateLaunchHolds();
+    }));
+
+    self.on('serversUpdated', co.wrap(function*() {
+        yield updateLaunchHolds();
+    }));
+
     self.markUserActivity = function markUserActivity(user) {
         let userID = self.getDocumentID(user);
 

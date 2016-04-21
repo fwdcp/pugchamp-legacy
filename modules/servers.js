@@ -143,27 +143,31 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
+    self.updateServerStatuses = co.wrap(function* updateServerStatuses() {
+        let updatedStatuses = yield _.map(_.keys(GAME_SERVER_POOL), gameServer => getServerStatus(gameServer));
+        serverStatuses = _.zipObject(_.keys(GAME_SERVER_POOL), updatedStatuses);
+
+        yield cache.setAsync('serverStatuses', JSON.stringify(serverStatuses));
+
+        self.emit('serversUpdated');
+    });
+
+    /**
+     * @async
+     */
     self.getServerStatuses = co.wrap(function* getServerStatuses(forceUpdate) {
-        let serverStatuses;
-
         if (serverUpdateLimiter.tryRemoveTokens(1) || forceUpdate) {
-            let updatedStatuses = yield _.map(_.keys(GAME_SERVER_POOL), gameServer => getServerStatus(gameServer));
-            serverStatuses = _.zipObject(_.keys(GAME_SERVER_POOL), updatedStatuses);
-
-            yield cache.setAsync('serverStatuses', JSON.stringify(serverStatuses));
-        }
-        else {
-            let cacheResponse = yield cache.getAsync('serverStatuses');
-
-            if (!cacheResponse) {
-                yield self.getServerStatuses(true);
-                cacheResponse = yield cache.getAsync('serverStatuses');
-            }
-
-            serverStatuses = JSON.parse(cacheResponse);
+            yield self.updateServerStatuses();
         }
 
-        return serverStatuses;
+        let cacheResponse = yield cache.getAsync('serverStatuses');
+
+        if (!cacheResponse) {
+            yield self.updateServerStatuses();
+            cacheResponse = yield cache.getAsync('serverStatuses');
+        }
+
+        return JSON.parse(cacheResponse);
     });
 
     /**
@@ -230,6 +234,8 @@ module.exports = function(app, cache, chance, database, io, self) {
                 yield self.sendRCONCommands(server, ['pugchamp_game_reset']);
             }
         }));
+
+        yield self.updateServerStatuses();
     });
 
     /**
@@ -372,6 +378,8 @@ module.exports = function(app, cache, chance, database, io, self) {
                 yield disconnectFromRCON(rcon);
             }
         }
+
+        yield self.updateServerStatuses();
     });
 
     /**
@@ -520,5 +528,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }
+
+        yield self.updateServerStatuses();
     }));
 };
