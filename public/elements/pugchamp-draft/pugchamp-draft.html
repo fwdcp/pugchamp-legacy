@@ -249,7 +249,7 @@
                                     <iron-icon icon="warning"></iron-icon>
                                     <paper-tooltip>Overrides Enabled</paper-tooltip>
                                 </span>
-                                <span hidden$="{{hasAvailablePlayers(players, role.key, unavailablePlayers)}}">
+                                <span hidden$="{{hasAvailablePlayers(players, role.key, overrideRoles, allPlayers, unavailablePlayers)}}">
                                     <iron-icon icon="hourglass-empty"></iron-icon>
                                     <paper-tooltip>None Available</paper-tooltip>
                                 </span>
@@ -592,8 +592,13 @@
                     return 'highlight';
                 }
             },
-            hasAvailablePlayers: function(players, role, unavailablePlayers) {
-                return _(players[role]).map('id').difference(unavailablePlayers).size() > 0;
+            hasAvailablePlayers: function(players, role, overrideRoles, allPlayers, unavailablePlayers) {
+                if (_.includes(overrideRoles, role)) {
+                    return _(allPlayers).difference(unavailablePlayers).size() > 0;
+                }
+                else {
+                    return _(players[role]).map('id').difference(unavailablePlayers).size() > 0;
+                }
             },
             onPlayer: function(event) {
                 this.set('highlightedPlayer', event.model.item.id);
