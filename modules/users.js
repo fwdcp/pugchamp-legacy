@@ -505,7 +505,6 @@ module.exports = function(app, cache, chance, database, io, self) {
     }
 
     io.sockets.on('authenticated', co.wrap(function*(socket) {
-        try {
         let userID = socket.decoded_token.user;
 
         let user = yield self.getCachedUser(userID);
@@ -527,7 +526,6 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         socket.removeAllListeners('disconnect');
         socket.on('disconnect', onUserDisconnect);
-    } catch (err) { console.log(err.stack); }
     }));
 
     app.get('/user/settings', function(req, res) {

@@ -144,8 +144,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.updateServerStatuses = co.wrap(function* updateServerStatuses() {
-        let updatedStatuses = yield _.map(_.keys(GAME_SERVER_POOL), gameServer => getServerStatus(gameServer));
-        serverStatuses = _.zipObject(_.keys(GAME_SERVER_POOL), updatedStatuses);
+        let serverStatuses = _.zipObject(_.keys(GAME_SERVER_POOL), yield _.map(_.keys(GAME_SERVER_POOL), gameServer => getServerStatus(gameServer)));
 
         yield cache.setAsync('serverStatuses', JSON.stringify(serverStatuses));
 
