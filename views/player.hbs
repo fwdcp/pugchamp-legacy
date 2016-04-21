@@ -42,7 +42,15 @@
     {{/head}}
 
     {{#> body}}
-    <h1>{{user.alias}}</h1>
+    <h1>
+        {{#each groups}}
+        <span>
+            <iron-icon icon="{{icon}}"></iron-icon>
+            <paper-tooltip>{{item.name}}</paper-tooltip>
+        </span>
+        {{/each}}
+        {{user.alias}}
+    </h1>
 
     <a class="button" href="https://steamcommunity.com/profiles/{{user.steamID}}"><paper-button class="link" id="steam" raised>Steam Profile</paper-button></a>
     <a class="button" href="http://logs.tf/profile/{{user.steamID}}"><paper-button class="link" raised>Logs.tf Profile</paper-button></a>
