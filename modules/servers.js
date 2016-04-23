@@ -145,6 +145,11 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     self.updateServerStatuses = co.wrap(function* updateServerStatuses() {
         let serverStatuses = _.zipObject(_.keys(GAME_SERVER_POOL), yield _.map(_.keys(GAME_SERVER_POOL), gameServer => getServerStatus(gameServer)));
+        _.forEach(serverStatuses, function(status) {
+            if (status.game) {
+                status.game = status.game.toObject();
+            }
+        });
 
         yield cache.setAsync('serverStatuses', JSON.stringify(serverStatuses));
 
@@ -459,7 +464,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         let servers = yield self.getServerStatuses(self.isUserAdmin(req.user));
 
         res.render('servers', {
-            servers: _.mapValues(servers, (status, name) => ({server: _.omit(GAME_SERVER_POOL[name], 'rcon', 'salt'), status: status}))
+            servers: _.mapValues(servers, (status, name) => ({server: _.omit(GAME_SERVER_POOL[name], 'rcon', 'salt'), status}))
         });
     }));
 
