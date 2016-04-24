@@ -464,7 +464,10 @@ module.exports = function(app, cache, chance, database, io, self) {
         let servers = yield self.getServerStatuses(self.isUserAdmin(req.user));
 
         res.render('servers', {
-            servers: _.mapValues(servers, (status, name) => ({server: _.omit(GAME_SERVER_POOL[name], 'rcon', 'salt'), status}))
+            servers: _.mapValues(servers, (status, name) => ({
+                server: _.omit(GAME_SERVER_POOL[name], 'rcon', 'salt'),
+                status
+            }))
         });
     }));
 

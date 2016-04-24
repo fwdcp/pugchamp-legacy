@@ -29,10 +29,7 @@ var cache = require('./cache');
 var chance = new Chance(crypto.randomBytes(4).readInt32LE());
 var database = require('./database');
 var server = http.Server(app);
-var io = socketIO(server, {
-    pingTimeout: 60000,
-    pingInterval: 5000
-});
+var io = socketIO(server);
 var self = new PugChamp();
 
 app.set('view engine', 'hbs');

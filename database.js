@@ -75,7 +75,11 @@ var userSchema = new mongoose.Schema({
         }
     }
 });
-userSchema.index({alias: 'text'}, {default_language: 'none'});
+userSchema.index({
+    alias: 'text'
+}, {
+    default_language: 'none'
+});
 userSchema.virtual('admin').get(function() {
     return _.includes(ADMINS, this.steamID);
 });
@@ -121,7 +125,9 @@ userSchema.set('toObject', {
             }
         }
 
-        ret.groups = _(doc.groups).intersection(_.keys(USER_GROUPS)).map(groupID => _.assign({}, _.pick(USER_GROUPS[groupID], 'icon', 'name'), {id: groupID}));
+        ret.groups = _(doc.groups).intersection(_.keys(USER_GROUPS)).map(groupID => _.assign({}, _.pick(USER_GROUPS[groupID], 'icon', 'name'), {
+            id: groupID
+        }));
 
         delete ret.options;
     }
@@ -207,11 +213,15 @@ gameSchema.set('toObject', {
     versionKey: false,
     transform(doc, ret) {
         if (doc.map) {
-            ret.map = _.assign({}, MAPS[doc.map], {id: doc.map});
+            ret.map = _.assign({}, MAPS[doc.map], {
+                id: doc.map
+            });
         }
 
         if (doc.server) {
-            ret.server = _.assign({}, _.omit(SERVER_POOL[doc.server], 'rcon', 'salt'), {id: doc.server});
+            ret.server = _.assign({}, _.omit(SERVER_POOL[doc.server], 'rcon', 'salt'), {
+                id: doc.server
+            });
         }
     }
 });

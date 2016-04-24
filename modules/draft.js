@@ -744,7 +744,11 @@ module.exports = function(app, cache, chance, database, io, self) {
                         supported = true;
                     }
                     else if (turnDefinition.method === 'fresh') {
-                        let recentGames = yield _(draftTeams).flatMap('players').uniq().map(player => database.Game.findOne({'teams.composition.players.user': player.user}).sort({date: -1}).exec()).value();
+                        let recentGames = yield _(draftTeams).flatMap('players').uniq().map(player => database.Game.findOne({
+                            'teams.composition.players.user': player.user
+                        }).sort({
+                            date: -1
+                        }).exec()).value();
 
                         let recentlyPlayedMap = _.chain(recentGames).reduce(function(maps, game) {
                             if (!game || !_.includes(remainingMaps, game.map)) {
@@ -777,7 +781,11 @@ module.exports = function(app, cache, chance, database, io, self) {
                         supported = true;
                     }
                     else if (turnDefinition.method === 'fresh') {
-                        let recentGames = yield _(draftTeams).flatMap('players').uniq().map(player => database.Game.findOne({'teams.composition.players.user': player.user}).sort({date: -1}).exec()).value();
+                        let recentGames = yield _(draftTeams).flatMap('players').uniq().map(player => database.Game.findOne({
+                            'teams.composition.players.user': player.user
+                        }).sort({
+                            date: -1
+                        }).exec()).value();
 
                         let recentlyPlayedMap = _.chain(recentGames).reduce(function(maps, game) {
                             if (!game || !_.includes(remainingMaps, game.map)) {
