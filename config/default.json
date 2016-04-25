@@ -71,7 +71,7 @@
         "draft": {
             "captainDraftExpireCooldown": "2m",
             "separateCaptainPool": true,
-            "turnTimeLimit": "90s"
+            "turnTimeLimit": "60s"
         },
         "servers": {
             "commandTimeout": "5s",
