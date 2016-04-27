@@ -51,6 +51,12 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             yield self.postToSlack(message);
         });
+
+        co(function*() {
+            yield self.postToLog({
+                description: 'server booting up'
+            });
+        });
     }
     else {
         self.postToSlack = co.wrap(_.noop);
