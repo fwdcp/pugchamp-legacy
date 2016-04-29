@@ -3,6 +3,7 @@
 const _ = require('lodash');
 const co = require('co');
 const config = require('config');
+const debug = require('debug')('pugchamp:draft');
 const ms = require('ms');
 
 module.exports = function(app, cache, chance, database, io, self) {
@@ -336,10 +337,13 @@ module.exports = function(app, cache, chance, database, io, self) {
             let usersToUpdate = _.unionBy(captainPool, fullPlayerList, user => self.getDocumentID(user));
 
             try {
+                debug('saving drafted game');
                 yield game.save();
 
+                debug(`updating game ${game.id}`);
                 yield self.processGameUpdate(game);
 
+                debug('updating restrictions for players in draft');
                 yield _.map(_.unionBy(captainPool, fullPlayerList, user => self.getDocumentID(user)), user => self.updateUserRestrictions(user));
 
                 currentDraftGame = self.getDocumentID(game);

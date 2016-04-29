@@ -4,6 +4,7 @@ const _ = require('lodash');
 const co = require('co');
 const config = require('config');
 const crypto = require('crypto');
+const debug = require('debug')('pugchamp:servers');
 const HttpStatus = require('http-status-codes');
 const ms = require('ms');
 const RateLimiter = require('limiter').RateLimiter;
@@ -219,6 +220,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.shutdownGame = co.wrap(function* shutdownGame(game) {
+        debug(`shutting down servers for game ${game.id}`);
         yield _.map(GAME_SERVER_POOL, co.wrap(function*(serverInfo, server) {
             let serverStatus = yield getServerStatus(server);
 
@@ -235,6 +237,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
 
             if (serverStatus.status === 'assigned' && self.getDocumentID(serverStatus.game) === self.getDocumentID(game)) {
+                debug(`found server ${server} assigned to game ${game.id}, shutting down`);
                 yield self.sendRCONCommands(server, ['pugchamp_game_reset']);
             }
         }));
@@ -249,7 +252,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         let serverStatus = yield getServerStatus(game.server);
 
         if (serverStatus.status === 'unreachable' || serverStatus.status === 'unknown') {
+            debug(`failed to get status of server ${game.server} for game ${game.id}`);
             for (let delay of RETRY_ATTEMPTS) {
+                debug(`waiting for ${delay}ms before retrying`);
                 yield self.promiseDelay(delay, null, false);
 
                 serverStatus = yield getServerStatus(game.server);
@@ -261,6 +266,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
 
         if (serverStatus.status !== 'assigned' || self.getDocumentID(serverStatus.game) !== self.getDocumentID(game)) {
+            debug(`server ${game.server} is not assigned to game ${game.id}`);
             throw new Error('server not assigned to game');
         }
 
@@ -330,6 +336,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         });
 
+        debug(`sending commands to update players on server ${game.server} for game ${game.id}`);
         yield self.sendRCONCommands(game.server, commands);
     });
 
@@ -337,22 +344,29 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.initializeServer = co.wrap(function* initializeServer(game) {
+        debug(`initializing server ${game.server} for game ${game.id}`);
+
         if (!game.server) {
             throw new Error('no server is currently assigned to this game');
         }
 
+        debug(`resetting status of game ${game.id} to initializing`);
         game.status = 'initializing';
         yield game.save();
 
+        debug(`updating game ${game.id}`);
         yield self.processGameUpdate(game);
 
+        debug(`resetting servers currently assigned to game ${game.id}`);
         yield self.shutdownGame(game);
 
         let rcon;
 
         try {
+            debug(`connecting to RCON for server ${game.server} for game ${game.id}`);
             rcon = yield connectToRCON(game.server);
 
+            debug(`resetting server ${game.server} for game ${game.id}`);
             yield sendCommandsToServer(rcon, ['pugchamp_game_reset']);
 
             let gameServerInfo = GAME_SERVER_POOL[game.server];
@@ -362,23 +376,27 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let mapInfo = MAPS[game.map];
 
+            debug(`performing initial setup for server ${game.server} for game ${game.id}`);
             yield sendCommandsToServer(rcon, [`pugchamp_api_url "${BASE_URL}/api/servers/${key}"`, `pugchamp_game_id "${self.getDocumentID(game)}"`, `pugchamp_game_map "${mapInfo.file}"`, `pugchamp_game_config "${mapInfo.config}"`]);
 
             yield self.updateServerPlayers(game);
 
             try {
+                debug(`launching server ${game.server} for game ${game.id}`);
                 yield sendCommandsToServer(rcon, ['pugchamp_game_start'], MAP_CHANGE_TIMEOUT);
             }
             catch (err) {
                 let serverStatus = yield getServerStatus(game.server);
 
                 if (serverStatus.status !== 'assigned' || self.getDocumentID(serverStatus.game) !== self.getDocumentID(game) || serverStatus.game.status === 'initializing') {
+                    debug(`game server ${game.server} not launched for game ${game.id}`);
                     throw err;
                 }
             }
         }
         finally {
             if (rcon) {
+                debug(`disconnecting from RCON for server ${game.server} for game ${game.id}`);
                 yield disconnectFromRCON(rcon);
             }
         }
@@ -390,17 +408,25 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.assignGameToServer = co.wrap(function* assignGameToServer(game, server) {
+        debug(`assigning game ${game.id} to server`);
+
+        debug(`resetting status of game ${game.id} to initializing`);
         game.status = 'initializing';
         game.server = null;
         yield game.save();
 
+        debug(`updating game ${game.id}`);
         yield self.processGameUpdate(game);
 
         if (!server) {
+            debug(`randomly assigning game ${game.id} to available server`);
             let availableServers = yield self.getAvailableServers(true);
 
             if (_.size(availableServers) === 0) {
+                debug('no servers available on initial attempt');
+
                 for (let delay of RETRY_ATTEMPTS) {
+                    debug(`waiting for ${delay}ms before retrying`);
                     yield self.promiseDelay(delay, null, false);
 
                     availableServers = yield self.getAvailableServers(true);
@@ -411,6 +437,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 }
 
                 if (_.size(availableServers) === 0) {
+                    debug('failed to find servers after retries');
                     throw new Error('no servers available');
                 }
             }
@@ -418,15 +445,18 @@ module.exports = function(app, cache, chance, database, io, self) {
             server = chance.pick(availableServers);
         }
 
+        debug(`assigning game ${game.id} to server ${server}`);
         game.server = server;
         yield game.save();
 
+        debug(`updating game ${game.id}`);
         yield self.processGameUpdate(game);
 
         try {
             yield self.initializeServer(game);
         }
         catch (err) {
+            debug(`initializing server ${game.server} for game ${game.id} failed`);
             self.postToLog({
                 description: `encountered error while trying to initialize server \`${server}\` for game \`${self.getDocumentID(game)}\``,
                 error: err
@@ -435,6 +465,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             let success = false;
 
             for (let delay of RETRY_ATTEMPTS) {
+                debug(`waiting for ${delay}ms before retrying`);
                 yield self.promiseDelay(delay, null, false);
 
                 try {
@@ -455,6 +486,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
 
             if (!success) {
+                debug(`failed to initialize server ${game.server} for game ${game.id} after retries`);
                 throw new Error('failed to initialize server');
             }
         }
