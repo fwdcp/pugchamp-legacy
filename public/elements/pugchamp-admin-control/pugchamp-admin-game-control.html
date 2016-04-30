@@ -17,7 +17,7 @@
             }
         </style>
 
-        <p hidden$="{{!isLiveOnServer(game.server, game.status)}}">Server: {{game.server}}</p>
+        <p hidden$="{{!isLiveOnServer(game.server, game.status)}}">Server: {{game.server.id}}</p>
 
         <form is="iron-form" action="/admin/game/{{game.id}}" method="post" on-iron-form-response="reload" on-iron-form-error="reload">
             <input type="hidden" name="type" value="requestSubstitute">
