@@ -311,7 +311,6 @@ module.exports = function(app, cache, chance, database, io, self) {
             self.postToAdminLog(req.user, `reassigned game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\` to server \`${server}\``);
 
             try {
-                yield self.shutdownGame(game);
                 yield self.assignGameToServer(game, true, server);
 
                 res.sendStatus(HttpStatus.OK);
