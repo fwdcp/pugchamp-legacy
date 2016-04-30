@@ -299,25 +299,16 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            let availableServers = yield self.getAvailableServers(true);
-
-            if (_.size(availableServers) === 0) {
-                res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR);
-                return;
-            }
-
-            let server = chance.pick(availableServers);
-
-            self.postToAdminLog(req.user, `reassigned game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\` to server \`${server}\``);
+            self.postToAdminLog(req.user, `reassigned game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\` to new server`);
 
             try {
-                yield self.assignGameToServer(game, true, server);
+                yield self.assignGameToServer(game, true);
 
                 res.sendStatus(HttpStatus.OK);
             }
             catch (err) {
                 self.postToLog({
-                    description: `failed to reassign game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\` to server \`${game.server}\``,
+                    description: `failed to reassign game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\` to new server`,
                     error: err
                 });
 

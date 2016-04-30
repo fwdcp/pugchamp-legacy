@@ -475,9 +475,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             debug(`updating game ${game.id}`);
             yield self.processGameUpdate(game);
 
-            let server = requestedServer;
-
-            if (!server) {
+            if (!requestedServer) {
                 debug(`randomly assigning game ${game.id} to available server`);
                 let availableServers = yield self.getAvailableServers(true);
 
@@ -486,11 +484,13 @@ module.exports = function(app, cache, chance, database, io, self) {
                     throw new Error('no servers available');
                 }
 
-                server = chance.pick(availableServers);
+                game.server = chance.pick(availableServers);
+            }
+            else {
+                game.server = requestedServer;
             }
 
-            debug(`assigning game ${game.id} to server ${server}`);
-            game.server = server;
+            debug(`assigning game ${game.id} to server ${game.server}`);
             yield game.save();
 
             debug(`updating game ${game.id}`);
