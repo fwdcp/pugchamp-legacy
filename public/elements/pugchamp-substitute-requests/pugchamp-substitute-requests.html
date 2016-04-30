@@ -5,6 +5,7 @@
 
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-time-sync-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-user-behavior.html">
 <link rel="import" href="/elements/pugchamp-notification/pugchamp-notification.html">
 <link rel="import" href="/elements/pugchamp-sound/pugchamp-sound.html">
@@ -73,14 +74,13 @@
     <script>
         Polymer({
             is: 'pugchamp-substitute-requests',
-            behaviors: [PugChampPolymerHelperBehaviors, PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior, PugChampClientBehaviors.UserBehavior],
+            behaviors: [PugChampPolymerHelperBehaviors, PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior, PugChampClientBehaviors.TimeSyncBehavior, PugChampClientBehaviors.UserBehavior],
             ready: function() {
                 this._listenToEvent('substituteRequestsUpdated', 'onSubstituteRequestsUpdated');
 
                 this.set('requests', []);
-                this.set('currentTime', 0);
 
-                this.async(this.updateTimers, 1000);
+                this.updateTimers();
             },
             onSubstituteRequestsUpdated: function(info) {
                 if (this.requests.length < info.requests.length) {
@@ -88,10 +88,9 @@
                 }
 
                 this.set('requests', info.requests);
-                this.set('currentTime', info.currentTime);
             },
             updateTimers: function() {
-                this.set('currentTime', this.currentTime + 1000);
+                this.set('currentTime', this.timesync.now());
 
                 this.async(this.updateTimers, 1000);
             },

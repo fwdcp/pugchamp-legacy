@@ -245,11 +245,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 cacheResponse = yield cache.getAsync('draftStatus');
             }
 
-            let draftStatusMessage = JSON.parse(cacheResponse);
-
-            draftStatusMessage.currentTime = Date.now();
-
-            return draftStatusMessage;
+            return JSON.parse(cacheResponse);
         });
     }
 

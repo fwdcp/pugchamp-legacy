@@ -16,6 +16,7 @@
 
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-time-sync-behavior.html">
 <link rel="import" href="/elements/pugchamp-notification/pugchamp-notification.html">
 <link rel="import" href="/elements/pugchamp-player-stats/pugchamp-player-stats.html">
 <link rel="import" href="/elements/pugchamp-sound/pugchamp-sound.html">
@@ -139,7 +140,7 @@
             <h2>Launch In Progress</h2>
 
             <p>
-                <paper-progress id="readyTime" class="transiting" min="0"></paper-progress>
+                <paper-progress id="readyTime" class="transiting" min="0" value="{{difference(currentTime, startTime)}}" max="{{difference(endTime, startTime)}}"></paper-progress>
             </p>
             <p class="ready-status" hidden$="{{isAvailable(availability)}}"><iron-icon icon="block"></iron-icon> You are currently not marked as available for an upcoming game.</p>
             <p>
@@ -248,7 +249,7 @@
     <script>
         Polymer({
             is: 'pugchamp-launchpad',
-            behaviors: [PugChampPolymerHelperBehaviors, PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior],
+            behaviors: [PugChampPolymerHelperBehaviors, PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior, PugChampClientBehaviors.TimeSyncBehavior],
             properties: {
                 noCaptains: {
                     type: Boolean,
@@ -269,7 +270,7 @@
                 this._listenToEvent('userAvailabilityUpdated', 'onUserAvailabilityUpdated');
                 this._listenToEvent('userReadyStatusUpdated', 'onUserReadyStatusUpdated');
 
-                this.async(this.incrementReadyTimer, 1000);
+                this.updateTimers();
             },
             onLaunchStatusUpdated: function(status) {
                 this.set('roles', status.roles);
@@ -281,16 +282,14 @@
                 }
                 this.set('rolesNeeded', status.rolesNeeded);
                 this.set('holds', status.launchHolds);
+                this.set('startTime', status.startTime);
+                this.set('endTime', status.endTime);
 
                 if (!this.launchActive && status.active) {
                     this.startReady();
                 }
                 else if (this.launchActive && !status.active) {
                     this.resetReady();
-                }
-
-                if (this.launchActive) {
-                    this.updateTime({elapsed: status.currentTime - status.startTime, total: status.endTime - status.startTime});
                 }
             },
             updateAvailability: function() {
@@ -364,12 +363,15 @@
 
                 this.set('readyToPlay', false);
             },
-            updateTime: function(time) {
-                this.$.readyTime.value = time.elapsed / 1000;
-                this.$.readyTime.max = time.total / 1000;
+            updateTimers: function() {
+                this.set('currentTime', this.timesync.now());
+
+                this.playLaunchAlert();
+
+                this.async(this.updateTimers, 1000);
             },
             playLaunchAlert: function() {
-                if (this.launchActive && Math.round(this.$.readyTime.max - this.$.readyTime.value) === 10) {
+                if (this.launchActive && Math.round((this.$.readyTime.max - this.$.readyTime.value) / 1000) === 10) {
                     if ((!this.isRestricted(this.restrictions, 'start') || !this.isRestricted(this.restrictions, 'captain')) && (!this.readyToPlay || !this.isAvailable(this.availability))) {
                         this.$.launchAlertSound.play();
                     }
@@ -441,6 +443,9 @@
             },
             double: function(number) {
                 return 2 * number;
+            },
+            difference: function(a, b) {
+                return a - b;
             }
         });
     </script>

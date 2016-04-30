@@ -5,6 +5,8 @@ const config = require('config');
 const hbs = require('hbs');
 const math = require('mathjs');
 const moment = require('moment');
+const path = require('path');
+const serveStatic = require('serve-static');
 
 module.exports = function(app, cache, chance, database, io, self) {
     const HIDE_CAPTAINS = config.get('app.games.hideCaptains');
@@ -104,4 +106,17 @@ module.exports = function(app, cache, chance, database, io, self) {
     app.get('/', function(req, res) {
         res.render('index');
     });
+
+    function onTimesync(data) {
+        this.emit('timesync', {
+            id: _.has(data, 'id') ? data.id : null,
+            result: Date.now()
+        });
+    }
+
+    io.sockets.on('connection', function(socket) {
+        socket.on('timesync', onTimesync);
+    });
+
+    app.use('/timesync', serveStatic(path.dirname(require.resolve('timesync'))));
 };

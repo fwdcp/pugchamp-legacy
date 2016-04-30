@@ -12,6 +12,7 @@
 
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-time-sync-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-user-behavior.html">
 <link rel="import" href="/elements/pugchamp-notification/pugchamp-notification.html">
 <link rel="import" href="/elements/pugchamp-player-stats/pugchamp-player-stats.html">
@@ -179,7 +180,7 @@
                         {{fullTurnTeamName(item.team, teams)}}
                         <br>
                         {{fullTurnChoiceInfo(item)}}
-                        <paper-progress hidden$="{{!_equals(index, currentTurn)}}" class="turn-time" class="transiting" min="0"></paper-progress>
+                        <paper-progress hidden$="{{!_equals(index, currentTurn)}}" class="turn-time" class="transiting" min="0" value="{{difference(currentTime, startTime)}}" max="{{difference(endTime, startTime)}}"></paper-progress>
                     </paper-material>
                 </template>
             </div>
@@ -292,7 +293,7 @@
     <script>
         Polymer({
             is: 'pugchamp-draft',
-            behaviors: [PugChampPolymerHelperBehaviors, PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior, PugChampClientBehaviors.UserBehavior],
+            behaviors: [PugChampPolymerHelperBehaviors, PugChampClientBehaviors.BaseBehavior, PugChampClientBehaviors.RestrictionsBehavior, PugChampClientBehaviors.TimeSyncBehavior, PugChampClientBehaviors.UserBehavior],
             properties: {
                 hideCaptains: {
                     type: Boolean,
@@ -303,6 +304,8 @@
                 this.set('active', false);
 
                 this._listenToEvent('draftStatusUpdated', 'onDraftStatusUpdated');
+
+                this.updateTimers();
             },
             onDraftStatusUpdated: function(status) {
                 this.set('active', status.active);
@@ -320,38 +323,25 @@
                 this.set('unavailablePlayers', status.unavailablePlayers);
                 this.set('turns', status.draftTurns);
                 this.set('currentTurn', status.currentDraftTurn);
+                this.set('startTime', status.turnStartTime);
+                this.set('endTime', status.turnEndTime);
 
                 if (this.active && !this.complete) {
                     if (this.turns[this.currentTurn].method === 'captain' && this._isCurrentUser(this.user, this.teams[this.turns[this.currentTurn].team].captain.id)) {
                         this.startDraftTurn();
                     }
-
-                    if (this.currentTimer) {
-                        this.cancelAsync(this.currentTimer);
-                    }
-
-                    this.async(function() {
-                        var progress = Polymer.dom(this.$.draftTurns).querySelector('.draft-turn[data-status=current] .turn-time');
-                        progress.value = (status.currentTime - status.turnStartTime) / 1000;
-                        progress.max = (status.turnEndTime - status.turnStartTime) / 1000;
-
-                        this.currentTimer = this.async(this.incrementTurnTimer, 1000);
-                    });
                 }
             },
             startDraftTurn: function() {
                 this.$.turnNotification.notify();
                 this.$.draftYourPickSound.play();
             },
-            incrementTurnTimer: function() {
-                var progress = Polymer.dom(this.$.draftTurns).querySelector('.draft-turn[data-status=current] .turn-time');
-                progress.value++;
+            updateTimers: function() {
+                this.set('currentTime', this.timesync.now());
 
                 this.playExpireWarning();
 
-                if (progress.ratio < 100) {
-                    this.currentTimer = this.async(this.incrementTurnTimer, 1000);
-                }
+                this.async(this.updateTimers, 1000);
             },
             turnComparison: function(turn, current) {
                 if (turn < current) {
@@ -579,10 +569,10 @@
                 if (this.active && !this.complete && this.user && this.turns[this.currentTurn].method === 'captain' && this._isCurrentUser(this.user, this.teams[this.turns[this.currentTurn].team].id)) {
                     var progress = Polymer.dom(this.$.draftTurns).querySelector('.draft-turn[data-status=current] .turn-time');
 
-                    if (Math.round(progress.max - progress.value) === 10) {
+                    if (Math.round((this.endTime - this.currentTime) / 1000) === 10) {
                         this.$.draftTenSecondsSound.play();
                     }
-                    else if (Math.round(progress.max - progress.value) === 5) {
+                    else if (Math.round((this.endTime - this.currentTime) / 1000) === 5) {
                         this.$.draftFiveSecondsSound.play();
                     }
                 }
@@ -629,6 +619,9 @@
                 else {
                     return '';
                 }
+            },
+            difference: function(a, b) {
+                return a - b;
             }
         });
     </script>

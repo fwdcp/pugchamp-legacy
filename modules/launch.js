@@ -170,11 +170,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 cacheResponse = yield cache.getAsync('launchStatus');
             }
 
-            let launchStatusMessage = JSON.parse(cacheResponse);
-
-            launchStatusMessage.currentTime = Date.now();
-
-            return launchStatusMessage;
+            return JSON.parse(cacheResponse);
         });
     }
 

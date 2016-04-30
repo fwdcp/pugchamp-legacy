@@ -1,0 +1,29 @@
+<link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
+
+<script src="/components/lodash/lodash.js"></script>
+<script src="/timesync/timesync.js"></script>
+
+<script>
+    TimeSyncBehaviorImpl = {
+        created: function() {
+            if (!window.ts) {
+                window.ts = timesync.create({
+                    server: window.socket,
+                    interval: 5000
+                });
+
+                window.ts.send = function(socket, data) {
+                    socket.emit('timesync', data);
+                };
+
+                window.socket.on('timesync', function(data) {
+                    ts.receive(null, data);
+                });
+            }
+
+            this.timesync = window.ts;
+        }
+    };
+
+    PugChampClientBehaviors.TimeSyncBehavior = [PugChampClientBehaviors.BaseBehavior, TimeSyncBehaviorImpl];
+</script>

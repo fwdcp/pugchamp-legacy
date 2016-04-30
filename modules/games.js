@@ -273,11 +273,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 cacheResponse = yield cache.getAsync('substituteRequests');
             }
 
-            let substituteRequestsMessage = JSON.parse(cacheResponse);
-
-            substituteRequestsMessage.currentTime = Date.now();
-
-            return substituteRequestsMessage;
+            return JSON.parse(cacheResponse);
         });
     }
 
