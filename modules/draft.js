@@ -344,7 +344,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                 currentDraftGame = self.getDocumentID(game);
 
-                yield self.assignGameToServer(game);
+                yield self.assignGameToServer(game, true);
             }
             catch (err) {
                 self.postToLog({

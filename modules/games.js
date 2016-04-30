@@ -453,7 +453,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         yield self.processGameUpdate(game);
 
-        yield self.updateServerPlayers(game);
+        yield self.updateServerPlayers(game, true);
     });
 
     /**

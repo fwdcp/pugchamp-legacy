@@ -223,83 +223,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             return;
         }
 
-        if (req.body.type === 'reassignServer') {
-            if (game.status === 'completed') {
-                res.sendStatus(HttpStatus.BAD_REQUEST);
-                return;
-            }
-
-            let availableServers = yield self.getAvailableServers(true);
-
-            if (_.size(availableServers) === 0) {
-                res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR);
-                return;
-            }
-
-            let server = chance.pick(availableServers);
-
-            self.postToAdminLog(req.user, `reassigned game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\` to server \`${server}\``);
-
-            try {
-                yield self.shutdownGame(game);
-                yield self.assignGameToServer(game, server);
-
-                res.sendStatus(HttpStatus.OK);
-            }
-            catch (err) {
-                self.postToLog({
-                    description: `failed to reassign game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\` to server \`${game.server}\``,
-                    error: err
-                });
-
-                res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-        }
-        else if (req.body.type === 'reinitializeServer') {
-            if (game.status === 'aborted' || game.status === 'completed') {
-                res.sendStatus(HttpStatus.BAD_REQUEST);
-                return;
-            }
-
-            self.postToAdminLog(req.user, `reinitialized server \`${game.server}\` for game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``);
-
-            try {
-                yield self.initializeServer(game);
-
-                res.sendStatus(HttpStatus.OK);
-            }
-            catch (err) {
-                self.postToLog({
-                    description: `failed to reinitialize server \`${game.server}\` for game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``,
-                    error: err
-                });
-
-                res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-        }
-        else if (req.body.type === 'updateServerPlayers') {
-            if (game.status === 'aborted' || game.status === 'completed') {
-                res.sendStatus(HttpStatus.BAD_REQUEST);
-                return;
-            }
-
-            self.postToAdminLog(req.user, `updated players for server \`${game.server}\` for game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``);
-
-            try {
-                yield self.updateServerPlayers(game);
-
-                res.sendStatus(HttpStatus.OK);
-            }
-            catch (err) {
-                self.postToLog({
-                    description: `failed to update players for server \`${game.server}\` for game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``,
-                    error: err
-                });
-
-                res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-        }
-        else if (req.body.type === 'requestSubstitute') {
+        if (req.body.type === 'requestSubstitute') {
             if (game.status === 'aborted' || game.status === 'completed') {
                 res.sendStatus(HttpStatus.BAD_REQUEST);
                 return;
@@ -324,6 +248,82 @@ module.exports = function(app, cache, chance, database, io, self) {
             yield self.requestSubstitute(game, player);
 
             res.sendStatus(HttpStatus.OK);
+        }
+        else if (req.body.type === 'updateServerPlayers') {
+            if (game.status === 'aborted' || game.status === 'completed') {
+                res.sendStatus(HttpStatus.BAD_REQUEST);
+                return;
+            }
+
+            self.postToAdminLog(req.user, `updated players for server \`${game.server}\` for game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``);
+
+            try {
+                yield self.updateServerPlayers(game, true);
+
+                res.sendStatus(HttpStatus.OK);
+            }
+            catch (err) {
+                self.postToLog({
+                    description: `failed to update players for server \`${game.server}\` for game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``,
+                    error: err
+                });
+
+                res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        }
+        else if (req.body.type === 'reinitializeServer') {
+            if (game.status === 'aborted' || game.status === 'completed') {
+                res.sendStatus(HttpStatus.BAD_REQUEST);
+                return;
+            }
+
+            self.postToAdminLog(req.user, `reinitialized server \`${game.server}\` for game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``);
+
+            try {
+                yield self.initializeServer(game, true);
+
+                res.sendStatus(HttpStatus.OK);
+            }
+            catch (err) {
+                self.postToLog({
+                    description: `failed to reinitialize server \`${game.server}\` for game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``,
+                    error: err
+                });
+
+                res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        }
+        else if (req.body.type === 'reassignServer') {
+            if (game.status === 'completed') {
+                res.sendStatus(HttpStatus.BAD_REQUEST);
+                return;
+            }
+
+            let availableServers = yield self.getAvailableServers(true);
+
+            if (_.size(availableServers) === 0) {
+                res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+                return;
+            }
+
+            let server = chance.pick(availableServers);
+
+            self.postToAdminLog(req.user, `reassigned game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\` to server \`${server}\``);
+
+            try {
+                yield self.shutdownGame(game);
+                yield self.assignGameToServer(game, true, server);
+
+                res.sendStatus(HttpStatus.OK);
+            }
+            catch (err) {
+                self.postToLog({
+                    description: `failed to reassign game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\` to server \`${game.server}\``,
+                    error: err
+                });
+
+                res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
         }
         else if (req.body.type === 'abortGame') {
             if (game.status === 'aborted' || game.status === 'completed') {

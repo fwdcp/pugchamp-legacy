@@ -248,38 +248,71 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.updateServerPlayers = co.wrap(function* updateServerPlayers(game) {
-        let serverStatus = yield getServerStatus(game.server);
+    self.updateServerPlayers = co.wrap(function* updateServerPlayers(game, retry) {
+        let success = false;
 
-        if (serverStatus.status === 'unreachable' || serverStatus.status === 'unknown') {
-            debug(`failed to get status of server ${game.server} for game ${game.id}`);
-            for (let delay of RETRY_ATTEMPTS) {
-                debug(`waiting for ${delay}ms before retrying`);
-                yield self.promiseDelay(delay, null, false);
+        try {
+            let serverStatus = yield getServerStatus(game.server);
 
-                serverStatus = yield getServerStatus(game.server);
-
-                if (serverStatus.status !== 'unreachable' && serverStatus.status !== 'unknown') {
-                    break;
-                }
+            if (serverStatus.status !== 'assigned' || self.getDocumentID(serverStatus.game) !== self.getDocumentID(game)) {
+                debug(`server ${game.server} is not assigned to game ${game.id}`);
+                throw new Error('server not assigned to game');
             }
-        }
 
-        if (serverStatus.status !== 'assigned' || self.getDocumentID(serverStatus.game) !== self.getDocumentID(game)) {
-            debug(`server ${game.server} is not assigned to game ${game.id}`);
-            throw new Error('server not assigned to game');
-        }
+            let gameUsers = yield _.map(self.getGameUsers(game), user => self.getCachedUser(user));
+            let commands = _.map(gameUsers, function(user) {
+                let gameUserInfo = self.getGameUserInfo(game, user);
 
-        let gameUsers = yield _.map(self.getGameUsers(game), user => self.getCachedUser(user));
-        let commands = _.map(gameUsers, function(user) {
-            let gameUserInfo = self.getGameUserInfo(game, user);
+                if (gameUserInfo.player) {
+                    if (!gameUserInfo.player.replaced) {
+                        let className = ROLES[gameUserInfo.role.role].class;
 
-            if (gameUserInfo.player) {
-                if (!gameUserInfo.player.replaced) {
-                    let className = ROLES[gameUserInfo.role.role].class;
+                        let gameTeam = 1;
+                        let gameClass = 0;
 
+                        if (gameUserInfo.team.faction === 'RED') {
+                            gameTeam = 2;
+                        }
+                        else if (gameUserInfo.team.faction === 'BLU') {
+                            gameTeam = 3;
+                        }
+
+                        if (className === 'scout') {
+                            gameClass = 1;
+                        }
+                        else if (className === 'soldier') {
+                            gameClass = 3;
+                        }
+                        else if (className === 'pyro') {
+                            gameClass = 7;
+                        }
+                        else if (className === 'demoman') {
+                            gameClass = 4;
+                        }
+                        else if (className === 'heavy') {
+                            gameClass = 6;
+                        }
+                        else if (className === 'engineer') {
+                            gameClass = 9;
+                        }
+                        else if (className === 'medic') {
+                            gameClass = 5;
+                        }
+                        else if (className === 'sniper') {
+                            gameClass = 2;
+                        }
+                        else if (className === 'spy') {
+                            gameClass = 8;
+                        }
+
+                        return `pugchamp_game_player_add "${user.steamID}" "${user.alias}" ${gameTeam} ${gameClass}`;
+                    }
+                    else {
+                        return `pugchamp_game_player_remove "${user.steamID}"`;
+                    }
+                }
+                else {
                     let gameTeam = 1;
-                    let gameClass = 0;
 
                     if (gameUserInfo.team.faction === 'RED') {
                         gameTeam = 2;
@@ -288,86 +321,67 @@ module.exports = function(app, cache, chance, database, io, self) {
                         gameTeam = 3;
                     }
 
-                    if (className === 'scout') {
-                        gameClass = 1;
-                    }
-                    else if (className === 'soldier') {
-                        gameClass = 3;
-                    }
-                    else if (className === 'pyro') {
-                        gameClass = 7;
-                    }
-                    else if (className === 'demoman') {
-                        gameClass = 4;
-                    }
-                    else if (className === 'heavy') {
-                        gameClass = 6;
-                    }
-                    else if (className === 'engineer') {
-                        gameClass = 9;
-                    }
-                    else if (className === 'medic') {
-                        gameClass = 5;
-                    }
-                    else if (className === 'sniper') {
-                        gameClass = 2;
-                    }
-                    else if (className === 'spy') {
-                        gameClass = 8;
-                    }
-
-                    return `pugchamp_game_player_add "${user.steamID}" "${user.alias}" ${gameTeam} ${gameClass}`;
+                    return `pugchamp_game_player_add "${user.steamID}" "${user.alias}" ${gameTeam} 0`;
                 }
-                else {
-                    return `pugchamp_game_player_remove "${user.steamID}"`;
+            });
+
+            debug(`sending commands to update players on server ${game.server} for game ${game.id}`);
+            yield self.sendRCONCommands(game.server, commands);
+
+            success = true;
+        }
+        catch (err) {
+            self.postToLog({
+                description: `encountered error while trying to update server players to game \`${self.getDocumentID(game)}\``,
+                error: err
+            });
+
+            if (retry) {
+                for (let delay of RETRY_ATTEMPTS) {
+                    debug(`waiting for ${delay}ms before retrying`);
+                    yield self.promiseDelay(delay, null, false);
+
+                    try {
+                        yield self.updateServerPlayers(game, false);
+
+                        success = true;
+                        break;
+                    }
+                    catch (err) {
+                        success = false;
+                        continue;
+                    }
                 }
             }
-            else {
-                let gameTeam = 1;
+        }
 
-                if (gameUserInfo.team.faction === 'RED') {
-                    gameTeam = 2;
-                }
-                else if (gameUserInfo.team.faction === 'BLU') {
-                    gameTeam = 3;
-                }
-
-                return `pugchamp_game_player_add "${user.steamID}" "${user.alias}" ${gameTeam} 0`;
-            }
-        });
-
-        debug(`sending commands to update players on server ${game.server} for game ${game.id}`);
-        yield self.sendRCONCommands(game.server, commands);
+        if (!success) {
+            throw new Error('failed to update server players');
+        }
     });
 
     /**
      * @async
      */
-    self.initializeServer = co.wrap(function* initializeServer(game) {
-        debug(`initializing server ${game.server} for game ${game.id}`);
-
+    self.initializeServer = co.wrap(function* initializeServer(game, retry) {
         if (!game.server) {
             throw new Error('no server is currently assigned to this game');
         }
 
-        debug(`resetting status of game ${game.id} to initializing`);
-        game.status = 'initializing';
-        yield game.save();
-
-        debug(`updating game ${game.id}`);
-        yield self.processGameUpdate(game);
-
-        debug(`resetting servers currently assigned to game ${game.id}`);
-        yield self.shutdownGame(game);
-
-        let rcon;
+        let success = false;
 
         try {
-            debug(`connecting to RCON for server ${game.server} for game ${game.id}`);
-            rcon = yield connectToRCON(game.server);
+            debug(`initializing server ${game.server} for game ${game.id}`);
 
-            debug(`resetting server ${game.server} for game ${game.id}`);
-            yield sendCommandsToServer(rcon, ['pugchamp_game_reset']);
+            debug(`resetting status of game ${game.id} to initializing`);
+            game.status = 'initializing';
+            yield game.save();
+
+            debug(`updating game ${game.id}`);
+            yield self.processGameUpdate(game);
+
+            debug(`resetting servers currently assigned to game ${game.id}`);
+            yield self.shutdownGame(game);
 
             let gameServerInfo = GAME_SERVER_POOL[game.server];
             let hash = crypto.createHash('sha256');
@@ -376,119 +390,143 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let mapInfo = MAPS[game.map];
 
-            debug(`performing initial setup for server ${game.server} for game ${game.id}`);
-            yield sendCommandsToServer(rcon, [`pugchamp_api_url "${BASE_URL}/api/servers/${key}"`, `pugchamp_game_id "${self.getDocumentID(game)}"`, `pugchamp_game_map "${mapInfo.file}"`, `pugchamp_game_config "${mapInfo.config}"`]);
-
-            yield self.updateServerPlayers(game);
+            let rcon;
 
             try {
-                debug(`launching server ${game.server} for game ${game.id}`);
-                yield sendCommandsToServer(rcon, ['pugchamp_game_start'], MAP_CHANGE_TIMEOUT);
-            }
-            catch (err) {
-                let serverStatus = yield getServerStatus(game.server);
+                debug(`connecting to RCON for server ${game.server} for game ${game.id}`);
+                rcon = yield connectToRCON(game.server);
 
-                if (serverStatus.status !== 'assigned' || self.getDocumentID(serverStatus.game) !== self.getDocumentID(game) || serverStatus.game.status === 'initializing') {
-                    debug(`game server ${game.server} not launched for game ${game.id}`);
-                    throw err;
+                debug(`resetting server ${game.server} for game ${game.id}`);
+                yield sendCommandsToServer(rcon, ['pugchamp_game_reset']);
+
+                debug(`performing initial setup for server ${game.server} for game ${game.id}`);
+                yield sendCommandsToServer(rcon, [`pugchamp_api_url "${BASE_URL}/api/servers/${key}"`, `pugchamp_game_id "${self.getDocumentID(game)}"`, `pugchamp_game_map "${mapInfo.file}"`, `pugchamp_game_config "${mapInfo.config}"`]);
+
+                yield self.updateServerPlayers(game, false);
+
+                try {
+                    debug(`launching server ${game.server} for game ${game.id}`);
+                    yield sendCommandsToServer(rcon, ['pugchamp_game_start'], MAP_CHANGE_TIMEOUT);
+                }
+                catch (err) {
+                    let serverStatus = yield getServerStatus(game.server);
+
+                    if (serverStatus.status !== 'assigned' || self.getDocumentID(serverStatus.game) !== self.getDocumentID(game) || serverStatus.game.status === 'initializing') {
+                        debug(`game server ${game.server} not launched for game ${game.id}`);
+                        throw err;
+                    }
+                }
+            }
+            finally {
+                if (rcon) {
+                    debug(`disconnecting from RCON for server ${game.server} for game ${game.id}`);
+                    yield disconnectFromRCON(rcon);
+                }
+            }
+
+            yield self.updateServerStatuses();
+
+            success = true;
+        }
+        catch (err) {
+            self.postToLog({
+                description: `encountered error while trying to initialize server for game \`${self.getDocumentID(game)}\``,
+                error: err
+            });
+
+            if (retry) {
+                for (let delay of RETRY_ATTEMPTS) {
+                    debug(`waiting for ${delay}ms before retrying`);
+                    yield self.promiseDelay(delay, null, false);
+
+                    try {
+                        yield self.initializeServer(game, false);
+
+                        success = true;
+                        break;
+                    }
+                    catch (err) {
+                        success = false;
+                        continue;
+                    }
                 }
             }
         }
-        finally {
-            if (rcon) {
-                debug(`disconnecting from RCON for server ${game.server} for game ${game.id}`);
-                yield disconnectFromRCON(rcon);
-            }
-        }
 
-        yield self.updateServerStatuses();
+        if (!success) {
+            throw new Error('failed to initialize server');
+        }
     });
 
     /**
      * @async
      */
-    self.assignGameToServer = co.wrap(function* assignGameToServer(game, server) {
-        debug(`assigning game ${game.id} to server`);
+    self.assignGameToServer = co.wrap(function* assignGameToServer(game, retry, requestedServer) {
+        let success = false;
 
-        debug(`resetting status of game ${game.id} to initializing`);
-        game.status = 'initializing';
-        game.server = null;
-        yield game.save();
+        try {
+            debug(`assigning game ${game.id} to server`);
 
-        debug(`updating game ${game.id}`);
-        yield self.processGameUpdate(game);
+            debug(`resetting status of game ${game.id} to initializing`);
+            game.status = 'initializing';
+            game.server = null;
+            yield game.save();
 
-        if (!server) {
-            debug(`randomly assigning game ${game.id} to available server`);
-            let availableServers = yield self.getAvailableServers(true);
+            debug(`updating game ${game.id}`);
+            yield self.processGameUpdate(game);
 
-            if (_.size(availableServers) === 0) {
-                debug('no servers available on initial attempt');
+            let server = requestedServer;
 
+            if (!server) {
+                debug(`randomly assigning game ${game.id} to available server`);
+                let availableServers = yield self.getAvailableServers(true);
+
+                if (_.size(availableServers) === 0) {
+                    debug('failed to find servers');
+                    throw new Error('no servers available');
+                }
+
+                server = chance.pick(availableServers);
+            }
+
+            debug(`assigning game ${game.id} to server ${server}`);
+            game.server = server;
+            yield game.save();
+
+            debug(`updating game ${game.id}`);
+            yield self.processGameUpdate(game);
+
+            yield self.initializeServer(game, false);
+
+            success = true;
+        }
+        catch (err) {
+            self.postToLog({
+                description: `encountered error while trying to assign server to game \`${self.getDocumentID(game)}\``,
+                error: err
+            });
+
+            if (retry) {
                 for (let delay of RETRY_ATTEMPTS) {
                     debug(`waiting for ${delay}ms before retrying`);
                     yield self.promiseDelay(delay, null, false);
 
-                    availableServers = yield self.getAvailableServers(true);
+                    try {
+                        yield self.assignGameToServer(game, false, requestedServer);
 
-                    if (_.size(availableServers) !== 0) {
+                        success = true;
                         break;
                     }
-                }
-
-                if (_.size(availableServers) === 0) {
-                    debug('failed to find servers after retries');
-                    throw new Error('no servers available');
+                    catch (err) {
+                        success = false;
+                        continue;
+                    }
                 }
             }
-
-            server = chance.pick(availableServers);
         }
 
-        debug(`assigning game ${game.id} to server ${server}`);
-        game.server = server;
-        yield game.save();
-
-        debug(`updating game ${game.id}`);
-        yield self.processGameUpdate(game);
-
-        try {
-            yield self.initializeServer(game);
-        }
-        catch (err) {
-            debug(`initializing server ${game.server} for game ${game.id} failed`);
-            self.postToLog({
-                description: `encountered error while trying to initialize server \`${server}\` for game \`${self.getDocumentID(game)}\``,
-                error: err
-            });
-
-            let success = false;
-
-            for (let delay of RETRY_ATTEMPTS) {
-                debug(`waiting for ${delay}ms before retrying`);
-                yield self.promiseDelay(delay, null, false);
-
-                try {
-                    yield self.initializeServer(game);
-
-                    success = true;
-                    break;
-                }
-                catch (err) {
-                    self.postToLog({
-                        description: `encountered error while trying to initialize server \`${server}\` for game \`${self.getDocumentID(game)}\``,
-                        error: err
-                    });
-
-                    success = false;
-                    continue;
-                }
-            }
-
-            if (!success) {
-                debug(`failed to initialize server ${game.server} for game ${game.id} after retries`);
-                throw new Error('failed to initialize server');
-            }
+        if (!success) {
+            throw new Error('failed to assign game to server');
         }
     });
 
