@@ -77,7 +77,7 @@
             "commandTimeout": "5s",
             "mapChangeTimeout": "15s",
             "queryInterval": "15s",
-            "retryAttempts": ["5s", "10s", "15s"],
+            "retryAttempts": ["10s", "20s", "30s"],
             "serverTimeout": "10s"
         },
         "chat": {
