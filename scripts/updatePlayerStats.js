@@ -138,6 +138,47 @@ co(function*() {
             });
             /* eslint-enable lodash/prefer-lodash-method */
 
+            user.stats.captainRecord = _.countBy(captainGames, function(game) {
+                let teamIndex = _.findIndex(game.teams, function(team) {
+                    return getDocumentID(team.captain) === getDocumentID(user);
+                });
+
+                if (teamIndex === 0) {
+                    if (game.score[0] > game.score[1]) {
+                        return 'win';
+                    }
+                    else if (game.score[0] < game.score[1]) {
+                        return 'loss';
+                    }
+                    else if (game.score[0] === game.score[1]) {
+                        return 'tie';
+                    }
+                }
+                else if (teamIndex === 1) {
+                    if (game.score[1] > game.score[0]) {
+                        return 'win';
+                    }
+                    else if (game.score[1] < game.score[0]) {
+                        return 'loss';
+                    }
+                    else if (game.score[1] === game.score[0]) {
+                        return 'tie';
+                    }
+                }
+            });
+        }
+
+        {
+            /* eslint-disable lodash/prefer-lodash-method */
+            let captainGames = yield database.Game.find({
+                'teams.captain': getDocumentID(user),
+                'status': 'completed',
+                'score': {
+                    $exists: true
+                }
+            });
+            /* eslint-enable lodash/prefer-lodash-method */
+
             let captainScores = _.map(captainGames, function(game) {
                 let teamIndex = _.findIndex(game.teams, function(team) {
                     return getDocumentID(team.captain) === getDocumentID(user);
@@ -158,6 +199,46 @@ co(function*() {
             });
 
             user.stats.captainScore = calculatePredictionInterval(captainScores);
+        }
+
+        {
+            /* eslint-disable lodash/prefer-lodash-method */
+            let playerGames = yield database.Game.find({
+                'teams.composition.players.user': getDocumentID(user),
+                'status': 'completed',
+                'score': {
+                    $exists: true
+                }
+            });
+            /* eslint-enable lodash/prefer-lodash-method */
+
+            user.stats.playerRecord = _.countBy(playerGames, function(game) {
+                let gameUserInfo = getGameUserInfo(game, user);
+                let teamIndex = _.indexOf(game.teams, gameUserInfo.team);
+
+                if (teamIndex === 0) {
+                    if (game.score[0] > game.score[1]) {
+                        return 'win';
+                    }
+                    else if (game.score[0] < game.score[1]) {
+                        return 'loss';
+                    }
+                    else if (game.score[0] === game.score[1]) {
+                        return 'tie';
+                    }
+                }
+                else if (teamIndex === 1) {
+                    if (game.score[1] > game.score[0]) {
+                        return 'win';
+                    }
+                    else if (game.score[1] < game.score[0]) {
+                        return 'loss';
+                    }
+                    else if (game.score[1] === game.score[0]) {
+                        return 'tie';
+                    }
+                }
+            });
         }
 
         {
@@ -287,18 +368,18 @@ co(function*() {
             user.stats.roles = yield _(ROLES).keys().map(
                 /* eslint-disable lodash/prefer-lodash-method */
                 role => database.Game.find({
-                        'teams.composition': {
-                            $elemMatch: {
-                                'role': role,
-                                'players.user': getDocumentID(user)
-                            }
+                    'teams.composition': {
+                        $elemMatch: {
+                            'role': role,
+                            'players.user': getDocumentID(user)
                         }
                     }
-                    /* eslint-enable lodash/prefer-lodash-method */
-                ).count().exec().then(count => ({
+                }).count().exec().then(count => ({
                     role,
                     count
-                }))).value();
+                }))
+                /* eslint-enable lodash/prefer-lodash-method */
+            ).value();
         }
 
         {
@@ -307,6 +388,26 @@ co(function*() {
             }).count().exec();
             user.stats.total.user = yield database.Game.count({
                 'teams.composition.players.user': getDocumentID(user)
+            }).count().exec();
+        }
+
+        {
+            user.stats.replaced.into = yield database.Game.count({
+                'draft.choices.captain': {
+                    $nin: [getDocumentID(user)]
+                },
+                'draft.choices.user': {
+                    $nin: [getDocumentID(user)]
+                },
+                'teams.composition.players.user': getDocumentID(user)
+            }).count().exec();
+            user.stats.replaced.out = yield database.Game.count({
+                'teams.composition.players': {
+                    $elemMatch: {
+                        'user': getDocumentID(user),
+                        'replaced': true
+                    }
+                }
             }).count().exec();
         }
 

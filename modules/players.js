@@ -164,6 +164,47 @@ module.exports = function(app, cache, chance, database, io, self) {
             });
             /* eslint-enable lodash/prefer-lodash-method */
 
+            player.stats.captainRecord = _.countBy(captainGames, function(game) {
+                let teamIndex = _.findIndex(game.teams, function(team) {
+                    return self.getDocumentID(team.captain) === self.getDocumentID(player);
+                });
+
+                if (teamIndex === 0) {
+                    if (game.score[0] > game.score[1]) {
+                        return 'win';
+                    }
+                    else if (game.score[0] < game.score[1]) {
+                        return 'loss';
+                    }
+                    else if (game.score[0] === game.score[1]) {
+                        return 'tie';
+                    }
+                }
+                else if (teamIndex === 1) {
+                    if (game.score[1] > game.score[0]) {
+                        return 'win';
+                    }
+                    else if (game.score[1] < game.score[0]) {
+                        return 'loss';
+                    }
+                    else if (game.score[1] === game.score[0]) {
+                        return 'tie';
+                    }
+                }
+            });
+        }
+
+        {
+            /* eslint-disable lodash/prefer-lodash-method */
+            let captainGames = yield database.Game.find({
+                'teams.captain': self.getDocumentID(player),
+                'status': 'completed',
+                'score': {
+                    $exists: true
+                }
+            });
+            /* eslint-enable lodash/prefer-lodash-method */
+
             let captainScores = _.map(captainGames, function(game) {
                 let teamIndex = _.findIndex(game.teams, function(team) {
                     return self.getDocumentID(team.captain) === self.getDocumentID(player);
@@ -184,6 +225,46 @@ module.exports = function(app, cache, chance, database, io, self) {
             });
 
             player.stats.captainScore = calculatePredictionInterval(captainScores);
+        }
+
+        {
+            /* eslint-disable lodash/prefer-lodash-method */
+            let playerGames = yield database.Game.find({
+                'teams.composition.players.user': self.getDocumentID(player),
+                'status': 'completed',
+                'score': {
+                    $exists: true
+                }
+            });
+            /* eslint-enable lodash/prefer-lodash-method */
+
+            player.stats.playerRecord = _.countBy(playerGames, function(game) {
+                let gameUserInfo = self.getGameUserInfo(game, player);
+                let teamIndex = _.indexOf(game.teams, gameUserInfo.team);
+
+                if (teamIndex === 0) {
+                    if (game.score[0] > game.score[1]) {
+                        return 'win';
+                    }
+                    else if (game.score[0] < game.score[1]) {
+                        return 'loss';
+                    }
+                    else if (game.score[0] === game.score[1]) {
+                        return 'tie';
+                    }
+                }
+                else if (teamIndex === 1) {
+                    if (game.score[1] > game.score[0]) {
+                        return 'win';
+                    }
+                    else if (game.score[1] < game.score[0]) {
+                        return 'loss';
+                    }
+                    else if (game.score[1] === game.score[0]) {
+                        return 'tie';
+                    }
+                }
+            });
         }
 
         {
@@ -319,12 +400,12 @@ module.exports = function(app, cache, chance, database, io, self) {
                             'players.user': self.getDocumentID(player)
                         }
                     }
-                }
+                }).count().exec().then(count => ({
+                    role,
+                    count
+                }))
                 /* eslint-enable lodash/prefer-lodash-method */
-            ).count().exec().then(count => ({
-                role,
-                count
-            }))).value();
+            ).value();
         }
 
         {
@@ -333,6 +414,26 @@ module.exports = function(app, cache, chance, database, io, self) {
             }).count().exec();
             player.stats.total.player = yield database.Game.count({
                 'teams.composition.players.user': self.getDocumentID(player)
+            }).count().exec();
+        }
+
+        {
+            player.stats.replaced.into = yield database.Game.count({
+                'draft.choices.captain': {
+                    $nin: [self.getDocumentID(player)]
+                },
+                'draft.choices.player': {
+                    $nin: [self.getDocumentID(player)]
+                },
+                'teams.composition.players.user': self.getDocumentID(player)
+            }).count().exec();
+            player.stats.replaced.out = yield database.Game.count({
+                'teams.composition.players': {
+                    $elemMatch: {
+                        'user': self.getDocumentID(player),
+                        'replaced': true
+                    }
+                }
             }).count().exec();
         }
 

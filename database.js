@@ -37,6 +37,20 @@ var userSchema = new mongoose.Schema({
         }
     },
     stats: {
+        captainRecord: {
+            win: {
+                type: Number,
+                default: 0
+            },
+            loss: {
+                type: Number,
+                default: 0
+            },
+            tie: {
+                type: Number,
+                default: 0
+            }
+        },
         captainScore: {
             low: Number,
             center: Number,
@@ -50,6 +64,20 @@ var userSchema = new mongoose.Schema({
             position: Number,
             count: Number
         }],
+        playerRecord: {
+            win: {
+                type: Number,
+                default: 0
+            },
+            loss: {
+                type: Number,
+                default: 0
+            },
+            tie: {
+                type: Number,
+                default: 0
+            }
+        },
         playerScore: {
             low: Number,
             center: Number,
@@ -65,13 +93,32 @@ var userSchema = new mongoose.Schema({
                 default: 500
             }
         },
+        replaced: {
+            into: {
+                type: Number,
+                default: 0
+            },
+            out: {
+                type: Number,
+                default: 0
+            }
+        },
         roles: [{
             role: String,
-            count: Number
+            count: {
+                type: Number,
+                default: 0
+            }
         }],
         total: {
-            captain: Number,
-            player: Number
+            captain: {
+                type: Number,
+                default: 0
+            },
+            player: {
+                type: Number,
+                default: 0
+            }
         }
     }
 });
