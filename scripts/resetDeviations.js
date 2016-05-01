@@ -5,7 +5,9 @@ const co = require('co');
 var database = require('../database');
 
 co(function*() {
+    /* eslint-disable lodash/prefer-lodash-method */
     let users = yield database.User.find({}, 'alias stats.rating').exec();
+    /* eslint-enable lodash/prefer-lodash-method */
 
     for (let user of users) {
         let mean = user.stats.rating.mean;
