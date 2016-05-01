@@ -46,7 +46,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let rcon = RCON(gameServerInfo.rcon);
 
-            yield rcon.connect();
+            yield Promise.race(rcon.connect(), self.promiseDelay(COMMAND_TIMEOUT, null, true));
 
             return rcon;
         });
@@ -233,13 +233,13 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.sendRCONCommands = co.wrap(function* sendRCONCommands(server, commands) {
+    self.sendRCONCommands = co.wrap(function* sendRCONCommands(server, commands, timeout) {
         let rcon;
 
         try {
             rcon = yield connectToRCON(server);
 
-            let result = yield sendCommandsToServer(rcon, commands);
+            let result = yield sendCommandsToServer(rcon, commands, timeout);
 
             return result;
         }
@@ -417,39 +417,25 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let mapInfo = MAPS[game.map];
 
-            let rcon;
+            debug(`resetting server ${game.server} for game ${game.id}`);
+            yield self.sendRCONCommands(game.server, ['pugchamp_game_reset']);
+
+            debug(`performing initial setup for server ${game.server} for game ${game.id}`);
+            yield self.sendRCONCommands(game.server, [`pugchamp_api_url "${BASE_URL}/api/servers/${key}"`, `pugchamp_game_id "${self.getDocumentID(game)}"`, `pugchamp_game_map "${mapInfo.file}"`, `pugchamp_game_config "${mapInfo.config}"`]);
+
+            yield self.updateServerStatus(game.server);
+            yield self.updateServerPlayers(game, false);
 
             try {
-                debug(`connecting to RCON for server ${game.server} for game ${game.id}`);
-                rcon = yield connectToRCON(game.server);
-
-                debug(`resetting server ${game.server} for game ${game.id}`);
-                yield sendCommandsToServer(rcon, ['pugchamp_game_reset']);
-
-                debug(`performing initial setup for server ${game.server} for game ${game.id}`);
-                yield sendCommandsToServer(rcon, [`pugchamp_api_url "${BASE_URL}/api/servers/${key}"`, `pugchamp_game_id "${self.getDocumentID(game)}"`, `pugchamp_game_map "${mapInfo.file}"`, `pugchamp_game_config "${mapInfo.config}"`]);
-
-                yield self.updateServerStatus(game.server);
-
-                yield self.updateServerPlayers(game, false);
-
-                try {
-                    debug(`launching server ${game.server} for game ${game.id}`);
-                    yield sendCommandsToServer(rcon, ['pugchamp_game_start'], MAP_CHANGE_TIMEOUT);
-                }
-                catch (err) {
-                    let serverStatus = yield self.getServerStatus(game.server);
-
-                    if (serverStatus.status !== 'assigned' || self.getDocumentID(serverStatus.game) !== self.getDocumentID(game) || serverStatus.game.status === 'initializing') {
-                        debug(`game server ${game.server} not launched for game ${game.id}`);
-                        throw err;
-                    }
-                }
+                debug(`launching server ${game.server} for game ${game.id}`);
+                yield self.sendRCONCommands(game.server, ['pugchamp_game_start'], MAP_CHANGE_TIMEOUT);
             }
-            finally {
-                if (rcon) {
-                    debug(`disconnecting from RCON for server ${game.server} for game ${game.id}`);
-                    yield disconnectFromRCON(rcon);
+            catch (err) {
+                let serverStatus = yield self.getServerStatus(game.server);
+
+                if (serverStatus.status !== 'assigned' || self.getDocumentID(serverStatus.game) !== self.getDocumentID(game) || serverStatus.game.status === 'initializing') {
+                    debug(`game server ${game.server} not launched for game ${game.id}`);
+                    throw err;
                 }
             }
 
