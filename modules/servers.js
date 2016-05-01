@@ -7,7 +7,6 @@ const crypto = require('crypto');
 const debug = require('debug')('pugchamp:servers');
 const HttpStatus = require('http-status-codes');
 const ms = require('ms');
-const RateLimiter = require('limiter').RateLimiter;
 const RCON = require('srcds-rcon');
 
 module.exports = function(app, cache, chance, database, io, self) {
@@ -17,7 +16,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     const MAP_CHANGE_TIMEOUT = ms(config.get('app.servers.mapChangeTimeout'));
     const MAPS = config.get('app.games.maps');
     const MAXIMUM_SERVER_COMMAND_LENGTH = 511;
-    const QUERY_INTERVAL = config.get('app.servers.queryInterval');
+    const RECHECK_INTERVAL = config.get('app.servers.recheckInterval');
     const RETRY_ATTEMPTS = _.map(config.get('app.servers.retryAttempts'), delay => ms(delay));
     const ROLES = config.get('app.games.roles');
     const SERVER_TIMEOUT = ms(config.get('app.servers.serverTimeout'));
@@ -82,95 +81,74 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    function getServerStatus(gameServer) {
-        return Promise.race([co(function*() {
+    self.updateServerStatus = co.wrap(function* updateServerStatus(server) {
+        let serverStatus;
+
+        try {
+            let rcon = yield connectToRCON(server);
+
             try {
-                let rcon = yield connectToRCON(gameServer);
+                let response = yield sendCommandsToServer(rcon, ['pugchamp_game_info'], SERVER_TIMEOUT);
 
-                try {
-                    let response = yield sendCommandsToServer(rcon, ['pugchamp_game_info']);
+                let gameStatus = _.trim(response);
 
-                    let gameStatus = _.trim(response);
+                if (gameStatus === 'UNAVAILABLE') {
+                    serverStatus = {
+                        status: 'unavailable'
+                    };
+                }
+                else if (gameStatus === 'FREE') {
+                    serverStatus = {
+                        status: 'free'
+                    };
+                }
+                else {
+                    try {
+                        let game = yield database.Game.findById(gameStatus);
 
-                    if (gameStatus === 'UNAVAILABLE') {
-                        return {
-                            status: 'unavailable'
-                        };
-                    }
-                    else if (gameStatus === 'FREE') {
-                        return {
-                            status: 'free'
-                        };
-                    }
-                    else {
-                        try {
-                            let game = yield database.Game.findById(gameStatus);
-
-                            if (game) {
-                                return {
-                                    status: 'assigned',
-                                    game
-                                };
-                            }
-                            else {
-                                return {
-                                    status: 'unknown'
-                                };
-                            }
+                        if (game) {
+                            serverStatus = {
+                                status: 'assigned',
+                                game: game.toObject()
+                            };
                         }
-                        catch (err) {
-                            return {
+                        else {
+                            serverStatus = {
                                 status: 'unknown'
                             };
                         }
                     }
+                    catch (err) {
+                        serverStatus = {
+                            status: 'unknown'
+                        };
+                    }
                 }
-                finally {
-                    yield disconnectFromRCON(rcon);
-                }
             }
-            catch (err) {
-                return {
-                    status: 'unreachable'
-                };
+            finally {
+                yield disconnectFromRCON(rcon);
             }
-        }), self.promiseDelay(SERVER_TIMEOUT, {
-            status: 'unreachable'
-        }, false)]);
-    }
+        }
+        catch (err) {
+            serverStatus = {
+                status: 'unreachable'
+            };
+        }
 
-    var serverUpdateLimiter = new RateLimiter(1, QUERY_INTERVAL);
-
-    /**
-     * @async
-     */
-    self.updateServerStatuses = co.wrap(function* updateServerStatuses() {
-        let serverStatuses = _.zipObject(_.keys(GAME_SERVER_POOL), yield _.map(_.keys(GAME_SERVER_POOL), gameServer => getServerStatus(gameServer)));
-        _.forEach(serverStatuses, function(status) {
-            if (status.game) {
-                status.game = status.game.toObject();
-            }
-        });
-
-        yield cache.setAsync('serverStatuses', JSON.stringify(serverStatuses));
+        yield cache.setAsync(`serverStatus-${server}`, JSON.stringify(serverStatus));
 
         self.emit('serversUpdated');
+    });
+
+    self.updateServerStatuses = co.wrap(function* updateServerStatuses() {
+        yield _.map(_.keys(GAME_SERVER_POOL), server => self.updateServerStatus(server));
     });
 
     /**
      * @async
      */
-    self.getServerStatuses = co.wrap(function* getServerStatuses(forceUpdate) {
-        if (serverUpdateLimiter.tryRemoveTokens(1) || forceUpdate) {
-            yield self.updateServerStatuses();
-        }
-
-        let cacheResponse = yield cache.getAsync('serverStatuses');
-
-        if (!cacheResponse) {
-            yield self.updateServerStatuses();
-            cacheResponse = yield cache.getAsync('serverStatuses');
-        }
+    self.getServerStatus = co.wrap(function* getServerStatus(server) {
+        let cacheResponse = yield cache.getAsync(`serverStatus-${server}`);
 
         return JSON.parse(cacheResponse);
     });
@@ -178,22 +156,60 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.getAvailableServers = co.wrap(function* getAvailableServers(forceUpdate) {
-        let statuses = yield self.getServerStatuses(forceUpdate);
+    self.getServerStatuses = co.wrap(function* getServerStatuses() {
+        return _.zipObject(_.keys(GAME_SERVER_POOL), yield _.map(_.keys(GAME_SERVER_POOL), server => self.getServerStatus(server)));
+    });
 
-        return _(statuses).pickBy(function(status) {
-            if (status.status === 'free') {
-                return true;
+    /**
+     * @async
+     */
+    self.findAvailableServer = co.wrap(function* findAvailableServer() {
+        let serverStatuses = yield self.getServerStatuses();
+
+        // update supposedly free servers first
+        let freeServers = _.filter(_.keys(serverStatuses), server => serverStatuses[server].status === 'free');
+        yield _.map(freeServers, server => self.updateServerStatus(server));
+        serverStatuses = yield self.getServerStatuses();
+        freeServers = _.filter(_.keys(serverStatuses), server => serverStatuses[server].status === 'free');
+
+        // if servers are confirmed free, use them
+        if (_.size(freeServers) > 0) {
+            return chance.pick(freeServers);
+        }
+
+        // update all unassigned servers next
+        let unassignedServers = _.filter(_.keys(serverStatuses), server => serverStatuses[server].status !== 'assigned');
+        yield _.map(unassignedServers, server => self.updateServerStatus(server));
+        serverStatuses = yield self.getServerStatuses();
+        freeServers = _.filter(_.keys(serverStatuses), server => serverStatuses[server].status === 'free');
+
+        // if servers are confirmed free, use them
+        if (_.size(freeServers) > 0) {
+            return chance.pick(freeServers);
+        }
+
+        // finally look for servers that are assigned but not needed
+        let assignedServers = _.filter(_.keys(serverStatuses), server => serverStatuses[server].status === 'assigned');
+        yield _.map(assignedServers, server => self.updateServerStatus(server));
+        for (let server of assignedServers) {
+            let updatedGame = yield database.Game.findById(self.getDocumentID(serverStatuses[server].game));
+
+            if (updatedGame.status === 'aborted' || updatedGame.status === 'completed') {
+                // force immediate reset
+                yield self.shutdownGame(updatedGame);
+                yield self.updateServerStatus(server);
             }
+        }
+        serverStatuses = yield self.getServerStatuses();
+        freeServers = _.filter(_.keys(serverStatuses), server => serverStatuses[server].status === 'free');
 
-            if (status.status === 'assigned') {
-                if (status.game.status === 'completed' || status.game.status === 'aborted') {
-                    return true;
-                }
-            }
+        // if servers are confirmed free, use them
+        if (_.size(freeServers) > 0) {
+            return chance.pick(freeServers);
+        }
 
-            return false;
-        }).keys().value();
+        // no servers actually available
+        return null;
     });
 
     /**
@@ -221,28 +237,21 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     self.shutdownGame = co.wrap(function* shutdownGame(game) {
         debug(`shutting down servers for game ${game.id}`);
-        yield _.map(GAME_SERVER_POOL, co.wrap(function*(serverInfo, server) {
-            let serverStatus = yield getServerStatus(server);
+        let serverStatuses = yield self.getServerStatuses();
 
-            if (serverStatus.status === 'unreachable' || serverStatus.status === 'unknown') {
-                for (let delay of RETRY_ATTEMPTS) {
-                    yield self.promiseDelay(delay, null, false);
+        yield _.map(serverStatuses, co.wrap(function*(serverStatus, server) {
+            if (serverStatus.status === 'assigned' && self.getDocumentID(serverStatus.game) === self.getDocumentID(game)) {
+                // update server just to make sure
+                yield self.updateServerStatus(server);
+                serverStatus = yield self.getServerStatus(server);
 
-                    serverStatus = yield getServerStatus(server);
-
-                    if (serverStatus.status !== 'unreachable' && serverStatus.status !== 'unknown') {
-                        break;
-                    }
+                if (serverStatus.status === 'assigned' && self.getDocumentID(serverStatus.game) === self.getDocumentID(game)) {
+                    debug(`found server ${server} assigned to game ${game.id}, shutting down`);
+                    yield self.sendRCONCommands(server, ['pugchamp_game_reset']);
+                    yield self.updateServerStatus(server);
                 }
             }
-
-            if (serverStatus.status === 'assigned' && self.getDocumentID(serverStatus.game) === self.getDocumentID(game)) {
-                debug(`found server ${server} assigned to game ${game.id}, shutting down`);
-                yield self.sendRCONCommands(server, ['pugchamp_game_reset']);
-            }
         }));
-
-        yield self.updateServerStatuses();
     });
 
     /**
@@ -252,7 +261,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         let success = false;
 
         try {
-            let serverStatus = yield getServerStatus(game.server);
+            let serverStatus = yield self.getServerStatus(game.server);
 
             if (serverStatus.status !== 'assigned' || self.getDocumentID(serverStatus.game) !== self.getDocumentID(game)) {
                 debug(`server ${game.server} is not assigned to game ${game.id}`);
@@ -409,7 +418,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     yield sendCommandsToServer(rcon, ['pugchamp_game_start'], MAP_CHANGE_TIMEOUT);
                 }
                 catch (err) {
-                    let serverStatus = yield getServerStatus(game.server);
+                    let serverStatus = yield self.getServerStatus(game.server);
 
                     if (serverStatus.status !== 'assigned' || self.getDocumentID(serverStatus.game) !== self.getDocumentID(game) || serverStatus.game.status === 'initializing') {
                         debug(`game server ${game.server} not launched for game ${game.id}`);
@@ -424,7 +433,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 }
             }
 
-            yield self.updateServerStatuses();
+            yield self.updateServerStatus(game.server);
 
             success = true;
         }
@@ -477,14 +486,15 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             if (!requestedServer) {
                 debug(`randomly assigning game ${game.id} to available server`);
-                let availableServers = yield self.getAvailableServers(true);
 
-                if (_.size(availableServers) === 0) {
-                    debug('failed to find servers');
+                let server = yield self.findAvailableServer();
+
+                if (!server) {
+                    debug('failed to find available server');
                     throw new Error('no servers available');
                 }
 
-                game.server = chance.pick(availableServers);
+                game.server = server;
             }
             else {
                 game.server = requestedServer;
@@ -531,7 +541,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     });
 
     app.get('/servers', co.wrap(function*(req, res) {
-        let servers = yield self.getServerStatuses(self.isUserAdmin(req.user));
+        let servers = yield self.getServerStatuses();
 
         res.render('servers', {
             servers: _.mapValues(servers, (status, name) => ({
@@ -606,6 +616,33 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         }
 
-        yield self.updateServerStatuses();
+        yield self.updateServerStatus(game.server);
     }));
+
+    co(function*() {
+        yield self.updateServerStatuses();
+
+        setInterval(co.wrap(function*() {
+            yield self.updateServerStatuses();
+
+            let serverStatuses = yield self.getServerStatuses();
+
+            yield _.map(serverStatuses, co.wrap(function*(serverStatus, server) {
+                if (serverStatus.status === 'unreachable' || serverStatus.status === 'unknown' || serverStatus.status === 'unavailable') {
+                    self.postToLog({
+                        description: `server \`${server}\` is currently ${serverStatus.status}`
+                    });
+                }
+                else if (serverStatus.status === 'assigned') {
+                    let updatedGame = yield database.Game.findById(self.getDocumentID(serverStatus.game));
+
+                    if (updatedGame.status !== 'launching' && updatedGame.status === 'live') {
+                        self.postToLog({
+                            description: `server \`${server}\` is currently assigned to game \`${self.getDocumentID(serverStatus.game)}\` which is ${updatedGame.status}`
+                        });
+                    }
+                }
+            }));
+        }), RECHECK_INTERVAL);
+    });
 };

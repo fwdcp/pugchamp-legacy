@@ -68,13 +68,23 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    function getLaunchHolds(forceUpdate) {
+    function getLaunchHolds(fullCheck) {
         return co(function*() {
             let launchHolds = [];
 
-            let availableServers = yield self.getAvailableServers(forceUpdate);
-            if (_.size(availableServers) === 0) {
-                launchHolds.push('availableServers');
+            if (fullCheck) {
+                let server = yield self.findAvailableServer();
+
+                if (!server) {
+                    launchHolds.push('availableServers');
+                }
+            }
+            else {
+                let serverStatuses = yield self.getServerStatuses();
+
+                if (!_.some(serverStatuses, status => status.status === 'free')) {
+                    launchHolds.push('availableServers');
+                }
             }
 
             if (SEPARATE_CAPTAIN_POOL) {

@@ -342,6 +342,21 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
     }));
 
+    router.post('/servers', bodyParser.urlencoded({
+        extended: false
+    }), co.wrap(function*(req, res) {
+        if (req.body.type === 'updateStatuses') {
+            self.postToAdminLog(req.user, `executed \`${req.body.command}\` on server \`${req.params.id}\``);
+
+            yield self.updateServerStatuses();
+
+            res.sendStatus(HttpStatus.OK);
+        }
+        else {
+            res.sendStatus(HttpStatus.BAD_REQUEST);
+        }
+    }));
+
     router.post('/server/:id', bodyParser.urlencoded({
         extended: false
     }), co.wrap(function*(req, res) {
@@ -374,7 +389,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
-            yield self.updateServerStatuses();
+            yield self.updateServerStatus(req.params.id);
         }
         else {
             res.sendStatus(HttpStatus.BAD_REQUEST);
