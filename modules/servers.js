@@ -46,7 +46,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let rcon = RCON(gameServerInfo.rcon);
 
-            yield Promise.race(rcon.connect(), self.promiseDelay(COMMAND_TIMEOUT, null, true));
+            yield Promise.race([rcon.connect(), self.promiseDelay(COMMAND_TIMEOUT, null, true)]);
 
             return rcon;
         });
