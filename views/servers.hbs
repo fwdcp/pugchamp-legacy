@@ -7,10 +7,10 @@
     <link rel="import" href="/components/iron-form/iron-form.html">
     <link rel="import" href="/components/paper-button/paper-button.html">
 
-    <link rel="import" href="/elements/pugchamp-server-rcon/pugchamp-server-rcon.html">
+    <link rel="import" href="/elements/pugchamp-admin-control/pugchamp-admin-server-control.html">
 
     <style is="custom-style">
-        #update-statuses {
+        .action {
             background: var(--accent-color);
             color: var(--light-theme-text-color);
         }
@@ -22,10 +22,10 @@
     <h1>Servers</h1>
 
     {{#if currentUser.admin}}
-    <form is="iron-form" method="post" action="/admin/servers">
+    <form is="iron-form" method="post" action="/admin/servers" id="update-statuses">
         <input type="hidden" name="type" value="updateStatuses">
 
-        <paper-button raised onclick="submit(event)" id="update-statuses">Update Server Statuses</paper-button>
+        <paper-button raised onclick="submit(event)" class="action">Update Server Statuses</paper-button>
     </form>
     {{/if}}
 
@@ -40,7 +40,7 @@
     </p>
 
     {{#if ../currentUser.admin}}
-    <pugchamp-server-rcon server="{{@key}}"></pugchamp-server-rcon>
+    <pugchamp-admin-server-control server="{{@key}}"></pugchamp-admin-server-control>
     {{/if}}
     {{/each}}
 
@@ -49,6 +49,13 @@
         function submit(e) {
             Polymer.dom(e).rootTarget.parentElement.submit();
         }
+
+        function reload() {
+            document.location.reload();
+        }
+
+        document.getElementById('update-statuses').addEventListener('iron-form-error', reload);
+        document.getElementById('update-statuses').addEventListener('iron-form-response', reload);
     </script>
     {{/if}}
     {{/body}}
