@@ -8,6 +8,7 @@ const debug = require('debug')('pugchamp:servers');
 const Gamedig = require('gamedig');
 const HttpStatus = require('http-status-codes');
 const ms = require('ms');
+const RateLimiter = require('limiter').RateLimiter;
 const RCON = require('srcds-rcon');
 
 module.exports = function(app, cache, chance, database, io, self) {
@@ -19,8 +20,12 @@ module.exports = function(app, cache, chance, database, io, self) {
     const MAPS = config.get('app.games.maps');
     const MAXIMUM_SERVER_COMMAND_LENGTH = 511;
     const RECHECK_INTERVAL = ms(config.get('app.servers.recheckInterval'));
+    const RECONNECT_INTERVAL = ms(config.get('app.servers.reconnectInterval'));
     const RETRY_ATTEMPTS = _.map(config.get('app.servers.retryAttempts'), delay => ms(delay));
     const ROLES = config.get('app.games.roles');
+
+    var rconConnections = new Map();
+    var rconConnectionLimits = new Map();
 
     /**
      * @async
@@ -41,11 +46,11 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    function connectToRCON(gameServer) {
+    function connectToRCON(server) {
         return co(function*() {
-            let gameServerInfo = GAME_SERVER_POOL[gameServer];
+            let serverInfo = GAME_SERVER_POOL[server];
 
-            let rcon = RCON(gameServerInfo.rcon);
+            let rcon = RCON(serverInfo.rcon);
 
             yield Promise.race([rcon.connect(), self.promiseDelay(CONNECT_TIMEOUT, new Error('connection attempt timed out'), true)]);
 
@@ -92,6 +97,51 @@ module.exports = function(app, cache, chance, database, io, self) {
     function disconnectFromRCON(rcon) {
         return co(function*() {
             yield rcon.disconnect();
+        });
+    }
+
+    /**
+     * @async
+     */
+    function establishRCONConnection(server) {
+        return co(function*() {
+            let limiter = rconConnectionLimits.get(server);
+
+            if (limiter.tryRemoveTokens(1)) {
+                try {
+                    if (rconConnections.has(server)) {
+                        debug(`found existing connection to ${server}, disconnecting`);
+
+                        let rcon = rconConnections.get(server);
+
+                        yield disconnectFromRCON(rcon);
+
+                        rconConnections.delete(server);
+                    }
+
+                    debug(`connecting to ${server}`);
+                    let rcon = yield connectToRCON(server);
+
+                    debug(`connection to ${server} succeeded`);
+                    rconConnections.set(server, rcon);
+                }
+                catch (err) {
+                    debug(`connection to ${server} failed`);
+                    self.postToLog({
+                        description: `failed to connect to server \`${server}\``,
+                        error: err
+                    });
+
+                    debug(`retrying connection to ${server} in ${RECONNECT_INTERVAL}ms`);
+                    setTimeout(establishRCONConnection, RECONNECT_INTERVAL, server);
+
+                    throw new Error('failed to connect to RCON');
+                }
+            }
+            else {
+                debug(`hit rate limit for connecting to ${server}`);
+                throw new Error('RCON connection attempts on cooldown');
+            }
         });
     }
 
@@ -154,6 +204,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             };
         }
 
+        debug(`status for ${server} is now ${serverStatus.status}`);
         yield cache.setAsync(`serverStatus-${server}`, JSON.stringify(serverStatus));
 
         self.emit('serversUpdated');
@@ -210,15 +261,15 @@ module.exports = function(app, cache, chance, database, io, self) {
         // finally look for servers that are assigned but not needed
         let assignedServers = _.filter(_.keys(serverStatuses), server => serverStatuses[server].status === 'assigned');
         yield _.map(assignedServers, server => self.updateServerStatus(server));
-        for (let server of assignedServers) {
+        yield _.map(assignedServers, co.wrap(function*(server) {
             let updatedGame = yield database.Game.findById(self.getDocumentID(serverStatuses[server].game));
 
             if (updatedGame.status === 'aborted' || updatedGame.status === 'completed') {
                 // force immediate reset
-                yield self.shutdownGame(updatedGame);
+                yield self.shutdownGame(updatedGame, true);
                 yield self.updateServerStatus(server);
             }
-        }
+        }));
         serverStatuses = yield self.getServerStatuses();
         freeServers = _.filter(_.keys(serverStatuses), server => serverStatuses[server].status === 'free');
 
@@ -235,39 +286,121 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.sendRCONCommands = co.wrap(function* sendRCONCommands(server, commands, timeout) {
-        let rcon;
+        if (!rconConnections.has(server)) {
+            debug(`not currently connected to ${server}`);
+            establishRCONConnection(server);
+
+            throw new Error('not currently connected to RCON');
+        }
 
         try {
-            rcon = yield connectToRCON(server);
+            let rcon = rconConnections.get(server);
 
+            debug(`sending ${commands} to ${server}`);
             let result = yield sendCommandsToServer(rcon, commands, timeout);
 
+            debug(`received result of commands from ${server}`);
             return result;
         }
-        finally {
-            if (rcon) {
-                yield disconnectFromRCON(rcon);
-            }
+        catch (err) {
+            debug(`failed to send commands to ${server}`);
+            self.postToLog({
+                description: `failed to send commands to server \`${server}\``,
+                error: err
+            });
+
+            establishRCONConnection(server);
+
+            throw new Error('sending commands to server failed');
         }
     });
 
     /**
      * @async
      */
-    self.shutdownGame = co.wrap(function* shutdownGame(game) {
+    self.resetServer = co.wrap(function* resetServer(server, retry) {
+        let success = false;
+
+        try {
+            yield self.sendRCONCommands(server, ['pugchamp_game_reset']);
+            yield self.updateServerStatus(server);
+
+            let serverStatus = yield self.getServerStatus(server);
+
+            if (serverStatus.status !== 'free' && serverStatus.status !== 'unavailable') {
+                throw new Error('server reset failed');
+            }
+
+            success = true;
+        }
+        catch (err) {
+            self.postToLog({
+                description: `error while resetting server \`${server}\``,
+                error: err
+            });
+
+            if (retry) {
+                for (let delay of RETRY_ATTEMPTS) {
+                    debug(`waiting for ${delay}ms before retrying`);
+                    yield self.promiseDelay(delay, null, false);
+
+                    try {
+                        yield self.resetServer(server, false);
+
+                        success = true;
+                        break;
+                    }
+                    catch (err) {
+                        success = false;
+                        continue;
+                    }
+                }
+            }
+        }
+
+        if (!success) {
+            throw new Error('failed to reset server');
+        }
+    });
+
+    /**
+     * @async
+     */
+    self.shutdownGame = co.wrap(function* shutdownGame(game, retry) {
         debug(`shutting down servers for game ${game.id}`);
         let serverStatuses = yield self.getServerStatuses();
 
         yield _.map(serverStatuses, co.wrap(function*(serverStatus, server) {
+            if (serverStatus.status === 'unreachable' || serverStatus.status === 'unknown') {
+                if (retry) {
+                    for (let delay of RETRY_ATTEMPTS) {
+                        debug(`waiting for ${delay}ms before retrying`);
+                        yield self.promiseDelay(delay, null, false);
+
+                        try {
+                            yield self.updateServerStatus(server);
+                            serverStatus = yield self.getServerStatus(server);
+
+                            if (serverStatus.status === 'unreachable' || serverStatus.status === 'unknown') {
+                                throw new Error('server status still unknown');
+                            }
+
+                            break;
+                        }
+                        catch (err) {
+                            continue;
+                        }
+                    }
+                }
+            }
+
             if (serverStatus.status === 'assigned' && self.getDocumentID(serverStatus.game) === self.getDocumentID(game)) {
                 // update server just to make sure
                 yield self.updateServerStatus(server);
                 serverStatus = yield self.getServerStatus(server);
 
                 if (serverStatus.status === 'assigned' && self.getDocumentID(serverStatus.game) === self.getDocumentID(game)) {
-                    debug(`found server ${server} assigned to game ${game.id}, shutting down`);
-                    yield self.sendRCONCommands(server, ['pugchamp_game_reset']);
-                    yield self.updateServerStatus(server);
+                    yield self.resetServer(server, true);
                 }
             }
         }));
@@ -409,17 +542,17 @@ module.exports = function(app, cache, chance, database, io, self) {
             yield self.processGameUpdate(game);
 
             debug(`resetting servers currently assigned to game ${game.id}`);
-            yield self.shutdownGame(game);
+            yield self.shutdownGame(game, true);
 
-            let gameServerInfo = GAME_SERVER_POOL[game.server];
+            let serverInfo = GAME_SERVER_POOL[game.server];
             let hash = crypto.createHash('sha256');
-            hash.update(`${self.getDocumentID(game)}|${gameServerInfo.salt}`);
+            hash.update(`${self.getDocumentID(game)}|${serverInfo.salt}`);
             let key = hash.digest('hex');
 
             let mapInfo = MAPS[game.map];
 
             debug(`resetting server ${game.server} for game ${game.id}`);
-            yield self.sendRCONCommands(game.server, ['pugchamp_game_reset']);
+            yield self.resetServer(game.server, true);
 
             debug(`performing initial setup for server ${game.server} for game ${game.id}`);
             yield self.sendRCONCommands(game.server, [`pugchamp_api_url "${BASE_URL}/api/servers/${key}"`, `pugchamp_game_id "${self.getDocumentID(game)}"`, `pugchamp_game_map "${mapInfo.file}"`, `pugchamp_game_config "${mapInfo.config}"`]);
@@ -570,10 +703,10 @@ module.exports = function(app, cache, chance, database, io, self) {
             return;
         }
 
-        let gameServer = GAME_SERVER_POOL[game.server];
+        let serverInfo = GAME_SERVER_POOL[game.server];
 
         let hash = crypto.createHash('sha256');
-        hash.update(`${self.getDocumentID(game)}|${gameServer.salt}`);
+        hash.update(`${self.getDocumentID(game)}|${serverInfo.salt}`);
         let key = hash.digest('hex');
 
         if (req.params.key !== key) {
@@ -627,6 +760,11 @@ module.exports = function(app, cache, chance, database, io, self) {
 
     co(function*() {
         yield self.updateServerStatuses();
+
+        for (let server of _.keys(GAME_SERVER_POOL)) {
+            rconConnectionLimits.set(server, new RateLimiter(1, RECONNECT_INTERVAL));
+            establishRCONConnection(server);
+        }
 
         setInterval(co.wrap(function*() {
             yield self.updateServerStatuses();

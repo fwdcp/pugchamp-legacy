@@ -75,10 +75,11 @@
         },
         "servers": {
             "commandTimeout": "5s",
-            "connectTimeout": "10s",
+            "connectTimeout": "5s",
             "mapChangeTimeout": "15s",
             "recheckInterval": "5m",
-            "retryAttempts": ["5s", "10s", "15s", "20s", "25s", "30s"]
+            "reconnectInterval": "5s",
+            "retryAttempts": ["10s", "20s", "30s"]
         },
         "chat": {
             "rateLimit": "1s",

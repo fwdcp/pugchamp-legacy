@@ -475,7 +475,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         yield self.processGameUpdate(game);
         yield self.removeGameSubstituteRequests(game);
 
-        yield self.shutdownGame(game);
+        yield self.shutdownGame(game, true);
     });
 
     /**
