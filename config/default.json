@@ -78,7 +78,7 @@
             "connectTimeout": "10s",
             "mapChangeTimeout": "15s",
             "recheckInterval": "5m",
-            "retryAttempts": ["10s", "20s", "30s"]
+            "retryAttempts": ["5s", "10s", "15s", "20s", "25s", "30s"]
         },
         "chat": {
             "rateLimit": "1s",
