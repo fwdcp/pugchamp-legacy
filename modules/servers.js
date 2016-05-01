@@ -640,7 +640,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 else if (serverStatus.status === 'assigned') {
                     let updatedGame = yield database.Game.findById(self.getDocumentID(serverStatus.game));
 
-                    if (updatedGame.status !== 'launching' && updatedGame.status === 'live') {
+                    if (updatedGame.status !== 'launching' && updatedGame.status !== 'live') {
                         self.postToLog({
                             description: `server \`${server}\` is currently assigned to game \`${self.getDocumentID(serverStatus.game)}\` which is ${updatedGame.status}`
                         });
