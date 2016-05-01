@@ -296,7 +296,7 @@ co(function*() {
                 'draft.choices': {
                     $elemMatch: {
                         'type': 'playerPick',
-                        'user': getDocumentID(user)
+                        'player': getDocumentID(user)
                     }
                 }
             }).exec();
@@ -335,7 +335,7 @@ co(function*() {
                     'draft.choices': {
                         $elemMatch: {
                             'type': 'playerPick',
-                            'user': getDocumentID(user)
+                            'player': getDocumentID(user)
                         }
                     }
                 }, {
@@ -393,12 +393,16 @@ co(function*() {
 
         {
             user.stats.replaced.into = yield database.Game.count({
-                'draft.choices.captain': {
-                    $nin: [getDocumentID(user)]
-                },
-                'draft.choices.user': {
-                    $nin: [getDocumentID(user)]
-                },
+                $nor: [{
+                    'draft.choices': {
+                        $elemMatch: {
+                            'type': 'playerPick',
+                            'player': getDocumentID(user)
+                        }
+                    }
+                }, {
+                    'teams.captain': getDocumentID(user)
+                }],
                 'teams.composition.players.user': getDocumentID(user)
             }).count().exec();
             user.stats.replaced.out = yield database.Game.count({

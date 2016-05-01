@@ -419,12 +419,16 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         {
             player.stats.replaced.into = yield database.Game.count({
-                'draft.choices.captain': {
-                    $nin: [self.getDocumentID(player)]
-                },
-                'draft.choices.player': {
-                    $nin: [self.getDocumentID(player)]
-                },
+                $nor: [{
+                    'draft.choices': {
+                        $elemMatch: {
+                            'type': 'playerPick',
+                            'player': self.getDocumentID(player)
+                        }
+                    }
+                }, {
+                    'teams.captain': self.getDocumentID(player)
+                }],
                 'teams.composition.players.user': self.getDocumentID(player)
             }).count().exec();
             player.stats.replaced.out = yield database.Game.count({
