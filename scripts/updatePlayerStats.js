@@ -308,7 +308,7 @@ co(function*() {
                     if (choice.type === 'playerPick') {
                         position++;
 
-                        if (getDocumentID(choice.user) === getDocumentID(user)) {
+                        if (getDocumentID(choice.player) === getDocumentID(user)) {
                             break;
                         }
                     }
@@ -386,7 +386,7 @@ co(function*() {
             user.stats.total.captain = yield database.Game.count({
                 'teams.captain': getDocumentID(user)
             }).count().exec();
-            user.stats.total.user = yield database.Game.count({
+            user.stats.total.player = yield database.Game.count({
                 'teams.composition.players.user': getDocumentID(user)
             }).count().exec();
         }
