@@ -346,7 +346,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         extended: false
     }), co.wrap(function*(req, res) {
         if (req.body.type === 'updateStatuses') {
-            self.postToAdminLog(req.user, `updated server statuses`);
+            self.postToAdminLog(req.user, 'updated server statuses');
 
             yield self.updateServerStatuses();
 
