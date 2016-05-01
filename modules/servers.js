@@ -432,6 +432,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 yield self.sendRCONCommands(game.server, ['pugchamp_game_start'], MAP_CHANGE_TIMEOUT);
             }
             catch (err) {
+                yield self.updateServerStatus(game.server);
                 let serverStatus = yield self.getServerStatus(game.server);
 
                 if (serverStatus.status !== 'assigned' || self.getDocumentID(serverStatus.game) !== self.getDocumentID(game) || serverStatus.game.status === 'initializing') {
