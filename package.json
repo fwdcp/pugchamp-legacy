@@ -15,6 +15,7 @@
     "distributions": "^0.2.1",
     "express": "^4.13.3",
     "express-session": "^1.12.1",
+    "gamedig": "^0.2.24",
     "hbs": "^4.0.0",
     "heapdump": "^0.3.7",
     "http-status-codes": "^1.0.6",

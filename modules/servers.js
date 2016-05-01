@@ -5,6 +5,7 @@ const co = require('co');
 const config = require('config');
 const crypto = require('crypto');
 const debug = require('debug')('pugchamp:servers');
+const Gamedig = require('gamedig');
 const HttpStatus = require('http-status-codes');
 const ms = require('ms');
 const RCON = require('srcds-rcon');
@@ -16,10 +17,25 @@ module.exports = function(app, cache, chance, database, io, self) {
     const MAP_CHANGE_TIMEOUT = ms(config.get('app.servers.mapChangeTimeout'));
     const MAPS = config.get('app.games.maps');
     const MAXIMUM_SERVER_COMMAND_LENGTH = 511;
-    const RECHECK_INTERVAL = config.get('app.servers.recheckInterval');
+    const RECHECK_INTERVAL = ms(config.get('app.servers.recheckInterval'));
     const RETRY_ATTEMPTS = _.map(config.get('app.servers.retryAttempts'), delay => ms(delay));
     const ROLES = config.get('app.games.roles');
-    const SERVER_TIMEOUT = ms(config.get('app.servers.serverTimeout'));
+
+    /**
+     * @async
+     */
+    function queryServer(server) {
+        return new Promise(function(resolve, reject) {
+            Gamedig.query(server, function(state) {
+                if (!state.error) {
+                    resolve(state);
+                }
+                else {
+                    reject(new Error(state.error));
+                }
+            });
+        });
+    }
 
     /**
      * @async
@@ -85,12 +101,12 @@ module.exports = function(app, cache, chance, database, io, self) {
         let serverStatus;
 
         try {
-            let rcon = yield connectToRCON(server);
+            let serverInfo = yield queryServer(_.merge({
+                type: 'tf2'
+            }, GAME_SERVER_POOL[server].query));
 
-            try {
-                let response = yield sendCommandsToServer(rcon, ['pugchamp_game_info'], SERVER_TIMEOUT);
-
-                let gameStatus = _.trim(response);
+            if (_.has(serverInfo, 'raw.rules.pugchamp_game_info')) {
+                let gameStatus = _.get(serverInfo, 'raw.rules.pugchamp_game_info');
 
                 if (gameStatus === 'UNAVAILABLE') {
                     serverStatus = {
@@ -125,8 +141,10 @@ module.exports = function(app, cache, chance, database, io, self) {
                     }
                 }
             }
-            finally {
-                yield disconnectFromRCON(rcon);
+            else {
+                serverStatus = {
+                    status: 'unknown'
+                };
             }
         }
         catch (err) {
@@ -624,7 +642,6 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         setInterval(co.wrap(function*() {
             yield self.updateServerStatuses();
-
             let serverStatuses = yield self.getServerStatuses();
 
             yield _.map(serverStatuses, co.wrap(function*(serverStatus, server) {

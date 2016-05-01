@@ -17,6 +17,8 @@ public Plugin myinfo = {
     url = "http://pug.champ.gg"
 };
 
+ConVar gameInfo;
+
 ConVar apiURL;
 
 ConVar serverDelegated;
@@ -38,12 +40,12 @@ StringMap playerStartTimes;
 StringMap playerPlaytimes;
 
 public void OnPluginStart() {
+    gameInfo = CreateConVar("pugchamp_game_info", "", "the current game info", FCVAR_NOTIFY|FCVAR_PLUGIN);
+
     apiURL = CreateConVar("pugchamp_api_url", "", "the API URL to which game info is sent", FCVAR_PROTECTED|FCVAR_DONTRECORD|FCVAR_PLUGIN);
 
     serverDelegated = CreateConVar("pugchamp_server_delegated", "1", "whether the server is currently delegated to the PugChamp service", FCVAR_PLUGIN, true, 0.0, true, 1.0);
     serverDelegated.AddChangeHook(Hook_DelegationStatusChanged);
-
-    RegServerCmd("pugchamp_game_info", Command_GameInfo, "replies with current game info");
 
     RegServerCmd("pugchamp_game_reset", Command_GameReset, "resets a currently active game");
     RegServerCmd("pugchamp_game_start", Command_GameStart, "starts a new game");
@@ -54,6 +56,7 @@ public void OnPluginStart() {
     gameStartTime = -1.0;
 
     gameID = CreateConVar("pugchamp_game_id", "", "the ID for the current game", FCVAR_PLUGIN);
+    serverDelegated.AddChangeHook(Hook_GameIDChanged);
     gameMap = CreateConVar("pugchamp_game_map", "", "the map for the current game", FCVAR_PLUGIN);
     gameConfig = CreateConVar("pugchamp_game_config", "", "the config for the current game", FCVAR_PLUGIN);
 
@@ -74,6 +77,8 @@ public void OnPluginStart() {
 
     HookEvent("player_changename", Event_NameChange, EventHookMode_Post);
     HookUserMessage(GetUserMessageId("SayText2"), UserMessage_SayText2, true);
+
+    UpdateGameInfo();
 }
 
 public void OnMapStart() {
@@ -148,25 +153,12 @@ public void Hook_DelegationStatusChanged(ConVar convar, const char[] oldValue, c
     if (gameAssigned && !serverDelegated.BoolValue) {
         PrintToServer("Warning: the server is currently assigned to a game and will not be free until reset.");
     }
+
+    UpdateGameInfo();
 }
 
-public Action Command_GameInfo(int args) {
-    char id[32];
-    gameID.GetString(id, sizeof(id));
-
-    if (!StrEqual(id, "")) {
-        ReplyToCommand(0, "%s", id);
-    }
-    else {
-        if (serverDelegated.BoolValue) {
-            ReplyToCommand(0, "FREE");
-        }
-        else {
-            ReplyToCommand(0, "UNAVAILABLE");
-        }
-    }
-
-    return Plugin_Handled;
+public void Hook_GameIDChanged(ConVar convar, const char[] oldValue, const char[] newValue) {
+    UpdateGameInfo();
 }
 
 public Action Command_GameReset(int args) {
@@ -482,6 +474,23 @@ public int HTTPRequestReturned(HTTPRequestHandle HTTPRequest, bool requestSucces
     }
     else if (statusCode != HTTPStatusCode_OK) {
         ThrowError("HTTP request failed with code %i", statusCode);
+    }
+}
+
+void UpdateGameInfo() {
+    char id[32];
+    gameID.GetString(id, sizeof(id));
+
+    if (!StrEqual(id, "")) {
+        gameInfo.SetString(id);
+    }
+    else {
+        if (serverDelegated.BoolValue) {
+            gameInfo.SetString("FREE");
+        }
+        else {
+            gameInfo.SetString("UNAVAILABLE");
+        }
     }
 }
 

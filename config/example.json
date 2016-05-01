@@ -214,6 +214,10 @@
             "pool": {
                 "localhost-1": {
                     "game": "steam://connect/localhost:27015",
+                    "query": {
+                        "host": "localhost",
+                        "port": 27015
+                    },
                     "rcon": {
                         "address": "localhost:27015",
                         "password": "test"

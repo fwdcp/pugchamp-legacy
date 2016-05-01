@@ -82,7 +82,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             else {
                 let serverStatuses = yield self.getServerStatuses();
 
-                if (!_.some(serverStatuses, status => status.status === 'free')) {
+                if (!_.some(serverStatuses, serverStatus => serverStatus.status === 'free')) {
                     launchHolds.push('availableServers');
                 }
             }
