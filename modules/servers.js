@@ -429,7 +429,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 debug(`performing initial setup for server ${game.server} for game ${game.id}`);
                 yield sendCommandsToServer(rcon, [`pugchamp_api_url "${BASE_URL}/api/servers/${key}"`, `pugchamp_game_id "${self.getDocumentID(game)}"`, `pugchamp_game_map "${mapInfo.file}"`, `pugchamp_game_config "${mapInfo.config}"`]);
 
-                yield self.updateServerStatus(server);
+                yield self.updateServerStatus(game.server);
 
                 yield self.updateServerPlayers(game, false);
 
