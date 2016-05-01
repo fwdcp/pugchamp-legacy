@@ -607,7 +607,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             yield game.save();
 
             yield self.processGameUpdate(game);
-            setTimeout(self.shutdownGame, POST_GAME_RESET_DELAY, game);
+            setTimeout(self.shutdownGame, POST_GAME_RESET_DELAY, game, true);
             yield self.removeGameSubstituteRequests(self.getDocumentID(game));
 
             try {
