@@ -13,6 +13,7 @@ const RCON = require('srcds-rcon');
 module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const COMMAND_TIMEOUT = ms(config.get('app.servers.commandTimeout'));
+    const CONNECT_TIMEOUT = ms(config.get('app.servers.connectTimeout'));
     const GAME_SERVER_POOL = config.get('app.servers.pool');
     const MAP_CHANGE_TIMEOUT = ms(config.get('app.servers.mapChangeTimeout'));
     const MAPS = config.get('app.games.maps');
@@ -46,7 +47,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let rcon = RCON(gameServerInfo.rcon);
 
-            yield Promise.race([rcon.connect(), self.promiseDelay(COMMAND_TIMEOUT, null, true)]);
+            yield Promise.race([rcon.connect(), self.promiseDelay(CONNECT_TIMEOUT, new Error('connection attempt timed out'), true)]);
 
             return rcon;
         });

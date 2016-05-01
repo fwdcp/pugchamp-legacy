@@ -75,6 +75,7 @@
         },
         "servers": {
             "commandTimeout": "5s",
+            "connectTimeout": "10s",
             "mapChangeTimeout": "15s",
             "recheckInterval": "5m",
             "retryAttempts": ["10s", "20s", "30s"]
