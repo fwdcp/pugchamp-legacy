@@ -14,6 +14,8 @@ const path = require('path');
 
 require('moment-duration-format');
 
+const helpers = require('../helpers');
+
 module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const GAME_SERVER_POOL = config.get('app.servers.pool');
@@ -38,11 +40,11 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         }
 
-        return _.uniqBy(users, user => self.getDocumentID(user));
+        return _.uniqBy(users, user => helpers.getDocumentID(user));
     };
 
     self.getGameUserInfo = function getGameUserInfo(game, user) {
-        let userID = self.getDocumentID(user);
+        let userID = helpers.getDocumentID(user);
 
         let team;
         let role;
@@ -51,7 +53,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         team = _.find(game.teams, function(currentTeam) {
             role = _.find(currentTeam.composition, function(currentRole) {
                 player = _.find(currentRole.players, function(currentPlayer) {
-                    return userID === self.getDocumentID(currentPlayer.user);
+                    return userID === helpers.getDocumentID(currentPlayer.user);
                 });
 
                 if (player) {
@@ -61,7 +63,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return false;
             });
 
-            if (role || userID === self.getDocumentID(currentTeam.captain)) {
+            if (role || userID === helpers.getDocumentID(currentTeam.captain)) {
                 return true;
             }
 
@@ -85,7 +87,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     function rateGame(game) {
         return co(function*() {
-            yield child_process.exec(`python rate_game.py ${self.getDocumentID(game)}`, {
+            yield child_process.exec(`python rate_game.py ${helpers.getDocumentID(game)}`, {
                 cwd: path.resolve(__dirname, '../ratings')
             });
         });
@@ -100,7 +102,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 let gameUserInfo = self.getGameUserInfo(game.toObject(), user);
 
                 let currentGameInfo = {
-                    game: self.getDocumentID(game),
+                    game: helpers.getDocumentID(game),
                     team: _.omit(gameUserInfo.team, 'composition'),
                     user: yield self.getCachedUser(user)
                 };
@@ -118,7 +120,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     }
                 }
 
-                currentGameInfo.captain = self.getDocumentID(gameUserInfo.team.captain) === self.getDocumentID(user);
+                currentGameInfo.captain = helpers.getDocumentID(gameUserInfo.team.captain) === helpers.getDocumentID(user);
                 if (currentGameInfo.captain) {
                     currentGameInfo.activeTeamPlayers = yield _(gameUserInfo.team.composition).map(role => _(role.players).reject('replaced').map(player => ({
                         user: player.user,
@@ -130,12 +132,12 @@ module.exports = function(app, cache, chance, database, io, self) {
                     })).value();
                 }
 
-                yield cache.setAsync(`currentGame-${self.getDocumentID(user)}`, JSON.stringify(currentGameInfo));
+                yield cache.setAsync(`currentGame-${helpers.getDocumentID(user)}`, JSON.stringify(currentGameInfo));
 
                 self.emitToUser(user, 'currentGameUpdated', [currentGameInfo]);
             }
             else {
-                yield cache.delAsync(`currentGame-${self.getDocumentID(user)}`);
+                yield cache.delAsync(`currentGame-${helpers.getDocumentID(user)}`);
 
                 self.emitToUser(user, 'currentGameUpdated', [null]);
             }
@@ -147,7 +149,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     function getCurrentGame(user) {
         return co(function*() {
-            let cacheResponse = yield cache.getAsync(`currentGame-${self.getDocumentID(user)}`);
+            let cacheResponse = yield cache.getAsync(`currentGame-${helpers.getDocumentID(user)}`);
 
             return JSON.parse(cacheResponse);
         });
@@ -208,11 +210,11 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.processGameUpdate = co.wrap(function* processGameUpdate(game) {
-        let gameID = self.getDocumentID(game);
+        let gameID = helpers.getDocumentID(game);
         game = yield database.Game.findById(gameID);
 
         if (game.status !== 'initializing') {
-            if (self.getDocumentID(game) === self.getCurrentDraftGame()) {
+            if (helpers.getDocumentID(game) === self.getCurrentDraftGame()) {
                 yield self.cleanUpDraft();
             }
         }
@@ -240,15 +242,15 @@ module.exports = function(app, cache, chance, database, io, self) {
                 requests: []
             };
 
-            let outgoingPlayers = _.keyBy(yield _(currentSubstituteRequests.values()).toArray().map(request => self.getCachedUser(request.player)).value(), user => self.getDocumentID(user));
+            let outgoingPlayers = _.keyBy(yield _(currentSubstituteRequests.values()).toArray().map(request => self.getCachedUser(request.player)).value(), user => helpers.getDocumentID(user));
 
             for (let request of currentSubstituteRequests.entries()) {
                 substituteRequestsMessage.requests.push({
                     id: request[0],
                     game: request[1].game,
                     role: ROLES[request[1].role],
-                    captain: self.getDocumentID(request[1].captain),
-                    player: outgoingPlayers[self.getDocumentID(request[1].player)],
+                    captain: helpers.getDocumentID(request[1].captain),
+                    player: outgoingPlayers[helpers.getDocumentID(request[1].player)],
                     candidates: _.toArray(request[1].candidates),
                     startTime: request[1].opened,
                     endTime: request[1].opened + SUBSTITUTE_REQUEST_PERIOD
@@ -293,7 +295,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 request.timeout = null;
             }
 
-            let game = yield database.Game.findById(self.getDocumentID(request.game));
+            let game = yield database.Game.findById(helpers.getDocumentID(request.game));
 
             if (!game || game.status === 'completed' || game.status === 'aborted') {
                 yield self.removeSubstituteRequest(requestID);
@@ -318,7 +320,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 selectedCandidate = _.head(candidates);
             }
             else if (SUBSTITUTE_SELECTION_METHOD === 'closest') {
-                let player = yield database.User.findById(self.getDocumentID(request.player)).exec();
+                let player = yield database.User.findById(helpers.getDocumentID(request.player)).exec();
                 /* eslint-disable lodash/prefer-lodash-method */
                 let candidatePlayers = yield database.User.find({
                     '_id': {
@@ -329,7 +331,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                 selectedCandidate = _(candidatePlayers).sortBy(function(candidate) {
                     return Math.abs(candidate.stats.rating.mean - player.stats.rating.mean);
-                }).map(candidate => self.getDocumentID(candidate)).head();
+                }).map(candidate => helpers.getDocumentID(candidate)).head();
             }
             else if (SUBSTITUTE_SELECTION_METHOD === 'random') {
                 selectedCandidate = chance.pick(candidates);
@@ -340,7 +342,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
             catch (err) {
                 self.postToLog({
-                    description: `error in making substitution for game \`${self.getDocumentID(game)}\``,
+                    description: `error in making substitution for game \`${helpers.getDocumentID(game)}\``,
                     error: err
                 });
 
@@ -388,9 +390,9 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.removeGameSubstituteRequests = co.wrap(function* removeGameSubstituteRequests(game) {
-        let gameID = self.getDocumentID(game);
+        let gameID = helpers.getDocumentID(game);
 
-        yield _(currentSubstituteRequests.entries()).toArray().filter(request => (self.getDocumentID(request[1].game) === gameID)).map(request => self.removeSubstituteRequest(request[0])).value();
+        yield _(currentSubstituteRequests.entries()).toArray().filter(request => (helpers.getDocumentID(request[1].game) === gameID)).map(request => self.removeSubstituteRequest(request[0])).value();
     });
 
     /**
@@ -407,18 +409,18 @@ module.exports = function(app, cache, chance, database, io, self) {
             return;
         }
 
-        if (currentSubstituteRequests.has(self.getDocumentID(gameUserInfo.player))) {
+        if (currentSubstituteRequests.has(helpers.getDocumentID(gameUserInfo.player))) {
             return;
         }
 
-        currentSubstituteRequests.set(self.getDocumentID(gameUserInfo.player), {
-            game: self.getDocumentID(game),
+        currentSubstituteRequests.set(helpers.getDocumentID(gameUserInfo.player), {
+            game: helpers.getDocumentID(game),
             role: gameUserInfo.role.role,
-            captain: self.getDocumentID(gameUserInfo.team.captain),
-            player: self.getDocumentID(player),
+            captain: helpers.getDocumentID(gameUserInfo.team.captain),
+            player: helpers.getDocumentID(player),
             opened: Date.now(),
             candidates: new Set(),
-            timeout: setTimeout(attemptSubstitution, SUBSTITUTE_REQUEST_PERIOD, self.getDocumentID(gameUserInfo.player))
+            timeout: setTimeout(attemptSubstitution, SUBSTITUTE_REQUEST_PERIOD, helpers.getDocumentID(gameUserInfo.player))
         });
 
         yield updateSubstituteRequestsMessage();
@@ -432,12 +434,12 @@ module.exports = function(app, cache, chance, database, io, self) {
             return;
         }
 
-        let oldPlayerID = self.getDocumentID(oldPlayer);
-        let newPlayerID = self.getDocumentID(newPlayer);
+        let oldPlayerID = helpers.getDocumentID(oldPlayer);
+        let newPlayerID = helpers.getDocumentID(newPlayer);
 
         _(game.teams).flatMap('composition').forEach(function(role) {
             let player = _.find(role.players, function(currentPlayer) {
-                return !currentPlayer.replaced && oldPlayerID === self.getDocumentID(currentPlayer.user);
+                return !currentPlayer.replaced && oldPlayerID === helpers.getDocumentID(currentPlayer.user);
             });
 
             if (player) {
@@ -506,7 +508,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         if (info.status === 'setup') {
             if (game.status !== 'initializing' && game.status !== 'launching') {
                 self.postToLog({
-                    description: `game \`${self.getDocumentID(game)}\` was ${game.status} but is being reported as set up`
+                    description: `game \`${helpers.getDocumentID(game)}\` was ${game.status} but is being reported as set up`
                 });
 
                 return;
@@ -521,7 +523,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         else if (info.status === 'live') {
             if (game.status === 'aborted' || game.status === 'completed') {
                 self.postToLog({
-                    description: `game \`${self.getDocumentID(game)}\` was ${game.status} but is being reported as live`
+                    description: `game \`${helpers.getDocumentID(game)}\` was ${game.status} but is being reported as live`
                 });
 
                 return;
@@ -541,15 +543,15 @@ module.exports = function(app, cache, chance, database, io, self) {
                 /* eslint-disable lodash/prefer-lodash-method */
                 let gameUsers = _.keyBy(yield database.User.find({
                     '_id': {
-                        $in: _.map(self.getGameUsers(game), user => self.getDocumentID(user))
+                        $in: _.map(self.getGameUsers(game), user => helpers.getDocumentID(user))
                     }
-                }), user => self.getDocumentID(user));
+                }), user => helpers.getDocumentID(user));
                 /* eslint-enable lodash/prefer-lodash-method */
 
                 for (let team of game.teams) {
                     for (let role of team.composition) {
                         for (let player of role.players) {
-                            let user = gameUsers[self.getDocumentID(player.user)];
+                            let user = gameUsers[helpers.getDocumentID(player.user)];
 
                             if (user && _.has(info.time, user.steamID)) {
                                 player.time = info.time[user.steamID];
@@ -566,7 +568,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         else if (info.status === 'completed') {
             if (game.status === 'aborted' || game.status === 'completed') {
                 self.postToLog({
-                    description: `game \`${self.getDocumentID(game)}\` was ${game.status} but is being reported as completed`
+                    description: `game \`${helpers.getDocumentID(game)}\` was ${game.status} but is being reported as completed`
                 });
 
                 return;
@@ -586,15 +588,15 @@ module.exports = function(app, cache, chance, database, io, self) {
                 /* eslint-disable lodash/prefer-lodash-method */
                 let gameUsers = _.keyBy(yield database.User.find({
                     '_id': {
-                        $in: _.map(self.getGameUsers(game), user => self.getDocumentID(user))
+                        $in: _.map(self.getGameUsers(game), user => helpers.getDocumentID(user))
                     }
-                }), user => self.getDocumentID(user));
+                }), user => helpers.getDocumentID(user));
                 /* eslint-enable lodash/prefer-lodash-method */
 
                 for (let team of game.teams) {
                     for (let role of team.composition) {
                         for (let player of role.players) {
-                            let user = gameUsers[self.getDocumentID(player.user)];
+                            let user = gameUsers[helpers.getDocumentID(player.user)];
 
                             if (user && _.has(info.time, user.steamID)) {
                                 player.time = info.time[user.steamID];
@@ -608,7 +610,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             yield self.processGameUpdate(game);
             setTimeout(self.shutdownGame, POST_GAME_RESET_DELAY, game, true);
-            yield self.removeGameSubstituteRequests(self.getDocumentID(game));
+            yield self.removeGameSubstituteRequests(helpers.getDocumentID(game));
 
             try {
                 yield rateGame(game);
@@ -619,7 +621,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
             catch (err) {
                 self.postToLog({
-                    description: `failed to update stats for game \`${self.getDocumentID(game)}\``,
+                    description: `failed to update stats for game \`${helpers.getDocumentID(game)}\``,
                     error: err
                 });
             }
@@ -676,7 +678,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let playerInfo = self.getGameUserInfo(game, info.player);
 
-            if (userID !== self.getDocumentID(playerInfo.team.captain)) {
+            if (userID !== helpers.getDocumentID(playerInfo.team.captain)) {
                 return;
             }
 
@@ -705,13 +707,13 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let playerInfo = self.getGameUserInfo(game, request.player);
 
-            if (userID === self.getDocumentID(playerInfo.team.captain)) {
+            if (userID === helpers.getDocumentID(playerInfo.team.captain)) {
                 yield self.removeSubstituteRequest(requestID);
             }
             else if (self.isUserAdmin(userID)) {
                 let player = yield self.getCachedUser(request.player);
 
-                self.postToAdminLog(userID, `retracted substitute request for player \`<${BASE_URL}/player/${player.steamID}|${player.alias}>\` for game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``);
+                self.postToAdminLog(userID, `retracted substitute request for player \`<${BASE_URL}/player/${player.steamID}|${player.alias}>\` for game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``);
 
                 yield self.removeSubstituteRequest(requestID);
             }
@@ -766,14 +768,14 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.invalidateGamePage = co.wrap(function* invalidateGamePage(game) {
-        yield cache.delAsync(`gamePage-${self.getDocumentID(game)}`);
+        yield cache.delAsync(`gamePage-${helpers.getDocumentID(game)}`);
     });
 
     /**
      * @async
      */
     self.invalidateUserGamePages = co.wrap(function* invalidateUserGamePages(user) {
-        let userID = self.getDocumentID(user);
+        let userID = helpers.getDocumentID(user);
 
         /* eslint-disable lodash/prefer-lodash-method */
         let games = yield database.Game.find({
@@ -796,7 +798,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.getGamePage = co.wrap(function* getGamePage(game) {
-        let cacheResponse = yield cache.getAsync(`gamePage-${self.getDocumentID(game)}`);
+        let cacheResponse = yield cache.getAsync(`gamePage-${helpers.getDocumentID(game)}`);
 
         let gamePage;
 
@@ -804,7 +806,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             gamePage = JSON.parse(cacheResponse);
         }
         else {
-            game = yield database.Game.findById(self.getDocumentID(game));
+            game = yield database.Game.findById(helpers.getDocumentID(game));
 
             if (!game) {
                 return null;
@@ -814,16 +816,16 @@ module.exports = function(app, cache, chance, database, io, self) {
                 game: game.toObject()
             };
 
-            let gameUsers = _.keyBy(yield _.map(self.getGameUsers(game), user => self.getCachedUser(user)), user => self.getDocumentID(user));
+            let gameUsers = _.keyBy(yield _.map(self.getGameUsers(game), user => self.getCachedUser(user)), user => helpers.getDocumentID(user));
 
             /* eslint-disable lodash/prefer-lodash-method */
             let ratings = HIDE_RATINGS ? {} : _.keyBy(yield database.Rating.find({
-                game: self.getDocumentID(game)
-            }).exec(), rating => self.getDocumentID(rating.user));
+                game: helpers.getDocumentID(game)
+            }).exec(), rating => helpers.getDocumentID(rating.user));
             /* eslint-enable lodash/prefer-lodash-method */
 
             _.forEach(gamePage.game.teams, function(team) {
-                team.captain = gameUsers[self.getDocumentID(team.captain)];
+                team.captain = gameUsers[helpers.getDocumentID(team.captain)];
 
                 team.composition = _.sortBy(team.composition, function(role) {
                     return _(ROLES).keys().indexOf(role.role);
@@ -835,10 +837,10 @@ module.exports = function(app, cache, chance, database, io, self) {
                     }, ROLES[role.role]);
 
                     _.forEach(role.players, function(player) {
-                        player.user = gameUsers[self.getDocumentID(player.user)];
+                        player.user = gameUsers[helpers.getDocumentID(player.user)];
 
                         if (!HIDE_RATINGS) {
-                            let rating = ratings[self.getDocumentID(player.user)];
+                            let rating = ratings[helpers.getDocumentID(player.user)];
 
                             if (rating) {
                                 player.rating = {
@@ -852,7 +854,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 });
             });
 
-            yield cache.setAsync(`gamePage-${self.getDocumentID(game)}`, JSON.stringify(gamePage));
+            yield cache.setAsync(`gamePage-${helpers.getDocumentID(game)}`, JSON.stringify(gamePage));
         }
 
         return gamePage;

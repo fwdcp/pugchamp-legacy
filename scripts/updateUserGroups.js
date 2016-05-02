@@ -6,34 +6,14 @@ const config = require('config');
 const HttpStatus = require('http-status-codes');
 const rp = require('request-promise');
 
+const helpers = require('../helpers');
+
 var cache = require('../cache');
 var database = require('../database');
 
-function getDocumentID(info) {
-    if (_.hasIn(info, 'toHexString')) {
-        return info.toHexString();
-    }
-
-    if (_.isString(info)) {
-        return info;
-    }
-
-    if (_.isObject(info)) {
-        if (_.hasIn(info, '_id') && _.hasIn(info._id, 'toHexString')) {
-            return info._id.toHexString();
-        }
-
-        if (_.hasIn(info, 'id')) {
-            return info.id;
-        }
-    }
-
-    return null;
-}
-
 function updateCachedUser(user) {
     return co(function*() {
-        let userID = getDocumentID(user);
+        let userID = helpers.getDocumentID(user);
         user = yield database.User.findById(userID);
 
         yield cache.setAsync(`user-${userID}`, JSON.stringify(user.toObject()));

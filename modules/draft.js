@@ -6,6 +6,8 @@ const config = require('config');
 const debug = require('debug')('pugchamp:draft');
 const ms = require('ms');
 
+const helpers = require('../helpers');
+
 module.exports = function(app, cache, chance, database, io, self) {
     const CAPTAIN_DRAFT_EXPIRE_COOLDOWN = ms(config.get('app.draft.captainDraftExpireCooldown'));
     const DRAFT_ORDER = config.get('app.draft.order');
@@ -57,7 +59,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     var currentDraftExpireCooldowns = new Set();
 
     self.isOnDraftExpireCooldown = function isOnDraftExpireCooldown(user) {
-        let userID = self.getDocumentID(user);
+        let userID = helpers.getDocumentID(user);
 
         return currentDraftExpireCooldowns.has(userID);
     };
@@ -67,7 +69,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     function removeDraftExpireCooldown(user) {
         return co(function*() {
-            let userID = self.getDocumentID(user);
+            let userID = helpers.getDocumentID(user);
 
             currentDraftExpireCooldowns.delete(userID);
 
@@ -202,28 +204,28 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             draftStatusMessage.playerPool = {};
             for (let role of _.keys(ROLES)) {
-                draftStatusMessage.playerPool[role] = _.map(playerPool[role], player => _.find(draftStatusMessage.fullPlayerList, user => (self.getDocumentID(player) === self.getDocumentID(user))));
+                draftStatusMessage.playerPool[role] = _.map(playerPool[role], player => _.find(draftStatusMessage.fullPlayerList, user => (helpers.getDocumentID(player) === helpers.getDocumentID(user))));
             }
 
             draftStatusMessage.draftTurns = _.map(DRAFT_ORDER, (turn, index) => _.merge({}, turn, draftChoices[index]));
             for (let turn of draftStatusMessage.draftTurns) {
                 if (turn.player) {
-                    turn.player = _.find(draftStatusMessage.fullPlayerList, user => (self.getDocumentID(turn.player) === self.getDocumentID(user)));
+                    turn.player = _.find(draftStatusMessage.fullPlayerList, user => (helpers.getDocumentID(turn.player) === helpers.getDocumentID(user)));
                 }
 
                 if (turn.captain) {
-                    turn.captain = _.find(draftStatusMessage.captainPool, user => (self.getDocumentID(turn.captain) === self.getDocumentID(user)));
+                    turn.captain = _.find(draftStatusMessage.captainPool, user => (helpers.getDocumentID(turn.captain) === helpers.getDocumentID(user)));
                 }
             }
 
             draftStatusMessage.draftTeams = _.cloneDeep(draftTeams);
             for (let team of draftStatusMessage.draftTeams) {
                 if (team.captain) {
-                    team.captain = _.find(draftStatusMessage.captainPool, user => (self.getDocumentID(team.captain) === self.getDocumentID(user)));
+                    team.captain = _.find(draftStatusMessage.captainPool, user => (helpers.getDocumentID(team.captain) === helpers.getDocumentID(user)));
                 }
 
                 for (let player of team.players) {
-                    player.user = _.find(draftStatusMessage.fullPlayerList, user => (self.getDocumentID(player.user) === self.getDocumentID(user)));
+                    player.user = _.find(draftStatusMessage.fullPlayerList, user => (helpers.getDocumentID(player.user) === helpers.getDocumentID(user)));
                 }
             }
 
@@ -285,8 +287,8 @@ module.exports = function(app, cache, chance, database, io, self) {
         yield updateDraftStatusMessage();
 
         // NOTE: hacks with previous draft info - clear draft restrictions and mark activity to prevent players from getting removed
-        yield _.map(_.unionBy(previousDraftCaptains, previousDraftPlayers, user => self.getDocumentID(user)), user => self.updateUserRestrictions(user));
-        yield _.map(_.unionBy(previousDraftCaptains, previousDraftPlayers, user => self.getDocumentID(user)), user => self.markUserActivity(user));
+        yield _.map(_.unionBy(previousDraftCaptains, previousDraftPlayers, user => helpers.getDocumentID(user)), user => self.updateUserRestrictions(user));
+        yield _.map(_.unionBy(previousDraftCaptains, previousDraftPlayers, user => helpers.getDocumentID(user)), user => self.markUserActivity(user));
 
         self.emit('draftStatusChanged', draftActive);
     });
@@ -330,7 +332,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }).value();
             game.draft.pool.captains = captainPool;
 
-            let usersToUpdate = _.unionBy(captainPool, fullPlayerList, user => self.getDocumentID(user));
+            let usersToUpdate = _.unionBy(captainPool, fullPlayerList, user => helpers.getDocumentID(user));
 
             try {
                 debug('saving drafted game');
@@ -340,9 +342,9 @@ module.exports = function(app, cache, chance, database, io, self) {
                 yield self.processGameUpdate(game);
 
                 debug('updating restrictions for players in draft');
-                yield _.map(_.unionBy(captainPool, fullPlayerList, user => self.getDocumentID(user)), user => self.updateUserRestrictions(user));
+                yield _.map(_.unionBy(captainPool, fullPlayerList, user => helpers.getDocumentID(user)), user => self.updateUserRestrictions(user));
 
-                currentDraftGame = self.getDocumentID(game);
+                currentDraftGame = helpers.getDocumentID(game);
 
                 yield self.assignGameToServer(game, true);
             }
@@ -589,7 +591,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                         }).exec();
                         /* eslint-enable lodash/prefer-lodash-method */
 
-                        let candidates = _.map(fullCaptains, captain => self.getDocumentID(captain));
+                        let candidates = _.map(fullCaptains, captain => helpers.getDocumentID(captain));
                         let weights = _.map(fullCaptains, captain => (_.isNumber(captain.stats.captainScore.center) ? captain.stats.captainScore.center : 0));
 
                         let boost = EPSILON;
@@ -613,7 +615,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                         }).exec();
                         /* eslint-enable lodash/prefer-lodash-method */
 
-                        let candidates = _.map(fullCaptains, captain => self.getDocumentID(captain));
+                        let candidates = _.map(fullCaptains, captain => helpers.getDocumentID(captain));
                         let weights = _.map(fullCaptains, captain => (_.isNumber(captain.stats.captainScore.center) ? captain.stats.captainScore.center : 0));
 
                         let boost = EPSILON;
@@ -650,7 +652,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                         /* eslint-enable lodash/prefer-lodash-method */
 
                         let mostExperienced = _.maxBy(fullCaptains, 'stats.total.player');
-                        choice.captain = self.getDocumentID(mostExperienced);
+                        choice.captain = helpers.getDocumentID(mostExperienced);
 
                         supported = true;
                     }
@@ -948,7 +950,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             throw new Error('invalid state before draft start');
         }
 
-        yield _.map(_.unionBy(captainPool, fullPlayerList, user => self.getDocumentID(user)), user => self.updateUserRestrictions(user));
+        yield _.map(_.unionBy(captainPool, fullPlayerList, user => helpers.getDocumentID(user)), user => self.updateUserRestrictions(user));
 
         self.emit('draftStatusChanged', draftActive);
 

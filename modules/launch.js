@@ -7,6 +7,8 @@ const config = require('config');
 const moment = require('moment');
 const ms = require('ms');
 
+const helpers = require('../helpers');
+
 module.exports = function(app, cache, chance, database, io, self) {
     const AUTO_READY_THRESHOLD = ms(config.get('app.launch.autoReadyThreshold'));
     const GET_LAUNCH_HOLD_DEBOUNCE_MAX_WAIT = 5000;
@@ -156,7 +158,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 launchStatusMessage.playersAvailable[role] = yield _(playersAvailable[role]).toArray().map(user => self.getCachedUser(user)).value();
             }
 
-            launchStatusMessage.allPlayersAvailable = _.unionBy(..._.values(launchStatusMessage.playersAvailable), user => self.getDocumentID(user));
+            launchStatusMessage.allPlayersAvailable = _.unionBy(..._.values(launchStatusMessage.playersAvailable), user => helpers.getDocumentID(user));
 
             if (SEPARATE_CAPTAIN_POOL) {
                 launchStatusMessage.captainsAvailable = yield _(captainsAvailable).toArray().map(user => self.getCachedUser(user)).value();
@@ -252,7 +254,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     }
 
     function syncUserAvailability(user) {
-        let userID = self.getDocumentID(user);
+        let userID = helpers.getDocumentID(user);
 
         self.emitToUser(userID, 'userAvailabilityUpdated', [{
             roles: _.mapValues(playersAvailable, function(players) {
@@ -267,7 +269,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     function updateUserAvailability(user, availability) {
         return co(function*() {
-            let userID = self.getDocumentID(user);
+            let userID = helpers.getDocumentID(user);
             let userRestrictions = yield self.getUserRestrictions(user);
 
             if (!_.includes(userRestrictions.aspects, 'start')) {
@@ -303,7 +305,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     function updateUserReadyStatus(user, ready) {
         return co(function*() {
-            let userID = self.getDocumentID(user);
+            let userID = helpers.getDocumentID(user);
 
             if (launchAttemptActive) {
                 if (ready) {
@@ -402,7 +404,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     }));
 
     self.markUserActivity = function markUserActivity(user) {
-        let userID = self.getDocumentID(user);
+        let userID = helpers.getDocumentID(user);
 
         lastActivity.set(userID, new Date());
     };

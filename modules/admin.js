@@ -9,6 +9,8 @@ const HttpStatus = require('http-status-codes');
 const moment = require('moment');
 const ms = require('ms');
 
+const helpers = require('../helpers');
+
 module.exports = function(app, cache, chance, database, io, self) {
     const ADMINS = config.get('app.users.admins');
     const ADMIN_LOG_CHANNEL = config.has('server.slack.channels.adminLog') ? config.get('server.slack.channels.adminLog') : '#admin-log';
@@ -21,7 +23,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     var adminUserIDs = [];
 
     self.isUserAdmin = function isUserAdmin(user) {
-        let userID = self.getDocumentID(user);
+        let userID = helpers.getDocumentID(user);
 
         return _.includes(adminUserIDs, userID);
     };
@@ -74,7 +76,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 if (/^[A-Za-z0-9_]{1,15}$/.test(req.body.alias)) {
                     let existingUser = yield self.getUserByAlias(req.body.alias);
 
-                    if (!existingUser || self.getDocumentID(existingUser) === self.getDocumentID(user)) {
+                    if (!existingUser || helpers.getDocumentID(existingUser) === helpers.getDocumentID(user)) {
                         self.postToAdminLog(req.user, `changed the alias of \`<${BASE_URL}/player/${user.steamID}|${req.body.alias}>\` from \`${user.alias}\``);
 
                         user.alias = req.body.alias;
@@ -146,7 +148,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
 
             let restriction = new database.Restriction({
-                user: self.getDocumentID(user),
+                user: helpers.getDocumentID(user),
                 active: true,
                 aspects,
                 reason,
@@ -181,7 +183,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            if (self.getDocumentID(user) === self.getDocumentID(restriction.user) && restriction.active) {
+            if (helpers.getDocumentID(user) === helpers.getDocumentID(restriction.user) && restriction.active) {
                 let formattedAspects = _.size(restriction.aspects) > 0 ? ` (aspects: ${restriction.aspects.join(', ')})` : '';
                 let formattedExpiration = restriction.expires ? ` (expires: ${moment(restriction.expires).format('llll')})` : ' (expires: never)';
                 let formattedReason = restriction.reason ? ` (reason: ${restriction.reason})` : '';
@@ -197,7 +199,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 }
                 catch (err) {
                     self.postToLog({
-                        description: `failed to revoke restriction \`${self.getDocumentID(restriction)}\` for <${BASE_URL}/player/${user.steamID}|${user.alias}>`,
+                        description: `failed to revoke restriction \`${helpers.getDocumentID(restriction)}\` for <${BASE_URL}/player/${user.steamID}|${user.alias}>`,
                         error: err
                     });
 
@@ -243,7 +245,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            self.postToAdminLog(req.user, `requested substitute for player \`<${BASE_URL}/player/${player.steamID}|${player.alias}>\` for game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``);
+            self.postToAdminLog(req.user, `requested substitute for player \`<${BASE_URL}/player/${player.steamID}|${player.alias}>\` for game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``);
 
             yield self.requestSubstitute(game, player);
 
@@ -255,7 +257,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            self.postToAdminLog(req.user, `updated players for server \`${game.server}\` for game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``);
+            self.postToAdminLog(req.user, `updated players for server \`${game.server}\` for game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``);
 
             try {
                 yield self.updateServerPlayers(game, true);
@@ -264,7 +266,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
             catch (err) {
                 self.postToLog({
-                    description: `failed to update players for server \`${game.server}\` for game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``,
+                    description: `failed to update players for server \`${game.server}\` for game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``,
                     error: err
                 });
 
@@ -277,7 +279,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            self.postToAdminLog(req.user, `reinitialized server \`${game.server}\` for game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``);
+            self.postToAdminLog(req.user, `reinitialized server \`${game.server}\` for game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``);
 
             try {
                 yield self.initializeServer(game, true);
@@ -286,7 +288,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
             catch (err) {
                 self.postToLog({
-                    description: `failed to reinitialize server \`${game.server}\` for game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``,
+                    description: `failed to reinitialize server \`${game.server}\` for game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``,
                     error: err
                 });
 
@@ -299,7 +301,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            self.postToAdminLog(req.user, `reassigned game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\` to new server`);
+            self.postToAdminLog(req.user, `reassigned game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\` to new server`);
 
             try {
                 yield self.assignGameToServer(game, true);
@@ -308,7 +310,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
             catch (err) {
                 self.postToLog({
-                    description: `failed to reassign game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\` to new server`,
+                    description: `failed to reassign game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\` to new server`,
                     error: err
                 });
 
@@ -321,7 +323,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            self.postToAdminLog(req.user, `aborted game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``);
+            self.postToAdminLog(req.user, `aborted game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``);
 
             try {
                 yield self.abortGame(game);
@@ -330,7 +332,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
             catch (err) {
                 self.postToLog({
-                    description: `failed to abort game \`<${BASE_URL}/game/${self.getDocumentID(game)}|${self.getDocumentID(game)}>\``,
+                    description: `failed to abort game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``,
                     error: err
                 });
 
@@ -450,6 +452,6 @@ module.exports = function(app, cache, chance, database, io, self) {
         }).exec();
         /* eslint-enable lodash/prefer-lodash-method */
 
-        adminUserIDs = _.map(admins, user => self.getDocumentID(user));
+        adminUserIDs = _.map(admins, user => helpers.getDocumentID(user));
     });
 };

@@ -11,6 +11,8 @@ const ms = require('ms');
 const RateLimiter = require('limiter').RateLimiter;
 const RCON = require('srcds-rcon');
 
+const helpers = require('../helpers');
+
 module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const COMMAND_TIMEOUT = ms(config.get('app.servers.commandTimeout'));
@@ -52,7 +54,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let rcon = RCON(serverInfo.rcon);
 
-            yield Promise.race([rcon.connect(), self.promiseDelay(CONNECT_TIMEOUT, new Error('connection attempt timed out'), true)]);
+            yield Promise.race([rcon.connect(), helpers.promiseDelay(CONNECT_TIMEOUT, new Error('connection attempt timed out'), true)]);
 
             return rcon;
         });
@@ -262,7 +264,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         let assignedServers = _.filter(_.keys(serverStatuses), server => serverStatuses[server].status === 'assigned');
         yield _.map(assignedServers, server => self.updateServerStatus(server));
         yield _.map(assignedServers, co.wrap(function*(server) {
-            let updatedGame = yield database.Game.findById(self.getDocumentID(serverStatuses[server].game));
+            let updatedGame = yield database.Game.findById(helpers.getDocumentID(serverStatuses[server].game));
 
             if (updatedGame.status === 'aborted' || updatedGame.status === 'completed') {
                 // force immediate reset
@@ -342,7 +344,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             if (retry) {
                 for (let delay of RETRY_ATTEMPTS) {
                     debug(`waiting for ${delay}ms before retrying`);
-                    yield self.promiseDelay(delay, null, false);
+                    yield helpers.promiseDelay(delay, null, false);
 
                     try {
                         yield self.resetServer(server, false);
@@ -375,7 +377,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 if (retry) {
                     for (let delay of RETRY_ATTEMPTS) {
                         debug(`waiting for ${delay}ms before retrying`);
-                        yield self.promiseDelay(delay, null, false);
+                        yield helpers.promiseDelay(delay, null, false);
 
                         try {
                             yield self.updateServerStatus(server);
@@ -394,12 +396,12 @@ module.exports = function(app, cache, chance, database, io, self) {
                 }
             }
 
-            if (serverStatus.status === 'assigned' && self.getDocumentID(serverStatus.game) === self.getDocumentID(game)) {
+            if (serverStatus.status === 'assigned' && helpers.getDocumentID(serverStatus.game) === helpers.getDocumentID(game)) {
                 // update server just to make sure
                 yield self.updateServerStatus(server);
                 serverStatus = yield self.getServerStatus(server);
 
-                if (serverStatus.status === 'assigned' && self.getDocumentID(serverStatus.game) === self.getDocumentID(game)) {
+                if (serverStatus.status === 'assigned' && helpers.getDocumentID(serverStatus.game) === helpers.getDocumentID(game)) {
                     yield self.resetServer(server, true);
                 }
             }
@@ -415,7 +417,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         try {
             let serverStatus = yield self.getServerStatus(game.server);
 
-            if (serverStatus.status !== 'assigned' || self.getDocumentID(serverStatus.game) !== self.getDocumentID(game)) {
+            if (serverStatus.status !== 'assigned' || helpers.getDocumentID(serverStatus.game) !== helpers.getDocumentID(game)) {
                 debug(`server ${game.server} is not assigned to game ${game.id}`);
                 throw new Error('server not assigned to game');
             }
@@ -493,14 +495,14 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
         catch (err) {
             self.postToLog({
-                description: `encountered error while trying to update server players to game \`${self.getDocumentID(game)}\``,
+                description: `encountered error while trying to update server players to game \`${helpers.getDocumentID(game)}\``,
                 error: err
             });
 
             if (retry) {
                 for (let delay of RETRY_ATTEMPTS) {
                     debug(`waiting for ${delay}ms before retrying`);
-                    yield self.promiseDelay(delay, null, false);
+                    yield helpers.promiseDelay(delay, null, false);
 
                     try {
                         yield self.updateServerPlayers(game, false);
@@ -546,7 +548,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let serverInfo = GAME_SERVER_POOL[game.server];
             let hash = crypto.createHash('sha256');
-            hash.update(`${self.getDocumentID(game)}|${serverInfo.salt}`);
+            hash.update(`${helpers.getDocumentID(game)}|${serverInfo.salt}`);
             let key = hash.digest('hex');
 
             let mapInfo = MAPS[game.map];
@@ -555,7 +557,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             yield self.resetServer(game.server, false);
 
             debug(`performing initial setup for server ${game.server} for game ${game.id}`);
-            yield self.sendRCONCommands(game.server, [`pugchamp_api_url "${BASE_URL}/api/servers/${key}"`, `pugchamp_game_id "${self.getDocumentID(game)}"`, `pugchamp_game_map "${mapInfo.file}"`, `pugchamp_game_config "${mapInfo.config}"`]);
+            yield self.sendRCONCommands(game.server, [`pugchamp_api_url "${BASE_URL}/api/servers/${key}"`, `pugchamp_game_id "${helpers.getDocumentID(game)}"`, `pugchamp_game_map "${mapInfo.file}"`, `pugchamp_game_config "${mapInfo.config}"`]);
 
             yield self.updateServerStatus(game.server);
             yield self.updateServerPlayers(game, false);
@@ -568,7 +570,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 yield self.updateServerStatus(game.server);
                 let serverStatus = yield self.getServerStatus(game.server);
 
-                if (serverStatus.status !== 'assigned' || self.getDocumentID(serverStatus.game) !== self.getDocumentID(game) || serverStatus.game.status === 'initializing') {
+                if (serverStatus.status !== 'assigned' || helpers.getDocumentID(serverStatus.game) !== helpers.getDocumentID(game) || serverStatus.game.status === 'initializing') {
                     debug(`game server ${game.server} not launched for game ${game.id}`);
                     throw err;
                 }
@@ -578,14 +580,14 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
         catch (err) {
             self.postToLog({
-                description: `encountered error while trying to initialize server for game \`${self.getDocumentID(game)}\``,
+                description: `encountered error while trying to initialize server for game \`${helpers.getDocumentID(game)}\``,
                 error: err
             });
 
             if (retry) {
                 for (let delay of RETRY_ATTEMPTS) {
                     debug(`waiting for ${delay}ms before retrying`);
-                    yield self.promiseDelay(delay, null, false);
+                    yield helpers.promiseDelay(delay, null, false);
 
                     try {
                         yield self.initializeServer(game, false);
@@ -651,14 +653,14 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
         catch (err) {
             self.postToLog({
-                description: `encountered error while trying to assign server to game \`${self.getDocumentID(game)}\``,
+                description: `encountered error while trying to assign server to game \`${helpers.getDocumentID(game)}\``,
                 error: err
             });
 
             if (retry) {
                 for (let delay of RETRY_ATTEMPTS) {
                     debug(`waiting for ${delay}ms before retrying`);
-                    yield self.promiseDelay(delay, null, false);
+                    yield helpers.promiseDelay(delay, null, false);
 
                     try {
                         yield self.assignGameToServer(game, false, requestedServer);
@@ -706,7 +708,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         let serverInfo = GAME_SERVER_POOL[game.server];
 
         let hash = crypto.createHash('sha256');
-        hash.update(`${self.getDocumentID(game)}|${serverInfo.salt}`);
+        hash.update(`${helpers.getDocumentID(game)}|${serverInfo.salt}`);
         let key = hash.digest('hex');
 
         if (req.params.key !== key) {
@@ -728,7 +730,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             let success = false;
 
             for (let delay of RETRY_ATTEMPTS) {
-                yield self.promiseDelay(delay, null, false);
+                yield helpers.promiseDelay(delay, null, false);
 
                 try {
                     yield self.handleGameServerUpdate(req.query);
@@ -777,11 +779,11 @@ module.exports = function(app, cache, chance, database, io, self) {
                     });
                 }
                 else if (serverStatus.status === 'assigned') {
-                    let updatedGame = yield database.Game.findById(self.getDocumentID(serverStatus.game));
+                    let updatedGame = yield database.Game.findById(helpers.getDocumentID(serverStatus.game));
 
                     if (updatedGame.status !== 'launching' && updatedGame.status !== 'live') {
                         self.postToLog({
-                            description: `server \`${server}\` is currently assigned to game \`${self.getDocumentID(serverStatus.game)}\` which is ${updatedGame.status}`
+                            description: `server \`${server}\` is currently assigned to game \`${helpers.getDocumentID(serverStatus.game)}\` which is ${updatedGame.status}`
                         });
                     }
                 }

@@ -7,6 +7,8 @@ const ms = require('ms');
 const RateLimiter = require('limiter').RateLimiter;
 const twitter = require('twitter-text');
 
+const helpers = require('../helpers');
+
 module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const CHAT_LOG_CHANNEL = config.has('server.slack.channels.chatLog') ? config.get('server.slack.channels.chatLog') : '#chat-log';
@@ -58,7 +60,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 attachment = {
                     fallback: `${message.user.alias}: ${message.body}`,
                     author_name: message.user.alias,
-                    author_link: `${BASE_URL}/user/${self.getDocumentID(message.user)}`,
+                    author_link: `${BASE_URL}/user/${helpers.getDocumentID(message.user)}`,
                     text: message.body
                 };
             }
@@ -174,7 +176,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     }) === 0));
 
                     let mentions = yield _.map(mentionedAliases, alias => self.getUserByAlias(alias));
-                    mentions = yield _(mentions).compact().uniqBy(user => self.getDocumentID(user)).map(user => self.getCachedUser(user)).value();
+                    mentions = yield _(mentions).compact().uniqBy(user => helpers.getDocumentID(user)).map(user => self.getCachedUser(user)).value();
 
                     self.sendMessage({
                         user: userID,
@@ -192,7 +194,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         co(function*() {
             if (self.isUserAdmin(userID)) {
-                let victimID = self.getDocumentID(victim);
+                let victimID = helpers.getDocumentID(victim);
                 victim = yield self.getCachedUser(victim);
 
                 self.postToAdminLog(userID, `purged the chat messages of \`<${BASE_URL}/player/${victim.steamID}|${victim.alias}>\``);

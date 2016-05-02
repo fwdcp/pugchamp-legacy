@@ -13,6 +13,8 @@ const rp = require('request-promise');
 const socketioJwt = require('socketio-jwt');
 const url = require('url');
 
+const helpers = require('../helpers');
+
 module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const CAPTAIN_GAME_REQUIREMENT = config.get('app.users.captainGameRequirement');
@@ -75,7 +77,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.updateCachedUser = co.wrap(function* updateCachedUser(user) {
-        let userID = self.getDocumentID(user);
+        let userID = helpers.getDocumentID(user);
         user = yield database.User.findById(userID);
 
         yield cache.setAsync(`user-${userID}`, JSON.stringify(user.toObject()));
@@ -87,7 +89,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.getCachedUser = co.wrap(function* getCachedUser(user) {
-        let userID = self.getDocumentID(user);
+        let userID = helpers.getDocumentID(user);
 
         let cacheResponse = yield cache.getAsync(`user-${userID}`);
 
@@ -128,7 +130,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     };
 
     self.emitToUser = function emitToUser(user, name, args) {
-        let userID = self.getDocumentID(user);
+        let userID = helpers.getDocumentID(user);
 
         if (userSockets.has(userID)) {
             _(userSockets.get(userID)).toArray().forEach(function(socketID) {
@@ -145,7 +147,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.updateUserRestrictions = co.wrap(function* updateUserRestrictions(user) {
-        let userID = self.getDocumentID(user);
+        let userID = helpers.getDocumentID(user);
         user = yield database.User.findById(userID);
         let restrictions = [];
 
@@ -288,7 +290,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.getUserRestrictions = co.wrap(function* getUserRestrictions(user) {
-        let userID = self.getDocumentID(user);
+        let userID = helpers.getDocumentID(user);
 
         if (userID) {
             if (!userRestrictions.has(userID)) {
@@ -311,7 +313,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     function updateUserGroups(user) {
         return co(function*() {
-            user = yield database.User.findById(self.getDocumentID(user));
+            user = yield database.User.findById(helpers.getDocumentID(user));
             user.groups = [];
 
             for (let groupID of _.keys(USER_GROUPS)) {
@@ -432,7 +434,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
     })));
     passport.serializeUser(function(user, done) {
-        done(null, self.getDocumentID(user));
+        done(null, helpers.getDocumentID(user));
     });
     passport.deserializeUser(function(id, done) {
         database.User.findById(id, done);
@@ -556,7 +558,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 if (/^[A-Za-z0-9_]{1,15}$/.test(req.body.alias)) {
                     let existingUser = yield self.getUserByAlias(req.body.alias);
 
-                    if (!existingUser || self.getDocumentID(existingUser) === self.getDocumentID(req.user)) {
+                    if (!existingUser || helpers.getDocumentID(existingUser) === helpers.getDocumentID(req.user)) {
                         req.user.alias = req.body.alias;
 
                         majorChange = true;

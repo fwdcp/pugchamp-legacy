@@ -19,39 +19,6 @@ module.exports = function(app, cache, chance, database, io, self) {
     const SITE_SUBTITLE = config.get('app.common.siteSubtitle');
     const SITE_THEME = config.get('app.common.siteTheme');
 
-    self.promiseDelay = function(delay, value, fail) {
-        return new Promise(function(resolve, reject) {
-            if (!fail) {
-                setTimeout(resolve, delay, value);
-            }
-            else {
-                setTimeout(reject, delay, value);
-            }
-        });
-    };
-
-    self.getDocumentID = function getDocumentID(info) {
-        if (_.hasIn(info, 'toHexString')) {
-            return info.toHexString();
-        }
-
-        if (_.isString(info)) {
-            return info;
-        }
-
-        if (_.isObject(info)) {
-            if (_.hasIn(info, '_id') && _.hasIn(info._id, 'toHexString')) {
-                return info._id.toHexString();
-            }
-
-            if (_.hasIn(info, 'id')) {
-                return info.id;
-            }
-        }
-
-        return null;
-    };
-
     hbs.registerHelper('toJSON', function(object) {
         return JSON.stringify(object);
     });
