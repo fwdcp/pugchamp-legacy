@@ -1,7 +1,10 @@
-const _ = require('lodash');
+'use strict';
 
-module.exports = {
-    getDocumentID: function getDocumentID(info) {
+const _ = require('lodash');
+const child_process = require('child_process');
+
+const helpers = {
+    getDocumentID(info) {
         if (_.hasIn(info, 'toHexString')) {
             return info.toHexString();
         }
@@ -22,7 +25,60 @@ module.exports = {
 
         return null;
     },
-    promiseDelay: function(delay, value, fail) {
+    getGameUsers(game) {
+        let users = [];
+
+        for (let team of game.teams) {
+            users.push(team.captain);
+
+            for (let role of team.composition) {
+                for (let player of role.players) {
+                    users.push(player.user);
+                }
+            }
+        }
+
+        return _(users).map(user => helpers.getDocumentID(user)).uniq().value();
+    },
+    getGameUserInfo(game, user) {
+        let userID = helpers.getDocumentID(user);
+
+        let team;
+        let role;
+        let player;
+
+        team = _.find(game.teams, function(currentTeam) {
+            role = _.find(currentTeam.composition, function(currentRole) {
+                player = _.find(currentRole.players, function(currentPlayer) {
+                    return userID === helpers.getDocumentID(currentPlayer.user);
+                });
+
+                if (player) {
+                    return true;
+                }
+
+                return false;
+            });
+
+            if (role || userID === helpers.getDocumentID(currentTeam.captain)) {
+                return true;
+            }
+
+            return false;
+        });
+
+        if (team) {
+            return {
+                game,
+                team,
+                role,
+                player
+            };
+        }
+
+        return null;
+    },
+    promiseDelay(delay, value, fail) {
         return new Promise(function(resolve, reject) {
             if (!fail) {
                 setTimeout(resolve, delay, value);
@@ -31,5 +87,25 @@ module.exports = {
                 setTimeout(reject, delay, value);
             }
         });
+    },
+    runScript(script, args, options) {
+        return new Promise(function(resolve, reject) {
+            let child = child_process.fork(script, args, options);
+
+            child.on('error', function(err) {
+                reject(err);
+            });
+
+            child.on('exit', function(code, signal) {
+                if (code || signal) {
+                    reject(code || signal);
+                }
+                else {
+                    resolve();
+                }
+            });
+        });
     }
 };
+
+module.exports = helpers;

@@ -6,7 +6,6 @@ const co = require('co');
 const config = require('config');
 const jwt = require('jsonwebtoken');
 const HttpStatus = require('http-status-codes');
-const moment = require('moment');
 const OpenIDStrategy = require('passport-openid').Strategy;
 const passport = require('passport');
 const rp = require('request-promise');
@@ -17,72 +16,22 @@ const helpers = require('../helpers');
 
 module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
-    const CAPTAIN_GAME_REQUIREMENT = config.get('app.users.captainGameRequirement');
     const HIDE_DRAFT_STATS = config.get('app.users.hideDraftStats');
     const INITIAL_RATINGS = config.has('app.users.initialRatings') ? config.get('app.users.initialRatings') : [];
     const UNAUTHENTICATED_RESTRICTIONS = {
         aspects: ['sub', 'start', 'captain', 'chat', 'support'],
         reasons: ['You are currently not [logged on](/user/login).']
     };
-    const USER_AUTHORIZATIONS = config.has('app.users.authorizations') ? config.get('app.users.authorizations') : [];
-    const USER_AUTHORIZATION_DEFAULT = config.has('app.users.authorizationDefault') ? config.get('app.users.authorizationDefault') : true;
-    const USER_AUTHORIZATION_APIS = config.has('app.users.authorizationAPIs') ? config.get('app.users.authorizationAPIs') : [];
-    const USER_GROUPS = config.has('app.users.groups') ? config.get('app.users.groups') : {};
 
-    var userRestrictions = new Map();
     var userSockets = new Map();
 
     /**
      * @async
      */
-    function checkUserAuthorization(user) {
-        return co(function*() {
-            for (let authorization of USER_AUTHORIZATIONS) {
-                if (authorization.user === user.steamID) {
-                    return authorization.authorized;
-                }
-            }
-
-            for (let authorizationAPI of USER_AUTHORIZATION_APIS) {
-                try {
-                    let response = yield rp({
-                        resolveWithFullResponse: true,
-                        simple: false,
-                        qs: {
-                            user: user.steamID
-                        },
-                        uri: authorizationAPI
-                    });
-
-                    if (response.statusCode === HttpStatus.OK) {
-                        return true;
-                    }
-                    else if (response.statusCode === HttpStatus.FORBIDDEN) {
-                        return false;
-                    }
-                    else {
-                        continue;
-                    }
-                }
-                catch (err) {
-                    continue;
-                }
-            }
-
-            return USER_AUTHORIZATION_DEFAULT;
+    self.updateUserCache = co.wrap(function* updateUserCache(users) {
+        yield helpers.runScript('scripts/updateUserCache.js', _.map(users, user => helpers.getDocumentID(user)), {
+            cwd: process.cwd()
         });
-    }
-
-    /**
-     * @async
-     */
-    self.updateCachedUser = co.wrap(function* updateCachedUser(user) {
-        let userID = helpers.getDocumentID(user);
-        user = yield database.User.findById(userID);
-
-        yield cache.setAsync(`user-${userID}`, JSON.stringify(user.toObject()));
-
-        self.emit('cachedUserUpdated', userID);
     });
 
     /**
@@ -94,7 +43,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         let cacheResponse = yield cache.getAsync(`user-${userID}`);
 
         if (!cacheResponse) {
-            yield self.updateCachedUser(user);
+            yield self.updateUserCache([user]);
             cacheResponse = yield cache.getAsync(`user-${userID}`);
         }
 
@@ -146,144 +95,16 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.updateUserRestrictions = co.wrap(function* updateUserRestrictions(user) {
-        let userID = helpers.getDocumentID(user);
-        user = yield database.User.findById(userID);
-        let restrictions = [];
-
-        const NOT_READY_RESTRICTIONS = {
-            aspects: ['sub', 'start', 'captain', 'chat', 'support'],
-            reasons: ['Your account is not [set up](/user/settings) properly.']
-        };
-        if (!user.setUp) {
-            restrictions.push(NOT_READY_RESTRICTIONS);
-        }
-
-        const UNAUTHORIZED_USER_RESTRICTIONS = {
-            aspects: ['sub', 'start', 'captain', 'chat', 'support'],
-            reasons: ['You are not authorized to use this system.']
-        };
-        const UNAUTHORIZED_ADMIN_RESTRICTIONS = {
-            aspects: ['sub', 'start', 'captain'],
-            reasons: ['You are not authorized to play in this system.']
-        };
-        let authorized = yield checkUserAuthorization(user);
-        if (user.authorized !== authorized) {
-            user.authorized = authorized;
-            yield user.save();
-            yield self.updateCachedUser(user);
-        }
-        if (!user.authorized) {
-            if (!self.isUserAdmin(user)) {
-                restrictions.push(UNAUTHORIZED_USER_RESTRICTIONS);
-            }
-            else {
-                restrictions.push(UNAUTHORIZED_ADMIN_RESTRICTIONS);
-            }
-        }
-
-        const CURRENT_GAME_RESTRICTIONS = {
-            aspects: ['sub', 'start', 'captain'],
-            reasons: ['You are involved in a currently active game.']
-        };
-        let currentGame = yield database.Game.findOne({
-            $or: [{
-                'teams.captain': userID
-            }, {
-                'teams.composition.players.user': userID
-            }],
-            status: {
-                $in: ['initializing', 'launching', 'live']
-            }
-        });
-        if (currentGame) {
-            restrictions.push(CURRENT_GAME_RESTRICTIONS);
-        }
-
-        const CURRENT_DRAFT_RESTRICTIONS = {
-            aspects: ['sub'],
-            reasons: ['You are involved in a currently occurring draft.']
-        };
-        if (_.includes(self.getDraftPlayers(), userID)) {
-            restrictions.push(CURRENT_DRAFT_RESTRICTIONS);
-        }
-
-        const CURRENT_SUBSTITUTE_REQUEST_RESTRICTIONS = {
-            aspects: ['start', 'captain'],
-            reasons: ['You are currently applying to a substitute request.']
-        };
-        let appliedToSubstitute = _.some(self.getCurrentSubstituteRequests(), function(request) {
-            return request.candidates.has(userID);
-        });
-        if (appliedToSubstitute) {
-            restrictions.push(CURRENT_SUBSTITUTE_REQUEST_RESTRICTIONS);
-        }
-
-        const MIN_GAME_RESTRICTIONS = {
-            aspects: ['captain'],
-            reasons: ['You cannot captain because you do not meet the requirement for games played.']
-        };
-        if (_.isNil(user.stats.total.player) || user.stats.total.player < CAPTAIN_GAME_REQUIREMENT) {
-            restrictions.push(MIN_GAME_RESTRICTIONS);
-        }
-
-        const DRAFT_EXPIRE_COOLDOWN_RESTRICTIONS = {
-            aspects: ['captain'],
-            reasons: ['You are currently on a captain cooldown for allowing a draft to expire.']
-        };
-        if (self.isOnDraftExpireCooldown(user)) {
-            restrictions.push(DRAFT_EXPIRE_COOLDOWN_RESTRICTIONS);
-        }
-
-        /* eslint-disable lodash/prefer-lodash-method */
-        let activeRestrictions = yield database.Restriction.find({
-            'user': userID,
-            'active': true
-        });
-        /* eslint-enable lodash/prefer-lodash-method */
-
-        for (let restriction of activeRestrictions) {
-            if (!restriction.expires || moment().isBefore(restriction.expires)) {
-                let reason;
-
-                if (_.size(restriction.aspects) !== 0) {
-                    let formattedAspects = restriction.aspects.join(', ');
-                    let formattedExpiration = restriction.expires ? moment(restriction.expires).fromNow() : 'never';
-                    let formattedReason = restriction.reason ? ` for the reason: ${restriction.reason}` : '.';
-                    reason = `You are currently restricted (aspects: ${formattedAspects}) (expires: ${formattedExpiration})${formattedReason}`;
-                }
-                else {
-                    let formattedReason = restriction.reason ? ` for the reason: ${restriction.reason}` : '.';
-                    reason = `You have received a warning${formattedReason}`;
-                }
-
-                restrictions.push({
-                    aspects: restriction.aspects,
-                    reasons: [reason]
-                });
-            }
-            else {
-                restriction.active = false;
-
-                yield restriction.save();
-            }
-        }
-
-        let combinedRestrictions = _.reduce(restrictions, function(combined, restriction) {
-            return {
-                aspects: _.union(combined.aspects, restriction.aspects),
-                reasons: _.concat(combined.reasons, restriction.reasons)
-            };
-        }, {
-            aspects: [],
-            reasons: []
+    self.updateUserRestrictions = co.wrap(function* updateUserRestrictions([users]) {
+        yield helpers.runScript('scripts/updateUserRestrictions.js', _.map(users, user => helpers.getDocumentID(user)), {
+            cwd: process.cwd()
         });
 
-        userRestrictions.set(userID, combinedRestrictions);
+        for (let user of users) {
+            let userRestrictions = yield self.getUserRestrictions(user);
 
-        self.emit('userRestrictionsUpdated', userID);
-
-        yield self.invalidatePlayerPage(user);
+            self.emit('userRestrictionsUpdated', helpers.getDocumentID(user), userRestrictions);
+        }
     });
 
     /**
@@ -293,69 +114,32 @@ module.exports = function(app, cache, chance, database, io, self) {
         let userID = helpers.getDocumentID(user);
 
         if (userID) {
-            if (!userRestrictions.has(userID)) {
-                yield self.updateUserRestrictions(user);
+            let cacheResponse = yield cache.getAsync(`userRestrictions-${userID}`);
+
+            if (!cacheResponse) {
+                yield self.updateUserRestrictions([user]);
+                cacheResponse = yield cache.getAsync(`userRestrictions-${userID}`);
             }
 
-            return userRestrictions.get(userID);
+            return JSON.parse(cacheResponse);
         }
         else {
             return UNAUTHENTICATED_RESTRICTIONS;
         }
     });
 
-    self.on('userRestrictionsUpdated', co.wrap(function*(userID) {
-        self.emitToUser(userID, 'restrictionsUpdated', [yield self.getUserRestrictions(userID)]);
-    }));
+    self.on('userRestrictionsUpdated', function(userID, userRestrictions) {
+        self.emitToUser(userID, 'restrictionsUpdated', [userRestrictions]);
+    });
 
     /**
      * @async
      */
-    function updateUserGroups(user) {
+    function updateUserGroups(users) {
         return co(function*() {
-            user = yield database.User.findById(helpers.getDocumentID(user));
-            user.groups = [];
-
-            for (let groupID of _.keys(USER_GROUPS)) {
-                let groupInfo = USER_GROUPS[groupID];
-
-                let authorization = _.find(groupInfo.authorizations, ['user', user.steamID]);
-                if (authorization) {
-                    if (authorization.authorized) {
-                        user.groups.push(groupID);
-                    }
-
-                    continue;
-                }
-
-                try {
-                    let response = yield rp({
-                        resolveWithFullResponse: true,
-                        simple: false,
-                        qs: {
-                            user: user.steamID
-                        },
-                        uri: groupInfo.api
-                    });
-
-                    if (response.statusCode === HttpStatus.OK) {
-                        user.groups.push(groupID);
-                    }
-                    else if (response.statusCode === HttpStatus.FORBIDDEN) {
-                        continue;
-                    }
-                }
-                catch (err) {
-                    // ignore
-                }
-
-                if (_.has(groupInfo, 'default') && groupInfo.default) {
-                    user.groups.push(groupID);
-                }
-            }
-
-            yield user.save();
-            yield self.updateCachedUser(user);
+            yield helpers.runScript('scripts/updateUserGroups.js', _.map(users, user => helpers.getDocumentID(user)), {
+                cwd: process.cwd()
+            });
         });
     }
 
@@ -424,7 +208,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                 yield user.save();
 
-                yield self.updatePlayerStats(user);
+                yield self.updatePlayerStats([user]);
             }
 
             done(null, user);
@@ -515,8 +299,8 @@ module.exports = function(app, cache, chance, database, io, self) {
         if (!userSockets.has(userID)) {
             userSockets.set(userID, new Set([socket.id]));
 
-            yield self.updateUserRestrictions(userID);
-            yield updateUserGroups(userID);
+            yield self.updateUserRestrictions([userID]);
+            yield updateUserGroups([userID]);
 
             self.emit('userConnected', userID);
         }
@@ -586,11 +370,11 @@ module.exports = function(app, cache, chance, database, io, self) {
             try {
                 yield req.user.save();
 
-                yield self.updateCachedUser(req.user);
-                yield self.updateUserRestrictions(req.user);
+                yield self.updateUserCache([req.user]);
 
                 if (majorChange) {
-                    yield self.invalidateUserGamePages(req.user);
+                    yield self.updateUserRestrictions([req.user]);
+                    yield self.updateUserGames(req.user);
                 }
             }
             catch (err) {

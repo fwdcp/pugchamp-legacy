@@ -422,9 +422,9 @@ module.exports = function(app, cache, chance, database, io, self) {
                 throw new Error('server not assigned to game');
             }
 
-            let gameUsers = yield _.map(self.getGameUsers(game), user => self.getCachedUser(user));
+            let gameUsers = yield _.map(helpers.getGameUsers(game), user => self.getCachedUser(user));
             let commands = _.map(gameUsers, function(user) {
-                let gameUserInfo = self.getGameUserInfo(game, user);
+                let gameUserInfo = helpers.getGameUserInfo(game, user);
 
                 if (gameUserInfo.player) {
                     if (!gameUserInfo.player.replaced) {

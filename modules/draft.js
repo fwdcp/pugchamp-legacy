@@ -3,7 +3,6 @@
 const _ = require('lodash');
 const co = require('co');
 const config = require('config');
-const debug = require('debug')('pugchamp:draft');
 const ms = require('ms');
 
 const helpers = require('../helpers');
@@ -56,27 +55,6 @@ module.exports = function(app, cache, chance, database, io, self) {
         return currentState;
     }
 
-    var currentDraftExpireCooldowns = new Set();
-
-    self.isOnDraftExpireCooldown = function isOnDraftExpireCooldown(user) {
-        let userID = helpers.getDocumentID(user);
-
-        return currentDraftExpireCooldowns.has(userID);
-    };
-
-    /**
-     * @async
-     */
-    function removeDraftExpireCooldown(user) {
-        return co(function*() {
-            let userID = helpers.getDocumentID(user);
-
-            currentDraftExpireCooldowns.delete(userID);
-
-            yield self.updateUserRestrictions(user);
-        });
-    }
-
     var draftActive = false;
     var draftComplete = false;
 
@@ -105,15 +83,6 @@ module.exports = function(app, cache, chance, database, io, self) {
 
     self.getCurrentDraftGame = function getCurrentDraftGame() {
         return currentDraftGame;
-    };
-
-    self.getDraftPlayers = function getDraftPlayers() {
-        if (draftActive && !draftComplete) {
-            return _.union(captainPool, fullPlayerList);
-        }
-        else {
-            return [];
-        }
     };
 
     function checkIfLegalState(teams, maps, final) {
@@ -254,6 +223,26 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
+    function updateDraftUsers() {
+        return co(function*() {
+            let draftUsers = (draftActive && !draftComplete) ? _.union(captainPool, fullPlayerList) : [];
+
+            yield cache.setAsync('draftUsers', JSON.stringify(draftUsers));
+        });
+    }
+
+    /**
+     * @async
+     */
+    self.processDraftStatusUpdate = _.debounce(co.wrap(function* processDraftStatusUpdate() {
+        yield updateDraftUsers();
+
+        yield updateDraftStatusMessage();
+    }));
+
+    /**
+     * @async
+     */
     self.cleanUpDraft = co.wrap(function* cleanUpDraft() {
         // NOTE: we need to save these to perform operations once draft is cleared
         let previousDraftCaptains = captainPool;
@@ -284,11 +273,13 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         currentDraftGame = null;
 
-        yield updateDraftStatusMessage();
+        self.processDraftStatusUpdate();
 
         // NOTE: hacks with previous draft info - clear draft restrictions and mark activity to prevent players from getting removed
-        yield _.map(_.unionBy(previousDraftCaptains, previousDraftPlayers, user => helpers.getDocumentID(user)), user => self.updateUserRestrictions(user));
-        yield _.map(_.unionBy(previousDraftCaptains, previousDraftPlayers, user => helpers.getDocumentID(user)), user => self.markUserActivity(user));
+        yield self.updateUserRestrictions(_.union(previousDraftPlayers, previousDraftPlayers));
+        for (let user of _.union(previousDraftCaptains, previousDraftPlayers)) {
+            self.markUserActivity(user);
+        }
 
         self.emit('draftStatusChanged', draftActive);
     });
@@ -335,14 +326,12 @@ module.exports = function(app, cache, chance, database, io, self) {
             let usersToUpdate = _.unionBy(captainPool, fullPlayerList, user => helpers.getDocumentID(user));
 
             try {
-                debug('saving drafted game');
                 yield game.save();
 
-                debug(`updating game ${game.id}`);
                 yield self.processGameUpdate(game);
 
-                debug('updating restrictions for players in draft');
-                yield _.map(_.unionBy(captainPool, fullPlayerList, user => helpers.getDocumentID(user)), user => self.updateUserRestrictions(user));
+                yield updateDraftUsers();
+                yield self.updateUserRestrictions(_.union(captainPool, fullPlayerList));
 
                 currentDraftGame = helpers.getDocumentID(game);
 
@@ -361,7 +350,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 yield self.cleanUpDraft();
             }
 
-            yield _.map(usersToUpdate, user => self.updatePlayerStats(user));
+            yield self.updatePlayerStats(usersToUpdate);
         });
     }
 
@@ -390,7 +379,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             currentDraftTurnStartTime = Date.now();
 
-            yield updateDraftStatusMessage();
+            self.processDraftStatusUpdate();
 
             yield launchGameFromDraft();
         });
@@ -846,11 +835,9 @@ module.exports = function(app, cache, chance, database, io, self) {
                 let captain = draftTeams[turnDefinition.team].captain;
 
                 if (captain) {
-                    currentDraftExpireCooldowns.add(captain);
+                    yield cache.setAsync('draftExpired-${captain}', JSON.stringify(true), 'PX', CAPTAIN_DRAFT_EXPIRE_COOLDOWN);
 
-                    yield self.updateUserRestrictions(captain);
-
-                    setTimeout(removeDraftExpireCooldown, CAPTAIN_DRAFT_EXPIRE_COOLDOWN, captain);
+                    yield self.updateUserRestrictions([captain]);
                 }
             }
 
@@ -896,7 +883,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             currentDraftTurnStartTime = Date.now();
             currentDraftTurnExpireTimeout = setTimeout(expireTime, TURN_TIME_LIMIT);
 
-            yield updateDraftStatusMessage();
+            self.processDraftStatusUpdate();
 
             if (turnDefinition.method === 'captain') {
                 if (!draftTeams[turnDefinition.team].captain) {
@@ -950,7 +937,10 @@ module.exports = function(app, cache, chance, database, io, self) {
             throw new Error('invalid state before draft start');
         }
 
-        yield _.map(_.unionBy(captainPool, fullPlayerList, user => helpers.getDocumentID(user)), user => self.updateUserRestrictions(user));
+        yield updateDraftUsers();
+        yield self.updateUserRestrictions(_.union(captainPool, fullPlayerList));
+
+        self.processDraftStatusUpdate();
 
         self.emit('draftStatusChanged', draftActive);
 
@@ -976,7 +966,5 @@ module.exports = function(app, cache, chance, database, io, self) {
         socket.on('makeDraftChoice', onUserMakeDraftChoice);
     });
 
-    co(function*() {
-        yield updateDraftStatusMessage();
-    });
+    self.processDraftStatusUpdate();
 };

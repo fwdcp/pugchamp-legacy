@@ -18,69 +18,12 @@ const helpers = require('../helpers');
 
 module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
-    const GAME_SERVER_POOL = config.get('app.servers.pool');
-    const HIDE_RATINGS = config.get('app.users.hideRatings');
     const MONGODB_URL = config.get('server.mongodb');
     const POST_GAME_RESET_DELAY = ms(config.get('app.games.postGameResetDelay'));
     const RATING_BASE = config.get('app.users.ratingBase');
     const ROLES = config.get('app.games.roles');
     const SUBSTITUTE_REQUEST_PERIOD = ms(config.get('app.games.substituteRequestPeriod'));
     const SUBSTITUTE_SELECTION_METHOD = config.get('app.games.substituteSelectionMethod');
-
-    self.getGameUsers = function getGameUsers(game) {
-        let users = [];
-
-        for (let team of game.teams) {
-            users.push(team.captain);
-
-            for (let role of team.composition) {
-                for (let player of role.players) {
-                    users.push(player.user);
-                }
-            }
-        }
-
-        return _.uniqBy(users, user => helpers.getDocumentID(user));
-    };
-
-    self.getGameUserInfo = function getGameUserInfo(game, user) {
-        let userID = helpers.getDocumentID(user);
-
-        let team;
-        let role;
-        let player;
-
-        team = _.find(game.teams, function(currentTeam) {
-            role = _.find(currentTeam.composition, function(currentRole) {
-                player = _.find(currentRole.players, function(currentPlayer) {
-                    return userID === helpers.getDocumentID(currentPlayer.user);
-                });
-
-                if (player) {
-                    return true;
-                }
-
-                return false;
-            });
-
-            if (role || userID === helpers.getDocumentID(currentTeam.captain)) {
-                return true;
-            }
-
-            return false;
-        });
-
-        if (team) {
-            return {
-                game,
-                team,
-                role,
-                player
-            };
-        }
-
-        return null;
-    };
 
     /**
      * @async
@@ -96,50 +39,21 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    function updateCurrentGame(game, user) {
+    function updateCurrentGame(users) {
         return co(function*() {
-            if (game.status === 'launching' || game.status === 'live') {
-                let gameUserInfo = self.getGameUserInfo(game.toObject(), user);
+            yield helpers.runScript('scripts/updateCurrentGame.js', _.map(users, user => helpers.getDocumentID(user)), {
+                cwd: process.cwd()
+            });
 
-                let currentGameInfo = {
-                    game: helpers.getDocumentID(game),
-                    team: _.omit(gameUserInfo.team, 'composition'),
-                    user: yield self.getCachedUser(user)
-                };
+            for (let user of users) {
+                let cacheResponse = yield cache.getAsync(`currentGame-${helpers.getDocumentID(user)}`);
 
-                currentGameInfo.team.captain = yield self.getCachedUser(gameUserInfo.team.captain);
-
-                currentGameInfo.player = gameUserInfo.role && gameUserInfo.player;
-                if (currentGameInfo.player) {
-                    currentGameInfo.role = ROLES[gameUserInfo.role.role];
-                    currentGameInfo.replaced = gameUserInfo.player.replaced;
-
-                    if (!currentGameInfo.replaced && game.server) {
-                        currentGameInfo.server = _.omit(GAME_SERVER_POOL[game.server], 'rcon', 'salt');
-                        currentGameInfo.server.id = game.server;
-                    }
+                if (cacheResponse) {
+                    self.emitToUser(user, 'currentGameUpdated', [JSON.parse(cacheResponse)]);
                 }
-
-                currentGameInfo.captain = helpers.getDocumentID(gameUserInfo.team.captain) === helpers.getDocumentID(user);
-                if (currentGameInfo.captain) {
-                    currentGameInfo.activeTeamPlayers = yield _(gameUserInfo.team.composition).map(role => _(role.players).reject('replaced').map(player => ({
-                        user: player.user,
-                        role: ROLES[role.role]
-                    })).value()).flattenDeep().map(co.wrap(function*(player) {
-                        player.user = yield self.getCachedUser(player.user);
-
-                        return player;
-                    })).value();
+                else {
+                    self.emitToUser(user, 'currentGameUpdated', [null]);
                 }
-
-                yield cache.setAsync(`currentGame-${helpers.getDocumentID(user)}`, JSON.stringify(currentGameInfo));
-
-                self.emitToUser(user, 'currentGameUpdated', [currentGameInfo]);
-            }
-            else {
-                yield cache.delAsync(`currentGame-${helpers.getDocumentID(user)}`);
-
-                self.emitToUser(user, 'currentGameUpdated', [null]);
             }
         });
     }
@@ -152,22 +66,6 @@ module.exports = function(app, cache, chance, database, io, self) {
             let cacheResponse = yield cache.getAsync(`currentGame-${helpers.getDocumentID(user)}`);
 
             return JSON.parse(cacheResponse);
-        });
-    }
-
-    /**
-     * @async
-     */
-    function updateGameList() {
-        return co(function*() {
-            /* eslint-disable lodash/prefer-lodash-method */
-            let games = yield database.Game.find({}).sort('-date').select('date status teams.faction teams.captain score map duration').populate('teams.captain', 'alias steamID').exec();
-            /* eslint-enable lodash/prefer-lodash-method */
-
-            yield cache.setAsync('allGameList', JSON.stringify(_.invokeMap(games, 'toObject')));
-            yield cache.setAsync('allVisibleGameList', JSON.stringify(_(games).filter(game => game.status !== 'initializing' && game.status !== 'aborted').invokeMap('toObject').value()));
-            yield cache.setAsync('recentGameList', JSON.stringify(_(games).takeWhile(game => moment().diff(game.date, 'days') < 1).invokeMap('toObject').value()));
-            yield cache.setAsync('recentVisibleGameList', JSON.stringify(_(games).takeWhile(game => moment().diff(game.date, 'days') < 1).filter(game => game.status !== 'initializing' && game.status !== 'aborted').invokeMap('toObject').value()));
         });
     }
 
@@ -198,7 +96,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             let cacheResponse = yield cache.getAsync(keyName);
 
             if (!cacheResponse) {
-                yield updateGameList();
+                yield self.updateGameCache();
                 cacheResponse = yield cache.getAsync(keyName);
             }
 
@@ -219,12 +117,11 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         }
 
-        yield _.map(self.getGameUsers(game), user => self.updateUserRestrictions(user));
-        yield _.map(self.getGameUsers(game), user => updateCurrentGame(game, user));
+        yield self.updateUserRestrictions(helpers.getGameUsers(game));
+        yield updateCurrentGame(helpers.getGameUsers(game));
 
-        yield self.invalidateGamePage(game);
-        yield updateGameList();
-        yield _.map(self.getGameUsers(game), user => self.invalidatePlayerPage(game, user));
+        yield self.updateGameCache([game]);
+        yield self.updateUserCache(helpers.getGameUsers(game));
     });
 
     var currentSubstituteRequests = new Map();
@@ -282,6 +179,26 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
+    function updateSubstituteRequestCandidates() {
+        return co(function*() {
+            let candidates = _(currentSubstituteRequests.values()).toArray().flatMap(request => _.toArray(request.candidates)).uniq().value();
+
+            yield cache.setAsync('substituteRequestsCandidates', JSON.stringify(candidates));
+        });
+    }
+
+    /**
+     * @async
+     */
+    self.processSubstituteRequestsUpdate = _.debounce(co.wrap(function* processSubstituteRequestsUpdate() {
+        yield updateSubstituteRequestCandidates();
+
+        yield updateSubstituteRequestsMessage();
+    }));
+
+    /**
+     * @async
+     */
     function attemptSubstitution(requestID) {
         return co(function*() {
             if (!currentSubstituteRequests.has(requestID)) {
@@ -302,7 +219,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            let gameUserInfo = self.getGameUserInfo(game, request.player);
+            let gameUserInfo = helpers.getGameUserInfo(game, request.player);
 
             if (!gameUserInfo || !gameUserInfo.player || gameUserInfo.player.replaced) {
                 yield self.removeSubstituteRequest(requestID);
@@ -376,9 +293,9 @@ module.exports = function(app, cache, chance, database, io, self) {
                 }
             }
 
-            yield self.updateUserRestrictions(player);
+            yield self.updateUserRestrictions([player]);
 
-            yield updateSubstituteRequestsMessage();
+            self.processSubstituteRequestsUpdate();
 
             if (!request.timeout) {
                 yield attemptSubstitution(requestID);
@@ -398,12 +315,12 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.requestSubstitute = co.wrap(function* requestSubstitute(game, player) {
+    self.requestSubstitute = function requestSubstitute(game, player) {
         if (!game || game.status === 'completed' || game.status === 'aborted') {
             return;
         }
 
-        let gameUserInfo = self.getGameUserInfo(game, player);
+        let gameUserInfo = helpers.getGameUserInfo(game, player);
 
         if (!gameUserInfo || !gameUserInfo.player || gameUserInfo.player.replaced) {
             return;
@@ -423,8 +340,8 @@ module.exports = function(app, cache, chance, database, io, self) {
             timeout: setTimeout(attemptSubstitution, SUBSTITUTE_REQUEST_PERIOD, helpers.getDocumentID(gameUserInfo.player))
         });
 
-        yield updateSubstituteRequestsMessage();
-    });
+        self.processSubstituteRequestsUpdate();
+    };
 
     /**
      * @async
@@ -493,9 +410,9 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             currentSubstituteRequests.delete(requestID);
 
-            yield _(request.candidates).toArray().map(candidate => self.updateUserRestrictions(candidate)).value();
+            yield self.updateUserRestrictions(_.toArray(request.candidates));
 
-            yield updateSubstituteRequestsMessage();
+            self.processSubstituteRequestsUpdate();
         }
     });
 
@@ -543,7 +460,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 /* eslint-disable lodash/prefer-lodash-method */
                 let gameUsers = _.keyBy(yield database.User.find({
                     '_id': {
-                        $in: _.map(self.getGameUsers(game), user => helpers.getDocumentID(user))
+                        $in: helpers.getGameUsers(game)
                     }
                 }), user => helpers.getDocumentID(user));
                 /* eslint-enable lodash/prefer-lodash-method */
@@ -588,7 +505,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 /* eslint-disable lodash/prefer-lodash-method */
                 let gameUsers = _.keyBy(yield database.User.find({
                     '_id': {
-                        $in: _.map(self.getGameUsers(game), user => helpers.getDocumentID(user))
+                        $in: helpers.getGameUsers(game)
                     }
                 }), user => helpers.getDocumentID(user));
                 /* eslint-enable lodash/prefer-lodash-method */
@@ -615,9 +532,9 @@ module.exports = function(app, cache, chance, database, io, self) {
             try {
                 yield rateGame(game);
 
-                yield _.map(self.getGameUsers(game), user => self.updatePlayerStats(user));
+                yield self.updatePlayerStats(helpers.getGameUsers(game));
 
-                yield self.invalidateGamePage(game);
+                yield self.updateGameCache([game]);
             }
             catch (err) {
                 self.postToLog({
@@ -642,7 +559,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                 yield game.save();
 
-                yield self.invalidateGamePage(game);
+                yield self.updateGameCache([game]);
             }
         }
         else if (info.status === 'demoavailable') {
@@ -661,7 +578,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                 yield game.save();
 
-                yield self.invalidateGamePage(game);
+                yield self.updateGameCache([game]);
             }
         }
     });
@@ -676,13 +593,13 @@ module.exports = function(app, cache, chance, database, io, self) {
         co(function*() {
             let game = yield database.Game.findById(info.game);
 
-            let playerInfo = self.getGameUserInfo(game, info.player);
+            let playerInfo = helpers.getGameUserInfo(game, info.player);
 
             if (userID !== helpers.getDocumentID(playerInfo.team.captain)) {
                 return;
             }
 
-            yield self.requestSubstitute(game, info.player);
+            self.requestSubstitute(game, info.player);
         });
     }
 
@@ -705,7 +622,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             let request = currentSubstituteRequests.get(requestID);
             let game = yield database.Game.findById(request.game);
 
-            let playerInfo = self.getGameUserInfo(game, request.player);
+            let playerInfo = helpers.getGameUserInfo(game, request.player);
 
             if (userID === helpers.getDocumentID(playerInfo.team.captain)) {
                 yield self.removeSubstituteRequest(requestID);
@@ -735,17 +652,15 @@ module.exports = function(app, cache, chance, database, io, self) {
         socket.on('retractSubstituteRequest', onUserRetractSubstituteRequest);
     }));
 
-    self.on('userRestrictionsUpdated', co.wrap(function*(userID) {
-        let userRestrictions = yield self.getUserRestrictions(userID);
-
+    self.on('userRestrictionsUpdated', function(userID, userRestrictions) {
         if (_.includes(userRestrictions.aspects, 'sub')) {
             for (let request of currentSubstituteRequests.values()) {
                 request.candidates.delete(userID);
             }
         }
 
-        yield updateSubstituteRequestsMessage();
-    }));
+        self.processSubstituteRequestsUpdate();
+    });
 
     hbs.registerHelper('ratingChange', function(change) {
         if (change > 0) {
@@ -767,14 +682,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.invalidateGamePage = co.wrap(function* invalidateGamePage(game) {
-        yield cache.delAsync(`gamePage-${helpers.getDocumentID(game)}`);
-    });
-
-    /**
-     * @async
-     */
-    self.invalidateUserGamePages = co.wrap(function* invalidateUserGamePages(user) {
+    self.updateUserGames = co.wrap(function* updateUserGames(user) {
         let userID = helpers.getDocumentID(user);
 
         /* eslint-disable lodash/prefer-lodash-method */
@@ -782,16 +690,12 @@ module.exports = function(app, cache, chance, database, io, self) {
             $or: [{
                 'teams.captain': userID
             }, {
-                'teams.composition.players': {
-                    $elemMatch: {
-                        user: userID
-                    }
-                }
+                'teams.composition.players.user': userID
             }]
         }).exec();
         /* eslint-enable lodash/prefer-lodash-method */
 
-        yield _.map(games, game => self.invalidateGamePage(game));
+        yield self.updateGameCache(games);
     });
 
     /**
@@ -800,64 +704,12 @@ module.exports = function(app, cache, chance, database, io, self) {
     self.getGamePage = co.wrap(function* getGamePage(game) {
         let cacheResponse = yield cache.getAsync(`gamePage-${helpers.getDocumentID(game)}`);
 
-        let gamePage;
-
-        if (cacheResponse) {
-            gamePage = JSON.parse(cacheResponse);
-        }
-        else {
-            game = yield database.Game.findById(helpers.getDocumentID(game));
-
-            if (!game) {
-                return null;
-            }
-
-            gamePage = {
-                game: game.toObject()
-            };
-
-            let gameUsers = _.keyBy(yield _.map(self.getGameUsers(game), user => self.getCachedUser(user)), user => helpers.getDocumentID(user));
-
-            /* eslint-disable lodash/prefer-lodash-method */
-            let ratings = HIDE_RATINGS ? {} : _.keyBy(yield database.Rating.find({
-                game: helpers.getDocumentID(game)
-            }).exec(), rating => helpers.getDocumentID(rating.user));
-            /* eslint-enable lodash/prefer-lodash-method */
-
-            _.forEach(gamePage.game.teams, function(team) {
-                team.captain = gameUsers[helpers.getDocumentID(team.captain)];
-
-                team.composition = _.sortBy(team.composition, function(role) {
-                    return _(ROLES).keys().indexOf(role.role);
-                });
-
-                _.forEach(team.composition, function(role) {
-                    role.role = _.assign({
-                        id: role.role
-                    }, ROLES[role.role]);
-
-                    _.forEach(role.players, function(player) {
-                        player.user = gameUsers[helpers.getDocumentID(player.user)];
-
-                        if (!HIDE_RATINGS) {
-                            let rating = ratings[helpers.getDocumentID(player.user)];
-
-                            if (rating) {
-                                player.rating = {
-                                    rating: rating.after.mean,
-                                    deviation: rating.after.deviation,
-                                    change: rating.after.mean - rating.before.mean
-                                };
-                            }
-                        }
-                    });
-                });
-            });
-
-            yield cache.setAsync(`gamePage-${helpers.getDocumentID(game)}`, JSON.stringify(gamePage));
+        if (!cacheResponse) {
+            yield self.updateGameCache([game]);
+            cacheResponse = yield cache.getAsync(`gamePage-${helpers.getDocumentID(game)}`);
         }
 
-        return gamePage;
+        return JSON.parse(cacheResponse);
     });
 
     app.get('/game/:id', co.wrap(function*(req, res) {
@@ -883,9 +735,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }));
 
-    co(function*() {
-        yield updateSubstituteRequestsMessage();
+    self.processSubstituteRequestsUpdate();
 
-        fs.writeFileSync(path.resolve(__dirname, '../ratings/settings.cfg'), `[config]\nconnect: ${MONGODB_URL}\ndb: ${database.Rating.db.name}\nratingBase: ${RATING_BASE}\n`);
-    });
+    fs.writeFileSync(path.resolve(__dirname, '../ratings/settings.cfg'), `[config]\nconnect: ${MONGODB_URL}\ndb: ${database.Rating.db.name}\nratingBase: ${RATING_BASE}\n`);
 };

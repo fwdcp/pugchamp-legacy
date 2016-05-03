@@ -11,8 +11,6 @@ const helpers = require('../helpers');
 
 module.exports = function(app, cache, chance, database, io, self) {
     const AUTO_READY_THRESHOLD = ms(config.get('app.launch.autoReadyThreshold'));
-    const GET_LAUNCH_HOLD_DEBOUNCE_MAX_WAIT = 5000;
-    const GET_LAUNCH_HOLD_DEBOUNCE_WAIT = 1000;
     const READY_PERIOD = ms(config.get('app.launch.readyPeriod'));
     const ROLES = config.get('app.games.roles');
     const SEPARATE_CAPTAIN_POOL = config.get('app.draft.separateCaptainPool');
@@ -84,7 +82,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             else {
                 let serverStatuses = yield self.getServerStatuses();
 
-                if (!_.some(serverStatuses, serverStatus => serverStatus.status === 'free')) {
+                if (!_.some(serverStatuses, ['status', 'free'])) {
                     launchHolds.push('availableServers');
                 }
             }
@@ -215,7 +213,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 launchAttemptActive = false;
                 launchAttemptStart = null;
 
-                yield self.updateLaunchStatus();
+                self.processLaunchStatusUpdate();
 
                 return;
             }
@@ -249,7 +247,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             launchAttemptActive = false;
             launchAttemptStart = null;
 
-            yield self.updateLaunchStatus();
+            self.processLaunchStatusUpdate();
         });
     }
 
@@ -296,7 +294,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             syncUserAvailability(user);
 
-            yield self.updateLaunchStatus();
+            self.processLaunchStatusUpdate();
         });
     }
 
@@ -304,33 +302,31 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     function updateUserReadyStatus(user, ready) {
-        return co(function*() {
-            let userID = helpers.getDocumentID(user);
+        let userID = helpers.getDocumentID(user);
 
-            if (launchAttemptActive) {
-                if (ready) {
-                    readiesReceived.add(userID);
-                }
-                else {
-                    readiesReceived.delete(userID);
-                }
-
-                self.emitToUser(user, 'userReadyStatusUpdated', [ready]);
+        if (launchAttemptActive) {
+            if (ready) {
+                readiesReceived.add(userID);
+            }
+            else {
+                readiesReceived.delete(userID);
             }
 
-            yield self.updateLaunchStatus();
-        });
+            self.emitToUser(user, 'userReadyStatusUpdated', [ready]);
+        }
+
+        self.processLaunchStatusUpdate();
     }
 
     /**
      * @async
      */
     function autoReadyRecentlyActiveUsers() {
-        return co(function*() {
-            let activeUsers = _(lastActivity.keys()).toArray().filter(userID => (moment().diff(lastActivity.get(userID)) < AUTO_READY_THRESHOLD)).value();
+        let activeUsers = _(lastActivity.keys()).toArray().filter(userID => (moment().diff(lastActivity.get(userID)) < AUTO_READY_THRESHOLD)).value();
 
-            yield _.map(activeUsers, userID => updateUserReadyStatus(userID, true));
-        });
+        for (let userID of activeUsers) {
+            updateUserReadyStatus(userID, true);
+        }
     }
 
     /**
@@ -340,11 +336,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         return co(function*() {
             if (!launchAttemptActive) {
                 try {
-                    let timeout = setTimeout(attemptLaunch, READY_PERIOD);
-
-                    if (!timeout) {
-                        throw new Error('timeout failed');
-                    }
+                    setTimeout(attemptLaunch, READY_PERIOD);
 
                     launchAttemptActive = true;
                     launchAttemptStart = Date.now();
@@ -353,11 +345,11 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                     io.sockets.emit('userReadyStatusUpdated', false);
 
-                    yield autoReadyRecentlyActiveUsers();
+                    autoReadyRecentlyActiveUsers();
 
                     currentLaunchHolds = yield getLaunchHolds(false);
 
-                    yield updateLaunchStatusMessage();
+                    self.processLaunchStatusUpdate();
                 }
                 catch (err) {
                     self.postToLog({
@@ -372,36 +364,11 @@ module.exports = function(app, cache, chance, database, io, self) {
                     launchAttemptActive = false;
                     launchAttemptStart = null;
 
-                    yield self.updateLaunchStatus();
+                    self.processLaunchStatusUpdate();
                 }
             }
         });
     }
-
-    /**
-     * @async
-     */
-    const updateLaunchHolds = _.debounce(co.wrap(function* updateLaunchHolds() {
-        let shouldAttemptLaunch = !launchAttemptActive;
-
-        currentLaunchHolds = yield getLaunchHolds(false);
-
-        yield updateLaunchStatusMessage();
-
-        if (shouldAttemptLaunch && _.size(currentLaunchHolds) === 0) {
-            yield beginLaunchAttempt();
-        }
-    }), GET_LAUNCH_HOLD_DEBOUNCE_WAIT, {
-        maxWait: GET_LAUNCH_HOLD_DEBOUNCE_MAX_WAIT
-    });
-
-    self.on('draftStatusChanged', co.wrap(function*() {
-        yield updateLaunchHolds();
-    }));
-
-    self.on('serversUpdated', co.wrap(function*() {
-        yield updateLaunchHolds();
-    }));
 
     self.markUserActivity = function markUserActivity(user) {
         let userID = helpers.getDocumentID(user);
@@ -412,10 +379,25 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.updateLaunchStatus = co.wrap(function* updateLaunchStatus() {
-        yield updateLaunchStatusMessage();
+    self.processLaunchStatusUpdate = _.debounce(co.wrap(function* processLaunchStatusUpdate() {
+        let shouldAttemptLaunch = !launchAttemptActive;
 
-        yield updateLaunchHolds();
+        currentLaunchHolds = yield getLaunchHolds(false);
+
+        if (shouldAttemptLaunch && _.size(currentLaunchHolds) === 0) {
+            yield beginLaunchAttempt();
+        }
+        else {
+            yield updateLaunchStatusMessage();
+        }
+    }));
+
+    self.on('draftStatusChanged', function() {
+        self.processLaunchStatusUpdate();
+    });
+
+    self.on('serversUpdated', function() {
+        self.processLaunchStatusUpdate();
     });
 
     io.sockets.on('connection', co.wrap(function*(socket) {
@@ -431,7 +413,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             yield updateUserAvailability(userID, availability);
 
             if (launchAttemptActive) {
-                yield updateUserReadyStatus(userID, true);
+                updateUserReadyStatus(userID, true);
             }
         });
     }
@@ -439,11 +421,9 @@ module.exports = function(app, cache, chance, database, io, self) {
     function onUserUpdateReadyStatus(ready) {
         let userID = this.decoded_token.user;
 
-        co(function*() {
-            self.markUserActivity(userID);
+        self.markUserActivity(userID);
 
-            yield updateUserReadyStatus(userID, ready);
-        });
+        updateUserReadyStatus(userID, ready);
     }
 
     io.sockets.on('authenticated', function(socket) {
@@ -469,12 +449,10 @@ module.exports = function(app, cache, chance, database, io, self) {
             captain: SEPARATE_CAPTAIN_POOL ? false : undefined
         });
 
-        yield updateUserReadyStatus(userID, false);
+        updateUserReadyStatus(userID, false);
     }));
 
-    self.on('userRestrictionsUpdated', co.wrap(function*(userID) {
-        let userRestrictions = yield self.getUserRestrictions(userID);
-
+    self.on('userRestrictionsUpdated', function(userID, userRestrictions) {
         if (_.includes(userRestrictions.aspects, 'start')) {
             _.forEach(playersAvailable, function(players) {
                 players.delete(userID);
@@ -489,10 +467,8 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         syncUserAvailability(userID);
 
-        yield self.updateLaunchStatus();
-    }));
-
-    co(function*() {
-        yield self.updateLaunchStatus();
+        self.processLaunchStatusUpdate();
     });
+
+    self.processLaunchStatusUpdate();
 };

@@ -14,24 +14,22 @@ module.exports = function(app, cache, chance, database, io, self) {
     const CHAT_LOG_CHANNEL = config.has('server.slack.channels.chatLog') ? config.get('server.slack.channels.chatLog') : '#chat-log';
     const RATE_LIMIT = ms(config.get('app.chat.rateLimit'));
     const SHOW_CONNECTION_MESSAGES = config.get('app.chat.showConnectionMessages');
-    const UPDATE_ONLINE_USER_LIST_DEBOUNCE_MAX_WAIT = 5000;
-    const UPDATE_ONLINE_USER_LIST_DEBOUNCE_WAIT = 1000;
 
     var userChatLimiters = new Map();
 
     /**
      * @async
      */
-    const updateOnlineUserList = _.debounce(co.wrap(function* updateOnlineUserList() {
-        let users = yield _.map(self.getOnlineUsers(), user => self.getCachedUser(user));
-        let onlineList = _(users).filter(user => (user.setUp && (user.authorized || self.isUserAdmin(user)))).sortBy('alias').value();
+    function updateOnlineUserList() {
+        return co(function*() {
+            let users = yield _.map(self.getOnlineUsers(), user => self.getCachedUser(user));
+            let onlineList = _(users).filter(user => (user.setUp && (user.authorized || self.isUserAdmin(user)))).sortBy('alias').value();
 
-        yield cache.setAsync('onlineUsers', JSON.stringify(onlineList));
+            yield cache.setAsync('onlineUsers', JSON.stringify(onlineList));
 
-        io.sockets.emit('onlineUserListUpdated', onlineList);
-    }), UPDATE_ONLINE_USER_LIST_DEBOUNCE_WAIT, {
-        maxWait: UPDATE_ONLINE_USER_LIST_DEBOUNCE_MAX_WAIT
-    });
+            io.sockets.emit('onlineUserListUpdated', onlineList);
+        });
+    }
 
     /**
      * @async
@@ -48,6 +46,13 @@ module.exports = function(app, cache, chance, database, io, self) {
             return JSON.parse(cacheResponse);
         });
     }
+
+    /**
+     * @async
+     */
+    self.processOnlineListUpdate = _.debounce(co.wrap(function* processOnlineListUpdate() {
+        yield updateOnlineUserList();
+    }));
 
     /**
      * @async
@@ -120,7 +125,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             userChatLimiters.set(userID, new RateLimiter(1, RATE_LIMIT));
         }
 
-        yield updateOnlineUserList();
+        self.processOnlineListUpdate();
     }));
 
     self.on('userDisconnected', co.wrap(function*(userID) {
@@ -135,7 +140,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         }
 
-        yield updateOnlineUserList();
+        self.processOnlineListUpdate();
     }));
 
     io.sockets.on('connection', co.wrap(function*(socket) {
@@ -210,7 +215,5 @@ module.exports = function(app, cache, chance, database, io, self) {
         socket.on('purgeUser', onUserPurgeUser);
     });
 
-    co(function*() {
-        yield updateOnlineUserList();
-    });
+    self.processOnlineListUpdate();
 };

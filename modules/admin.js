@@ -107,11 +107,11 @@ module.exports = function(app, cache, chance, database, io, self) {
             try {
                 yield user.save();
 
-                yield self.updateCachedUser(user);
-                yield self.updateUserRestrictions(user);
+                yield self.updateUserCache([user]);
+                yield self.updateUserRestrictions([user]);
 
                 if (majorChange) {
-                    yield self.invalidateUserGamePages(req.user);
+                    yield self.updateUserGames(req.user);
                 }
 
                 res.sendStatus(HttpStatus.OK);
@@ -162,7 +162,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             try {
                 yield restriction.save();
-                yield self.updateUserRestrictions(user);
+                yield self.updateUserRestrictions([user]);
 
                 res.sendStatus(HttpStatus.OK);
             }
@@ -193,7 +193,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                 try {
                     yield restriction.save();
-                    yield self.updateUserRestrictions(user);
+                    yield self.updateUserRestrictions([user]);
 
                     res.sendStatus(HttpStatus.OK);
                 }
@@ -238,7 +238,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            let gameUserInfo = self.getGameUserInfo(game, player);
+            let gameUserInfo = helpers.getGameUserInfo(game, player);
 
             if (!gameUserInfo || !gameUserInfo.player || gameUserInfo.player.replaced) {
                 res.sendStatus(HttpStatus.BAD_REQUEST);
@@ -247,7 +247,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             self.postToAdminLog(req.user, `requested substitute for player \`<${BASE_URL}/player/${player.steamID}|${player.alias}>\` for game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``);
 
-            yield self.requestSubstitute(game, player);
+            self.requestSubstitute(game, player);
 
             res.sendStatus(HttpStatus.OK);
         }
