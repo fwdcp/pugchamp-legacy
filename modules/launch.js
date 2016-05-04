@@ -164,7 +164,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             yield cache.setAsync('launchStatus', JSON.stringify(launchStatusMessage));
 
-            io.sockets.emit('launchStatusUpdated', yield getLaunchStatusMessage());
+            io.sockets.emit('launchStatusUpdated', launchStatusMessage);
         });
     }
 

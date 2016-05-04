@@ -156,7 +156,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             yield cache.setAsync('substituteRequests', JSON.stringify(substituteRequestsMessage));
 
-            io.sockets.emit('substituteRequestsUpdated', yield getSubstituteRequestsMessage());
+            io.sockets.emit('substituteRequestsUpdated', substituteRequestsMessage);
         });
     }
 

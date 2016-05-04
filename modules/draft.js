@@ -200,7 +200,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             yield cache.setAsync('draftStatus', JSON.stringify(draftStatusMessage));
 
-            io.sockets.emit('draftStatusUpdated', yield getDraftStatusMessage());
+            io.sockets.emit('draftStatusUpdated', draftStatusMessage);
         });
     }
 
