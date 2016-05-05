@@ -209,14 +209,11 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     function getDraftStatusMessage() {
         return co(function*() {
-            let cacheResponse = yield cache.getAsync('draftStatus');
-
-            if (!cacheResponse) {
+            if (!(yield cache.existsAsync('draftStatus'))) {
                 yield updateDraftStatusMessage();
-                cacheResponse = yield cache.getAsync('draftStatus');
             }
 
-            return JSON.parse(cacheResponse);
+            return JSON.parse(yield cache.getAsync('draftStatus'));
         });
     }
 

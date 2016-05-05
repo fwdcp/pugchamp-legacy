@@ -173,14 +173,11 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     function getLaunchStatusMessage() {
         return co(function*() {
-            let cacheResponse = yield cache.getAsync('launchStatus');
-
-            if (!cacheResponse) {
+            if (!(yield cache.existsAsync('launchStatus'))) {
                 yield updateLaunchStatusMessage();
-                cacheResponse = yield cache.getAsync('launchStatus');
             }
 
-            return JSON.parse(cacheResponse);
+            return JSON.parse(yield cache.getAsync('launchStatus'));
         });
     }
 

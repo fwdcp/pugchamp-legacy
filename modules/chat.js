@@ -36,14 +36,11 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     function getOnlineUserList() {
         return co(function*() {
-            let cacheResponse = yield cache.getAsync('onlineUsers');
-
-            if (!cacheResponse) {
+            if (!(yield cache.existsAsync('onlineUsers'))) {
                 yield updateOnlineUserList();
-                cacheResponse = yield cache.getAsync('onlineUsers');
             }
 
-            return JSON.parse(cacheResponse);
+            return JSON.parse(yield cache.getAsync('onlineUsers'));
         });
     }
 

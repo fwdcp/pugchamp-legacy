@@ -46,10 +46,8 @@ module.exports = function(app, cache, chance, database, io, self) {
             });
 
             for (let user of users) {
-                let cacheResponse = yield cache.getAsync(`currentGame-${helpers.getDocumentID(user)}`);
-
-                if (cacheResponse) {
-                    self.emitToUser(user, 'currentGameUpdated', [JSON.parse(cacheResponse)]);
+                if (yield cache.existsAsync(`currentGame-${helpers.getDocumentID(user)}`)) {
+                    self.emitToUser(user, 'currentGameUpdated', [JSON.parse(`currentGame-${helpers.getDocumentID(user)}`)]);
                 }
                 else {
                     self.emitToUser(user, 'currentGameUpdated', [null]);
@@ -63,9 +61,12 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     function getCurrentGame(user) {
         return co(function*() {
-            let cacheResponse = yield cache.getAsync(`currentGame-${helpers.getDocumentID(user)}`);
-
-            return JSON.parse(cacheResponse);
+            if (yield cache.existsAsync(`currentGame-${helpers.getDocumentID(user)}`)) {
+                self.emitToUser(user, 'currentGameUpdated', [JSON.parse(`currentGame-${helpers.getDocumentID(user)}`)]);
+            }
+            else {
+                self.emitToUser(user, 'currentGameUpdated', [null]);
+            }
         });
     }
 
@@ -93,14 +94,11 @@ module.exports = function(app, cache, chance, database, io, self) {
                 }
             }
 
-            let cacheResponse = yield cache.getAsync(keyName);
-
-            if (!cacheResponse) {
+            if (!(yield cache.existsAsync(keyName))) {
                 yield self.updateGameCache();
-                cacheResponse = yield cache.getAsync(keyName);
             }
 
-            return JSON.parse(cacheResponse);
+            return JSON.parse(yield cache.getAsync(keyName));
         });
     }
 
@@ -165,14 +163,11 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     function getSubstituteRequestsMessage() {
         return co(function*() {
-            let cacheResponse = yield cache.getAsync('substituteRequests');
-
-            if (!cacheResponse) {
+            if (!(yield cache.existsAsync('substituteRequests'))) {
                 yield updateSubstituteRequestsMessage();
-                cacheResponse = yield cache.getAsync('substituteRequests');
             }
 
-            return JSON.parse(cacheResponse);
+            return JSON.parse(yield cache.getAsync('substituteRequests'));
         });
     }
 
@@ -702,14 +697,11 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.getGamePage = co.wrap(function* getGamePage(game) {
-        let cacheResponse = yield cache.getAsync(`gamePage-${helpers.getDocumentID(game)}`);
-
-        if (!cacheResponse) {
+        if (!(yield cache.existsAsync(`gamePage-${helpers.getDocumentID(game)}`))) {
             yield self.updateGameCache([game]);
-            cacheResponse = yield cache.getAsync(`gamePage-${helpers.getDocumentID(game)}`);
         }
 
-        return JSON.parse(cacheResponse);
+        return JSON.parse(yield cache.getAsync(`gamePage-${helpers.getDocumentID(game)}`));
     });
 
     app.get('/game/:id', co.wrap(function*(req, res) {

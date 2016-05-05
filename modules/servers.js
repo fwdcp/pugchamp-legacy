@@ -220,9 +220,11 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.getServerStatus = co.wrap(function* getServerStatus(server) {
-        let cacheResponse = yield cache.getAsync(`serverStatus-${server}`);
+        if (!(yield cache.existsAsync(`serverStatus-${server}`))) {
+            yield self.updateServerStatus(server);
+        }
 
-        return JSON.parse(cacheResponse);
+        return JSON.parse(yield cache.getAsync(`serverStatus-${server}`));
     });
 
     /**

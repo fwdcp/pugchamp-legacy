@@ -40,14 +40,11 @@ module.exports = function(app, cache, chance, database, io, self) {
     self.getCachedUser = co.wrap(function* getCachedUser(user) {
         let userID = helpers.getDocumentID(user);
 
-        let cacheResponse = yield cache.getAsync(`user-${userID}`);
-
-        if (!cacheResponse) {
+        if (!(yield cache.existsAsync(`user-${userID}`))) {
             yield self.updateUserCache([user]);
-            cacheResponse = yield cache.getAsync(`user-${userID}`);
         }
 
-        return JSON.parse(cacheResponse);
+        return JSON.parse(yield cache.getAsync(`user-${userID}`));
     });
 
     /**
@@ -114,14 +111,11 @@ module.exports = function(app, cache, chance, database, io, self) {
         let userID = helpers.getDocumentID(user);
 
         if (userID) {
-            let cacheResponse = yield cache.getAsync(`userRestrictions-${userID}`);
-
-            if (!cacheResponse) {
+            if (!(yield cache.existsAsync(`userRestrictions-${userID}`))) {
                 yield self.updateUserRestrictions([user]);
-                cacheResponse = yield cache.getAsync(`userRestrictions-${userID}`);
             }
 
-            return JSON.parse(cacheResponse);
+            return JSON.parse(yield cache.getAsync(`userRestrictions-${userID}`));
         }
         else {
             return UNAUTHENTICATED_RESTRICTIONS;
