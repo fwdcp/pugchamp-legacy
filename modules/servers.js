@@ -128,11 +128,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     rconConnections.set(server, rcon);
                 }
                 catch (err) {
-                    debug(`connection to ${server} failed`);
-                    self.postToLog({
-                        description: `failed to connect to server \`${server}\``,
-                        error: err
-                    });
+                    debug(`connection to ${server} failed: ${err.stack}`);
 
                     debug(`retrying connection to ${server} in ${RECONNECT_INTERVAL}ms`);
                     setTimeout(establishRCONConnection, RECONNECT_INTERVAL, server);
@@ -307,11 +303,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             return result;
         }
         catch (err) {
-            debug(`failed to send commands to ${server}`);
-            self.postToLog({
-                description: `failed to send commands to server \`${server}\``,
-                error: err
-            });
+            debug(`failed to send commands to ${server}: ${err.stack}`);
 
             establishRCONConnection(server);
 
@@ -338,10 +330,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             success = true;
         }
         catch (err) {
-            self.postToLog({
-                description: `error while resetting server \`${server}\``,
-                error: err
-            });
+            debug(`error while resetting server ${server}: ${err.stack}`);
 
             if (retry) {
                 for (let delay of RETRY_ATTEMPTS) {
@@ -496,10 +485,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             success = true;
         }
         catch (err) {
-            self.postToLog({
-                description: `encountered error while trying to update server players to game \`${helpers.getDocumentID(game)}\``,
-                error: err
-            });
+            debug(`encountered error while trying to update server players to game ${helpers.getDocumentID(game)}: ${err.stack}`);
 
             if (retry) {
                 for (let delay of RETRY_ATTEMPTS) {
@@ -581,10 +567,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             success = true;
         }
         catch (err) {
-            self.postToLog({
-                description: `encountered error while trying to initialize server for game \`${helpers.getDocumentID(game)}\``,
-                error: err
-            });
+            debug(`encountered error while trying to initialize server for game ${helpers.getDocumentID(game)}: ${err.stack}`);
 
             if (retry) {
                 for (let delay of RETRY_ATTEMPTS) {
@@ -654,10 +637,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             success = true;
         }
         catch (err) {
-            self.postToLog({
-                description: `encountered error while trying to assign server to game \`${helpers.getDocumentID(game)}\``,
-                error: err
-            });
+            debug(`encountered error while trying to assign server for game ${helpers.getDocumentID(game)}: ${err.stack}`);
 
             if (retry) {
                 for (let delay of RETRY_ATTEMPTS) {
@@ -724,10 +704,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             res.sendStatus(HttpStatus.OK);
         }
         catch (err) {
-            self.postToLog({
-                description: `failed to handle game update: \`${JSON.stringify(req.query)}\``,
-                error: err
-            });
+            debug(`failed to handle update for game ${helpers.getDocumentID(game)} (${JSON.stringify(req.query)}): ${err.stack}`);
 
             let success = false;
 
@@ -741,10 +718,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     break;
                 }
                 catch (err) {
-                    self.postToLog({
-                        description: `failed to handle game update: \`${JSON.stringify(req.query)}\``,
-                        error: err
-                    });
+                    debug(`failed to handle update for game ${helpers.getDocumentID(game)} (${JSON.stringify(req.query)}): ${err.stack}`);
 
                     success = false;
                     continue;
