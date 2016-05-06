@@ -28,6 +28,13 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
+    self.updateGameCache = co.wrap(function* updateGameCache(games) {
+        yield helpers.runAppScript('updateGameCache', _.map(games, game => helpers.getDocumentID(game)));
+    });
+
+    /**
+     * @async
+     */
     function rateGame(game) {
         return co(function*() {
             yield child_process.exec(`python rate_game.py ${helpers.getDocumentID(game)}`, {
