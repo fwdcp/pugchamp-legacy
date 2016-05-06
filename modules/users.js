@@ -48,6 +48,22 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
+    self.getCachedUsers = co.wrap(function* getCachedUsers(users) {
+        let cachedUsers = yield cache.mgetAsync(_.map(users, user => `user-${helpers.getDocumentID(user)}`));
+
+        let missingUsers = _.filter(users, (user, index) => !cachedUsers[index]);
+        if (_.size(missingUsers) > 0) {
+            yield self.updateUserCache(missingUsers);
+
+            cachedUsers = yield cache.mgetAsync(_.map(users, user => `user-${helpers.getDocumentID(user)}`));
+        }
+
+        return cachedUsers;
+    });
+
+    /**
+     * @async
+     */
     self.getUserByAlias = co.wrap(function* getUserByAlias(alias) {
         let user = yield database.User.findOne({
             $text: {
@@ -116,6 +132,22 @@ module.exports = function(app, cache, chance, database, io, self) {
         else {
             return UNAUTHENTICATED_RESTRICTIONS;
         }
+    });
+
+    /**
+     * @async
+     */
+    self.getUsersRestrictions = co.wrap(function* getUsersRestrictions(users) {
+        let usersRestrictions = yield cache.mgetAsync(_.map(users, user => `userRestrictions-${helpers.getDocumentID(user)}`));
+
+        let missingUsers = _.filter(users, (user, index) => !usersRestrictions[index]);
+        if (_.size(missingUsers) > 0) {
+            yield self.updateUserRestrictions(missingUsers);
+
+            usersRestrictions = yield cache.mgetAsync(_.map(users, user => `userRestrictions-${helpers.getDocumentID(user)}`));
+        }
+
+        return _.zipObject(_.map(users, user => helpers.getDocumentID(user)), _.map(usersRestrictions, restrictions => restrictions || UNAUTHENTICATED_RESTRICTIONS));
     });
 
     self.on('userRestrictionsUpdated', function(userID, userRestrictions) {

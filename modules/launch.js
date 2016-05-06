@@ -153,13 +153,13 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             launchStatusMessage.playersAvailable = {};
             for (let role of _.keys(ROLES)) {
-                launchStatusMessage.playersAvailable[role] = yield _(playersAvailable[role]).toArray().map(user => self.getCachedUser(user)).value();
+                launchStatusMessage.playersAvailable[role] = yield self.getCachedUsers(_.toArray(playersAvailable[role]));
             }
 
             launchStatusMessage.allPlayersAvailable = _.unionBy(..._.values(launchStatusMessage.playersAvailable), user => helpers.getDocumentID(user));
 
             if (SEPARATE_CAPTAIN_POOL) {
-                launchStatusMessage.captainsAvailable = yield _(captainsAvailable).toArray().map(user => self.getCachedUser(user)).value();
+                launchStatusMessage.captainsAvailable = yield self.getCachedUsers(_.toArray(captainsAvailable));
             }
 
             yield cache.setAsync('launchStatus', JSON.stringify(launchStatusMessage));

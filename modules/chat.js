@@ -22,7 +22,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     function updateOnlineUserList() {
         return co(function*() {
-            let users = yield _.map(self.getOnlineUsers(), user => self.getCachedUser(user));
+            let users = yield self.getCachedUsers(self.getOnlineUsers());
             let onlineList = _(users).filter(user => (user.setUp && (user.authorized || self.isUserAdmin(user)))).sortBy('alias').value();
 
             yield cache.setAsync('onlineUsers', JSON.stringify(onlineList));
@@ -178,7 +178,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     }) === 0));
 
                     let mentions = yield _.map(mentionedAliases, alias => self.getUserByAlias(alias));
-                    mentions = yield _(mentions).compact().uniqBy(user => helpers.getDocumentID(user)).map(user => self.getCachedUser(user)).value();
+                    mentions = yield self.getCachedUsers(_(mentions).compact().uniqBy(user => helpers.getDocumentID(user)).value());
 
                     self.sendMessage({
                         user: userID,

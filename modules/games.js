@@ -135,7 +135,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 requests: []
             };
 
-            let outgoingPlayers = _.keyBy(yield _(currentSubstituteRequests.values()).toArray().map(request => self.getCachedUser(request.player)).value(), user => helpers.getDocumentID(user));
+            let outgoingPlayers = _.keyBy(yield self.getCachedUsers(_(currentSubstituteRequests.values()).toArray().map('player').value()), user => helpers.getDocumentID(user));
 
             for (let request of currentSubstituteRequests.entries()) {
                 substituteRequestsMessage.requests.push({

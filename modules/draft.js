@@ -167,9 +167,9 @@ module.exports = function(app, cache, chance, database, io, self) {
                 draftStatusMessage.turnEndTime = currentDraftTurnStartTime + TURN_TIME_LIMIT;
             }
 
-            draftStatusMessage.captainPool = yield _.map(captainPool, user => self.getCachedUser(user));
+            draftStatusMessage.captainPool = yield self.getCachedUsers(captainPool);
 
-            draftStatusMessage.fullPlayerList = yield _.map(fullPlayerList, user => self.getCachedUser(user));
+            draftStatusMessage.fullPlayerList = yield self.getCachedUsers(fullPlayerList);
 
             draftStatusMessage.playerPool = {};
             for (let role of _.keys(ROLES)) {
@@ -905,7 +905,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             captainPool = draftInfo.captains;
         }
         else {
-            let userRestrictions = _.zipObject(fullPlayerList, yield _.map(fullPlayerList, user => self.getUserRestrictions(user)));
+            let userRestrictions = yield self.getUsersRestrictions(fullPlayerList);
 
             captainPool = _.reject(fullPlayerList, player => _.includes(userRestrictions[player].aspects, 'captain'));
         }
