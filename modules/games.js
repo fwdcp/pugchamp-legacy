@@ -41,9 +41,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     function updateCurrentGame(users) {
         return co(function*() {
-            yield helpers.runScript('scripts/updateCurrentGame.js', _.map(users, user => helpers.getDocumentID(user)), {
-                cwd: process.cwd()
-            });
+            yield helpers.runAppScript('updateCurrentGame', _.map(users, user => helpers.getDocumentID(user)));
 
             for (let user of users) {
                 if (yield cache.existsAsync(`currentGame-${helpers.getDocumentID(user)}`)) {

@@ -2,6 +2,7 @@
 
 const _ = require('lodash');
 const child_process = require('child_process');
+const path = require('path');
 
 const helpers = {
     getDocumentID(info) {
@@ -86,6 +87,11 @@ const helpers = {
             else {
                 setTimeout(reject, delay, value);
             }
+        });
+    },
+    runAppScript(scriptName, args) {
+        return helpers.runScript(path.join('scripts', `${scriptName}.js`), args, {
+            cwd: process.cwd()
         });
     },
     runScript(script, args, options) {

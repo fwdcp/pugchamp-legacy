@@ -5,6 +5,7 @@ const _ = require('lodash');
 const argv = require('yargs').argv;
 const co = require('co');
 const config = require('config');
+const debug = require('debug')('pugchamp:scripts:updateUserRestrictions');
 const HttpStatus = require('http-status-codes');
 const moment = require('moment');
 const rp = require('request-promise');
@@ -109,6 +110,10 @@ co(function*() {
             /* eslint-enable lodash/prefer-lodash-method */
         }
 
+        debug(`updating user restrictions for ${_.size(users)} users`);
+
+        let cacheUpdatesRequired = [];
+
         for (let user of users) {
             let userID = helpers.getDocumentID(user);
 
@@ -121,7 +126,10 @@ co(function*() {
             let authorized = yield checkUserAuthorization(user);
             if (user.authorized !== authorized) {
                 user.authorized = authorized;
+
                 yield user.save();
+
+                cacheUpdatesRequired.push(userID);
             }
             if (!user.authorized) {
                 if (!user.admin) {
@@ -202,6 +210,8 @@ co(function*() {
                     restriction.active = false;
 
                     yield restriction.save();
+
+                    cacheUpdatesRequired.push(userID);
                 }
             }
 
@@ -218,9 +228,9 @@ co(function*() {
             yield cache.setAsync(`userRestrictions-${userID}`, JSON.stringify(combinedRestrictions));
         }
 
-        yield helpers.runScript('scripts/updateUserCache.js', _.map(users, user => helpers.getDocumentID(user)), {
-            cwd: process.cwd()
-        });
+        if (_.size(cacheUpdatesRequired) > 0) {
+            yield helpers.runAppScript('updateUserCache', _.uniq(cacheUpdatesRequired));
+        }
 
         process.exit(0);
     }

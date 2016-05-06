@@ -5,6 +5,7 @@ const _ = require('lodash');
 const argv = require('yargs').argv;
 const co = require('co');
 const config = require('config');
+const debug = require('debug')('pugchamp:scripts:updatePlayerStats');
 const distributions = require('distributions');
 const math = require('mathjs');
 
@@ -73,11 +74,15 @@ co(function*() {
             /* eslint-enable lodash/prefer-lodash-method */
         }
 
+        debug(`updating player stats for ${_.size(users)} users`);
+
         for (let user of users) {
+            let userID = helpers.getDocumentID(user);
+
             {
                 /* eslint-disable lodash/prefer-lodash-method */
                 let captainGames = yield database.Game.find({
-                    'teams.captain': helpers.getDocumentID(user),
+                    'teams.captain': userID,
                     'status': 'completed',
                     'score': {
                         $exists: true
@@ -87,7 +92,7 @@ co(function*() {
 
                 user.stats.captainRecord = _.countBy(captainGames, function(game) {
                     let teamIndex = _.findIndex(game.teams, function(team) {
-                        return helpers.getDocumentID(team.captain) === helpers.getDocumentID(user);
+                        return helpers.getDocumentID(team.captain) === userID;
                     });
 
                     if (teamIndex === 0) {
@@ -118,7 +123,7 @@ co(function*() {
             {
                 /* eslint-disable lodash/prefer-lodash-method */
                 let captainGames = yield database.Game.find({
-                    'teams.captain': helpers.getDocumentID(user),
+                    'teams.captain': userID,
                     'status': 'completed',
                     'score': {
                         $exists: true
@@ -128,7 +133,7 @@ co(function*() {
 
                 let captainScores = _.map(captainGames, function(game) {
                     let teamIndex = _.findIndex(game.teams, function(team) {
-                        return helpers.getDocumentID(team.captain) === helpers.getDocumentID(user);
+                        return helpers.getDocumentID(team.captain) === userID;
                     });
 
                     let differential = 0;
@@ -151,7 +156,7 @@ co(function*() {
             {
                 /* eslint-disable lodash/prefer-lodash-method */
                 let playerGames = yield database.Game.find({
-                    'teams.composition.players.user': helpers.getDocumentID(user),
+                    'teams.composition.players.user': userID,
                     'status': 'completed',
                     'score': {
                         $exists: true
@@ -191,7 +196,7 @@ co(function*() {
             {
                 /* eslint-disable lodash/prefer-lodash-method */
                 let playerGames = yield database.Game.find({
-                    'teams.composition.players.user': helpers.getDocumentID(user),
+                    'teams.composition.players.user': userID,
                     'status': 'completed',
                     'score': {
                         $exists: true
@@ -224,7 +229,7 @@ co(function*() {
                 let draftStats = [];
 
                 let captainGameCount = yield database.Game.count({
-                    'teams.captain': helpers.getDocumentID(user)
+                    'teams.captain': userID
                 }).count().exec();
                 draftStats.push({
                     type: 'captain',
@@ -243,7 +248,7 @@ co(function*() {
                     'draft.choices': {
                         $elemMatch: {
                             'type': 'playerPick',
-                            'player': helpers.getDocumentID(user)
+                            'player': userID
                         }
                     }
                 }).exec();
@@ -255,7 +260,7 @@ co(function*() {
                         if (choice.type === 'playerPick') {
                             position++;
 
-                            if (helpers.getDocumentID(choice.player) === helpers.getDocumentID(user)) {
+                            if (helpers.getDocumentID(choice.player) === userID) {
                                 break;
                             }
                         }
@@ -281,13 +286,13 @@ co(function*() {
                         'draft.choices': {
                             $elemMatch: {
                                 'type': 'playerPick',
-                                'player': helpers.getDocumentID(user)
+                                'player': userID
                             }
                         }
                     }, {
-                        'teams.captain': helpers.getDocumentID(user)
+                        'teams.captain': userID
                     }],
-                    'draft.pool.players.user': helpers.getDocumentID(user)
+                    'draft.pool.players.user': userID
                 }).count().exec();
                 /* eslint-enable lodash/prefer-lodash-method */
                 draftStats.push({
@@ -300,7 +305,7 @@ co(function*() {
 
             {
                 let rating = yield database.Rating.findOne({
-                    user: helpers.getDocumentID(user)
+                    user: userID
                 }).sort('-date').exec();
 
                 if (rating) {
@@ -317,7 +322,7 @@ co(function*() {
                         'teams.composition': {
                             $elemMatch: {
                                 'role': role,
-                                'players.user': helpers.getDocumentID(user)
+                                'players.user': userID
                             }
                         }
                     }).count().exec().then(count => ({
@@ -330,10 +335,10 @@ co(function*() {
 
             {
                 user.stats.total.captain = yield database.Game.count({
-                    'teams.captain': helpers.getDocumentID(user)
+                    'teams.captain': userID
                 }).count().exec();
                 user.stats.total.player = yield database.Game.count({
-                    'teams.composition.players.user': helpers.getDocumentID(user)
+                    'teams.composition.players.user': userID
                 }).count().exec();
             }
 
@@ -343,18 +348,18 @@ co(function*() {
                         'draft.choices': {
                             $elemMatch: {
                                 'type': 'playerPick',
-                                'player': helpers.getDocumentID(user)
+                                'player': userID
                             }
                         }
                     }, {
-                        'teams.captain': helpers.getDocumentID(user)
+                        'teams.captain': userID
                     }],
-                    'teams.composition.players.user': helpers.getDocumentID(user)
+                    'teams.composition.players.user': userID
                 }).count().exec();
                 user.stats.replaced.out = yield database.Game.count({
                     'teams.composition.players': {
                         $elemMatch: {
-                            'user': helpers.getDocumentID(user),
+                            'user': userID,
                             'replaced': true
                         }
                     }
@@ -364,9 +369,7 @@ co(function*() {
             yield user.save();
         }
 
-        yield helpers.runScript('scripts/updateUserCache.js', _.map(users, user => helpers.getDocumentID(user)), {
-            cwd: process.cwd()
-        });
+        yield helpers.runAppScript('updateUserCache', argv._);
 
         process.exit(0);
     }

@@ -5,6 +5,7 @@ const _ = require('lodash');
 const argv = require('yargs').argv;
 const co = require('co');
 const config = require('config');
+const debug = require('debug')('pugchamp:scripts:updateUserCache');
 const math = require('mathjs');
 
 const helpers = require('../helpers');
@@ -70,6 +71,8 @@ co(function*() {
             users = yield database.User.find({}).exec();
             /* eslint-enable lodash/prefer-lodash-method */
         }
+
+        debug(`updating user cache for ${_.size(users)} users`);
 
         for (let user of users) {
             let userID = helpers.getDocumentID(user);

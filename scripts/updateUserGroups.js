@@ -5,6 +5,7 @@ const _ = require('lodash');
 const argv = require('yargs').argv;
 const co = require('co');
 const config = require('config');
+const debug = require('debug')('pugchamp:scripts:updateUserGroups');
 const HttpStatus = require('http-status-codes');
 const rp = require('request-promise');
 
@@ -33,7 +34,15 @@ co(function*() {
             /* eslint-enable lodash/prefer-lodash-method */
         }
 
+        debug(`updating user groups for ${_.size(users)} users`);
+
+        let cacheUpdatesRequired = [];
+
         for (let user of users) {
+            let userID = helpers.getDocumentID(user);
+
+            let oldGroups = user.groups;
+
             user.groups = [];
 
             for (let groupID of _.keys(USER_GROUPS)) {
@@ -74,12 +83,16 @@ co(function*() {
                 }
             }
 
+            if (_.size(_.xor(user.groups, oldGroups)) > 0) {
+                cacheUpdatesRequired.push(userID);
+            }
+
             yield user.save();
         }
 
-        yield helpers.runScript('scripts/updateUserCache.js', _.map(users, user => helpers.getDocumentID(user)), {
-            cwd: process.cwd()
-        });
+        if (_.size(cacheUpdatesRequired) > 0) {
+            yield helpers.runAppScript('updateUserCache', _.uniq(cacheUpdatesRequired));
+        }
 
         process.exit(0);
     }

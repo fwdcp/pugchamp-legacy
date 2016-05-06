@@ -5,6 +5,7 @@ const _ = require('lodash');
 const argv = require('yargs').argv;
 const co = require('co');
 const config = require('config');
+const debug = require('debug')('pugchamp:scripts:updateGameCache');
 const moment = require('moment');
 
 const helpers = require('../helpers');
@@ -33,6 +34,8 @@ co(function*() {
             games = yield database.Game.find({}).exec();
             /* eslint-enable lodash/prefer-lodash-method */
         }
+
+        debug(`updating game cache for ${_.size(games)} games`);
 
         for (let game of games) {
             let gameID = helpers.getDocumentID(game);

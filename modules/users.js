@@ -29,9 +29,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.updateUserCache = co.wrap(function* updateUserCache(users) {
-        yield helpers.runScript('scripts/updateUserCache.js', _.map(users, user => helpers.getDocumentID(user)), {
-            cwd: process.cwd()
-        });
+        yield helpers.runAppScript('updateUserCache', _.map(users, user => helpers.getDocumentID(user)));
     });
 
     /**
@@ -92,10 +90,8 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.updateUserRestrictions = co.wrap(function* updateUserRestrictions([users]) {
-        yield helpers.runScript('scripts/updateUserRestrictions.js', _.map(users, user => helpers.getDocumentID(user)), {
-            cwd: process.cwd()
-        });
+    self.updateUserRestrictions = co.wrap(function* updateUserRestrictions(users) {
+        yield helpers.runAppScript('updateUserRestrictions', _.map(users, user => helpers.getDocumentID(user)));
 
         for (let user of users) {
             let userRestrictions = yield self.getUserRestrictions(user);
@@ -131,9 +127,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     function updateUserGroups(users) {
         return co(function*() {
-            yield helpers.runScript('scripts/updateUserGroups.js', _.map(users, user => helpers.getDocumentID(user)), {
-                cwd: process.cwd()
-            });
+            yield helpers.runAppScript('updateUserGroups', _.map(users, user => helpers.getDocumentID(user)));
         });
     }
 

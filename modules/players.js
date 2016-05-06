@@ -41,9 +41,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.updatePlayerStats = co.wrap(function* updatePlayerStats(players) {
-        yield helpers.runScript('scripts/updatePlayerStats.js', _.map(players, player => helpers.getDocumentID(player)), {
-            cwd: process.cwd()
-        });
+        yield helpers.runAppScript('updatePlayerStats', _.map(players, player => helpers.getDocumentID(player)));
     });
 
     hbs.registerHelper('draftStatToRow', function(stat) {
