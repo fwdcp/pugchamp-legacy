@@ -59,7 +59,7 @@ co(function*() {
                     user: user.toObject()
                 };
 
-                currentGameInfo.team.captain = gameUserInfo.team.captain.toObject();
+                currentGameInfo.team.captain = gameUserInfo.team.captain;
 
                 currentGameInfo.player = gameUserInfo.role && gameUserInfo.player;
                 if (currentGameInfo.player) {
@@ -78,7 +78,7 @@ co(function*() {
                         user: player.user,
                         role: ROLES[role.role]
                     })).value()).flattenDeep().map(function(player) {
-                        player.user = player.user.toObject();
+                        player.user = player.user;
 
                         return player;
                     }).value();
