@@ -52,7 +52,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             for (let user of users) {
                 if (yield cache.existsAsync(`currentGame-${helpers.getDocumentID(user)}`)) {
-                    self.emitToUser(user, 'currentGameUpdated', [JSON.parse(`currentGame-${helpers.getDocumentID(user)}`)]);
+                    self.emitToUser(user, 'currentGameUpdated', [JSON.parse(yield cache.getAsync(`currentGame-${helpers.getDocumentID(user)}`))]);
                 }
                 else {
                     self.emitToUser(user, 'currentGameUpdated', [null]);
@@ -67,7 +67,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     function getCurrentGame(user) {
         return co(function*() {
             if (yield cache.existsAsync(`currentGame-${helpers.getDocumentID(user)}`)) {
-                self.emitToUser(user, 'currentGameUpdated', [JSON.parse(`currentGame-${helpers.getDocumentID(user)}`)]);
+                self.emitToUser(user, 'currentGameUpdated', [JSON.parse(yield cache.getAsync(`currentGame-${helpers.getDocumentID(user)}`))]);
             }
             else {
                 self.emitToUser(user, 'currentGameUpdated', [null]);
