@@ -49,16 +49,21 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.getCachedUsers = co.wrap(function* getCachedUsers(users) {
-        let cachedUsers = yield cache.mgetAsync(_.map(users, user => `user-${helpers.getDocumentID(user)}`));
+        if (_.size(users) > 0) {
+            let cachedUsers = yield cache.mgetAsync(..._.map(users, user => `user-${helpers.getDocumentID(user)}`));
 
-        let missingUsers = _.filter(users, (user, index) => !cachedUsers[index]);
-        if (_.size(missingUsers) > 0) {
-            yield self.updateUserCache(missingUsers);
+            let missingUsers = _.filter(users, (user, index) => !cachedUsers[index]);
+            if (_.size(missingUsers) > 0) {
+                yield self.updateUserCache(missingUsers);
 
-            cachedUsers = yield cache.mgetAsync(_.map(users, user => `user-${helpers.getDocumentID(user)}`));
+                cachedUsers = yield cache.mgetAsync(..._.map(users, user => `user-${helpers.getDocumentID(user)}`));
+            }
+
+            return _.map(cachedUsers, cachedUser => JSON.parse(cachedUser));
         }
-
-        return cachedUsers;
+        else {
+            return [];
+        }
     });
 
     /**
@@ -138,16 +143,21 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.getUsersRestrictions = co.wrap(function* getUsersRestrictions(users) {
-        let usersRestrictions = yield cache.mgetAsync(_.map(users, user => `userRestrictions-${helpers.getDocumentID(user)}`));
+        if (_.size(users) > 0) {
+            let usersRestrictions = yield cache.mgetAsync(..._.map(users, user => `userRestrictions-${helpers.getDocumentID(user)}`));
 
-        let missingUsers = _.filter(users, (user, index) => !usersRestrictions[index]);
-        if (_.size(missingUsers) > 0) {
-            yield self.updateUserRestrictions(missingUsers);
+            let missingUsers = _.filter(users, (user, index) => !usersRestrictions[index]);
+            if (_.size(missingUsers) > 0) {
+                yield self.updateUserRestrictions(missingUsers);
 
-            usersRestrictions = yield cache.mgetAsync(_.map(users, user => `userRestrictions-${helpers.getDocumentID(user)}`));
+                usersRestrictions = yield cache.mgetAsync(..._.map(users, user => `userRestrictions-${helpers.getDocumentID(user)}`));
+            }
+
+            return _.zipObject(_.map(users, user => helpers.getDocumentID(user)), _.map(usersRestrictions, restrictions => restrictions ? JSON.parse(restrictions) : UNAUTHENTICATED_RESTRICTIONS));
         }
-
-        return _.zipObject(_.map(users, user => helpers.getDocumentID(user)), _.map(usersRestrictions, restrictions => restrictions || UNAUTHENTICATED_RESTRICTIONS));
+        else {
+            return [];
+        }
     });
 
     self.on('userRestrictionsUpdated', function(userID, userRestrictions) {
