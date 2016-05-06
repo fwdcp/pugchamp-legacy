@@ -61,46 +61,51 @@
                     <strong>Captain</strong>: {{info.team.captain.alias}}
                 </p>
 
-                <p hidden$="{{!info.server}}">
-                    <strong>Server</strong>: {{info.server.id}}
-                    <br>
-                    <iframe id="gameServerConnect" width="0" height="0" hidden></iframe>
-                    <paper-button class="connect" on-tap="connectToGameServer" hidden$="{{!info.server.game}}" raised id="gameConnect">Connect to Game</paper-button>
-                    <paper-button hidden$="{{!connectCommand(gameServerURI)}}" data-clipboard-text$="{{connectCommand(gameServerURI)}}" raised id="gameConnectCommand">Copy Game Connect Command</paper-button>
-                    <template is="dom-if" if="{{isSteamServer(gameServerURI)}}">
-                        <paper-tooltip for="gameConnect">
-                            <strong>Address</strong>: {{_callMethod(gameServerURI, 'segmentCoded', 0)}}
-                            <template is="dom-if" if="{{_callMethod(gameServerURI, 'segmentCoded', 1)}}">
-                                <br>
-                                <strong>Password</strong>: {{_callMethod(gameServerURI, 'segmentCoded', 1)}}
-                            </template>
-                        </paper-tooltip>
-                    </template>
-                    <br>
-                    <iframe id="voiceServerConnect" width="0" height="0" hidden></iframe>
-                    <paper-button class="connect" on-tap="connectToVoiceServer" hidden$="{{!info.server.voice}}" raised id="voiceConnect">Connect to Voice</paper-button>
-                    <template is="dom-if" if="{{isMumbleServer(voiceServerURI)}}">
-                        <paper-tooltip for="voiceConnect">
-                            <strong>Address</strong>: {{_callMethod(voiceServerURI, 'hostname')}}
-                            <template is="dom-if" if="{{_callMethod(voiceServerURI, 'port')}}">
-                                <br>
-                                <strong>Port</strong>: {{_callMethod(voiceServerURI, 'port')}}
-                            </template>
-                            <template is="dom-if" if="{{_callMethod(voiceServerURI, 'username')}}">
-                                <br>
-                                <strong>Username</strong>: {{_callMethod(voiceServerURI, 'username')}}
-                            </template>
-                            <template is="dom-if" if="{{_callMethod(voiceServerURI, 'password')}}">
-                                <br>
-                                <strong>Password</strong>: {{_callMethod(voiceServerURI, 'password')}}
-                            </template>
-                            <template is="dom-if" if="{{channelPath(voiceServerURI)}}">
-                                <br>
-                                <strong>Channel</strong>: {{channelPath(voiceServerURI)}}
-                            </template>
-                        </paper-tooltip>
-                    </template>
-                </p>
+                <span hidden$="{{info.replaced}}">
+                    <p hidden$="{{!info.server}}">
+                        <strong>Server</strong>: {{info.server.id}}
+                        <br>
+                        <iframe id="gameServerConnect" width="0" height="0" hidden></iframe>
+                        <paper-button class="connect" on-tap="connectToGameServer" hidden$="{{!info.server.game}}" raised id="gameConnect">Connect to Game</paper-button>
+                        <paper-button hidden$="{{!connectCommand(gameServerURI)}}" data-clipboard-text$="{{connectCommand(gameServerURI)}}" raised id="gameConnectCommand">Copy Game Connect Command</paper-button>
+                        <template is="dom-if" if="{{isSteamServer(gameServerURI)}}">
+                            <paper-tooltip for="gameConnect">
+                                <strong>Address</strong>: {{_callMethod(gameServerURI, 'segmentCoded', 0)}}
+                                <template is="dom-if" if="{{_callMethod(gameServerURI, 'segmentCoded', 1)}}">
+                                    <br>
+                                    <strong>Password</strong>: {{_callMethod(gameServerURI, 'segmentCoded', 1)}}
+                                </template>
+                            </paper-tooltip>
+                        </template>
+                        <br>
+                        <iframe id="voiceServerConnect" width="0" height="0" hidden></iframe>
+                        <paper-button class="connect" on-tap="connectToVoiceServer" hidden$="{{!info.server.voice}}" raised id="voiceConnect">Connect to Voice</paper-button>
+                        <template is="dom-if" if="{{isMumbleServer(voiceServerURI)}}">
+                            <paper-tooltip for="voiceConnect">
+                                <strong>Address</strong>: {{_callMethod(voiceServerURI, 'hostname')}}
+                                <template is="dom-if" if="{{_callMethod(voiceServerURI, 'port')}}">
+                                    <br>
+                                    <strong>Port</strong>: {{_callMethod(voiceServerURI, 'port')}}
+                                </template>
+                                <template is="dom-if" if="{{_callMethod(voiceServerURI, 'username')}}">
+                                    <br>
+                                    <strong>Username</strong>: {{_callMethod(voiceServerURI, 'username')}}
+                                </template>
+                                <template is="dom-if" if="{{_callMethod(voiceServerURI, 'password')}}">
+                                    <br>
+                                    <strong>Password</strong>: {{_callMethod(voiceServerURI, 'password')}}
+                                </template>
+                                <template is="dom-if" if="{{channelPath(voiceServerURI)}}">
+                                    <br>
+                                    <strong>Channel</strong>: {{channelPath(voiceServerURI)}}
+                                </template>
+                            </paper-tooltip>
+                        </template>
+                    </p>
+                    <p hidden$="{{info.server}}">
+                        Server info is not available at this time.
+                    </p>
+                </span>
 
                 <p hidden$="{{!info.replaced}}">
                     You have been substituted out of this game.
