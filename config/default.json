@@ -1,10 +1,14 @@
 {
     "app": {
         "users": {
+            "authorizations": [],
+            "authorizationAPIs": [],
             "authorizationDefault": true,
             "captainGameRequirement": 5,
+            "groups": [],
             "hideDraftStats": false,
             "hideRatings": false,
+            "initialRatings": [],
             "ratingBase": 1500,
             "restrictionDurations": [{
                 "name": "1 hour",

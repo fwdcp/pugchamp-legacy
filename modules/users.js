@@ -17,7 +17,7 @@ const helpers = require('../helpers');
 module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const HIDE_DRAFT_STATS = config.get('app.users.hideDraftStats');
-    const INITIAL_RATINGS = config.has('app.users.initialRatings') ? config.get('app.users.initialRatings') : [];
+    const INITIAL_RATINGS = config.get('app.users.initialRatings');
     const UNAUTHENTICATED_RESTRICTIONS = {
         aspects: ['sub', 'start', 'captain', 'chat', 'support'],
         reasons: ['You are currently not [logged on](/user/login).']

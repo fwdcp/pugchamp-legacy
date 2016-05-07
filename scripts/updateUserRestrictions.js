@@ -12,9 +12,9 @@ const rp = require('request-promise');
 
 const helpers = require('../helpers');
 
-const USER_AUTHORIZATIONS = config.has('app.users.authorizations') ? config.get('app.users.authorizations') : [];
-const USER_AUTHORIZATION_DEFAULT = config.has('app.users.authorizationDefault') ? config.get('app.users.authorizationDefault') : true;
-const USER_AUTHORIZATION_APIS = config.has('app.users.authorizationAPIs') ? config.get('app.users.authorizationAPIs') : [];
+const USER_AUTHORIZATIONS = config.get('app.users.authorizations');
+const USER_AUTHORIZATION_APIS = config.get('app.users.authorizationAPIs');
+const USER_AUTHORIZATION_DEFAULT = config.get('app.users.authorizationDefault');
 
 var cache = require('../cache');
 var database = require('../database');
