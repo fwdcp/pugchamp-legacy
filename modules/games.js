@@ -123,8 +123,8 @@ module.exports = function(app, cache, chance, database, io, self) {
         yield self.updateUserRestrictions(helpers.getGameUsers(game));
         yield updateCurrentGame(helpers.getGameUsers(game));
 
-        yield self.updateGameCache([game]);
-        yield self.updateUserCache(helpers.getGameUsers(game));
+        self.updateGameCache([game]);
+        self.updateUserCache(helpers.getGameUsers(game));
     });
 
     var currentSubstituteRequests = new Map();
