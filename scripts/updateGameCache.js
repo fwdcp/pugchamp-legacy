@@ -2,7 +2,7 @@
 'use strict';
 
 const _ = require('lodash');
-const argv = require('yargs').argv;
+const argv = require('yargs').boolean('a').argv;
 const co = require('co');
 const config = require('config');
 const debug = require('debug')('pugchamp:scripts:updateGameCache');
@@ -20,7 +20,7 @@ co(function*() {
     try {
         let games;
 
-        if (_.size(argv._) > 0) {
+        if (argv.a) {
             /* eslint-disable lodash/prefer-lodash-method */
             games = yield database.Game.find({
                 '_id': {
