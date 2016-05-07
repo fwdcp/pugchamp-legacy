@@ -25,6 +25,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     const RECONNECT_INTERVAL = ms(config.get('app.servers.reconnectInterval'));
     const RETRY_ATTEMPTS = _.map(config.get('app.servers.retryAttempts'), delay => ms(delay));
     const ROLES = config.get('app.games.roles');
+    const SIMPLE_RETRY_INTERVALS = _.map(config.get('app.servers.simpleRetryIntervals'), delay => ms(delay));
 
     var rconConnections = new Map();
     var rconConnectionLimits = new Map();
@@ -285,15 +286,17 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.sendRCONCommands = co.wrap(function* sendRCONCommands(server, commands, timeout) {
-        if (!rconConnections.has(server)) {
-            debug(`not currently connected to ${server}`);
-            establishRCONConnection(server);
-
-            throw new Error('not currently connected to RCON');
-        }
+    self.sendRCONCommands = co.wrap(function* sendRCONCommands(server, commands, retry, timeout) {
+        let success = false;
 
         try {
+            if (!rconConnections.has(server)) {
+                debug(`not currently connected to ${server}`);
+                establishRCONConnection(server);
+
+                throw new Error('not currently connected to RCON');
+            }
+
             let rcon = rconConnections.get(server);
 
             debug(`sending ${commands} to ${server}`);
@@ -305,6 +308,26 @@ module.exports = function(app, cache, chance, database, io, self) {
         catch (err) {
             debug(`failed to send commands to ${server}: ${err.stack}`);
 
+            if (retry) {
+                for (let delay of SIMPLE_RETRY_INTERVALS) {
+                    debug(`waiting for ${delay}ms before retrying`);
+                    yield helpers.promiseDelay(delay, null, false);
+
+                    try {
+                        yield self.sendRCONCommands(server, commands, timeout, false);
+
+                        success = true;
+                        break;
+                    }
+                    catch (err) {
+                        success = false;
+                        continue;
+                    }
+                }
+            }
+        }
+
+        if (!success) {
             establishRCONConnection(server);
 
             throw new Error('sending commands to server failed');
@@ -318,7 +341,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         let success = false;
 
         try {
-            yield self.sendRCONCommands(server, ['pugchamp_game_reset']);
+            yield self.sendRCONCommands(server, ['pugchamp_game_reset'], true);
             yield self.updateServerStatus(server);
 
             let serverStatus = yield self.getServerStatus(server);
@@ -366,7 +389,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         yield _.map(serverStatuses, co.wrap(function*(serverStatus, server) {
             if (serverStatus.status === 'unreachable' || serverStatus.status === 'unknown') {
                 if (retry) {
-                    for (let delay of RETRY_ATTEMPTS) {
+                    for (let delay of SIMPLE_RETRY_INTERVALS) {
                         debug(`waiting for ${delay}ms before retrying`);
                         yield helpers.promiseDelay(delay, null, false);
 
@@ -480,7 +503,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             });
 
             debug(`sending commands to update players on server ${game.server} for game ${game.id}`);
-            yield self.sendRCONCommands(game.server, commands);
+            yield self.sendRCONCommands(game.server, commands, true);
 
             success = true;
         }
@@ -545,14 +568,14 @@ module.exports = function(app, cache, chance, database, io, self) {
             yield self.resetServer(game.server, false);
 
             debug(`performing initial setup for server ${game.server} for game ${game.id}`);
-            yield self.sendRCONCommands(game.server, [`pugchamp_api_url "${BASE_URL}/api/servers/${key}"`, `pugchamp_game_id "${helpers.getDocumentID(game)}"`, `pugchamp_game_map "${mapInfo.file}"`, `pugchamp_game_config "${mapInfo.config}"`]);
+            yield self.sendRCONCommands(game.server, [`pugchamp_api_url "${BASE_URL}/api/servers/${key}"`, `pugchamp_game_id "${helpers.getDocumentID(game)}"`, `pugchamp_game_map "${mapInfo.file}"`, `pugchamp_game_config "${mapInfo.config}"`], true);
 
             yield self.updateServerStatus(game.server);
             yield self.updateServerPlayers(game, false);
 
             try {
                 debug(`launching server ${game.server} for game ${game.id}`);
-                yield self.sendRCONCommands(game.server, ['pugchamp_game_start'], MAP_CHANGE_TIMEOUT);
+                yield self.sendRCONCommands(game.server, ['pugchamp_game_start'], true, MAP_CHANGE_TIMEOUT);
             }
             catch (err) {
                 yield self.updateServerStatus(game.server);
