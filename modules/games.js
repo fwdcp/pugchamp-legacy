@@ -293,6 +293,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 }
             }
 
+            yield updateSubstituteRequestCandidates();
             yield self.updateUserRestrictions([player]);
 
             self.processSubstituteRequestsUpdate();
@@ -410,6 +411,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             currentSubstituteRequests.delete(requestID);
 
+            yield updateSubstituteRequestCandidates();
             yield self.updateUserRestrictions(_.toArray(request.candidates));
 
             self.processSubstituteRequestsUpdate();

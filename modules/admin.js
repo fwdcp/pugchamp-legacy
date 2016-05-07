@@ -163,6 +163,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             try {
                 yield restriction.save();
                 yield self.updateUserRestrictions([user]);
+                yield self.updateUserCache([user]);
 
                 res.sendStatus(HttpStatus.OK);
             }
@@ -194,6 +195,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 try {
                     yield restriction.save();
                     yield self.updateUserRestrictions([user]);
+                    yield self.updateUserCache([user]);
 
                     res.sendStatus(HttpStatus.OK);
                 }
