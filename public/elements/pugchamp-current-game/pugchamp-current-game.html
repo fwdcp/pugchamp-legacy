@@ -61,7 +61,7 @@
                     <strong>Captain</strong>: {{info.team.captain.alias}}
                 </p>
 
-                <span hidden$="{{info.replaced}}">
+                <div hidden$="{{info.replaced}}">
                     <p hidden$="{{!info.server}}">
                         <strong>Server</strong>: {{info.server.id}}
                         <br>
@@ -105,11 +105,11 @@
                     <p hidden$="{{info.server}}">
                         Server info is not available at this time.
                     </p>
-                </span>
+                </div>
 
-                <p hidden$="{{!info.replaced}}">
-                    You have been substituted out of this game.
-                </p>
+                <div hidden$="{{!info.replaced}}">
+                    <p>You have been substituted out of this game.</p>
+                </div>
             </div>
 
             <div hidden$="{{!info.captain}}">
