@@ -314,7 +314,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     yield helpers.promiseDelay(delay, null, false);
 
                     try {
-                        yield self.sendRCONCommands(server, commands, timeout, false);
+                        yield self.sendRCONCommands(server, commands, false, timeout);
 
                         success = true;
                         break;
