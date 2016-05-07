@@ -20,7 +20,7 @@ co(function*() {
     try {
         let games;
 
-        if (argv.a) {
+        if (!argv.a) {
             /* eslint-disable lodash/prefer-lodash-method */
             games = yield database.Game.find({
                 '_id': {

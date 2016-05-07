@@ -95,7 +95,7 @@ co(function*() {
     try {
         let users;
 
-        if (argv.a) {
+        if (!argv.a) {
             /* eslint-disable lodash/prefer-lodash-method */
             users = yield database.User.find({
                 '_id': {
