@@ -79,7 +79,7 @@ const helpers = {
 
         return null;
     },
-    promiseDelay(delay, value, fail) {
+    promiseDelay(delay, value = undefined, fail = false) {
         return new Promise(function(resolve, reject) {
             if (!fail) {
                 setTimeout(resolve, delay, value);
@@ -89,12 +89,12 @@ const helpers = {
             }
         });
     },
-    runAppScript(scriptName, args) {
+    runAppScript(scriptName, args = []) {
         return helpers.runScript(path.join('scripts', `${scriptName}.js`), args, {
             cwd: process.cwd()
         });
     },
-    runScript(script, args, options) {
+    runScript(script, args = [], options = {}) {
         return new Promise(function(resolve, reject) {
             let child = child_process.fork(script, args, options);
 

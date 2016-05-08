@@ -64,7 +64,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    function sendCommandsToServer(rcon, commands, timeout) {
+    function sendCommandsToServer(rcon, commands, timeout = COMMAND_TIMEOUT) {
         return co(function*() {
             let condensedCommands = [];
 
@@ -85,7 +85,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             let results = [];
 
             for (let condensedCommand of condensedCommands) {
-                let result = yield rcon.command(condensedCommand, !_.isUndefined(timeout) ? timeout : COMMAND_TIMEOUT);
+                let result = yield rcon.command(condensedCommand, timeout);
 
                 results.push(result);
             }
@@ -267,7 +267,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             if (updatedGame.status === 'aborted' || updatedGame.status === 'completed') {
                 // force immediate reset
-                yield self.shutdownGame(updatedGame, true);
+                yield self.shutdownGame(updatedGame);
                 yield self.updateServerStatus(server);
             }
         }));
@@ -286,7 +286,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.sendRCONCommands = co.wrap(function* sendRCONCommands(server, commands, retry, timeout) {
+    self.sendRCONCommands = co.wrap(function* sendRCONCommands(server, commands, timeout = COMMAND_TIMEOUT, retry = true) {
         let success = false;
 
         try {
@@ -311,10 +311,10 @@ module.exports = function(app, cache, chance, database, io, self) {
             if (retry) {
                 for (let delay of SIMPLE_RETRY_INTERVALS) {
                     debug(`waiting for ${delay}ms before retrying`);
-                    yield helpers.promiseDelay(delay, null, false);
+                    yield helpers.promiseDelay(delay);
 
                     try {
-                        yield self.sendRCONCommands(server, commands, false, timeout);
+                        yield self.sendRCONCommands(server, commands, timeout, false);
 
                         success = true;
                         break;
@@ -337,11 +337,11 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.resetServer = co.wrap(function* resetServer(server, retry) {
+    self.resetServer = co.wrap(function* resetServer(server, retry = true) {
         let success = false;
 
         try {
-            yield self.sendRCONCommands(server, ['pugchamp_game_reset'], true);
+            yield self.sendRCONCommands(server, ['pugchamp_game_reset']);
             yield self.updateServerStatus(server);
 
             let serverStatus = yield self.getServerStatus(server);
@@ -358,7 +358,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             if (retry) {
                 for (let delay of RETRY_ATTEMPTS) {
                     debug(`waiting for ${delay}ms before retrying`);
-                    yield helpers.promiseDelay(delay, null, false);
+                    yield helpers.promiseDelay(delay);
 
                     try {
                         yield self.resetServer(server, false);
@@ -382,7 +382,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.shutdownGame = co.wrap(function* shutdownGame(game, retry) {
+    self.shutdownGame = co.wrap(function* shutdownGame(game, retry = true) {
         debug(`shutting down servers for game ${game.id}`);
         let serverStatuses = yield self.getServerStatuses();
 
@@ -391,7 +391,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 if (retry) {
                     for (let delay of SIMPLE_RETRY_INTERVALS) {
                         debug(`waiting for ${delay}ms before retrying`);
-                        yield helpers.promiseDelay(delay, null, false);
+                        yield helpers.promiseDelay(delay);
 
                         try {
                             yield self.updateServerStatus(server);
@@ -416,7 +416,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 serverStatus = yield self.getServerStatus(server);
 
                 if (serverStatus.status === 'assigned' && helpers.getDocumentID(serverStatus.game) === helpers.getDocumentID(game)) {
-                    yield self.resetServer(server, true);
+                    yield self.resetServer(server);
                 }
             }
         }));
@@ -425,7 +425,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.updateServerPlayers = co.wrap(function* updateServerPlayers(game, retry) {
+    self.updateServerPlayers = co.wrap(function* updateServerPlayers(game, retry = true) {
         let success = false;
 
         try {
@@ -503,7 +503,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             });
 
             debug(`sending commands to update players on server ${game.server} for game ${game.id}`);
-            yield self.sendRCONCommands(game.server, commands, true);
+            yield self.sendRCONCommands(game.server, commands);
 
             success = true;
         }
@@ -513,7 +513,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             if (retry) {
                 for (let delay of RETRY_ATTEMPTS) {
                     debug(`waiting for ${delay}ms before retrying`);
-                    yield helpers.promiseDelay(delay, null, false);
+                    yield helpers.promiseDelay(delay);
 
                     try {
                         yield self.updateServerPlayers(game, false);
@@ -537,7 +537,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.initializeServer = co.wrap(function* initializeServer(game, retry) {
+    self.initializeServer = co.wrap(function* initializeServer(game, retry = true) {
         if (!game.server) {
             throw new Error('no server is currently assigned to this game');
         }
@@ -555,7 +555,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             yield self.processGameUpdate(game);
 
             debug(`resetting servers currently assigned to game ${game.id}`);
-            yield self.shutdownGame(game, true);
+            yield self.shutdownGame(game);
 
             let serverInfo = GAME_SERVER_POOL[game.server];
             let hash = crypto.createHash('sha256');
@@ -568,14 +568,14 @@ module.exports = function(app, cache, chance, database, io, self) {
             yield self.resetServer(game.server, false);
 
             debug(`performing initial setup for server ${game.server} for game ${game.id}`);
-            yield self.sendRCONCommands(game.server, [`pugchamp_api_url "${BASE_URL}/api/servers/${key}"`, `pugchamp_game_id "${helpers.getDocumentID(game)}"`, `pugchamp_game_map "${mapInfo.file}"`, `pugchamp_game_config "${mapInfo.config}"`], true);
+            yield self.sendRCONCommands(game.server, [`pugchamp_api_url "${BASE_URL}/api/servers/${key}"`, `pugchamp_game_id "${helpers.getDocumentID(game)}"`, `pugchamp_game_map "${mapInfo.file}"`, `pugchamp_game_config "${mapInfo.config}"`]);
 
             yield self.updateServerStatus(game.server);
             yield self.updateServerPlayers(game, false);
 
             try {
                 debug(`launching server ${game.server} for game ${game.id}`);
-                yield self.sendRCONCommands(game.server, ['pugchamp_game_start'], true, MAP_CHANGE_TIMEOUT);
+                yield self.sendRCONCommands(game.server, ['pugchamp_game_start'], MAP_CHANGE_TIMEOUT);
             }
             catch (err) {
                 yield self.updateServerStatus(game.server);
@@ -595,7 +595,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             if (retry) {
                 for (let delay of RETRY_ATTEMPTS) {
                     debug(`waiting for ${delay}ms before retrying`);
-                    yield helpers.promiseDelay(delay, null, false);
+                    yield helpers.promiseDelay(delay);
 
                     try {
                         yield self.initializeServer(game, false);
@@ -619,7 +619,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.assignGameToServer = co.wrap(function* assignGameToServer(game, retry, requestedServer) {
+    self.assignGameToServer = co.wrap(function* assignGameToServer(game, requestedServer, retry = true) {
         let success = false;
 
         try {
@@ -665,10 +665,10 @@ module.exports = function(app, cache, chance, database, io, self) {
             if (retry) {
                 for (let delay of RETRY_ATTEMPTS) {
                     debug(`waiting for ${delay}ms before retrying`);
-                    yield helpers.promiseDelay(delay, null, false);
+                    yield helpers.promiseDelay(delay);
 
                     try {
-                        yield self.assignGameToServer(game, false, requestedServer);
+                        yield self.assignGameToServer(game, requestedServer, false);
 
                         success = true;
                         break;
@@ -732,7 +732,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             let success = false;
 
             for (let delay of RETRY_ATTEMPTS) {
-                yield helpers.promiseDelay(delay, null, false);
+                yield helpers.promiseDelay(delay);
 
                 try {
                     yield self.handleGameServerUpdate(req.query);

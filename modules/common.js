@@ -76,7 +76,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
     function onTimesync(data) {
         this.emit('timesync', {
-            id: _.has(data, 'id') ? data.id : null,
+            id: _.get(data, 'id', null),
             result: Date.now()
         });
     }

@@ -88,7 +88,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             message.user = yield self.getCachedUser(message.user);
         }
 
-        self.emitToUser(user, 'messageReceived', [message]);
+        self.emitToUser(user, 'messageReceived', message);
     });
 
     /**

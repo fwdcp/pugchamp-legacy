@@ -40,7 +40,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.updatePlayerStats = co.wrap(function* updatePlayerStats(players) {
+    self.updatePlayerStats = co.wrap(function* updatePlayerStats(...players) {
         yield helpers.runAppScript('updatePlayerStats', _.map(players, player => helpers.getDocumentID(player)));
     });
 
@@ -69,7 +69,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         let cacheResponse = yield cache.getAsync(`playerPage-${helpers.getDocumentID(player)}`);
 
         if (!cacheResponse) {
-            yield self.updateUserCache([player]);
+            yield self.updateUserCache(player);
             cacheResponse = yield cache.getAsync(`playerPage-${helpers.getDocumentID(player)}`);
         }
 

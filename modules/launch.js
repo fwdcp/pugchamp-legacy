@@ -251,12 +251,12 @@ module.exports = function(app, cache, chance, database, io, self) {
     function syncUserAvailability(user) {
         let userID = helpers.getDocumentID(user);
 
-        self.emitToUser(userID, 'userAvailabilityUpdated', [{
+        self.emitToUser(userID, 'userAvailabilityUpdated', {
             roles: _.mapValues(playersAvailable, function(players) {
                 return players.has(userID);
             }),
             captain: SEPARATE_CAPTAIN_POOL ? captainsAvailable.has(userID) : undefined
-        }]);
+        });
     }
 
     /**
@@ -309,7 +309,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 readiesReceived.delete(userID);
             }
 
-            self.emitToUser(user, 'userReadyStatusUpdated', [ready]);
+            self.emitToUser(user, 'userReadyStatusUpdated', ready);
         }
 
         self.processLaunchStatusUpdate();

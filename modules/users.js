@@ -28,7 +28,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.updateUserCache = co.wrap(function* updateUserCache(users) {
+    self.updateUserCache = co.wrap(function* updateUserCache(...users) {
         yield helpers.runAppScript('updateUserCache', _.map(users, user => helpers.getDocumentID(user)));
     });
 
@@ -39,7 +39,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         let userID = helpers.getDocumentID(user);
 
         if (!(yield cache.existsAsync(`user-${userID}`))) {
-            yield self.updateUserCache([user]);
+            yield self.updateUserCache(user);
         }
 
         return JSON.parse(yield cache.getAsync(`user-${userID}`));
@@ -54,7 +54,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let missingUsers = _.filter(users, (user, index) => !cachedUsers[index]);
             if (_.size(missingUsers) > 0) {
-                yield self.updateUserCache(missingUsers);
+                yield self.updateUserCache(...missingUsers);
 
                 cachedUsers = yield cache.mgetAsync(..._.map(users, user => `user-${helpers.getDocumentID(user)}`));
             }
@@ -94,7 +94,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         return _.toArray(userSockets.keys());
     };
 
-    self.emitToUser = function emitToUser(user, name, args) {
+    self.emitToUser = function emitToUser(user, name, ...args) {
         let userID = helpers.getDocumentID(user);
 
         if (userSockets.has(userID)) {
@@ -111,7 +111,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.updateUserRestrictions = co.wrap(function* updateUserRestrictions(users) {
+    self.updateUserRestrictions = co.wrap(function* updateUserRestrictions(...users) {
         yield helpers.runAppScript('updateUserRestrictions', _.map(users, user => helpers.getDocumentID(user)));
 
         for (let user of users) {
@@ -129,7 +129,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         if (userID) {
             if (!(yield cache.existsAsync(`userRestrictions-${userID}`))) {
-                yield self.updateUserRestrictions([user]);
+                yield self.updateUserRestrictions(user);
             }
 
             return JSON.parse(yield cache.getAsync(`userRestrictions-${userID}`));
@@ -148,7 +148,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let missingUsers = _.filter(users, (user, index) => !usersRestrictions[index]);
             if (_.size(missingUsers) > 0) {
-                yield self.updateUserRestrictions(missingUsers);
+                yield self.updateUserRestrictions(...missingUsers);
 
                 usersRestrictions = yield cache.mgetAsync(..._.map(users, user => `userRestrictions-${helpers.getDocumentID(user)}`));
             }
@@ -161,7 +161,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     });
 
     self.on('userRestrictionsUpdated', function(userID, userRestrictions) {
-        self.emitToUser(userID, 'restrictionsUpdated', [userRestrictions]);
+        self.emitToUser(userID, 'restrictionsUpdated', userRestrictions);
     });
 
     /**
@@ -238,7 +238,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                 yield user.save();
 
-                yield self.updatePlayerStats([user]);
+                yield self.updatePlayerStats(user);
             }
 
             done(null, user);
@@ -329,7 +329,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         if (!userSockets.has(userID)) {
             userSockets.set(userID, new Set([socket.id]));
 
-            yield self.updateUserRestrictions([userID]);
+            yield self.updateUserRestrictions(userID);
             yield updateUserGroups([userID]);
 
             self.emit('userConnected', userID);
@@ -400,10 +400,10 @@ module.exports = function(app, cache, chance, database, io, self) {
             try {
                 yield req.user.save();
 
-                yield self.updateUserCache([req.user]);
+                yield self.updateUserCache(req.user);
 
                 if (majorChange) {
-                    yield self.updateUserRestrictions([req.user]);
+                    yield self.updateUserRestrictions(req.user);
                     yield self.updateUserGames(req.user);
                 }
             }

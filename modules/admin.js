@@ -107,8 +107,8 @@ module.exports = function(app, cache, chance, database, io, self) {
             try {
                 yield user.save();
 
-                yield self.updateUserCache([user]);
-                yield self.updateUserRestrictions([user]);
+                yield self.updateUserCache(user);
+                yield self.updateUserRestrictions(user);
 
                 if (majorChange) {
                     yield self.updateUserGames(req.user);
@@ -162,8 +162,8 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             try {
                 yield restriction.save();
-                yield self.updateUserRestrictions([user]);
-                yield self.updateUserCache([user]);
+                yield self.updateUserRestrictions(user);
+                yield self.updateUserCache(user);
 
                 res.sendStatus(HttpStatus.OK);
             }
@@ -194,8 +194,8 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                 try {
                     yield restriction.save();
-                    yield self.updateUserRestrictions([user]);
-                    yield self.updateUserCache([user]);
+                    yield self.updateUserRestrictions(user);
+                    yield self.updateUserCache(user);
 
                     res.sendStatus(HttpStatus.OK);
                 }
@@ -262,7 +262,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             self.postToAdminLog(req.user, `updated players for server \`${game.server}\` for game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``);
 
             try {
-                yield self.updateServerPlayers(game, true);
+                yield self.updateServerPlayers(game);
 
                 res.sendStatus(HttpStatus.OK);
             }
@@ -284,7 +284,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             self.postToAdminLog(req.user, `reinitialized server \`${game.server}\` for game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``);
 
             try {
-                yield self.initializeServer(game, true);
+                yield self.initializeServer(game);
 
                 res.sendStatus(HttpStatus.OK);
             }
@@ -306,7 +306,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             self.postToAdminLog(req.user, `reassigned game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\` to new server`);
 
             try {
-                yield self.assignGameToServer(game, true);
+                yield self.assignGameToServer(game);
 
                 res.sendStatus(HttpStatus.OK);
             }
@@ -380,7 +380,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             self.postToAdminLog(req.user, `executed \`${req.body.command}\` on server \`${req.params.id}\``);
 
             try {
-                let result = yield self.sendRCONCommands(req.params.id, _.split(req.body.command, ';'), true);
+                let result = yield self.sendRCONCommands(req.params.id, _.split(req.body.command, ';'));
 
                 res.json(result);
             }

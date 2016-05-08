@@ -273,7 +273,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         self.processDraftStatusUpdate();
 
         // NOTE: hacks with previous draft info - clear draft restrictions and mark activity to prevent players from getting removed
-        yield self.updateUserRestrictions(_.union(previousDraftPlayers, previousDraftPlayers));
+        yield self.updateUserRestrictions(..._.union(previousDraftPlayers, previousDraftPlayers));
         for (let user of _.union(previousDraftCaptains, previousDraftPlayers)) {
             self.markUserActivity(user);
         }
@@ -328,11 +328,11 @@ module.exports = function(app, cache, chance, database, io, self) {
                 yield self.processGameUpdate(game);
 
                 yield updateDraftUsers();
-                yield self.updateUserRestrictions(_.union(captainPool, fullPlayerList));
+                yield self.updateUserRestrictions(..._.union(captainPool, fullPlayerList));
 
                 currentDraftGame = helpers.getDocumentID(game);
 
-                yield self.assignGameToServer(game, true);
+                yield self.assignGameToServer(game);
             }
             catch (err) {
                 self.postToLog({
@@ -347,7 +347,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 yield self.cleanUpDraft();
             }
 
-            yield self.updatePlayerStats(usersToUpdate);
+            yield self.updatePlayerStats(...usersToUpdate);
         });
     }
 
@@ -834,7 +834,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 if (captain) {
                     yield cache.setAsync('draftExpired-${captain}', JSON.stringify(true), 'PX', CAPTAIN_DRAFT_EXPIRE_COOLDOWN);
 
-                    yield self.updateUserRestrictions([captain]);
+                    yield self.updateUserRestrictions(captain);
                 }
             }
 
@@ -935,7 +935,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
 
         yield updateDraftUsers();
-        yield self.updateUserRestrictions(_.union(captainPool, fullPlayerList));
+        yield self.updateUserRestrictions(..._.union(captainPool, fullPlayerList));
 
         self.processDraftStatusUpdate();
 

@@ -28,7 +28,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.updateGameCache = co.wrap(function* updateGameCache(games) {
+    self.updateGameCache = co.wrap(function* updateGameCache(...games) {
         yield helpers.runAppScript('updateGameCache', _.map(games, game => helpers.getDocumentID(game)));
     });
 
@@ -52,10 +52,10 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             for (let user of users) {
                 if (yield cache.existsAsync(`currentGame-${helpers.getDocumentID(user)}`)) {
-                    self.emitToUser(user, 'currentGameUpdated', [JSON.parse(yield cache.getAsync(`currentGame-${helpers.getDocumentID(user)}`))]);
+                    self.emitToUser(user, 'currentGameUpdated', JSON.parse(yield cache.getAsync(`currentGame-${helpers.getDocumentID(user)}`)));
                 }
                 else {
-                    self.emitToUser(user, 'currentGameUpdated', [null]);
+                    self.emitToUser(user, 'currentGameUpdated', null);
                 }
             }
         });
@@ -67,10 +67,10 @@ module.exports = function(app, cache, chance, database, io, self) {
     function getCurrentGame(user) {
         return co(function*() {
             if (yield cache.existsAsync(`currentGame-${helpers.getDocumentID(user)}`)) {
-                self.emitToUser(user, 'currentGameUpdated', [JSON.parse(yield cache.getAsync(`currentGame-${helpers.getDocumentID(user)}`))]);
+                self.emitToUser(user, 'currentGameUpdated', JSON.parse(yield cache.getAsync(`currentGame-${helpers.getDocumentID(user)}`)));
             }
             else {
-                self.emitToUser(user, 'currentGameUpdated', [null]);
+                self.emitToUser(user, 'currentGameUpdated', null);
             }
         });
     }
@@ -120,11 +120,11 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         }
 
-        yield self.updateUserRestrictions(helpers.getGameUsers(game));
+        yield self.updateUserRestrictions(...helpers.getGameUsers(game));
         yield updateCurrentGame(helpers.getGameUsers(game));
 
-        self.updateGameCache([game]);
-        self.updateUserCache(helpers.getGameUsers(game));
+        self.updateGameCache(game);
+        self.updateUserCache(...helpers.getGameUsers(game));
     });
 
     var currentSubstituteRequests = new Map();
@@ -294,7 +294,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
 
             yield updateSubstituteRequestCandidates();
-            yield self.updateUserRestrictions([player]);
+            yield self.updateUserRestrictions(player);
 
             self.processSubstituteRequestsUpdate();
 
@@ -373,7 +373,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         yield self.processGameUpdate(game);
 
-        yield self.updateServerPlayers(game, true);
+        yield self.updateServerPlayers(game);
     });
 
     /**
@@ -395,7 +395,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         yield self.processGameUpdate(game);
         yield self.removeGameSubstituteRequests(game);
 
-        yield self.shutdownGame(game, true);
+        yield self.shutdownGame(game);
     });
 
     /**
@@ -412,7 +412,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             currentSubstituteRequests.delete(requestID);
 
             yield updateSubstituteRequestCandidates();
-            yield self.updateUserRestrictions(_.toArray(request.candidates));
+            yield self.updateUserRestrictions(..._.toArray(request.candidates));
 
             self.processSubstituteRequestsUpdate();
         }
@@ -528,15 +528,15 @@ module.exports = function(app, cache, chance, database, io, self) {
             yield game.save();
 
             yield self.processGameUpdate(game);
-            setTimeout(self.shutdownGame, POST_GAME_RESET_DELAY, game, true);
+            setTimeout(self.shutdownGame, POST_GAME_RESET_DELAY, game);
             yield self.removeGameSubstituteRequests(helpers.getDocumentID(game));
 
             try {
                 yield rateGame(game);
 
-                yield self.updatePlayerStats(helpers.getGameUsers(game));
+                yield self.updatePlayerStats(...helpers.getGameUsers(game));
 
-                yield self.updateGameCache([game]);
+                yield self.updateGameCache(game);
             }
             catch (err) {
                 self.postToLog({
@@ -561,7 +561,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                 yield game.save();
 
-                yield self.updateGameCache([game]);
+                yield self.updateGameCache(game);
             }
         }
         else if (info.status === 'demoavailable') {
@@ -580,7 +580,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                 yield game.save();
 
-                yield self.updateGameCache([game]);
+                yield self.updateGameCache(game);
             }
         }
     });
@@ -697,7 +697,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         }).exec();
         /* eslint-enable lodash/prefer-lodash-method */
 
-        yield self.updateGameCache(games);
+        yield self.updateGameCache(...games);
     });
 
     /**
@@ -705,7 +705,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     self.getGamePage = co.wrap(function* getGamePage(game) {
         if (!(yield cache.existsAsync(`gamePage-${helpers.getDocumentID(game)}`))) {
-            yield self.updateGameCache([game]);
+            yield self.updateGameCache(game);
         }
 
         return JSON.parse(yield cache.getAsync(`gamePage-${helpers.getDocumentID(game)}`));
