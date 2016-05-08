@@ -167,7 +167,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    function updateUserGroups(users) {
+    function updateUserGroups(...users) {
         return co(function*() {
             yield helpers.runAppScript('updateUserGroups', _.map(users, user => helpers.getDocumentID(user)));
         });
@@ -330,7 +330,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             userSockets.set(userID, new Set([socket.id]));
 
             yield self.updateUserRestrictions(userID);
-            yield updateUserGroups([userID]);
+            yield updateUserGroups(userID);
 
             self.emit('userConnected', userID);
         }
