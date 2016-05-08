@@ -1,7 +1,6 @@
 /* eslint no-console: "off", no-process-exit: "off" */
 'use strict';
 
-const _ = require('lodash');
 const argv = require('yargs').boolean('a').argv;
 const co = require('co');
 
