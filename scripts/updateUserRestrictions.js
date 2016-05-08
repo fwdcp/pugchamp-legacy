@@ -67,10 +67,6 @@ co(function*() {
         aspects: ['sub', 'start', 'captain'],
         reasons: ['You are involved in a currently active game.']
     };
-    const CURRENT_SUBSTITUTE_REQUEST_RESTRICTIONS = {
-        aspects: ['start', 'captain'],
-        reasons: ['You are currently applying to a substitute request.']
-    };
     const DRAFT_EXPIRE_COOLDOWN_RESTRICTIONS = {
         aspects: ['captain'],
         reasons: ['You are currently on a captain cooldown for allowing a draft to expire.']
@@ -158,13 +154,6 @@ co(function*() {
                 let draftUsers = JSON.parse(yield cache.getAsync('draftUsers'));
                 if (_.includes(draftUsers, userID)) {
                     restrictions.push(CURRENT_DRAFT_RESTRICTIONS);
-                }
-            }
-
-            if (yield cache.existsAsync('substituteRequestsCandidates')) {
-                let candidates = JSON.parse(yield cache.getAsync('substituteRequestsCandidates'));
-                if (_.includes(candidates, userID)) {
-                    restrictions.push(CURRENT_SUBSTITUTE_REQUEST_RESTRICTIONS);
                 }
             }
 

@@ -179,20 +179,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    function updateSubstituteRequestCandidates() {
-        return co(function*() {
-            let candidates = _(currentSubstituteRequests.values()).toArray().flatMap(request => _.toArray(request.candidates)).uniq().value();
-
-            yield cache.setAsync('substituteRequestsCandidates', JSON.stringify(candidates));
-        });
-    }
-
-    /**
-     * @async
-     */
     self.processSubstituteRequestsUpdate = _.debounce(co.wrap(function* processSubstituteRequestsUpdate() {
-        yield updateSubstituteRequestCandidates();
-
         yield updateSubstituteRequestsMessage();
     }));
 
@@ -215,14 +202,14 @@ module.exports = function(app, cache, chance, database, io, self) {
             let game = yield database.Game.findById(helpers.getDocumentID(request.game));
 
             if (!game || game.status === 'completed' || game.status === 'aborted') {
-                yield self.removeSubstituteRequest(requestID);
+                self.removeSubstituteRequest(requestID);
                 return;
             }
 
             let gameUserInfo = helpers.getGameUserInfo(game, request.player);
 
             if (!gameUserInfo || !gameUserInfo.player || gameUserInfo.player.replaced) {
-                yield self.removeSubstituteRequest(requestID);
+                self.removeSubstituteRequest(requestID);
                 return;
             }
 
@@ -268,7 +255,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 });
             }
 
-            yield self.removeSubstituteRequest(requestID);
+            self.removeSubstituteRequest(requestID);
         });
     }
 
@@ -293,9 +280,6 @@ module.exports = function(app, cache, chance, database, io, self) {
                 }
             }
 
-            yield updateSubstituteRequestCandidates();
-            yield self.updateUserRestrictions(player);
-
             self.processSubstituteRequestsUpdate();
 
             if (!request.timeout) {
@@ -307,11 +291,13 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.removeGameSubstituteRequests = co.wrap(function* removeGameSubstituteRequests(game) {
+    self.removeGameSubstituteRequests = function removeGameSubstituteRequests(game) {
         let gameID = helpers.getDocumentID(game);
 
-        yield _(currentSubstituteRequests.entries()).toArray().filter(request => (helpers.getDocumentID(request[1].game) === gameID)).map(request => self.removeSubstituteRequest(request[0])).value();
-    });
+        _(currentSubstituteRequests.entries()).toArray().filter(request => (helpers.getDocumentID(request[1].game) === gameID)).forEach(function(request) {
+            self.removeSubstituteRequest(request[0]);
+        });
+    };
 
     /**
      * @async
@@ -393,7 +379,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         yield game.save();
 
         yield self.processGameUpdate(game);
-        yield self.removeGameSubstituteRequests(game);
+        self.removeGameSubstituteRequests(game);
 
         yield self.shutdownGame(game);
     });
@@ -401,7 +387,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.removeSubstituteRequest = co.wrap(function* removeSubstituteRequest(requestID) {
+    self.removeSubstituteRequest = function removeSubstituteRequest(requestID) {
         if (currentSubstituteRequests.has(requestID)) {
             let request = currentSubstituteRequests.get(requestID);
 
@@ -411,12 +397,9 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             currentSubstituteRequests.delete(requestID);
 
-            yield updateSubstituteRequestCandidates();
-            yield self.updateUserRestrictions(..._.toArray(request.candidates));
-
             self.processSubstituteRequestsUpdate();
         }
-    });
+    };
 
     /**
      * @async
@@ -528,8 +511,8 @@ module.exports = function(app, cache, chance, database, io, self) {
             yield game.save();
 
             yield self.processGameUpdate(game);
+            self.removeGameSubstituteRequests(game);
             setTimeout(self.shutdownGame, POST_GAME_RESET_DELAY, game);
-            yield self.removeGameSubstituteRequests(helpers.getDocumentID(game));
 
             try {
                 yield rateGame(game);
@@ -627,14 +610,14 @@ module.exports = function(app, cache, chance, database, io, self) {
             let playerInfo = helpers.getGameUserInfo(game, request.player);
 
             if (userID === helpers.getDocumentID(playerInfo.team.captain)) {
-                yield self.removeSubstituteRequest(requestID);
+                self.removeSubstituteRequest(requestID);
             }
             else if (self.isUserAdmin(userID)) {
                 let player = yield self.getCachedUser(request.player);
 
                 self.postToAdminLog(userID, `retracted substitute request for player \`<${BASE_URL}/player/${player.steamID}|${player.alias}>\` for game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``);
 
-                yield self.removeSubstituteRequest(requestID);
+                self.removeSubstituteRequest(requestID);
             }
         });
     }
