@@ -645,7 +645,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 }
                 else if (turnDefinition.type === 'playerPick') {
                     if (turnDefinition.method === 'random') {
-                        choice.role = chance.weighted(allowedRoles, _.map(allowedRoles, role => (_.has(ROLES[role].priority) ? ROLES[role].priority : 1)));
+                        choice.role = chance.weighted(allowedRoles, _.map(allowedRoles, role => _.get(ROLES[role], 'priority', 1)));
                         choice.override = _.includes(overrideRoles, choice.role);
                         choice.player = chance.pick(choice.override ? _.difference(fullPlayerList, unavailablePlayers) : _.difference(playerPool[choice.role], unavailablePlayers));
 
@@ -657,7 +657,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                         choice.role = _.maxBy(allowedRoles, function(role) {
                             let playersNeeded = ROLES[role].min - currentRoleDistribution[role];
                             let playersAvailable = _(playerPool[role]).difference(unavailablePlayers).size();
-                            let priority = _.has(ROLES[role].priority) ? ROLES[role].priority : 1;
+                            let priority = _.get(ROLES[role], 'priority', 1);
 
                             return ((priority * playersNeeded) + EPSILON) / (playersAvailable + EPSILON);
                         });
@@ -720,7 +720,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 }
                 else if (turnDefinition.type === 'captainRole') {
                     if (turnDefinition.method === 'random') {
-                        choice.role = chance.weighted(allowedRoles, _.map(allowedRoles, role => (_.has(ROLES[role].priority) ? ROLES[role].priority : 1)));
+                        choice.role = chance.weighted(allowedRoles, _.map(allowedRoles, role => _.get(ROLES[role], 'priority', 1)));
 
                         supported = true;
                     }
