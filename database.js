@@ -179,7 +179,7 @@ userSchema.set('toObject', {
 
         ret.groups = _(doc.groups).intersection(_.keys(USER_GROUPS)).map(groupID => _.assign({}, _.pick(USER_GROUPS[groupID], 'icon', 'name'), {
             id: groupID
-        }));
+        })).value();
 
         delete ret.options;
     }
