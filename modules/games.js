@@ -584,6 +584,13 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
+            let player = yield self.getCachedUser(info.player);
+            let captain = yield self.getCachedUser(userID);
+
+            self.postToLog({
+                description: `\`<${BASE_URL}/player/${captain.steamID}|${captain.alias}>\` requested substitute for player \`<${BASE_URL}/player/${player.steamID}|${player.alias}>\` for game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``
+            });
+
             self.requestSubstitute(game, info.player);
         });
     }
@@ -609,12 +616,18 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let playerInfo = helpers.getGameUserInfo(game, request.player);
 
+            let player = yield self.getCachedUser(request.player);
+
             if (userID === helpers.getDocumentID(playerInfo.team.captain)) {
+                let captain = yield self.getCachedUser(userID);
+
+                self.postToLog({
+                    description: `\`<${BASE_URL}/player/${captain.steamID}|${captain.alias}>\` retracted substitute request for player \`<${BASE_URL}/player/${player.steamID}|${player.alias}>\` for game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``
+                });
+
                 self.removeSubstituteRequest(requestID);
             }
             else if (self.isUserAdmin(userID)) {
-                let player = yield self.getCachedUser(request.player);
-
                 self.postToAdminLog(userID, `retracted substitute request for player \`<${BASE_URL}/player/${player.steamID}|${player.alias}>\` for game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``);
 
                 self.removeSubstituteRequest(requestID);

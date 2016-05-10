@@ -8,6 +8,7 @@ const ms = require('ms');
 const helpers = require('../helpers');
 
 module.exports = function(app, cache, chance, database, io, self) {
+    const BASE_URL = config.get('server.baseURL');
     const CAPTAIN_DRAFT_EXPIRE_COOLDOWN = ms(config.get('app.draft.captainDraftExpireCooldown'));
     const DRAFT_ORDER = config.get('app.draft.order');
     const EPSILON = Math.sqrt(Number.EPSILON);
@@ -829,9 +830,13 @@ module.exports = function(app, cache, chance, database, io, self) {
             let turnDefinition = DRAFT_ORDER[currentDraftTurn];
 
             if (turnDefinition.method === 'captain' && _.has(draftTeams[turnDefinition.team], 'captain')) {
-                let captain = helpers.getDocumentID(draftTeams[turnDefinition.team].captain);
+                let captain = yield self.getCachedUser(draftTeams[turnDefinition.team].captain);
 
-                yield cache.setAsync(`draftExpired-${captain}`, JSON.stringify(true), 'PX', CAPTAIN_DRAFT_EXPIRE_COOLDOWN);
+                self.postToLog({
+                    description: `\`<${BASE_URL}/player/${captain.steamID}|${captain.alias}>\` expired draft`
+                });
+
+                yield cache.setAsync(`draftExpired-${helpers.getDocumentID(captain)}`, JSON.stringify(true), 'PX', CAPTAIN_DRAFT_EXPIRE_COOLDOWN);
 
                 yield self.updateUserRestrictions(captain);
             }
