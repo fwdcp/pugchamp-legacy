@@ -828,14 +828,12 @@ module.exports = function(app, cache, chance, database, io, self) {
         return co(function*() {
             let turnDefinition = DRAFT_ORDER[currentDraftTurn];
 
-            if (turnDefinition.method === 'captain') {
-                let captain = draftTeams[turnDefinition.team].captain;
+            if (turnDefinition.method === 'captain' && _.has(draftTeams[turnDefinition.team], 'captain')) {
+                let captain = helpers.getDocumentID(draftTeams[turnDefinition.team].captain);
 
-                if (captain) {
-                    yield cache.setAsync('draftExpired-${captain}', JSON.stringify(true), 'PX', CAPTAIN_DRAFT_EXPIRE_COOLDOWN);
+                yield cache.setAsync(`draftExpired-${captain}`, JSON.stringify(true), 'PX', CAPTAIN_DRAFT_EXPIRE_COOLDOWN);
 
-                    yield self.updateUserRestrictions(captain);
-                }
+                yield self.updateUserRestrictions(captain);
             }
 
             self.sendMessage({
