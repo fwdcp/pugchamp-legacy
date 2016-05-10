@@ -4,7 +4,7 @@
             "authorizations": [],
             "authorizationAPIs": [],
             "authorizationDefault": true,
-            "captainGameRequirement": 5,
+            "captainGameRequirement": 10,
             "groups": [],
             "hideDraftStats": false,
             "hideRatings": false,
