@@ -2,6 +2,7 @@
 
 const _ = require('lodash');
 const config = require('config');
+const debug = require('debug')('pugchamp:util:database');
 const math = require('mathjs');
 const mongoose = require('mongoose');
 
@@ -14,6 +15,10 @@ const SERVER_POOL = config.get('app.servers.pool');
 const USER_GROUPS = config.has('app.users.groups') ? config.get('app.users.groups') : {};
 
 mongoose.connect(config.get('server.mongodb'));
+
+mongoose.connection.on('error', function(err) {
+    debug(`Mongoose encountered error: ${err.stack || err}`);
+});
 
 var userSchema = new mongoose.Schema({
     alias: {
