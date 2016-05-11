@@ -4,7 +4,6 @@ const _ = require('lodash');
 const co = require('co');
 const config = require('config');
 const ms = require('ms');
-const RateLimiter = require('limiter').RateLimiter;
 const twitter = require('twitter-text');
 
 const helpers = require('../helpers');
@@ -14,8 +13,6 @@ module.exports = function(app, cache, chance, database, io, self) {
     const CHAT_LOG_CHANNEL = config.has('server.slack.channels.chatLog') ? config.get('server.slack.channels.chatLog') : '#chat-log';
     const RATE_LIMIT = ms(config.get('app.chat.rateLimit'));
     const SHOW_CONNECTION_MESSAGES = config.get('app.chat.showConnectionMessages');
-
-    var userChatLimiters = new Map();
 
     /**
      * @async
@@ -118,10 +115,6 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         }
 
-        if (!userChatLimiters.has(userID)) {
-            userChatLimiters.set(userID, new RateLimiter(1, RATE_LIMIT));
-        }
-
         self.processOnlineListUpdate();
     }));
 
@@ -148,10 +141,14 @@ module.exports = function(app, cache, chance, database, io, self) {
         let userID = this.decoded_token.user;
 
         co(function*() {
-            let userChatLimiter = userChatLimiters.get(userID);
+            if (!self.isUserAdmin(userID)) {
+                let cacheResponse = yield cache.getAsync(`chatLimited-${userID}`);
 
-            if (!userChatLimiter.tryRemoveTokens(1) && !self.isUserAdmin(userID)) {
-                return;
+                if (!_.isNil(cacheResponse) && JSON.parse(cacheResponse)) {
+                    return;
+                }
+
+                yield cache.setAsync(`chatLimited-${userID}`, JSON.stringify(true), 'PX', RATE_LIMIT);
             }
 
             self.markUserActivity(userID);
