@@ -267,7 +267,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             if (updatedGame.status === 'aborted' || updatedGame.status === 'completed') {
                 // force immediate reset
-                yield self.shutdownGame(updatedGame);
+                yield self.shutdownGameServers(updatedGame);
                 yield self.updateServerStatus(server);
             }
         }));
@@ -382,7 +382,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.shutdownGame = co.wrap(function* shutdownGame(game, retry = true) {
+    self.shutdownGameServers = co.wrap(function* shutdownGameServers(game, retry = true) {
         debug(`shutting down servers for game ${game.id}`);
         let serverStatuses = yield self.getServerStatuses();
 
@@ -555,7 +555,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             yield self.processGameUpdate(game);
 
             debug(`resetting servers currently assigned to game ${game.id}`);
-            yield self.shutdownGame(game);
+            yield self.shutdownGameServers(game);
 
             let serverInfo = GAME_SERVER_POOL[game.server];
             let hash = crypto.createHash('sha256');

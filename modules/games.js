@@ -375,7 +375,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         yield self.processGameUpdate(game);
         self.removeGameSubstituteRequests(game);
 
-        yield self.shutdownGame(game);
+        yield self.shutdownGameServers(game);
     });
 
     /**
@@ -506,7 +506,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             yield self.processGameUpdate(game);
             self.removeGameSubstituteRequests(game);
-            setTimeout(self.shutdownGame, POST_GAME_RESET_DELAY, game);
+            setTimeout(self.shutdownGameServers, POST_GAME_RESET_DELAY, game);
 
             try {
                 yield rateGame(game);
