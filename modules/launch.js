@@ -4,7 +4,6 @@ const _ = require('lodash');
 const co = require('co');
 const Combinatorics = require('js-combinatorics');
 const config = require('config');
-const moment = require('moment');
 const ms = require('ms');
 
 const helpers = require('../helpers');
@@ -52,8 +51,6 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         return neededCombinations;
     }
-
-    var lastActivity = new Map();
 
     var captainsAvailable = new Set();
     var playersAvailable = _.mapValues(ROLES, function() {
@@ -319,11 +316,17 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     function autoReadyRecentlyActiveUsers() {
-        let activeUsers = _(lastActivity.keys()).toArray().filter(userID => (moment().diff(lastActivity.get(userID)) < AUTO_READY_THRESHOLD)).value();
+        return co(function*() {
+            let allUsers = _.unionBy(_.toArray(captainsAvailable), ..._.map(playersAvailable, available => _.toArray(available)), user => helpers.getDocumentID(user));
 
-        for (let userID of activeUsers) {
-            updateUserReadyStatus(userID, true);
-        }
+            let activeResults = yield cache.mgetAsync(_.map(allUsers, user => `userActive-${helpers.getDocumentID(user)}`));
+
+            let recentlyActive = _.filter(allUsers, (user, index) => (!_.isNil(activeResults[index]) && JSON.parse(activeResults[index])));
+
+            for (let userID of recentlyActive) {
+                updateUserReadyStatus(userID, true);
+            }
+        });
     }
 
     /**
@@ -342,7 +345,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                     io.sockets.emit('userReadyStatusUpdated', false);
 
-                    autoReadyRecentlyActiveUsers();
+                    yield autoReadyRecentlyActiveUsers();
 
                     currentLaunchHolds = yield getLaunchHolds(false);
 
@@ -367,11 +370,11 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
-    self.markUserActivity = function markUserActivity(user) {
+    self.markUserActivity = co.wrap(function* markUserActivity(user) {
         let userID = helpers.getDocumentID(user);
 
-        lastActivity.set(userID, new Date());
-    };
+        yield cache.setAsync(`userActive-${userID}`, JSON.stringify(true), 'PX', AUTO_READY_THRESHOLD);
+    });
 
     /**
      * @async
