@@ -149,7 +149,7 @@
                 new Clipboard(this.$.gameConnectCommand);
             },
             onCurrentGameUpdated: function(info) {
-                if (!this.info && info) {
+                if (!_.isNil(_.get(info, 'server')) && !_.isEqual(_.get(info, 'server'), _.get(this.info, 'server'))) {
                     this.$.gameNotification.notify();
 
                     this.$.gameDetailsAvailableSound.play();
