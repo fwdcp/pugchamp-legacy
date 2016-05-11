@@ -51,12 +51,9 @@ module.exports = function(app, cache, chance, database, io, self) {
             yield helpers.runAppScript('updateCurrentGame', _.map(users, user => helpers.getDocumentID(user)));
 
             for (let user of users) {
-                if (yield cache.existsAsync(`currentGame-${helpers.getDocumentID(user)}`)) {
-                    self.emitToUser(user, 'currentGameUpdated', JSON.parse(yield cache.getAsync(`currentGame-${helpers.getDocumentID(user)}`)));
-                }
-                else {
-                    self.emitToUser(user, 'currentGameUpdated', null);
-                }
+                let cacheResponse = yield cache.getAsync(`currentGame-${helpers.getDocumentID(user)}`);
+
+                self.emitToUser(user, 'currentGameUpdated', _.isNil(cacheResponse) ? null : JSON.parse(cacheResponse));
             }
         });
     }
@@ -66,12 +63,9 @@ module.exports = function(app, cache, chance, database, io, self) {
      */
     function getCurrentGame(user) {
         return co(function*() {
-            if (yield cache.existsAsync(`currentGame-${helpers.getDocumentID(user)}`)) {
-                self.emitToUser(user, 'currentGameUpdated', JSON.parse(yield cache.getAsync(`currentGame-${helpers.getDocumentID(user)}`)));
-            }
-            else {
-                self.emitToUser(user, 'currentGameUpdated', null);
-            }
+            let cacheResponse = yield cache.getAsync(`currentGame-${helpers.getDocumentID(user)}`);
+
+            self.emitToUser(user, 'currentGameUpdated', _.isNil(cacheResponse) ? null : JSON.parse(cacheResponse));
         });
     }
 
