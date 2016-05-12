@@ -103,9 +103,14 @@ public void OnMapStart() {
 }
 
 public void OnClientAuthorized(int client) {
-    char steamID[32];
-    if (!GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID)) || allowedPlayers.FindString(steamID) == -1) {
-        KickClient(client, "you are not authorized to join this server");
+    char currentGameInfo[32];
+    gameInfo.GetString(currentGameInfo, sizeof(currentGameInfo));
+
+    if (!StrEqual(currentGameInfo, "UNAVAILABLE")) {
+        char steamID[32];
+        if (!GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID)) || allowedPlayers.FindString(steamID) == -1) {
+            KickClient(client, "you are not authorized to join this server");
+        }
     }
 }
 
