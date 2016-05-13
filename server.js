@@ -3,6 +3,7 @@
 const Chance = require('chance');
 const config = require('config');
 const crypto = require('crypto');
+const debug = require('debug')('pugchamp:util:server');
 const EventEmitter = require('events');
 const express = require('express');
 const fs = require('fs');
@@ -58,7 +59,7 @@ app.use('/components', serveStatic(path.resolve(__dirname, 'bower_components')))
 require('./modules')(app, cache, chance, database, io, self);
 
 app.use(function(err, req, res, next) {
-    console.error(err.stack);
+    debug(`Express caught error: ${err.stack || err}`);
     res.render('error');
 });
 
