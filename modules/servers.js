@@ -306,6 +306,8 @@ module.exports = function(app, cache, chance, database, io, self) {
             result = yield sendCommandsToServer(rcon, commands, timeout);
 
             debug(`received result of commands from ${server}`);
+
+            success = true;
         }
         catch (err) {
             debug(`failed to send commands to ${server}: ${err.stack}`);
