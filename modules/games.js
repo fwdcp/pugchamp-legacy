@@ -50,7 +50,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         return co(function*() {
             yield helpers.runAppScript('updateCurrentGame', _.map(users, user => helpers.getDocumentID(user)));
 
-            let cachedCurrentGames = _.zip(_.map(users, user => helpers.getDocumentID(user)), yield cache.mgetAsync(_.map(users, user => `currentGame-${helpers.getDocumentID(user)}`)));
+            let cachedCurrentGames = _.zipObject(_.map(users, user => helpers.getDocumentID(user)), yield cache.mgetAsync(_.map(users, user => `currentGame-${helpers.getDocumentID(user)}`)));
 
             _.forEach(cachedCurrentGames, function(cacheResponse, userID) {
                 self.emitToUser(userID, 'currentGameUpdated', _.isNil(cacheResponse) ? null : JSON.parse(cacheResponse));
