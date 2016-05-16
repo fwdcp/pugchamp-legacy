@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const bodyParser = require('body-parser');
 const co = require('co');
 const config = require('config');
 const crypto = require('crypto');
@@ -706,13 +707,15 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }));
 
-    app.get('/api/servers/:key', co.wrap(function*(req, res) {
-        if (!req.query.game) {
+    app.post('/api/servers/:key', bodyParser.urlencoded({
+        extended: true
+    }), co.wrap(function*(req, res) {
+        if (!req.body.game) {
             res.sendStatus(HttpStatus.BAD_REQUEST);
             return;
         }
 
-        let game = yield database.Game.findById(req.query.game);
+        let game = yield database.Game.findById(req.body.game);
 
         if (!game) {
             res.sendStatus(HttpStatus.NOT_FOUND);
@@ -731,12 +734,12 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
 
         try {
-            yield self.handleGameServerUpdate(req.query);
+            yield self.handleGameServerUpdate(req.body);
 
             res.sendStatus(HttpStatus.OK);
         }
         catch (err) {
-            debug(`failed to handle update for game ${helpers.getDocumentID(game)} (${JSON.stringify(req.query)}): ${err.stack}`);
+            debug(`failed to handle update for game ${helpers.getDocumentID(game)} (${JSON.stringify(req.body)}): ${err.stack}`);
 
             let success = false;
 
@@ -744,13 +747,13 @@ module.exports = function(app, cache, chance, database, io, self) {
                 yield helpers.promiseDelay(delay);
 
                 try {
-                    yield self.handleGameServerUpdate(req.query);
+                    yield self.handleGameServerUpdate(req.body);
 
                     success = true;
                     break;
                 }
                 catch (err) {
-                    debug(`failed to handle update for game ${helpers.getDocumentID(game)} (${JSON.stringify(req.query)}): ${err.stack}`);
+                    debug(`failed to handle update for game ${helpers.getDocumentID(game)} (${JSON.stringify(req.body)}): ${err.stack}`);
 
                     success = false;
                     continue;

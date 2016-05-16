@@ -9,6 +9,9 @@
 
 #pragma newdecls required
 
+#define MAX_RETRIES 3
+#define RETRY_INTERVAL 5.0
+
 public Plugin myinfo = {
     name = "PugChamp Control",
     author = "Forward Command Post",
@@ -88,17 +91,15 @@ public void OnMapStart() {
 
         ServerCommand("exec %s", config);
 
-        char url[2048];
-        apiURL.GetString(url, sizeof(url));
-        HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
+        StringMap parameters = new StringMap();
 
         char id[32];
         gameID.GetString(id, sizeof(id));
-        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "game", id);
+        parameters.SetString("game", id);
 
-        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "status", "setup");
+        parameters.SetString("status", "setup");
 
-        Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned);
+        SendRequest(parameters, 0);
     }
 }
 
@@ -266,17 +267,15 @@ public void Event_GameStart(Event event, const char[] name, bool dontBroadcast) 
             }
         }
 
-        char url[2048];
-        apiURL.GetString(url, sizeof(url));
-        HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
+        StringMap parameters = new StringMap();
 
         char id[32];
         gameID.GetString(id, sizeof(id));
-        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "game", id);
+        parameters.SetString("game", id);
 
-        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "status", "live");
+        parameters.SetString("status", "live");
 
-        Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned);
+        SendRequest(parameters, 0);
 
         ServerCommand("tv_stoprecord");
         ServerCommand("tv_record pugchamp-%s", id);
@@ -294,26 +293,24 @@ public void Event_GameOver(Event event, const char[] name, bool dontBroadcast) {
             }
         }
 
-        char url[2048];
-        apiURL.GetString(url, sizeof(url));
-        HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
+        StringMap parameters = new StringMap();
 
         char id[32];
         gameID.GetString(id, sizeof(id));
-        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "game", id);
+        parameters.SetString("game", id);
 
-        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "status", "completed");
+        parameters.SetString("status", "completed");
 
         char score[4];
         IntToString(GetTeamScore(2), score, sizeof(score));
-        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "score[RED]", score);
+        parameters.SetString("score[RED]", score);
         IntToString(GetTeamScore(3), score, sizeof(score));
-        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "score[BLU]", score);
+        parameters.SetString("score[BLU]", score);
 
         if (gameStartTime != -1.0) {
             char duration[128];
             FloatToString(GetGameTime() - gameStartTime, duration, sizeof(duration));
-            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "duration", duration);
+            parameters.SetString("duration", duration);
         }
 
         StringMapSnapshot players = playerPlaytimes.Snapshot();
@@ -329,11 +326,11 @@ public void Event_GameOver(Event event, const char[] name, bool dontBroadcast) {
                 char value[128];
                 FloatToString(playtime, value, sizeof(value));
 
-                Steam_SetHTTPRequestGetOrPostParameter(httpRequest, key, value);
+                parameters.SetString(key, value);
             }
         }
 
-        Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned);
+        SendRequest(parameters, 0);
 
         ServerCommand("tv_stoprecord");
     }
@@ -341,26 +338,24 @@ public void Event_GameOver(Event event, const char[] name, bool dontBroadcast) {
 
 public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast) {
     if (gameAssigned && gameLive && !gameCompleted) {
-        char url[2048];
-        apiURL.GetString(url, sizeof(url));
-        HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
+        StringMap parameters = new StringMap();
 
         char id[32];
         gameID.GetString(id, sizeof(id));
-        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "game", id);
+        parameters.SetString("game", id);
 
-        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "status", "live");
+        parameters.SetString("status", "live");
 
         char score[4];
         IntToString(GetTeamScore(2), score, sizeof(score));
-        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "score[RED]", score);
+        parameters.SetString("score[RED]", score);
         IntToString(GetTeamScore(3), score, sizeof(score));
-        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "score[BLU]", score);
+        parameters.SetString("score[BLU]", score);
 
         if (gameStartTime != -1.0) {
             char duration[128];
             FloatToString(GetGameTime() - gameStartTime, duration, sizeof(duration));
-            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "duration", duration);
+            parameters.SetString("duration", duration);
         }
 
         for (int i = 1; i <= MaxClients; i++) {
@@ -382,7 +377,7 @@ public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
                 char value[128];
                 FloatToString(playtime, value, sizeof(value));
 
-                Steam_SetHTTPRequestGetOrPostParameter(httpRequest, key, value);
+                parameters.SetString(key, value);
             }
         }
 
@@ -392,7 +387,7 @@ public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
             }
         }
 
-        Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned);
+        SendRequest(parameters, 0);
     }
 }
 
@@ -434,19 +429,17 @@ public Action UserMessage_SayText2(UserMsg msg_id, BfRead msg, const int[] playe
 public void LogUploaded(bool success, const char[] logid, const char[] logurl) {
     if (gameAssigned) {
         if (success) {
-            char url[2048];
-            apiURL.GetString(url, sizeof(url));
-            HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
+            StringMap parameters = new StringMap();
 
             char id[32];
             gameID.GetString(id, sizeof(id));
-            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "game", id);
+            parameters.SetString("game", id);
 
-            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "status", "logavailable");
+            parameters.SetString("status", "logavailable");
 
-            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "url", logurl);
+            parameters.SetString("url", logurl);
 
-            Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned);
+            SendRequest(parameters, 0);
         }
     }
 }
@@ -454,32 +447,85 @@ public void LogUploaded(bool success, const char[] logid, const char[] logurl) {
 public void DemoUploaded(bool success, const char[] demourl) {
     if (gameAssigned) {
         if (success) {
-            char url[2048];
-            apiURL.GetString(url, sizeof(url));
-            HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_GET, url);
+            StringMap parameters = new StringMap();
 
             char id[32];
             gameID.GetString(id, sizeof(id));
-            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "game", id);
+            parameters.SetString("game", id);
 
-            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "status", "demoavailable");
+            parameters.SetString("status", "demoavailable");
 
-            Steam_SetHTTPRequestGetOrPostParameter(httpRequest, "url", demourl);
+            parameters.SetString("url", demourl);
 
-            Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned);
+            SendRequest(parameters, 0);
         }
     }
 }
 
-public int HTTPRequestReturned(HTTPRequestHandle HTTPRequest, bool requestSuccessful, HTTPStatusCode statusCode) {
-    Steam_ReleaseHTTPRequest(HTTPRequest);
+public int HTTPRequestReturned(HTTPRequestHandle HTTPRequest, bool requestSuccessful, HTTPStatusCode statusCode, any contextData) {
+    DataPack datapack = view_as<DataPack>(contextData);
+    datapack.Reset();
+    StringMap parameters = view_as<StringMap>(datapack.ReadCell());
+    int numRetries = datapack.ReadCell();
 
-    if (!requestSuccessful) {
-        ThrowError("HTTP request failed");
+    if (!requestSuccessful || statusCode != HTTPStatusCode_OK) {
+        if (!requestSuccessful) {
+            LogError("HTTP request failed");
+        }
+
+        if (statusCode != HTTPStatusCode_OK) {
+            LogError("HTTP request failed with code %i", statusCode);
+        }
+
+        if (numRetries < MAX_RETRIES) {
+            numRetries++;
+
+            DataPack timerData;
+
+            CreateDataTimer(RETRY_INTERVAL * numRetries, RetryRequest, timerData);
+
+            timerData.WriteCell(CloneHandle(parameters));
+            timerData.WriteCell(numRetries);
+        }
     }
-    else if (statusCode != HTTPStatusCode_OK) {
-        ThrowError("HTTP request failed with code %i", statusCode);
+
+    CloseHandle(parameters);
+    CloseHandle(datapack);
+
+    Steam_ReleaseHTTPRequest(HTTPRequest);
+}
+
+public Action RetryRequest(Handle timer, Handle hndl) {
+    DataPack datapack = view_as<DataPack>(hndl);
+    datapack.Reset();
+    StringMap parameters = view_as<StringMap>(datapack.ReadCell());
+    int numRetries = datapack.ReadCell();
+
+    SendRequest(parameters, numRetries);
+}
+
+void SendRequest(StringMap parameters, int numRetries) {
+    char url[2048];
+    apiURL.GetString(url, sizeof(url));
+    HTTPRequestHandle httpRequest = Steam_CreateHTTPRequest(HTTPMethod_POST, url);
+
+    StringMapSnapshot keys = parameters.Snapshot();
+
+    for (int i = 0; i < keys.Length; i++) {
+        char key[1024];
+        char value[1024];
+
+        keys.GetKey(i, key, sizeof(key));
+        parameters.GetString(key, value, sizeof(value));
+
+        Steam_SetHTTPRequestGetOrPostParameter(httpRequest, key, value);
     }
+
+    DataPack datapack = new DataPack();
+    datapack.WriteCell(parameters);
+    datapack.WriteCell(numRetries);
+
+    Steam_SendHTTPRequest(httpRequest, HTTPRequestReturned, datapack);
 }
 
 void UpdateGameInfo() {
