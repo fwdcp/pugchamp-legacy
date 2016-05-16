@@ -18,6 +18,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     const COMMAND_TIMEOUT = ms(config.get('app.servers.commandTimeout'));
     const CONNECT_TIMEOUT = ms(config.get('app.servers.connectTimeout'));
     const GAME_SERVER_POOL = config.get('app.servers.pool');
+    const LAUNCH_WAIT = ms(config.get('app.servers.launchWait'));
     const MAP_CHANGE_TIMEOUT = ms(config.get('app.servers.mapChangeTimeout'));
     const MAPS = config.get('app.games.maps');
     const MAXIMUM_SERVER_COMMAND_LENGTH = 511;
@@ -577,13 +578,21 @@ module.exports = function(app, cache, chance, database, io, self) {
                 debug(`launching server ${game.server} for game ${game.id}`);
                 yield self.sendRCONCommands(game.server, ['pugchamp_game_start'], MAP_CHANGE_TIMEOUT);
             }
-            catch (err) {
+            finally {
                 yield self.updateServerStatus(game.server);
                 let serverStatus = yield self.getServerStatus(game.server);
 
                 if (serverStatus.status !== 'assigned' || helpers.getDocumentID(serverStatus.game) !== helpers.getDocumentID(game) || serverStatus.game.status === 'initializing') {
-                    debug(`game server ${game.server} not launched for game ${game.id}`);
-                    throw err;
+                    debug(`game server ${game.server} not launched for game ${game.id}, waiting and retrying`);
+
+                    yield helpers.promiseDelay(LAUNCH_WAIT);
+
+                    serverStatus = yield self.getServerStatus(game.server);
+
+                    if (serverStatus.status !== 'assigned' || helpers.getDocumentID(serverStatus.game) !== helpers.getDocumentID(game) || serverStatus.game.status === 'initializing') {
+                        debug(`game server ${game.server} not launched for game ${game.id}`);
+                        throw new Error('game server not launched');
+                    }
                 }
             }
 

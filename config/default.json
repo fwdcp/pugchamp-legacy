@@ -80,6 +80,7 @@
         "servers": {
             "commandTimeout": "10s",
             "connectTimeout": "10s",
+            "launchWait": "5s",
             "mapChangeTimeout": "30s",
             "recheckInterval": "5m",
             "reconnectInterval": "5s",
