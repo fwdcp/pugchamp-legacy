@@ -69,6 +69,7 @@ co(function*() {
 
                     if (response.statusCode === HttpStatus.OK) {
                         user.groups.push(groupID);
+                        continue;
                     }
                     else if (response.statusCode === HttpStatus.FORBIDDEN) {
                         continue;
@@ -80,6 +81,7 @@ co(function*() {
 
                 if (_.has(groupInfo, 'default') && groupInfo.default) {
                     user.groups.push(groupID);
+                    continue;
                 }
             }
 
