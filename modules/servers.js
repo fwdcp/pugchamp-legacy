@@ -290,6 +290,8 @@ module.exports = function(app, cache, chance, database, io, self) {
     self.sendRCONCommands = co.wrap(function* sendRCONCommands(server, commands, timeout = COMMAND_TIMEOUT, retry = true) {
         let success = false;
 
+        let result;
+
         try {
             if (!rconConnections.has(server)) {
                 debug(`not currently connected to ${server}`);
@@ -301,10 +303,9 @@ module.exports = function(app, cache, chance, database, io, self) {
             let rcon = rconConnections.get(server);
 
             debug(`sending ${commands} to ${server}`);
-            let result = yield sendCommandsToServer(rcon, commands, timeout);
+            result = yield sendCommandsToServer(rcon, commands, timeout);
 
             debug(`received result of commands from ${server}`);
-            return result;
         }
         catch (err) {
             debug(`failed to send commands to ${server}: ${err.stack}`);
@@ -315,7 +316,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     yield helpers.promiseDelay(delay);
 
                     try {
-                        yield self.sendRCONCommands(server, commands, timeout, false);
+                        result = yield self.sendRCONCommands(server, commands, timeout, false);
 
                         success = true;
                         break;
@@ -333,6 +334,8 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             throw new Error('sending commands to server failed');
         }
+
+        return result;
     });
 
     /**
