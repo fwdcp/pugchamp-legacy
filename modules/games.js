@@ -462,10 +462,15 @@ module.exports = function(app, cache, chance, database, io, self) {
             yield self.processGameUpdate(game);
         }
         else if (info.status === 'completed') {
-            if (game.status === 'aborted' || game.status === 'completed') {
+            if (game.status === 'aborted') {
                 self.postToLog({
                     description: `game \`${helpers.getDocumentID(game)}\` was ${game.status} but is being reported as completed`
                 });
+
+                return;
+            }
+            else if (game.status === 'completed') {
+                // NOTE: being completed is fine, we just don't want to rerun the completion functions again since we already have data
 
                 return;
             }
