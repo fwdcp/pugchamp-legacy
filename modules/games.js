@@ -65,7 +65,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         return co(function*() {
             let cacheResponse = yield cache.getAsync(`currentGame-${helpers.getDocumentID(user)}`);
 
-            self.emitToUser(user, 'currentGameUpdated', _.isNil(cacheResponse) ? null : JSON.parse(cacheResponse));
+            return _.isNil(cacheResponse) ? null : JSON.parse(cacheResponse);
         });
     }
 
