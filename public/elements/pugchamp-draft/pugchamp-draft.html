@@ -567,8 +567,6 @@
             },
             playExpireWarning: function() {
                 if (this.active && !this.complete && this.user && this.turns[this.currentTurn].method === 'captain' && this._isCurrentUser(this.user, this.teams[this.turns[this.currentTurn].team].id)) {
-                    var progress = Polymer.dom(this.$.draftTurns).querySelector('.draft-turn[data-status=current] .turn-time');
-
                     if (Math.round((this.endTime - this.currentTime) / 1000) === 10) {
                         this.$.draftTenSecondsSound.play();
                     }
