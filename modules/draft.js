@@ -33,14 +33,14 @@ module.exports = function(app, cache, chance, database, io, self) {
         let currentState = _.reduce(ROLES, function(current, role, roleName) {
             current.players += currentRoleDistribution[roleName];
 
-            if (currentRoleDistribution[roleName] < role.min) {
+            if (currentRoleDistribution[roleName] < _.get(role, 'min', 0)) {
                 current.underfilledRoles.push(roleName);
-                current.underfilledTotal += role.min - currentRoleDistribution[roleName];
+                current.underfilledTotal += _.get(role, 'min', 0) - currentRoleDistribution[roleName];
             }
 
-            if (currentRoleDistribution[roleName] >= role.max) {
+            if (currentRoleDistribution[roleName] >= _.get(role, 'max', TEAM_SIZE)) {
                 current.filledRoles.push(roleName);
-                current.overfilledTotal += currentRoleDistribution[roleName] - role.max;
+                current.overfilledTotal += currentRoleDistribution[roleName] - _.get(role, 'max', TEAM_SIZE);
             }
 
             return current;
@@ -675,7 +675,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                         let currentRoleDistribution = calculateRoleDistribution(draftTeams[turnDefinition.team].players);
 
                         choice.role = _.maxBy(allowedRoles, function(role) {
-                            let playersNeeded = ROLES[role].min - currentRoleDistribution[role];
+                            let playersNeeded = _.get(ROLES[role], 'min', 0) - currentRoleDistribution[role];
                             let playersAvailable = _(playerPool[role]).difference(unavailablePlayers).size();
                             let priority = _.get(ROLES[role], 'priority', 1);
 
