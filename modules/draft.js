@@ -13,6 +13,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     const DRAFT_ORDER = config.get('app.draft.order');
     const EPSILON = Math.sqrt(Number.EPSILON);
     const MAP_POOL = config.get('app.games.maps');
+    const PREVENT_OVERRIDES = config.get('app.draft.preventOverrides');
     const ROLES = config.get('app.games.roles');
     const SEPARATE_CAPTAIN_POOL = config.get('app.draft.separateCaptainPool');
     const TEAM_SIZE = config.get('app.games.teamSize');
@@ -75,6 +76,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     var remainingMaps = [];
     var allowedRoles = [];
     var overrideRoles = [];
+    var restrictedPicks = [];
 
     var currentDraftGame = null;
 
@@ -160,7 +162,8 @@ module.exports = function(app, cache, chance, database, io, self) {
                 pickedMap,
                 remainingMaps,
                 allowedRoles,
-                overrideRoles
+                overrideRoles,
+                restrictedPicks
             };
 
             if (draftActive && !draftComplete) {
@@ -268,6 +271,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         remainingMaps = [];
         allowedRoles = [];
         overrideRoles = [];
+        restrictedPicks = [];
 
         currentDraftGame = null;
 
@@ -372,6 +376,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             allowedRoles = [];
             overrideRoles = [];
+            restrictedPicks = [];
 
             unavailablePlayers = _(draftTeams).flatMap(team => _(team.players).map('user').concat(team.captain).value()).uniq().value();
 
@@ -440,6 +445,14 @@ module.exports = function(app, cache, chance, database, io, self) {
                     }
 
                     if (!_.includes(allowedRoles, choice.role)) {
+                        return;
+                    }
+
+                    if (_.some(restrictedPicks, ['player', choice.player]) && !_.some(restrictedPicks, {
+                            player: choice.player,
+                            role: choice.role,
+                            team: turnDefinition.team
+                        })) {
                         return;
                     }
 
@@ -648,7 +661,13 @@ module.exports = function(app, cache, chance, database, io, self) {
                     if (turnDefinition.method === 'random') {
                         choice.role = chance.weighted(allowedRoles, _.map(allowedRoles, role => _.get(ROLES[role], 'priority', 1)));
                         choice.override = _.includes(overrideRoles, choice.role);
-                        choice.player = chance.pick(choice.override ? _.difference(fullPlayerList, unavailablePlayers) : _.difference(playerPool[choice.role], unavailablePlayers));
+
+                        let choicePool = _.reject(choice.override ? _.difference(fullPlayerList, unavailablePlayers) : _.difference(playerPool[choice.role], unavailablePlayers), player => _.some(restrictedPicks, ['player', player]) && !_.some(restrictedPicks, {
+                            player: player,
+                            role: choice.role,
+                            team: turnDefinition.team
+                        }));
+                        choice.player = chance.pick(choicePool);
 
                         supported = true;
                     }
@@ -668,7 +687,11 @@ module.exports = function(app, cache, chance, database, io, self) {
                         /* eslint-disable lodash/prefer-lodash-method */
                         let choicePool = yield database.User.find({
                             '_id': {
-                                $in: choice.override ? _.difference(fullPlayerList, unavailablePlayers) : _.difference(playerPool[choice.role], unavailablePlayers)
+                                $in: _.reject(choice.override ? _.difference(fullPlayerList, unavailablePlayers) : _.difference(playerPool[choice.role], unavailablePlayers), player => _.some(restrictedPicks, ['player', player]) && !_.some(restrictedPicks, {
+                                    player: player,
+                                    role: choice.role,
+                                    team: turnDefinition.team
+                                }))
                             }
                         }).exec();
                         /* eslint-enable lodash/prefer-lodash-method */
@@ -874,10 +897,37 @@ module.exports = function(app, cache, chance, database, io, self) {
                 overrideRoles = _.filter(teamState.underfilledRoles, function(role) {
                     return !ROLES[role].overrideImmune && _(playerPool[role]).difference(unavailablePlayers).size() === 0;
                 });
+
+                if (PREVENT_OVERRIDES) {
+                    restrictedPicks = _.flatMap(playerPool, function(rolePlayers, role) {
+                        if (_.includes(overrideRoles, role)) {
+                            return [];
+                        }
+
+                        let numPlayersNeeded = _.map(draftTeams, function(draftedTeam) {
+                            let needed = _.get(ROLES[role], 'min', 0) - _(draftedTeam.players).filter(['role', role]).size();
+
+                            return needed > 0 ? needed : 0;
+                        });
+                        let availablePlayers = _.difference(rolePlayers, unavailablePlayers);
+
+                        if (_.size(availablePlayers) <= _.sum(numPlayersNeeded)) {
+                            return _.flatMap(numPlayersNeeded, (needed, teamIndex) => (needed > 0 ? _.map(availablePlayers, player => ({
+                                role: role,
+                                player: player,
+                                team: teamIndex
+                            })) : []));
+                        }
+                    });
+                }
+                else {
+                    restrictedPicks = [];
+                }
             }
             else {
                 allowedRoles = [];
                 overrideRoles = [];
+                restrictedPicks = [];
             }
 
             currentDraftTurnStartTime = Date.now();

@@ -247,8 +247,12 @@
                                     <paper-tooltip>Picks Disabled</paper-tooltip>
                                 </span>
                                 <span hidden$="{{!_includes(overrideRoles, role.key)}}">
-                                    <iron-icon icon="warning"></iron-icon>
+                                    <iron-icon icon="unfold-more"></iron-icon>
                                     <paper-tooltip>Overrides Enabled</paper-tooltip>
+                                </span>
+                                <span hidden$="{{isRoleRestricted(restrictedPicks, role.key)}}">
+                                    <iron-icon icon="warning"></iron-icon>
+                                    <paper-tooltip>Players Restricted</paper-tooltip>
                                 </span>
                                 <span hidden$="{{hasAvailablePlayers(players, role.key, overrideRoles, allPlayers, unavailablePlayers)}}">
                                     <iron-icon icon="hourglass-empty"></iron-icon>
@@ -260,7 +264,7 @@
                                 <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
                                     <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" disabled="{{_includes(unavailablePlayers, item.id)}}" on-mouseenter="onPlayer" on-mouseleave="offPlayer">
                                         <div class="flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></div>
-                                        <paper-button class="draft-choice" data-role$="{{role.key}}" data-player$="{{item.id}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers)}}"
+                                        <paper-button class="draft-choice" data-role$="{{role.key}}" data-player$="{{item.id}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers, restrictedPicks)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers, restrictedPicks)}}"
                                         on-tap="pickPlayer" raised>Select</paper-button>
                                         <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item}}"></pugchamp-player-stats></paper-tooltip>
                                     </paper-icon-item>
@@ -270,7 +274,7 @@
                                 <template is="dom-repeat" items="{{allPlayers}}">
                                     <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" disabled="{{_includes(unavailablePlayers, item.id)}}" on-mouseenter="onPlayer" on-mouseleave="offPlayer">
                                         <div class="flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></div>
-                                        <paper-button class="draft-choice override" data-role$="{{role.key}}" data-player$="{{item.id}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers)}}"
+                                        <paper-button class="draft-choice override" data-role$="{{role.key}}" data-player$="{{item.id}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers, restrictedPicks)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers, restrictedPicks)}}"
                                         on-tap="pickPlayerOverride" raised>Override</paper-button>
                                         <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item}}"></pugchamp-player-stats></paper-tooltip>
                                     </paper-icon-item>
@@ -320,6 +324,7 @@
                 this.set('remainingMaps', status.remainingMaps);
                 this.set('allowedRoles', status.allowedRoles);
                 this.set('overrideRoles', status.overrideRoles);
+                this.set('restrictedPicks', status.restrictedPicks);
                 this.set('unavailablePlayers', status.unavailablePlayers);
                 this.set('turns', status.draftTurns);
                 this.set('currentTurn', status.currentDraftTurn);
@@ -505,7 +510,7 @@
                     return false;
                 }
             },
-            playerChoiceAllowed: function(user, turn, role, allowedRoles, player, unavailablePlayers) {
+            playerChoiceAllowed: function(user, turn, role, allowedRoles, player, unavailablePlayers, restrictedPicks) {
                 if (turn >= this.turns.length) {
                     return false;
                 }
@@ -527,6 +532,14 @@
                 }
 
                 if (_.includes(unavailablePlayers, player)) {
+                    return false;
+                }
+
+                if (_.some(restrictedPicks, ['player', player]) && !_.some(restrictedPicks, {
+                        player: player,
+                        role: role,
+                        team: this.turns[turn].team
+                    })) {
                     return false;
                 }
 
@@ -579,6 +592,9 @@
                 if (player === highlighted) {
                     return 'highlight';
                 }
+            },
+            isRoleRestricted: function(restrictedPicks, role) {
+                return _.some(restrictedPicks, ['role', role]);
             },
             hasAvailablePlayers: function(players, role, overrideRoles, allPlayers, unavailablePlayers) {
                 if (_.includes(overrideRoles, role)) {
