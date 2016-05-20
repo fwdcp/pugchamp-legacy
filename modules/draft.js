@@ -13,7 +13,6 @@ module.exports = function(app, cache, chance, database, io, self) {
     const DRAFT_ORDER = config.get('app.draft.order');
     const EPSILON = Math.sqrt(Number.EPSILON);
     const MAP_POOL = config.get('app.games.maps');
-    const PREVENT_OVERRIDES = config.get('app.draft.preventOverrides');
     const ROLES = config.get('app.games.roles');
     const SEPARATE_CAPTAIN_POOL = config.get('app.draft.separateCaptainPool');
     const TEAM_SIZE = config.get('app.games.teamSize');
@@ -663,7 +662,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                         choice.override = _.includes(overrideRoles, choice.role);
 
                         let choicePool = _.reject(choice.override ? _.difference(fullPlayerList, unavailablePlayers) : _.difference(playerPool[choice.role], unavailablePlayers), player => _.some(restrictedPicks, ['player', player]) && !_.some(restrictedPicks, {
-                            player: player,
+                            player,
                             role: choice.role,
                             team: turnDefinition.team
                         }));
@@ -688,7 +687,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                         let choicePool = yield database.User.find({
                             '_id': {
                                 $in: _.reject(choice.override ? _.difference(fullPlayerList, unavailablePlayers) : _.difference(playerPool[choice.role], unavailablePlayers), player => _.some(restrictedPicks, ['player', player]) && !_.some(restrictedPicks, {
-                                    player: player,
+                                    player,
                                     role: choice.role,
                                     team: turnDefinition.team
                                 }))
@@ -898,9 +897,13 @@ module.exports = function(app, cache, chance, database, io, self) {
                     return !ROLES[role].overrideImmune && _(playerPool[role]).difference(unavailablePlayers).size() === 0;
                 });
 
-                if (PREVENT_OVERRIDES) {
+                restrictedPicks = [];
+                let restrictedPicksConverged = false;
+                while (!restrictedPicksConverged) {
+                    let oldRestrictedPicks = restrictedPicks;
+
                     restrictedPicks = _.flatMap(playerPool, function(rolePlayers, role) {
-                        if (_.includes(overrideRoles, role)) {
+                        if (!ROLES[role].preventOverrides) {
                             return [];
                         }
 
@@ -909,12 +912,15 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                             return needed > 0 ? needed : 0;
                         });
-                        let availablePlayers = _.difference(rolePlayers, unavailablePlayers);
+                        let availablePlayers = _(rolePlayers).difference(unavailablePlayers).reject(player => (_.some(oldRestrictedPicks, ['player', player]) && !_.some(oldRestrictedPicks, {
+                            player,
+                            role
+                        }))).value();
 
                         if (_.size(availablePlayers) <= _.sum(numPlayersNeeded)) {
                             return _.flatMap(numPlayersNeeded, (needed, teamIndex) => (needed > 0 ? _.map(availablePlayers, player => ({
-                                role: role,
-                                player: player,
+                                role,
+                                player,
                                 team: teamIndex
                             })) : []));
                         }
@@ -922,9 +928,8 @@ module.exports = function(app, cache, chance, database, io, self) {
                             return [];
                         }
                     });
-                }
-                else {
-                    restrictedPicks = [];
+
+                    restrictedPicksConverged = _.isEqual(restrictedPicks, oldRestrictedPicks);
                 }
             }
             else {
