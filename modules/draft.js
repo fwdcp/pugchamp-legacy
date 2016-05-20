@@ -918,6 +918,9 @@ module.exports = function(app, cache, chance, database, io, self) {
                                 team: teamIndex
                             })) : []));
                         }
+                        else {
+                            return [];
+                        }
                     });
                 }
                 else {
