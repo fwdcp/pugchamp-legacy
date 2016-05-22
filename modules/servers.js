@@ -236,44 +236,23 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.findAvailableServer = co.wrap(function* findAvailableServer() {
-        let serverStatuses = yield self.getServerStatuses();
+        // update all server statuses
+        yield self.updateServerStatuses();
 
-        // update supposedly free servers first
-        let freeServers = _.filter(_.keys(serverStatuses), server => serverStatuses[server].status === 'free');
-        yield _.map(freeServers, server => self.updateServerStatus(server));
-        serverStatuses = yield self.getServerStatuses();
-        freeServers = _.filter(_.keys(serverStatuses), server => serverStatuses[server].status === 'free');
-
-        // if servers are confirmed free, use them
-        if (_.size(freeServers) > 0) {
-            return chance.pick(freeServers);
-        }
-
-        // update all unassigned servers next
-        let unassignedServers = _.filter(_.keys(serverStatuses), server => serverStatuses[server].status !== 'assigned');
-        yield _.map(unassignedServers, server => self.updateServerStatus(server));
-        serverStatuses = yield self.getServerStatuses();
-        freeServers = _.filter(_.keys(serverStatuses), server => serverStatuses[server].status === 'free');
-
-        // if servers are confirmed free, use them
-        if (_.size(freeServers) > 0) {
-            return chance.pick(freeServers);
-        }
-
-        // finally look for servers that are assigned but not needed
-        let assignedServers = _.filter(_.keys(serverStatuses), server => serverStatuses[server].status === 'assigned');
-        yield _.map(assignedServers, server => self.updateServerStatus(server));
-        yield _.map(assignedServers, co.wrap(function*(server) {
-            let updatedGame = yield database.Game.findById(helpers.getDocumentID(serverStatuses[server].game));
-
-            if (updatedGame.status === 'aborted' || updatedGame.status === 'completed') {
+        // free up assigned unneeded servers first
+        yield _.map(yield self.getServerStatuses(), co.wrap(function*(serverStatus, server) {
+            if (serverStatus.status === 'assigned' && (!serverStatus.game || serverStatus.game.status === 'aborted' || serverStatus.game.status === 'completed')) {
                 // force immediate reset
-                yield self.shutdownGameServers(updatedGame);
-                yield self.updateServerStatus(server);
+                yield self.shutdownGameServers(serverStatus.game);
             }
+
+            // update again just to be sure
+            yield self.updateServerStatus(server);
         }));
-        serverStatuses = yield self.getServerStatuses();
-        freeServers = _.filter(_.keys(serverStatuses), server => serverStatuses[server].status === 'free');
+
+        // get server statuses and find servers that are free
+        let serverStatuses = yield self.getServerStatuses();
+        let freeServers = _.filter(_.keys(serverStatuses), server => serverStatuses[server].status === 'free');
 
         // if servers are confirmed free, use them
         if (_.size(freeServers) > 0) {
