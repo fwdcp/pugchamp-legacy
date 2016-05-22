@@ -257,7 +257,7 @@ co(function*() {
                     let position = 0;
 
                     for (let choice of game.draft.choices) {
-                        if (choice.type === 'playerPick' || turn.type === 'playerOrCaptainRolePick') {
+                        if (choice.type === 'playerPick' || choice.type === 'playerOrCaptainRolePick') {
                             position++;
 
                             if (helpers.getDocumentID(choice.player) === userID) {
