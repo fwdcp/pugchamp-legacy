@@ -238,7 +238,7 @@ co(function*() {
 
                 let draftPositions = {};
 
-                let playersPicked = _(DRAFT_ORDER).filter(turn => (turn.type === 'playerPick' || turn.type === 'playerPickOrCaptainRole')).size();
+                let playersPicked = _(DRAFT_ORDER).filter(turn => (turn.type === 'playerPick' || turn.type === 'playerOrCaptainRolePick')).size();
                 for (let i = 1; i <= playersPicked; i++) {
                     draftPositions[i] = 0;
                 }
@@ -257,7 +257,7 @@ co(function*() {
                     let position = 0;
 
                     for (let choice of game.draft.choices) {
-                        if (choice.type === 'playerPick' || turn.type === 'playerPickOrCaptainRole') {
+                        if (choice.type === 'playerPick' || turn.type === 'playerOrCaptainRolePick') {
                             position++;
 
                             if (helpers.getDocumentID(choice.player) === userID) {
@@ -286,7 +286,7 @@ co(function*() {
                         'draft.choices': {
                             $elemMatch: {
                                 'type': {
-                                    $in: ['playerPick', 'playerPickOrCaptainRole']
+                                    $in: ['playerPick', 'playerOrCaptainRolePick']
                                 },
                                 'player': userID
                             }
@@ -350,7 +350,7 @@ co(function*() {
                         'draft.choices': {
                             $elemMatch: {
                                 'type': {
-                                    $in: ['playerPick', 'playerPickOrCaptainRole']
+                                    $in: ['playerPick', 'playerOrCaptainRolePick']
                                 },
                                 'player': userID
                             }

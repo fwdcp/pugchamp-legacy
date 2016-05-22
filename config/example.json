@@ -140,51 +140,51 @@
                 "pool": "global",
                 "team": 0
             }, {
-                "type": "playerPick",
+                "type": "playerOrCaptainRolePick",
                 "method": "captain",
                 "team": 0
             }, {
-                "type": "playerPick",
+                "type": "playerOrCaptainRolePick",
                 "method": "captain",
                 "team": 1
             }, {
-                "type": "playerPick",
+                "type": "playerOrCaptainRolePick",
                 "method": "captain",
                 "team": 1
             }, {
-                "type": "playerPick",
+                "type": "playerOrCaptainRolePick",
                 "method": "captain",
                 "team": 0
             }, {
-                "type": "playerPick",
+                "type": "playerOrCaptainRolePick",
                 "method": "captain",
                 "team": 0
             }, {
-                "type": "playerPick",
+                "type": "playerOrCaptainRolePick",
                 "method": "captain",
                 "team": 1
             }, {
-                "type": "playerPick",
+                "type": "playerOrCaptainRolePick",
                 "method": "captain",
                 "team": 1
             }, {
-                "type": "playerPick",
+                "type": "playerOrCaptainRolePick",
                 "method": "captain",
                 "team": 0
             }, {
-                "type": "playerPick",
+                "type": "playerOrCaptainRolePick",
                 "method": "captain",
                 "team": 0
             }, {
-                "type": "playerPick",
+                "type": "playerOrCaptainRolePick",
                 "method": "captain",
                 "team": 1
             }, {
-                "type": "captainRole",
+                "type": "playerOrCaptainRolePick",
                 "method": "random",
                 "team": 1
             }, {
-                "type": "captainRole",
+                "type": "playerOrCaptainRolePick",
                 "method": "random",
                 "team": 0
             }, {

@@ -369,10 +369,10 @@
                 else if (type === 'playerPick') {
                     return 'Player Pick';
                 }
-                else if (type === 'captainRole') {
+                else if (type === 'captainRolePick') {
                     return 'Captain Role Pick';
                 }
-                else if (type === 'playerPickOrCaptainRole') {
+                else if (type === 'playerOrCaptainRolePick') {
                     return 'Player/Role Pick'
                 }
                 else if (type === 'mapBan') {
@@ -423,12 +423,12 @@
                         return choice.captain.alias;
                     }
                 }
-                else if (choice.type === 'playerPick' || choice.type === 'playerPickOrCaptainRole') {
+                else if (choice.type === 'playerPick' || choice.type === 'playerOrCaptainRolePick') {
                     if (choice.player) {
                         return choice.player.alias + ' (' + this.roles[choice.role].name + ')';
                     }
                 }
-                else if (choice.type === 'captainRole') {
+                else if (choice.type === 'captainRolePick') {
                     if (choice.role) {
                         return this.roles[choice.role].name;
                     }
@@ -497,7 +497,7 @@
                     return false;
                 }
 
-                if (this.turns[turn].type !== 'captainRole' && !(this.turns[turn].type === 'playerPickOrCaptainRole' && !_.some(this.teams[this.turns[turn].team].players, player => _.get(player, 'user.id') === _.get(this.teams[this.turns[turn].team], 'captain.id')))) {
+                if (this.turns[turn].type !== 'captainRolePick' && !(this.turns[turn].type === 'playerOrCaptainRolePick' && !_.some(this.teams[this.turns[turn].team].players, player => _.get(player, 'user.id') === _.get(this.teams[this.turns[turn].team], 'captain.id')))) {
                     return false;
                 }
 
@@ -520,7 +520,7 @@
                     return false;
                 }
 
-                if (this.turns[turn].type !== 'playerPick' && this.turns[turn].type !== 'playerPickOrCaptainRole') {
+                if (this.turns[turn].type !== 'playerPick' && this.turns[turn].type !== 'playerOrCaptainRolePick') {
                     return false;
                 }
 

@@ -471,7 +471,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                         role: choice.role
                     });
                 }
-                else if (turnDefinition.type === 'captainRole') {
+                else if (turnDefinition.type === 'captainRolePick') {
                     if (!_.includes(allowedRoles, choice.role)) {
                         return;
                     }
@@ -485,7 +485,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                         role: choice.role
                     });
                 }
-                else if (turnDefinition.type === 'playerPickOrCaptainRole') {
+                else if (turnDefinition.type === 'playerOrCaptainRolePick') {
                     if (choice.player === draftTeams[turnDefinition.team].captain) {
                         if (!_.includes(allowedRoles, choice.role)) {
                             return;
@@ -785,14 +785,14 @@ module.exports = function(app, cache, chance, database, io, self) {
                         supported = true;
                     }
                 }
-                else if (turnDefinition.type === 'captainRole') {
+                else if (turnDefinition.type === 'captainRolePick') {
                     if (turnDefinition.method === 'random') {
                         choice.role = chance.weighted(allowedRoles, _.map(allowedRoles, role => _.get(ROLES[role], 'priority', 1)));
 
                         supported = true;
                     }
                 }
-                else if (turnDefinition.type === 'playerPickOrCaptainRole') {
+                else if (turnDefinition.type === 'playerOrCaptainRolePick') {
                     // NOTE: not implemented (should it be?)
                 }
                 else if (turnDefinition.type === 'mapBan') {
@@ -929,7 +929,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let turnDefinition = DRAFT_ORDER[turn];
 
-            if (turnDefinition.type === 'playerPick' || turnDefinition.type === 'captainRole' || turnDefinition.type === 'playerPickOrCaptainRole') {
+            if (turnDefinition.type === 'playerPick' || turnDefinition.type === 'captainRolePick' || turnDefinition.type === 'playerOrCaptainRolePick') {
                 let team = draftTeams[turnDefinition.team].players;
                 let teamState = calculateCurrentTeamState(team);
 
