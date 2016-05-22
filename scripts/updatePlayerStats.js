@@ -257,128 +257,128 @@ co(function*() {
                     let position = 0;
 
                     for (let choice of game.draft.choices) {
-                        if (choice.type === 'playerPick' || turn.type === 'playerPickOrCaptainRole')) {
-                        position++;
+                        if (choice.type === 'playerPick' || turn.type === 'playerPickOrCaptainRole') {
+                            position++;
 
-                        if (helpers.getDocumentID(choice.player) === userID) {
-                            break;
+                            if (helpers.getDocumentID(choice.player) === userID) {
+                                break;
+                            }
                         }
                     }
+
+                    if (!draftPositions[position]) {
+                        draftPositions[position] = 0;
+                    }
+                    draftPositions[position]++;
                 }
 
-                if (!draftPositions[position]) {
-                    draftPositions[position] = 0;
-                }
-                draftPositions[position]++;
-            }
-
-            _.forEach(draftPositions, function(count, position) {
-                draftStats.push({
-                    type: 'picked',
-                    position,
-                    count
+                _.forEach(draftPositions, function(count, position) {
+                    draftStats.push({
+                        type: 'picked',
+                        position,
+                        count
+                    });
                 });
-            });
 
-            /* eslint-disable lodash/prefer-lodash-method */
-            let undraftedCount = yield database.Game.find({
-                $nor: [{
-                    'draft.choices': {
-                        $elemMatch: {
-                            'type': {
-                                $in: ['playerPick', 'playerPickOrCaptainRole']
-                            },
-                            'player': userID
-                        }
-                    }
-                }, {
-                    'teams.captain': userID
-                }],
-                'draft.pool.players.user': userID
-            }).count().exec();
-            /* eslint-enable lodash/prefer-lodash-method */
-            draftStats.push({
-                type: 'undrafted',
-                count: undraftedCount
-            });
-
-            user.stats.draft = draftStats;
-        }
-
-        {
-            let rating = yield database.Rating.findOne({
-                user: userID
-            }).sort('-date').exec();
-
-            if (rating) {
-                user.stats.rating.mean = rating.after.mean;
-                user.stats.rating.deviation = rating.after.deviation;
-            }
-        }
-
-        {
-
-            user.stats.roles = yield _(ROLES).keys().map(
                 /* eslint-disable lodash/prefer-lodash-method */
-                role => database.Game.find({
-                    'teams.composition': {
-                        $elemMatch: {
-                            'role': role,
-                            'players.user': userID
+                let undraftedCount = yield database.Game.find({
+                    $nor: [{
+                        'draft.choices': {
+                            $elemMatch: {
+                                'type': {
+                                    $in: ['playerPick', 'playerPickOrCaptainRole']
+                                },
+                                'player': userID
+                            }
                         }
-                    }
-                }).count().exec().then(count => ({
-                    role,
-                    count
-                }))
+                    }, {
+                        'teams.captain': userID
+                    }],
+                    'draft.pool.players.user': userID
+                }).count().exec();
                 /* eslint-enable lodash/prefer-lodash-method */
-            ).value();
-        }
+                draftStats.push({
+                    type: 'undrafted',
+                    count: undraftedCount
+                });
 
-        {
-            user.stats.total.captain = yield database.Game.count({
-                'teams.captain': userID
-            }).count().exec();
-            user.stats.total.player = yield database.Game.count({
-                'teams.composition.players.user': userID
-            }).count().exec();
-        }
+                user.stats.draft = draftStats;
+            }
 
-        {
-            user.stats.replaced.into = yield database.Game.count({
-                $nor: [{
-                    'draft.choices': {
+            {
+                let rating = yield database.Rating.findOne({
+                    user: userID
+                }).sort('-date').exec();
+
+                if (rating) {
+                    user.stats.rating.mean = rating.after.mean;
+                    user.stats.rating.deviation = rating.after.deviation;
+                }
+            }
+
+            {
+
+                user.stats.roles = yield _(ROLES).keys().map(
+                    /* eslint-disable lodash/prefer-lodash-method */
+                    role => database.Game.find({
+                        'teams.composition': {
+                            $elemMatch: {
+                                'role': role,
+                                'players.user': userID
+                            }
+                        }
+                    }).count().exec().then(count => ({
+                        role,
+                        count
+                    }))
+                    /* eslint-enable lodash/prefer-lodash-method */
+                ).value();
+            }
+
+            {
+                user.stats.total.captain = yield database.Game.count({
+                    'teams.captain': userID
+                }).count().exec();
+                user.stats.total.player = yield database.Game.count({
+                    'teams.composition.players.user': userID
+                }).count().exec();
+            }
+
+            {
+                user.stats.replaced.into = yield database.Game.count({
+                    $nor: [{
+                        'draft.choices': {
+                            $elemMatch: {
+                                'type': {
+                                    $in: ['playerPick', 'playerPickOrCaptainRole']
+                                },
+                                'player': userID
+                            }
+                        }
+                    }, {
+                        'teams.captain': userID
+                    }],
+                    'teams.composition.players.user': userID
+                }).count().exec();
+                user.stats.replaced.out = yield database.Game.count({
+                    'teams.composition.players': {
                         $elemMatch: {
-                            'type': {
-                                $in: ['playerPick', 'playerPickOrCaptainRole']
-                            },
-                            'player': userID
+                            'user': userID,
+                            'replaced': true
                         }
                     }
-                }, {
-                    'teams.captain': userID
-                }],
-                'teams.composition.players.user': userID
-            }).count().exec();
-            user.stats.replaced.out = yield database.Game.count({
-                'teams.composition.players': {
-                    $elemMatch: {
-                        'user': userID,
-                        'replaced': true
-                    }
-                }
-            }).count().exec();
+                }).count().exec();
+            }
+
+            yield user.save();
         }
 
-        yield user.save();
+        yield helpers.runAppScript('updateUserCache', argv._);
+
+        process.exit(0);
     }
-
-    yield helpers.runAppScript('updateUserCache', argv._);
-
-    process.exit(0);
-}
-catch (err) {
-    console.log(err.stack);
-    process.exit(1);
-}
+    catch (err) {
+        console.log(err.stack);
+        process.exit(1);
+    }
 });
