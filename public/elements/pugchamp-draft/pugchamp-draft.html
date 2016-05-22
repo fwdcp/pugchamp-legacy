@@ -497,7 +497,7 @@
                     return false;
                 }
 
-                if (this.turns[turn].type !== 'captainRole' && !(this.turns[turn].type === 'playerPickOrCaptainRole' && _.some(this.teams[this.turns[turn].team].players, player => _.get(player, 'user.id') === _.get(this.teams[this.turns[turn].team], 'captain.id')))) {
+                if (this.turns[turn].type !== 'captainRole' && !(this.turns[turn].type === 'playerPickOrCaptainRole' && !_.some(this.teams[this.turns[turn].team].players, player => _.get(player, 'user.id') === _.get(this.teams[this.turns[turn].team], 'captain.id')))) {
                     return false;
                 }
 
