@@ -258,7 +258,7 @@
                                     <iron-icon icon="hourglass-empty"></iron-icon>
                                     <paper-tooltip>None Available</paper-tooltip>
                                 </span>
-                                <paper-button class="draft-choice" data-role$="{{role.key}}" hidden$="{{!roleChoiceAllowed(user, currentTurn, role.key, allowedRoles)}}" disabled="{{!roleChoiceAllowed(user, currentTurn, role.key, allowedRoles)}}" on-tap="chooseRole" raised>Select</paper-button>
+                                <paper-button class="draft-choice" data-role$="{{role.key}}" hidden$="{{!roleChoiceAllowed(user, currentTurn, role.key, allowedRoles)}}" disabled="{{!roleChoiceAllowed(user, currentTurn, role.key, allowedRoles)}}" on-tap="chooseRole" raised>Play</paper-button>
                             </paper-icon-item>
                             <template is="dom-if" if="{{!_includes(overrideRoles, role.key)}}">
                                 <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
@@ -370,7 +370,10 @@
                     return 'Player Pick';
                 }
                 else if (type === 'captainRole') {
-                    return 'Captain Role';
+                    return 'Captain Role Pick';
+                }
+                else if (type === 'playerPickOrCaptainRole') {
+                    return 'Player/Role Pick'
                 }
                 else if (type === 'mapBan') {
                     return 'Map Ban';
@@ -420,7 +423,7 @@
                         return choice.captain.alias;
                     }
                 }
-                else if (choice.type === 'playerPick') {
+                else if (choice.type === 'playerPick' || choice.type === 'playerPickOrCaptainRole') {
                     if (choice.player) {
                         return choice.player.alias + ' (' + this.roles[choice.role].name + ')';
                     }
@@ -494,7 +497,7 @@
                     return false;
                 }
 
-                if (this.turns[turn].type !== 'captainRole') {
+                if (this.turns[turn].type !== 'captainRole' && !(this.turns[turn].type === 'playerPickOrCaptainRole' && _.some(this.teams[this.turns[turn].team].players, player => _.get(player, 'user.id') === _.get(this.teams[this.turns[turn].team], 'captain.id')))) {
                     return false;
                 }
 
@@ -517,7 +520,7 @@
                     return false;
                 }
 
-                if (this.turns[turn].type !== 'playerPick') {
+                if (this.turns[turn].type !== 'playerPick' && this.turns[turn].type !== 'playerPickOrCaptainRole') {
                     return false;
                 }
 
@@ -562,7 +565,8 @@
             chooseRole: function(event) {
                 this.socket.emit('makeDraftChoice', {
                     type: this.turns[this.currentTurn].type,
-                    role: event.target.dataset.role
+                    role: event.target.dataset.role,
+                    player: this.user.id
                 });
             },
             pickPlayer: function(event) {

@@ -485,6 +485,50 @@ module.exports = function(app, cache, chance, database, io, self) {
                         role: choice.role
                     });
                 }
+                else if (turnDefinition.type === 'playerPickOrCaptainRole') {
+                    if (choice.player === draftTeams[turnDefinition.team].captain) {
+                        if (!_.includes(allowedRoles, choice.role)) {
+                            return;
+                        }
+
+                        if (!draftTeams[turnDefinition.team].captain) {
+                            return;
+                        }
+                    }
+                    else {
+                        if (_.includes(unavailablePlayers, choice.player)) {
+                            return;
+                        }
+
+                        if (!_.includes(allowedRoles, choice.role)) {
+                            return;
+                        }
+
+                        if (_.some(restrictedPicks, ['player', choice.player]) && !_.some(restrictedPicks, {
+                                player: choice.player,
+                                role: choice.role,
+                                team: turnDefinition.team
+                            })) {
+                            return;
+                        }
+
+                        if (choice.override) {
+                            if (!_.includes(overrideRoles, choice.role)) {
+                                return;
+                            }
+                        }
+                        else {
+                            if (!_.includes(playerPool[choice.role], choice.player)) {
+                                return;
+                            }
+                        }
+                    }
+
+                    newTeams[turnDefinition.team].players.push({
+                        user: choice.player,
+                        role: choice.role
+                    });
+                }
                 else if (turnDefinition.type === 'mapBan') {
                     if (!_.includes(remainingMaps, choice.map)) {
                         return;
@@ -748,6 +792,9 @@ module.exports = function(app, cache, chance, database, io, self) {
                         supported = true;
                     }
                 }
+                else if (turnDefinition.type === 'playerPickOrCaptainRole') {
+                    // NOTE: not implemented (should it be?)
+                }
                 else if (turnDefinition.type === 'mapBan') {
                     if (turnDefinition.method === 'random') {
                         choice.map = chance.pick(remainingMaps);
@@ -882,7 +929,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             let turnDefinition = DRAFT_ORDER[turn];
 
-            if (turnDefinition.type === 'playerPick' || turnDefinition.type === 'captainRole') {
+            if (turnDefinition.type === 'playerPick' || turnDefinition.type === 'captainRole' || turnDefinition.type === 'playerPickOrCaptainRole') {
                 let team = draftTeams[turnDefinition.team].players;
                 let teamState = calculateCurrentTeamState(team);
 
