@@ -79,7 +79,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             else {
                 let serverStatuses = yield self.getServerStatuses();
 
-                if (!_.some(serverStatuses, ['status', 'free'])) {
+                if (!_.some(serverStatuses, serverStatus => (serverStatus.status === 'free' || (serverStatus.status === 'assigned' && (!serverStatus.game || serverStatus.game.status === 'aborted' || serverStatus.game.status === 'completed'))))) {
                     launchHolds.push('availableServers');
                 }
             }
