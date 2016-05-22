@@ -250,7 +250,7 @@
                                     <iron-icon icon="unfold-more"></iron-icon>
                                     <paper-tooltip>Overrides Enabled</paper-tooltip>
                                 </span>
-                                <span hidden$="{{isRoleRestricted(restrictedPicks, role.key)}}">
+                                <span hidden$="{{!isRoleRestricted(restrictedPicks, role.key)}}">
                                     <iron-icon icon="warning"></iron-icon>
                                     <paper-tooltip>Players Restricted</paper-tooltip>
                                 </span>
@@ -509,6 +509,8 @@
                 if (!_.includes(allowedRoles, role)) {
                     return false;
                 }
+
+                return true;
             },
             playerChoiceAllowed: function(user, turn, role, allowedRoles, player, unavailablePlayers, restrictedPicks) {
                 if (turn >= this.turns.length) {
