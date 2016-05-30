@@ -264,6 +264,10 @@
                                 <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
                                     <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" disabled="{{_includes(unavailablePlayers, item.id)}}" on-mouseenter="onPlayer" on-mouseleave="offPlayer">
                                         <div class="flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></div>
+                                        <span hidden$="{{!isPlayerRestricted(restrictedPicks, item.id, role.key, currentTurn)}}">
+                                            <iron-icon icon="warning"></iron-icon>
+                                            <paper-tooltip>Player Restricted, {{restrictedPicksRemaining(currentTurn)}} Restricted Picks Remaining</paper-tooltip>
+                                        </span>
                                         <paper-button class="draft-choice" data-role$="{{role.key}}" data-player$="{{item.id}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers, restrictedPicks)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers, restrictedPicks)}}"
                                         on-tap="pickPlayer" raised>Select</paper-button>
                                         <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item}}"></pugchamp-player-stats></paper-tooltip>
@@ -602,6 +606,13 @@
             isRoleRestricted: function(restrictedPicks, role) {
                 return _.some(restrictedPicks, ['role', role]);
             },
+            isPlayerRestricted: function(restrictedPicks, player, role, turn) {
+                return _.some(restrictedPicks, ['player', player]) && !_.some(restrictedPicks, {
+                    player: player,
+                    role: role,
+                    team: this.turns[turn].team
+                });
+            },
             hasAvailablePlayers: function(players, role, overrideRoles, allPlayers, unavailablePlayers) {
                 if (_.includes(overrideRoles, role)) {
                     return _(allPlayers).difference(unavailablePlayers).size() > 0;
@@ -639,6 +650,9 @@
                 else {
                     return '';
                 }
+            },
+            restrictedPicksRemaining: function(turn) {
+                return this.teams[this.turns[turn].team].restrictedPicks;
             },
             difference: function(a, b) {
                 return a - b;
