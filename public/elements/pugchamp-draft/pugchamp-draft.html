@@ -544,7 +544,7 @@
                         player: player,
                         role: role,
                         team: this.turns[turn].team
-                    })) {
+                    }) && this.teams[this.turns[turn].team].restrictedPicks <= 0) {
                     return false;
                 }
 

@@ -74,6 +74,7 @@
         },
         "draft": {
             "captainDraftExpireCooldown": "10m",
+            "restrictedPickLimit": 0,
             "separateCaptainPool": true,
             "turnTimeLimit": "60s"
         },

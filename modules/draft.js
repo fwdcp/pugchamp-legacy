@@ -13,6 +13,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     const DRAFT_ORDER = config.get('app.draft.order');
     const EPSILON = Math.sqrt(Number.EPSILON);
     const MAP_POOL = config.get('app.games.maps');
+    const RESTRICTED_PICK_LIMIT = config.get('app.draft.restrictedPickLimit');
     const ROLES = config.get('app.games.roles');
     const SEPARATE_CAPTAIN_POOL = config.get('app.draft.separateCaptainPool');
     const TEAM_SIZE = config.get('app.games.teamSize');
@@ -452,7 +453,12 @@ module.exports = function(app, cache, chance, database, io, self) {
                             role: choice.role,
                             team: turnDefinition.team
                         })) {
-                        return;
+                        if (draftTeams[turnDefinition.team].restrictedPicks > 0) {
+                            newTeams[turnDefinition.team].restrictedPicks--;
+                        }
+                        else {
+                            return;
+                        }
                     }
 
                     if (choice.override) {
@@ -509,7 +515,12 @@ module.exports = function(app, cache, chance, database, io, self) {
                                 role: choice.role,
                                 team: turnDefinition.team
                             })) {
-                            return;
+                            if (draftTeams[turnDefinition.team].restrictedPicks > 0) {
+                                newTeams[turnDefinition.team].restrictedPicks--;
+                            }
+                            else {
+                                return;
+                            }
                         }
 
                         if (choice.override) {
@@ -1023,11 +1034,13 @@ module.exports = function(app, cache, chance, database, io, self) {
         draftTeams = [{
             faction: null,
             captain: null,
-            players: []
+            players: [],
+            restrictedPicks: RESTRICTED_PICK_LIMIT
         }, {
             faction: null,
             captain: null,
-            players: []
+            players: [],
+            restrictedPicks: RESTRICTED_PICK_LIMIT
         }];
         pickedMap = null;
 

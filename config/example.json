@@ -140,53 +140,53 @@
                 "pool": "global",
                 "team": 0
             }, {
-                "type": "playerOrCaptainRolePick",
+                "type": "playerPick",
                 "method": "captain",
                 "team": 0
             }, {
-                "type": "playerOrCaptainRolePick",
+                "type": "playerPick",
                 "method": "captain",
                 "team": 1
             }, {
-                "type": "playerOrCaptainRolePick",
+                "type": "playerPick",
                 "method": "captain",
                 "team": 1
             }, {
-                "type": "playerOrCaptainRolePick",
+                "type": "playerPick",
                 "method": "captain",
                 "team": 0
             }, {
-                "type": "playerOrCaptainRolePick",
+                "type": "playerPick",
                 "method": "captain",
                 "team": 0
             }, {
-                "type": "playerOrCaptainRolePick",
+                "type": "playerPick",
                 "method": "captain",
                 "team": 1
             }, {
-                "type": "playerOrCaptainRolePick",
+                "type": "playerPick",
                 "method": "captain",
                 "team": 1
             }, {
-                "type": "playerOrCaptainRolePick",
+                "type": "playerPick",
                 "method": "captain",
                 "team": 0
             }, {
-                "type": "playerOrCaptainRolePick",
+                "type": "playerPick",
                 "method": "captain",
                 "team": 0
             }, {
-                "type": "playerOrCaptainRolePick",
-                "method": "captain",
-                "team": 1
-            }, {
-                "type": "playerOrCaptainRolePick",
-                "method": "random",
-                "team": 1
-            }, {
-                "type": "playerOrCaptainRolePick",
+                "type": "captainRolePick",
                 "method": "random",
                 "team": 0
+            }, {
+                "type": "playerPick",
+                "method": "captain",
+                "team": 1
+            }, {
+                "type": "captainRolePick",
+                "method": "random",
+                "team": 1
             }, {
                 "type": "mapBan",
                 "method": "fresh"
@@ -204,7 +204,8 @@
             }, {
                 "type": "mapPick",
                 "method": "random"
-            }]
+            }],
+            "restrictedPickLimit": 1
         },
         "pages": [{
             "title": "Source Repository",
