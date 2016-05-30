@@ -453,7 +453,10 @@ module.exports = function(app, cache, chance, database, io, self) {
                             role: choice.role,
                             team: turnDefinition.team
                         })) {
-                        if (draftTeams[turnDefinition.team].restrictedPicks > 0) {
+                        if (draftTeams[turnDefinition.team].restrictedPicks > 0 && _.some(restrictedPicks, {
+                                player: choice.player,
+                                team: turnDefinition.team
+                            })) {
                             newTeams[turnDefinition.team].restrictedPicks--;
                         }
                         else {
@@ -515,7 +518,10 @@ module.exports = function(app, cache, chance, database, io, self) {
                                 role: choice.role,
                                 team: turnDefinition.team
                             })) {
-                            if (draftTeams[turnDefinition.team].restrictedPicks > 0) {
+                            if (draftTeams[turnDefinition.team].restrictedPicks > 0 && _.some(restrictedPicks, {
+                                    player: choice.player,
+                                    team: turnDefinition.team
+                                })) {
                                 newTeams[turnDefinition.team].restrictedPicks--;
                             }
                             else {

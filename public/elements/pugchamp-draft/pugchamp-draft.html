@@ -548,8 +548,13 @@
                         player: player,
                         role: role,
                         team: this.turns[turn].team
-                    }) && this.teams[this.turns[turn].team].restrictedPicks <= 0) {
-                    return false;
+                    })) {
+                    if (this.teams[this.turns[turn].team].restrictedPicks <= 0 || !_.some(restrictedPicks, {
+                            player: player,
+                            team: this.turns[turn].team
+                        })) {
+                        return false;
+                    }
                 }
 
                 return true;
