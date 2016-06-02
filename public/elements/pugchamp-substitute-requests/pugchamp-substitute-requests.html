@@ -51,7 +51,9 @@
 
                     <p>A substitute has been requested for <strong>{{item.player.alias}}</strong> (with role <strong>{{item.role.name}}</strong>).</p>
 
-                    <p><paper-progress class="period transiting" min="0" value="{{difference(currentTime, item.startTime)}}" max="{{difference(item.endTime, item.startTime)}}"></paper-progress></p>
+                    <p hidden$="{{isUntimed(currentTime, item.endTime)}}">
+                        <paper-progress class="period transiting" min="0" value="{{difference(currentTime, item.startTime)}}" max="{{difference(item.endTime, item.startTime)}}"></paper-progress>
+                    </p>
 
                     <p hidden$={{!user}}>
                         <a class="button" href$="/game/{{item.game}}" target="_blank"><paper-button class="view" raised>View Game Info</paper-button></a>
@@ -111,6 +113,9 @@
             },
             canRetractRequest: function(user, captainID) {
                 return this._isAdmin(user) || this._isCurrentUser(user, captainID);
+            },
+            isUntimed: function(currentTime, endTime) {
+                return currentTime > endTime;
             },
             difference: function(a, b) {
                 return a - b;
