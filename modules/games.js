@@ -439,7 +439,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 /* eslint-disable lodash/prefer-lodash-method */
                 let gameUsers = _.keyBy(yield database.User.find({
                     '_id': {
-                        $in: helpers.getGameUsers(game)
+                        $in: _.map(helpers.getGameUsers(game), user => helpers.getDocumentID(user))
                     }
                 }), user => helpers.getDocumentID(user));
                 /* eslint-enable lodash/prefer-lodash-method */
@@ -489,7 +489,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 /* eslint-disable lodash/prefer-lodash-method */
                 let gameUsers = _.keyBy(yield database.User.find({
                     '_id': {
-                        $in: helpers.getGameUsers(game)
+                        $in: _.map(helpers.getGameUsers(game), user => helpers.getDocumentID(user))
                     }
                 }), user => helpers.getDocumentID(user));
                 /* eslint-enable lodash/prefer-lodash-method */
