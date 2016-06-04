@@ -39,7 +39,7 @@ const helpers = {
             }
         }
 
-        return _(users).uniqBy(user => helpers.getDocumentID(user)).value();
+        return _.uniqBy(users, user => helpers.getDocumentID(user));
     },
     getGameUserInfo(game, user) {
         let userID = helpers.getDocumentID(user);
