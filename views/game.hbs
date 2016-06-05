@@ -137,19 +137,25 @@
         <div class="flex-2" id="details">
             <img src="/assets/img/maps/{{game.map.image}}">
             <br>
-            <p><strong>Map</strong>: {{game.map.name}}</p>
+            <p>
+                <strong>Time</strong>: <span id="date">{{momentFormat game.date}}</span>
+                <br>
+                <p><strong>Status</strong>: {{game.status}}</p>
+            </p>
 
-            <p id="date"><strong>Time</strong>: {{momentFormat game.date}}</p>
+            <p>
+                <strong>Map</strong>: {{game.map.name}}
+                <br>
+                {{#if game.duration includeZero=true}}
+                <strong>Duration</strong>: {{gameDuration game.duration}}
+                {{/if}}
+            </p>
 
-            <p><strong>Status</strong>: {{game.status}}</p>
-
-            {{#if game.duration includeZero=true}}
-                <p><strong>Duration</strong>:{{gameDuration game.duration}}</p>
-            {{/if}}
-
-            {{#if game.stats.dominanceScore includeZero=true}}
-                <p><strong>Dominance Score</strong>: {{gameDominanceScore game}}</p>
-            {{/if}}
+            <p>
+                {{#if game.stats.dominanceScore includeZero=true}}
+                <strong>Dominance Score</strong>: {{gameDominanceScore game}}</p>
+                {{/if}}
+            </p>
 
             <p>
                 {{#each game.links}}
@@ -197,11 +203,9 @@
 
     <script src="/components/moment/moment.js"></script>
     <script>
-        document.addEventListener('load', function() {
-            var date = document.getElementById('date');
+        var date = document.getElementById('date');
 
-            date.textContent = moment.utc(date.textContent).local().format('llll');
-        });
+        date.textContent = moment.utc(date.textContent).local().format('llll');
     </script>
     {{/body}}
 
