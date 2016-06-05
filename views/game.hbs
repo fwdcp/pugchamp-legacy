@@ -137,23 +137,25 @@
         <div class="flex-2" id="details">
             <img src="/assets/img/maps/{{game.map.image}}">
             <br>
-            {{game.map.name}}
+            <p><strong>Map</strong>: {{game.map.name}}</p>
 
-            <p id="date">{{momentFormat game.date}}</p>
+            <p id="date"><strong>Time</strong>: {{momentFormat game.date}}</p>
 
-            <p>{{game.status}}</p>
+            <p><strong>Status</strong>: {{game.status}}</p>
 
             {{#if game.duration includeZero=true}}
-                <p>{{gameDuration game.duration}}</p>
+                <p><strong>Duration</strong>:{{gameDuration game.duration}}</p>
             {{/if}}
 
             {{#if game.stats.dominanceScore includeZero=true}}
                 <p><strong>Dominance Score</strong>: {{gameDominanceScore game}}</p>
             {{/if}}
 
-            {{#each game.links}}
-                <a href="{{url}}"><paper-button raised class="link">{{type}}</paper-button></a>
-            {{/each}}
+            <p>
+                {{#each game.links}}
+                    <a href="{{url}}"><paper-button raised class="link">{{type}}</paper-button></a>
+                {{/each}}
+            </p>
 
             {{#if currentUser.admin}}
             <pugchamp-admin-game-control game="{{toJSON game}}"></pugchamp-admin-game-control>
