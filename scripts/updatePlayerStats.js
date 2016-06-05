@@ -131,24 +131,24 @@ co(function*() {
                 });
                 /* eslint-enable lodash/prefer-lodash-method */
 
-                let captainScores = _.map(captainGames, function(game) {
-                    let teamIndex = _.findIndex(game.teams, function(team) {
-                        return helpers.getDocumentID(team.captain) === userID;
-                    });
+                let captainScores = _(captainGames).map(function(game) {
+                    if (game.stats.dominanceScore) {
+                        let gameUserInfo = helpers.getGameUserInfo(game, user);
 
-                    let differential = 0;
+                        if (gameUserInfo) {
+                            let teamIndex = _.indexOf(game, gameUserInfo.team);
 
-                    if (teamIndex === 0) {
-                        differential = (game.score[0] - game.score[1]) / 5;
+                            if (teamIndex === 0) {
+                                return game.stats.dominanceScore;
+                            }
+                            else if (teamIndex === 1) {
+                                return -1 * game.stats.dominanceScore;
+                            }
+                        }
                     }
-                    else if (teamIndex === 1) {
-                        differential = (game.score[1] - game.score[0]) / 5;
-                    }
 
-                    let duration = game.duration ? game.duration / 1800 : 1;
-
-                    return differential / duration;
-                });
+                    return null;
+                }).filter(_.isNumber).value();
 
                 user.stats.captainScore = calculatePredictionInterval(captainScores);
             }
@@ -204,23 +204,24 @@ co(function*() {
                 });
                 /* eslint-enable lodash/prefer-lodash-method */
 
-                let playerScores = _.map(playerGames, function(game) {
-                    let gameUserInfo = helpers.getGameUserInfo(game, user);
-                    let teamIndex = _.indexOf(game.teams, gameUserInfo.team);
+                let playerScores = _(playerGames).map(function(game) {
+                    if (game.stats.dominanceScore) {
+                        let gameUserInfo = helpers.getGameUserInfo(game, user);
 
-                    let differential = 0;
+                        if (gameUserInfo) {
+                            let teamIndex = _.indexOf(game, gameUserInfo.team);
 
-                    if (teamIndex === 0) {
-                        differential = (game.score[0] - game.score[1]) / 5;
+                            if (teamIndex === 0) {
+                                return game.stats.dominanceScore;
+                            }
+                            else if (teamIndex === 1) {
+                                return -1 * game.stats.dominanceScore;
+                            }
+                        }
                     }
-                    else if (teamIndex === 1) {
-                        differential = (game.score[1] - game.score[0]) / 5;
-                    }
 
-                    let duration = game.duration ? game.duration / 1800 : 1;
-
-                    return differential / duration;
-                });
+                    return null;
+                }).filter(_.isNumber).value();
 
                 user.stats.playerScore = calculatePredictionInterval(playerScores);
             }

@@ -260,10 +260,22 @@ var gameSchema = new mongoose.Schema({
         }
     }
 });
+gameSchema.virtual('stats.dominanceScore').get(function() {
+    if (_.size(this.score) > 0 && _.isNumber(this.duration)) {
+        let differential = (this.score[0] - this.score[1]) / 5;
+        let duration = this.duration / 1800;
+
+        return differential / duration;
+    }
+});
 gameSchema.set('toObject', {
     getters: true,
     versionKey: false,
     transform(doc, ret) {
+        if (ret.stats) {
+            ret.stats.dominanceScore = _.isNumber(doc.stats.dominanceScore) ? math.round(doc.stats.dominanceScore, 3) : null;
+        }
+
         if (doc.map) {
             ret.map = _.assign({}, MAPS[doc.map], {
                 id: doc.map
