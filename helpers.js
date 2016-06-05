@@ -5,6 +5,9 @@ const child_process = require('child_process');
 const path = require('path');
 
 const helpers = {
+    getCurrentPlayers(game) {
+        return _(game.teams).flatMapDeep(team => _.map(team.composition, role => _(role.players).reject('replaced').map('user').value())).uniqBy(user => helpers.getDocumentID(user)).value();
+    },
     getDocumentID(info) {
         if (_.hasIn(info, 'toHexString')) {
             return info.toHexString();
