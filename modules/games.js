@@ -229,6 +229,39 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                 selectedCandidate = helpers.getDocumentID(_.minBy(candidatePlayers, candidate => Math.abs(candidate.stats.rating.mean - player.stats.rating.mean)));
             }
+            else if (SUBSTITUTE_SELECTION_METHOD === 'mutual') {
+                let currentPlayers = _(game).thru(helpers.getCurrentPlayers).map(user => helpers.getDocumentID(user)).without(helpers.getDocumentID(request.player)).value();
+
+                let currentPlayerGames = yield database.Game.count({
+                    'teams.composition.players.user': {
+                        $in: currentPlayers
+                    }
+                }).exec();
+
+                let candidateScores = {};
+
+                for (let candidate of candidates) {
+                    let candidateGames = yield database.Game.count({
+                        'teams.composition.players.user': helpers.getDocumentID(candidate)
+                    }).exec();
+
+                    let commonGames = yield database.Game.count({
+                        $and: [{
+                            'teams.composition.players.user': helpers.getDocumentID(candidate)
+                        }, {
+                            'teams.composition.players.user': {
+                                $in: currentPlayers
+                            }
+                        }]
+                    }).exec();
+
+                    let score = (commonGames * commonGames) / (candidateGames * currentPlayerGames);
+
+                    candidateScores[helpers.getDocumentID(candidate)] = _.isFinite(score) ? score : 0;
+                }
+
+                selectedCandidate = helpers.getDocumentID(_.maxBy(candidates, candidate => candidateScores[helpers.getDocumentID(candidate)]));
+            }
             else if (SUBSTITUTE_SELECTION_METHOD === 'random') {
                 selectedCandidate = chance.pick(candidates);
             }
