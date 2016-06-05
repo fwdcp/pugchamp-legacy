@@ -227,9 +227,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 }).exec();
                 /* eslint-enable lodash/prefer-lodash-method */
 
-                selectedCandidate = _(candidatePlayers).sortBy(function(candidate) {
-                    return Math.abs(candidate.stats.rating.mean - player.stats.rating.mean);
-                }).map(candidate => helpers.getDocumentID(candidate)).head();
+                selectedCandidate = helpers.getDocumentID(_.minBy(candidatePlayers, candidate => Math.abs(candidate.stats.rating.mean - player.stats.rating.mean)));
             }
             else if (SUBSTITUTE_SELECTION_METHOD === 'random') {
                 selectedCandidate = chance.pick(candidates);
