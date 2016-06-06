@@ -29,12 +29,12 @@ def rate_game(game_id):
         initial_team_ratings = {}
 
         for role in team['composition']:
-            initial_player = db.users.find_one(role['players'][0]['user'])
-            initial_player_rating = db.ratings.find_one(
-                {'game': game['_id'], 'user': initial_player['_id']})
+            user = db.users.find_one(role['players'][0]['user'])
+            user_rating = db.ratings.find_one(
+                {'game': game['_id'], 'user': user['_id']})
 
-            initial_team_ratings[user['_id']] = trueskill.Rating(mu=initial_player_rating['before'][
-                'mean'], sigma=initial_player_rating['after']['deviation'])
+            initial_team_ratings[user['_id']] = trueskill.Rating(mu=user_rating['before'][
+                'mean'], sigma=user_rating['after']['deviation'])
 
         initial_ratings.append(initial_team_ratings)
 
