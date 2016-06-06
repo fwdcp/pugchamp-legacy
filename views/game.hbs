@@ -145,19 +145,19 @@
 
             <p>
                 <strong>Map</strong>: {{game.map.name}}
-                <br>
                 {{#if game.duration includeZero=true}}
+                <br>
                 <strong>Duration</strong>: {{gameDuration game.duration}}
                 {{/if}}
             </p>
 
             <p>
-                {{#if game.stats.predictedQuality includeZero=true}}
-                <strong>Predicted Quality</strong>: {{game.stats.predictedQuality}}</p>
-                {{/if}}
-                <br>
                 {{#if game.stats.dominanceScore includeZero=true}}
                 <strong>Dominance Score</strong>: {{gameDominanceScore game}}</p>
+                {{/if}}
+                {{#if game.stats.predictedQuality includeZero=true}}
+                <br>
+                <strong>Predicted Quality</strong>: {{game.stats.predictedQuality}}</p>
                 {{/if}}
             </p>
 
