@@ -30,14 +30,15 @@ def rate_game(game_id):
 
         for role in team['composition']:
             initial_player = db.users.find_one(role['players'][0]['user'])
-            initial_player_rating = db.ratings.find_one({'game': game['_id'], 'user': initial_player['_id']}
+            initial_player_rating = db.ratings.find_one(
+                {'game': game['_id'], 'user': initial_player['_id']})
 
-            initial_team_ratings[user['_id']]=trueskill.Rating(mu=initial_player_rating['before'][
-                                                          'mean'], sigma=initial_player_rating['after']['deviation'])
+            initial_team_ratings[user['_id']] = trueskill.Rating(mu=initial_player_rating['before'][
+                'mean'], sigma=initial_player_rating['after']['deviation'])
 
         initial_ratings.append(initial_team_ratings)
 
-    quality=trueskill.quality(initial_ratings)
+    quality = trueskill.quality(initial_ratings)
 
     db.games.update({'_id': ObjectId(game_id)}, {
                     '$set': {'stats.predictedQuality': quality}})
