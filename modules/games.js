@@ -47,6 +47,17 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
+    function calculateQuality(game) {
+        return co(function*() {
+            yield child_process.exec(`python calculate_quality.py ${helpers.getDocumentID(game)}`, {
+                cwd: path.resolve(__dirname, '../ratings')
+            });
+        });
+    }
+
+    /**
+     * @async
+     */
     function updateCurrentGame(users) {
         return co(function*() {
             yield helpers.runAppScript('updateCurrentGame', _.map(users, user => helpers.getDocumentID(user)));
@@ -547,6 +558,8 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             try {
                 yield rateGame(game);
+
+                calculateQuality(game);
 
                 yield self.updatePlayerStats(...helpers.getGameUsers(game));
 
