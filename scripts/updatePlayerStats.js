@@ -91,9 +91,8 @@ co(function*() {
                 /* eslint-enable lodash/prefer-lodash-method */
 
                 user.stats.captainRecord = _.countBy(captainGames, function(game) {
-                    let teamIndex = _.findIndex(game.teams, function(team) {
-                        return helpers.getDocumentID(team.captain) === userID;
-                    });
+                    let gameUserInfo = helpers.getGameUserInfo(game, user);
+                    let teamIndex = _.indexOf(game.teams, gameUserInfo.team);
 
                     if (teamIndex === 0) {
                         if (game.score[0] > game.score[1]) {
@@ -136,7 +135,7 @@ co(function*() {
                         let gameUserInfo = helpers.getGameUserInfo(game, user);
 
                         if (gameUserInfo) {
-                            let teamIndex = _.indexOf(game, gameUserInfo.team);
+                            let teamIndex = _.indexOf(game.teams, gameUserInfo.team);
 
                             if (teamIndex === 0) {
                                 return game.stats.dominanceScore;
@@ -209,7 +208,7 @@ co(function*() {
                         let gameUserInfo = helpers.getGameUserInfo(game, user);
 
                         if (gameUserInfo) {
-                            let teamIndex = _.indexOf(game, gameUserInfo.team);
+                            let teamIndex = _.indexOf(game.teams, gameUserInfo.team);
 
                             if (teamIndex === 0) {
                                 return game.stats.dominanceScore;
