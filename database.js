@@ -219,6 +219,9 @@ var gameSchema = new mongoose.Schema({
             }]
         }]
     }],
+    stats: {
+        predictedQuality: Number
+    },
     links: [{
         type: {
             type: String
@@ -274,6 +277,7 @@ gameSchema.set('toObject', {
     transform(doc, ret) {
         if (ret.stats) {
             ret.stats.dominanceScore = _.isNumber(doc.stats.dominanceScore) ? math.round(doc.stats.dominanceScore, 3) : null;
+            ret.stats.predictedQuality = _.isNumber(doc.stats.predictedQuality) ? math.round(doc.stats.predictedQuality, 3) : null;
         }
 
         if (doc.map) {
