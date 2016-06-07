@@ -114,6 +114,7 @@ co(function*() {
             let userID = helpers.getDocumentID(user);
 
             let restrictions = [];
+            let expirationDate;
 
             if (!user.setUp) {
                 restrictions.push(NOT_READY_RESTRICTIONS);
@@ -176,7 +177,7 @@ co(function*() {
             /* eslint-enable lodash/prefer-lodash-method */
 
             for (let restriction of activeRestrictions) {
-                if (!restriction.expires || moment().isBefore(restriction.expires)) {
+                if (!restriction.expires || moment(restriction.expires).isAfter()) {
                     let reason;
 
                     if (_.size(restriction.aspects) !== 0) {
@@ -194,6 +195,12 @@ co(function*() {
                         aspects: restriction.aspects,
                         reasons: [reason]
                     });
+
+                    if (restriction.expires) {
+                        if (!expirationDate || moment(restriction.expires).isBefore(expirationDate)) {
+                            expirationDate = restriction.expires;
+                        }
+                    }
                 }
                 else {
                     restriction.active = false;
@@ -214,7 +221,12 @@ co(function*() {
                 reasons: []
             });
 
-            yield cache.setAsync(`userRestrictions-${userID}`, JSON.stringify(combinedRestrictions));
+            if (expirationDate) {
+                yield cache.setAsync(`userRestrictions-${userID}`, JSON.stringify(combinedRestrictions), 'PX', moment(expirationDate).diff());
+            }
+            else {
+                yield cache.setAsync(`userRestrictions-${userID}`, JSON.stringify(combinedRestrictions));
+            }
         }
 
         if (_.size(cacheUpdatesRequired) > 0) {
