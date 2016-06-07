@@ -358,10 +358,32 @@ restrictionSchema.set('toObject', {
     versionKey: false
 });
 
+var penaltySchema = new mongoose.Schema({
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    type: {
+        type: String,
+        enum: ['player', 'captain']
+    },
+    reason: {
+        type: String,
+        enum: ['expiring draft', 'being replaced out of a game']
+    },
+    game: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Game'
+    },
+    date: Date,
+    active: Boolean
+});
+
 module.exports = {
     User: mongoose.model('User', userSchema),
     Game: mongoose.model('Game', gameSchema),
     Rating: mongoose.model('Rating', ratingSchema),
     Restriction: mongoose.model('Restriction', restrictionSchema),
+    Penalty: mongoose.model('Penalty', penaltySchema),
     mongoose
 };
