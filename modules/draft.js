@@ -928,7 +928,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     date: new Date(),
                     active: true
                 });
-                penalty.save();
+                yield penalty.save();
 
                 yield self.updateUserRestrictions(captain);
             }
