@@ -219,6 +219,24 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
+            let penalty = yield database.Penalty.findOne({
+                'user': helpers.getDocumentID(request.player),
+                'type': 'general',
+                'game': helpers.getDocumentID(request.game)
+            }).exec();
+            if (!penalty) {
+                penalty = new database.Penalty({
+                    user: helpers.getDocumentID(request.player),
+                    type: 'player',
+                    game: helpers.getDocumentID(request.game),
+                    reason: 'being replaced out of a game',
+                    date: new Date(),
+                    active: true
+                });
+                yield penalty.save();
+                yield self.updateUserRestrictions(request.player);
+            }
+
             if (request.candidates.size === 0) {
                 return;
             }
@@ -669,10 +687,32 @@ module.exports = function(app, cache, chance, database, io, self) {
                     description: `\`<${BASE_URL}/player/${captain.steamID}|${captain.alias}>\` retracted substitute request for player \`<${BASE_URL}/player/${player.steamID}|${player.alias}>\` for game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``
                 });
 
+                let penalty = yield database.Penalty.findOne({
+                    'user': helpers.getDocumentID(request.player),
+                    'type': 'general',
+                    'game': helpers.getDocumentID(request.game),
+                    'reason': 'being replaced out of a game'
+                }).exec();
+                if (penalty) {
+                    yield penalty.remove();
+                    yield self.updateUserRestrictions(request.player);
+                }
+
                 self.removeSubstituteRequest(requestID);
             }
             else if (self.isUserAdmin(userID)) {
                 self.postToAdminLog(userID, `retracted substitute request for player \`<${BASE_URL}/player/${player.steamID}|${player.alias}>\` for game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``);
+
+                let penalty = yield database.Penalty.findOne({
+                    'user': helpers.getDocumentID(request.player),
+                    'type': 'general',
+                    'game': helpers.getDocumentID(request.game),
+                    'reason': 'being replaced out of a game'
+                }).exec();
+                if (penalty) {
+                    yield penalty.remove();
+                    yield self.updateUserRestrictions(request.player);
+                }
 
                 self.removeSubstituteRequest(requestID);
             }
