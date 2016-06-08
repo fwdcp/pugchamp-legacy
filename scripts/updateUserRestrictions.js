@@ -91,7 +91,7 @@ function calculateActivePenalty(penalties, durations) {
 
 co(function*() {
     const CAPTAIN_GAME_REQUIREMENT = config.get('app.users.captainGameRequirement');
-    const CAPTAIN_PENALTY_DURATIONS = _.map(config.get('app.users.penaltyDurations.captain'), duration => ms(duration));
+    const CAPTAIN_PENALTY_COOLDOWNS = _.map(config.get('app.users.penaltyCooldowns.captain'), duration => ms(duration));
     const CURRENT_DRAFT_RESTRICTIONS = {
         aspects: ['sub'],
         reasons: ['You are involved in a currently occurring draft.']
@@ -100,7 +100,7 @@ co(function*() {
         aspects: ['sub', 'start', 'captain'],
         reasons: ['You are involved in a currently active game.']
     };
-    const GENERAL_PENALTY_DURATIONS = _.map(config.get('app.users.penaltyDurations.general'), duration => ms(duration));
+    const GENERAL_PENALTY_COOLDOWNS = _.map(config.get('app.users.penaltyCooldowns.general'), duration => ms(duration));
     const MIN_GAME_RESTRICTIONS = {
         aspects: ['captain'],
         reasons: ['You cannot captain because you do not meet the requirement for games played.']
@@ -242,7 +242,7 @@ co(function*() {
             }).sort('date').exec();
             /* eslint-enable lodash/prefer-lodash-method */
 
-            let activeGeneralPenalty = calculateActivePenalty(generalPenalties, GENERAL_PENALTY_DURATIONS);
+            let activeGeneralPenalty = calculateActivePenalty(generalPenalties, GENERAL_PENALTY_COOLDOWNS);
 
             if (moment(activeGeneralPenalty.expires).isAfter()) {
                 restrictions.push({
@@ -263,7 +263,7 @@ co(function*() {
             }).sort('date').exec();
             /* eslint-enable lodash/prefer-lodash-method */
 
-            let activeCaptainPenalty = calculateActivePenalty(captainPenalties, CAPTAIN_PENALTY_DURATIONS);
+            let activeCaptainPenalty = calculateActivePenalty(captainPenalties, CAPTAIN_PENALTY_COOLDOWNS);
 
             if (moment(activeCaptainPenalty.expires).isAfter()) {
                 restrictions.push({

@@ -9,7 +9,7 @@
             "hideDraftStats": false,
             "hideRatings": false,
             "initialRatings": [],
-            "penaltyDurations": {
+            "penaltyCooldowns": {
                 "captain": ["30m", "2h", "24h", "7d"],
                 "general": ["30m", "2h", "24h", "7d"]
             },
