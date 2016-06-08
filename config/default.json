@@ -9,6 +9,10 @@
             "hideDraftStats": false,
             "hideRatings": false,
             "initialRatings": [],
+            "penaltyDurations": {
+                "captain": ["30m", "2h", "24h", "7d"],
+                "general": ["30m", "2h", "24h", "7d"]
+            },
             "ratingBase": 1500,
             "restrictionDurations": [{
                 "name": "1 hour",
@@ -73,7 +77,6 @@
             "readyPeriod": "60s"
         },
         "draft": {
-            "captainDraftExpireCooldown": "10m",
             "restrictedPickLimit": 0,
             "separateCaptainPool": true,
             "turnTimeLimit": "60s"

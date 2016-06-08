@@ -8,6 +8,7 @@ const config = require('config');
 const debug = require('debug')('pugchamp:scripts:updateUserRestrictions');
 const HttpStatus = require('http-status-codes');
 const moment = require('moment');
+const ms = require('ms');
 const rp = require('request-promise');
 
 const helpers = require('../helpers');
@@ -57,8 +58,40 @@ function checkUserAuthorization(user) {
     });
 }
 
+function calculateActivePenalty(penalties, durations) {
+    return _.reduce(penalties, function(current, penalty) {
+        let level = current.level;
+        let resetDate = moment(current.expires);
+
+        while (level > 0 && moment(penalty.date).diff(resetDate, 'days') >= 7) {
+            resetDate.add(7, 'days');
+            level -= 1;
+        }
+
+        level += 1;
+
+        let expires = moment(penalty.date);
+        if (level - 1 < durations.length) {
+            expires.add(durations[level - 1], 'ms');
+        }
+        else {
+            expires.add(_.last(durations), 'ms');
+        }
+
+        return {
+            level,
+            expires,
+            reason: penalty.reason
+        };
+    }, {
+        level: 0,
+        expires: moment(0)
+    });
+}
+
 co(function*() {
     const CAPTAIN_GAME_REQUIREMENT = config.get('app.users.captainGameRequirement');
+    const CAPTAIN_PENALTY_DURATIONS = _.map(config.get('app.users.penaltyDurations.captain'), duration => ms(duration));
     const CURRENT_DRAFT_RESTRICTIONS = {
         aspects: ['sub'],
         reasons: ['You are involved in a currently occurring draft.']
@@ -67,10 +100,7 @@ co(function*() {
         aspects: ['sub', 'start', 'captain'],
         reasons: ['You are involved in a currently active game.']
     };
-    const DRAFT_EXPIRE_COOLDOWN_RESTRICTIONS = {
-        aspects: ['captain'],
-        reasons: ['You are currently on a captain cooldown for allowing a draft to expire.']
-    };
+    const GENERAL_PENALTY_DURATIONS = _.map(config.get('app.users.penaltyDurations.general'), duration => ms(duration));
     const MIN_GAME_RESTRICTIONS = {
         aspects: ['captain'],
         reasons: ['You cannot captain because you do not meet the requirement for games played.']
@@ -162,13 +192,6 @@ co(function*() {
                 restrictions.push(MIN_GAME_RESTRICTIONS);
             }
 
-            if (yield cache.existsAsync(`draftExpired-${userID}`)) {
-                let draftExpired = JSON.parse(yield cache.getAsync(`draftExpired-${userID}`));
-                if (draftExpired) {
-                    restrictions.push(DRAFT_EXPIRE_COOLDOWN_RESTRICTIONS);
-                }
-            }
-
             /* eslint-disable lodash/prefer-lodash-method */
             let activeRestrictions = yield database.Restriction.find({
                 'user': userID,
@@ -208,6 +231,48 @@ co(function*() {
                     yield restriction.save();
 
                     cacheUpdatesRequired.push(userID);
+                }
+            }
+
+            /* eslint-disable lodash/prefer-lodash-method */
+            let generalPenalties = yield database.Penalty.find({
+                'user': userID,
+                'type': 'general',
+                'active': true
+            }).sort('date').exec();
+            /* eslint-enable lodash/prefer-lodash-method */
+
+            let activeGeneralPenalty = calculateActivePenalty(generalPenalties, GENERAL_PENALTY_DURATIONS);
+
+            if (moment(activeGeneralPenalty.expires).isAfter()) {
+                restrictions.push({
+                    aspects: ['sub', 'start', 'captain'],
+                    reasons: [`You are currently on a captain cooldown (reason: ${activeGeneralPenalty.reason}) (expires: ${moment(activeGeneralPenalty.expires).fromNow()}).`]
+                });
+
+                if (!expirationDate || moment(activeGeneralPenalty.expires).isBefore(expirationDate)) {
+                    expirationDate = activeGeneralPenalty.expires;
+                }
+            }
+
+            /* eslint-disable lodash/prefer-lodash-method */
+            let captainPenalties = yield database.Penalty.find({
+                'user': userID,
+                'type': 'captain',
+                'active': true
+            }).sort('date').exec();
+            /* eslint-enable lodash/prefer-lodash-method */
+
+            let activeCaptainPenalty = calculateActivePenalty(captainPenalties, CAPTAIN_PENALTY_DURATIONS);
+
+            if (moment(activeCaptainPenalty.expires).isAfter()) {
+                restrictions.push({
+                    aspects: ['captain'],
+                    reasons: [`You are currently on a captain cooldown (reason: ${activeCaptainPenalty.reason}) (expires: ${moment(activeCaptainPenalty.expires).fromNow()}).`]
+                });
+
+                if (!expirationDate || moment(activeCaptainPenalty.expires).isBefore(expirationDate)) {
+                    expirationDate = activeCaptainPenalty.expires;
                 }
             }
 

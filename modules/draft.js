@@ -9,7 +9,6 @@ const helpers = require('../helpers');
 
 module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
-    const CAPTAIN_DRAFT_EXPIRE_COOLDOWN = ms(config.get('app.draft.captainDraftExpireCooldown'));
     const DRAFT_ORDER = config.get('app.draft.order');
     const EPSILON = Math.sqrt(Number.EPSILON);
     const MAP_POOL = config.get('app.games.maps');
@@ -922,7 +921,14 @@ module.exports = function(app, cache, chance, database, io, self) {
                     description: `\`<${BASE_URL}/player/${captain.steamID}|${captain.alias}>\` expired draft`
                 });
 
-                yield cache.setAsync(`draftExpired-${helpers.getDocumentID(captain)}`, JSON.stringify(true), 'PX', CAPTAIN_DRAFT_EXPIRE_COOLDOWN);
+                let penalty = new database.Penalty({
+                    user: helpers.getDocumentID(captain),
+                    type: 'captain',
+                    reason: 'expiring draft',
+                    date: new Date(),
+                    active: true
+                });
+                penalty.save();
 
                 yield self.updateUserRestrictions(captain);
             }

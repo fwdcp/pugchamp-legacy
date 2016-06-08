@@ -345,7 +345,10 @@ var restrictionSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
-    active: Boolean,
+    active: {
+        type: Boolean,
+        default: true
+    },
     aspects: [{
         type: String,
         enum: ['sub', 'start', 'captain', 'chat', 'support']
@@ -365,7 +368,7 @@ var penaltySchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['player', 'captain']
+        enum: ['general', 'captain']
     },
     reason: {
         type: String,
@@ -376,7 +379,10 @@ var penaltySchema = new mongoose.Schema({
         ref: 'Game'
     },
     date: Date,
-    active: Boolean
+    active: {
+        type: Boolean,
+        default: true
+    }
 });
 
 module.exports = {
