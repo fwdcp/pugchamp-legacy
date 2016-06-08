@@ -594,7 +594,7 @@
                 });
             },
             playExpireWarning: function() {
-                if (this.active && !this.complete && this.user && this.turns[this.currentTurn].method === 'captain' && this._isCurrentUser(this.user, this.teams[this.turns[this.currentTurn].team].id)) {
+                if (this.active && !this.complete && this.user && this.turns[this.currentTurn].method === 'captain' && this._isCurrentUser(this.user, this.teams[this.turns[this.currentTurn].team].captain.id)) {
                     if (Math.round((this.endTime - this.currentTime) / 1000) === 10) {
                         this.$.draftTenSecondsSound.play();
                     }
