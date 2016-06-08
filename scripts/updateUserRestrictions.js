@@ -13,6 +13,7 @@ const rp = require('request-promise');
 
 const helpers = require('../helpers');
 
+const PENALTY_LEVEL_RESET_INTERVAL = config.get('app.users.penaltyLevelResetInterval');
 const USER_AUTHORIZATIONS = config.get('app.users.authorizations');
 const USER_AUTHORIZATION_APIS = config.get('app.users.authorizationAPIs');
 const USER_AUTHORIZATION_DEFAULT = config.get('app.users.authorizationDefault');
@@ -63,8 +64,8 @@ function calculateActivePenalty(penalties, durations) {
         let level = current.level;
         let resetDate = moment(current.expires);
 
-        while (level > 0 && moment(penalty.date).diff(resetDate, 'days') >= 7) {
-            resetDate.add(7, 'days');
+        while (level > 0 && moment(penalty.date).diff(resetDate, 'ms') >= PENALTY_LEVEL_RESET_INTERVAL) {
+            resetDate.add(PENALTY_LEVEL_RESET_INTERVAL, 'ms');
             level -= 1;
         }
 

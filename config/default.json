@@ -13,6 +13,7 @@
                 "captain": ["30m", "2h", "24h", "7d"],
                 "general": ["30m", "2h", "24h", "7d"]
             },
+            "penaltyLevelResetInterval": "7d",
             "ratingBase": 1500,
             "restrictionDurations": [{
                 "name": "1 hour",
