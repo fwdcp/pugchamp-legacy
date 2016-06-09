@@ -227,7 +227,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             if (!penalty) {
                 penalty = new database.Penalty({
                     user: helpers.getDocumentID(request.player),
-                    type: 'player',
+                    type: 'general',
                     game: helpers.getDocumentID(request.game),
                     reason: 'being replaced out of a game',
                     date: new Date(),
