@@ -248,7 +248,7 @@ co(function*() {
             if (moment(activeGeneralPenalty.expires).isAfter()) {
                 restrictions.push({
                     aspects: ['sub', 'start', 'captain'],
-                    reasons: [`You are currently on a captain cooldown (reason: ${activeGeneralPenalty.reason}) (expires: ${moment(activeGeneralPenalty.expires).fromNow()}).`]
+                    reasons: [`You are currently on a general cooldown (reason: ${activeGeneralPenalty.reason}) (expires: ${moment(activeGeneralPenalty.expires).fromNow()}).`]
                 });
 
                 if (!expirationDate || moment(activeGeneralPenalty.expires).isBefore(expirationDate)) {
