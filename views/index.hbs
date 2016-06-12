@@ -4,6 +4,7 @@
 
     {{#> head}}
     <link rel="import" href="/elements/pugchamp-admin-request/pugchamp-admin-request.html">
+    <link rel="import" href="/elements/pugchamp-advertisements/pugchamp-advertisements.html">
     <link rel="import" href="/elements/pugchamp-chat/pugchamp-chat.html">
     <link rel="import" href="/elements/pugchamp-client/pugchamp-client.html">
     <link rel="import" href="/elements/pugchamp-current-game/pugchamp-current-game.html">
@@ -24,6 +25,13 @@
     <pugchamp-client>
         <div class="horizontal layout wrap">
             <div id="content" class="flex">
+                {{#if advertisements}}
+                <pugchamp-advertisements>
+                    {{#each advertisements}}
+                    <div class="advertisement">{{{this}}}</div>
+                    {{/each}}
+                </pugchamp-advertisements>
+                {{/if}}
                 <pugchamp-restrictions></pugchamp-restrictions>
                 <pugchamp-current-game></pugchamp-current-game>
                 <pugchamp-substitute-requests></pugchamp-substitute-requests>

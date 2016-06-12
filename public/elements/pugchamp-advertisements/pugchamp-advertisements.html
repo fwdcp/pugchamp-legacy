@@ -1,0 +1,34 @@
+<link rel="import" href="/components/polymer/polymer.html">
+
+<link rel="import" href="/components/paper-material/paper-material.html">
+<link rel="import" href="/components/paper-styles/color.html">
+
+<dom-module id="pugchamp-advertisements">
+    <template>
+        <style is="custom-style">
+            #advertisements ::content .advertisement {
+                background: var(--primary-color);
+                color: var(--primary-text-color);
+                margin: 5px 0;
+                padding: 10px;
+            }
+
+            #advertisements ::content .advertisement a {
+                color: var(--accent-color);
+            }
+
+            #advertisements ::content .advertisement p {
+                margin: initial;
+            }
+        </style>
+
+        <div id="advertisements"><content select=".advertisement"></content></div>
+        <hr>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'pugchamp-advertisements'
+        });
+    </script>
+</dom-module>

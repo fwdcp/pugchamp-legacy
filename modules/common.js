@@ -70,6 +70,15 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
+    if (config.has('app.advertisements')) {
+        const ADVERTISEMENTS = config.get('app.advertisements');
+
+        app.use(function(req, res, next) {
+            res.locals.advertisements = ADVERTISEMENTS;
+            next();
+        });
+    }
+
     app.get('/', function(req, res) {
         res.render('index');
     });
