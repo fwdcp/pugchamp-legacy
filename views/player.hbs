@@ -8,7 +8,6 @@
     <link rel="import" href="/components/iron-icons/iron-icons.html">
     <link rel="import" href="/components/paper-button/paper-button.html">
     <link rel="import" href="/components/paper-checkbox/paper-checkbox.html">
-    <link rel="import" href="/components/paper-datatable/paper-datatable.html">
     <link rel="import" href="/components/paper-input/paper-input.html">
     <link rel="import" href="/components/paper-tooltip/paper-tooltip.html">
     <link rel="import" href="/components/paper-styles/color.html">
@@ -142,6 +141,10 @@
     <h2>Restrictions</h2>
 
     <pugchamp-admin-restriction-control user="{{toJSON user}}" restrictions="{{toJSON restrictions}}" restriction-durations="{{toJSON restrictionDurations}}"></pugchamp-admin-restriction-control>
+
+    <h2>Penalties</h2>
+
+    <pugchamp-admin-penalty-control general-penalty-history="{{toJSON generalPenaltyHistory}}" captain-penalty-history="{{toJSON captainPenaltyHistory}}"></pugchamp-admin-penalty-control>
     {{/if}}
 
     <script>

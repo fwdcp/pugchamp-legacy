@@ -13,7 +13,6 @@ const rp = require('request-promise');
 
 const helpers = require('../helpers');
 
-const PENALTY_LEVEL_RESET_INTERVAL = config.get('app.users.penaltyLevelResetInterval');
 const USER_AUTHORIZATIONS = config.get('app.users.authorizations');
 const USER_AUTHORIZATION_APIS = config.get('app.users.authorizationAPIs');
 const USER_AUTHORIZATION_DEFAULT = config.get('app.users.authorizationDefault');
@@ -59,13 +58,13 @@ function checkUserAuthorization(user) {
     });
 }
 
-function calculateActivePenalty(penalties, durations) {
+function calculateActivePenalty(penalties, durations, resetInterval) {
     return _.reduce(penalties, function(current, penalty) {
         let level = current.level;
         let resetDate = moment(current.expires);
 
-        while (level > 0 && moment(penalty.date).diff(resetDate, 'ms') >= PENALTY_LEVEL_RESET_INTERVAL) {
-            resetDate.add(PENALTY_LEVEL_RESET_INTERVAL, 'ms');
+        while (level > 0 && moment(penalty.date).diff(resetDate, 'ms') >= resetInterval) {
+            resetDate.add(resetInterval, 'ms');
             level -= 1;
         }
 
@@ -110,6 +109,7 @@ co(function*() {
         aspects: ['sub', 'start', 'captain', 'chat', 'support'],
         reasons: ['Your account is not [set up](/user/settings) properly.']
     };
+    const PENALTY_LEVEL_RESET_INTERVAL = config.get('app.users.penaltyLevelResetInterval');
     const UNAUTHORIZED_ADMIN_RESTRICTIONS = {
         aspects: ['sub', 'start', 'captain'],
         reasons: ['You are not authorized to play in this system.']
@@ -243,7 +243,7 @@ co(function*() {
             }).sort('date').exec();
             /* eslint-enable lodash/prefer-lodash-method */
 
-            let activeGeneralPenalty = calculateActivePenalty(generalPenalties, GENERAL_PENALTY_COOLDOWNS);
+            let activeGeneralPenalty = calculateActivePenalty(generalPenalties, GENERAL_PENALTY_COOLDOWNS, PENALTY_LEVEL_RESET_INTERVAL);
 
             if (moment(activeGeneralPenalty.expires).isAfter()) {
                 restrictions.push({
@@ -264,7 +264,7 @@ co(function*() {
             }).sort('date').exec();
             /* eslint-enable lodash/prefer-lodash-method */
 
-            let activeCaptainPenalty = calculateActivePenalty(captainPenalties, CAPTAIN_PENALTY_COOLDOWNS);
+            let activeCaptainPenalty = calculateActivePenalty(captainPenalties, CAPTAIN_PENALTY_COOLDOWNS, PENALTY_LEVEL_RESET_INTERVAL);
 
             if (moment(activeCaptainPenalty.expires).isAfter()) {
                 restrictions.push({

@@ -1,0 +1,56 @@
+<link rel="import" href="/components/polymer/polymer.html">
+
+<link rel="import" href="/components/paper-datatable/paper-datatable.html">
+
+<dom-module id="pugchamp-admin-restriction-control">
+    <template>
+        <style is="custom-style">
+            paper-datatable {
+                --paper-datatable-row-hover-color: var(--dark-theme-background-color);
+
+                --paper-datatable-column-header: {
+                    color: var(--dark-theme-text-color);
+                };
+
+                --paper-datatable-cell: {
+                    background: var(--box-background-color);
+                    color: var(--dark-theme-text-color);
+                };
+
+                --paper-datatable-column-header-sorted: {
+                    color: inherit;
+                };
+            }
+        </style>
+
+        <h3>General Penalty History</h3>
+
+        <paper-datatable data="{{generalPenaltyHistory}}">
+            <paper-datatable-column header="Date" property="date" type="Date"></paper-datatable-column>
+            <paper-datatable-column header="Type" property="type" type="String"></paper-datatable-column>
+            <paper-datatable-column header="Level" property="level" type="Number"></paper-datatable-column>
+            <paper-datatable-column header="Reason" property="reason" type="String"></paper-datatable-column>
+            <paper-datatable-column header="Duration" property="duration" type="String"></paper-datatable-column>
+        </paper-datatable>
+
+        <h3>Captain Penalty History</h3>
+
+        <paper-datatable data="{{captainPenaltyHistory}}">
+            <paper-datatable-column header="Date" property="date" type="Date"></paper-datatable-column>
+            <paper-datatable-column header="Type" property="type" type="String"></paper-datatable-column>
+            <paper-datatable-column header="Level" property="level" type="Number"></paper-datatable-column>
+            <paper-datatable-column header="Reason" property="reason" type="String"></paper-datatable-column>
+            <paper-datatable-column header="Duration" property="duration" type="String"></paper-datatable-column>
+        </paper-datatable>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'pugchamp-admin-penalty-control',
+            properties: {
+                generalPenalties: Array,
+                captainPenalties: Array
+            }
+        });
+    </script>
+</dom-module>
