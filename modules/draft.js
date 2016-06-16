@@ -276,11 +276,8 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         self.processDraftStatusUpdate();
 
-        // NOTE: hacks with previous draft info - clear draft restrictions and mark activity to prevent players from getting removed
+        // NOTE: hacks with previous draft info - clear draft restrictions
         yield self.updateUserRestrictions(..._.union(previousDraftPlayers, previousDraftPlayers));
-        for (let user of _.union(previousDraftCaptains, previousDraftPlayers)) {
-            self.markUserActivity(user);
-        }
 
         self.emit('draftStatusChanged', draftActive);
     });

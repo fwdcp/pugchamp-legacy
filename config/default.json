@@ -74,7 +74,6 @@
             "substituteSelectionMethod": "closest"
         },
         "launch": {
-            "autoReadyThreshold": "5m",
             "readyPeriod": "60s"
         },
         "draft": {

@@ -151,8 +151,6 @@ module.exports = function(app, cache, chance, database, io, self) {
                 yield cache.setAsync(`chatLimited-${userID}`, JSON.stringify(true), 'PX', RATE_LIMIT);
             }
 
-            self.markUserActivity(userID);
-
             let userRestrictions = yield self.getUserRestrictions(userID);
 
             if (!_.includes(userRestrictions.aspects, 'chat')) {

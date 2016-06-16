@@ -9,7 +9,6 @@ const ms = require('ms');
 const helpers = require('../helpers');
 
 module.exports = function(app, cache, chance, database, io, self) {
-    const AUTO_READY_THRESHOLD = ms(config.get('app.launch.autoReadyThreshold'));
     const READY_PERIOD = ms(config.get('app.launch.readyPeriod'));
     const ROLES = config.get('app.games.roles');
     const SEPARATE_CAPTAIN_POOL = config.get('app.draft.separateCaptainPool');
@@ -315,23 +314,6 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    function autoReadyRecentlyActiveUsers() {
-        return co(function*() {
-            let allUsers = _.unionBy(_.toArray(captainsAvailable), ..._.map(playersAvailable, available => _.toArray(available)), user => helpers.getDocumentID(user));
-
-            let activeResults = yield cache.mgetAsync(_.map(allUsers, user => `userActive-${helpers.getDocumentID(user)}`));
-
-            let recentlyActive = _.filter(allUsers, (user, index) => (!_.isNil(activeResults[index]) && JSON.parse(activeResults[index])));
-
-            for (let userID of recentlyActive) {
-                updateUserReadyStatus(userID, true);
-            }
-        });
-    }
-
-    /**
-     * @async
-     */
     function beginLaunchAttempt() {
         return co(function*() {
             if (!launchAttemptActive) {
@@ -344,8 +326,6 @@ module.exports = function(app, cache, chance, database, io, self) {
                     readiesReceived = new Set();
 
                     io.sockets.emit('userReadyStatusUpdated', false);
-
-                    yield autoReadyRecentlyActiveUsers();
 
                     currentLaunchHolds = yield getLaunchHolds(false);
 
@@ -369,12 +349,6 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         });
     }
-
-    self.markUserActivity = co.wrap(function* markUserActivity(user) {
-        let userID = helpers.getDocumentID(user);
-
-        yield cache.setAsync(`userActive-${userID}`, JSON.stringify(true), 'PX', AUTO_READY_THRESHOLD);
-    });
 
     /**
      * @async
@@ -408,8 +382,6 @@ module.exports = function(app, cache, chance, database, io, self) {
         let userID = this.decoded_token.user;
 
         co(function*() {
-            self.markUserActivity(userID);
-
             yield updateUserAvailability(userID, availability);
 
             if (launchAttemptActive) {
@@ -420,8 +392,6 @@ module.exports = function(app, cache, chance, database, io, self) {
 
     function onUserUpdateReadyStatus(ready) {
         let userID = this.decoded_token.user;
-
-        self.markUserActivity(userID);
 
         updateUserReadyStatus(userID, ready);
     }
