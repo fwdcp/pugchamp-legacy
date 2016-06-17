@@ -461,7 +461,7 @@ module.exports = function(app, cache, chance, database, io, self) {
      * @async
      */
     self.handleGameServerUpdate = co.wrap(function* handleGameServerUpdate(info) {
-        let game = yield database.Game.findById(info.game);
+        let game = yield database.Game.findById(info.game).populate('teams.captain', 'alias steamID').exec();
 
         if (info.status === 'setup') {
             if (game.status !== 'initializing' && game.status !== 'launching') {
@@ -522,6 +522,15 @@ module.exports = function(app, cache, chance, database, io, self) {
             yield game.save();
 
             yield self.processGameUpdate(game);
+
+            let duration = moment.duration(game.duration, 'seconds').format('m:ss', {
+                trim: false
+            });
+            let score = _(game.teams).map(team => (HIDE_CAPTAINS ? team.faction : team.captain.alias)).join(', ');
+
+            self.sendMessage({
+                action: `[game](/game/${helpers.getDocumentID(game)}) update: live for ${duration} with current score ${score}`
+            });
         }
         else if (info.status === 'completed') {
             if (game.status === 'aborted') {
@@ -574,6 +583,15 @@ module.exports = function(app, cache, chance, database, io, self) {
             yield self.processGameUpdate(game);
             self.removeGameSubstituteRequests(game);
             setTimeout(self.shutdownGameServers, POST_GAME_RESET_DELAY, game);
+
+            let duration = moment.duration(game.duration, 'seconds').format('m:ss', {
+                trim: false
+            });
+            let score = _(game.teams).map(team => (HIDE_CAPTAINS ? team.faction : team.captain.alias)).join(', ');
+
+            self.sendMessage({
+                action: `[game](/game/${helpers.getDocumentID(game)}) update: completed after ${duration} with final score ${score}`
+            });
 
             try {
                 yield rateGame(game);
