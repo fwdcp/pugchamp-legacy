@@ -929,6 +929,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 });
                 yield penalty.save();
 
+                yield self.updateUserCache(captain);
                 yield self.updateUserRestrictions(captain);
 
                 self.sendMessage({

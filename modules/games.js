@@ -237,6 +237,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     active: true
                 });
                 yield penalty.save();
+                yield self.updateUserCache(player);
                 yield self.updateUserRestrictions(player);
             }
 
@@ -698,9 +699,9 @@ module.exports = function(app, cache, chance, database, io, self) {
             let request = currentSubstituteRequests.get(requestID);
             let game = yield database.Game.findById(request.game);
 
-            let playerInfo = helpers.getGameUserInfo(game, request.player);
-
             let player = yield self.getCachedUser(request.player);
+
+            let playerInfo = helpers.getGameUserInfo(game, player);
 
             if (userID === helpers.getDocumentID(playerInfo.team.captain)) {
                 let captain = yield self.getCachedUser(userID);
@@ -710,14 +711,15 @@ module.exports = function(app, cache, chance, database, io, self) {
                 });
 
                 let penalty = yield database.Penalty.findOne({
-                    'user': helpers.getDocumentID(request.player),
+                    'user': helpers.getDocumentID(player),
                     'type': 'general',
                     'game': helpers.getDocumentID(request.game),
                     'reason': 'being replaced out of a game'
                 }).exec();
                 if (penalty) {
                     yield penalty.remove();
-                    yield self.updateUserRestrictions(request.player);
+                    yield self.updateUserCache(player);
+                    yield self.updateUserRestrictions(player);
                 }
 
                 self.removeSubstituteRequest(requestID);
@@ -726,14 +728,15 @@ module.exports = function(app, cache, chance, database, io, self) {
                 self.postToAdminLog(userID, `retracted substitute request for player \`<${BASE_URL}/player/${player.steamID}|${player.alias}>\` for game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``);
 
                 let penalty = yield database.Penalty.findOne({
-                    'user': helpers.getDocumentID(request.player),
+                    'user': helpers.getDocumentID(player),
                     'type': 'general',
                     'game': helpers.getDocumentID(request.game),
                     'reason': 'being replaced out of a game'
                 }).exec();
                 if (penalty) {
                     yield penalty.remove();
-                    yield self.updateUserRestrictions(request.player);
+                    yield self.updateUserCache(player);
+                    yield self.updateUserRestrictions(player);
                 }
 
                 self.removeSubstituteRequest(requestID);
