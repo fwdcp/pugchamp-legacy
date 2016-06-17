@@ -36,7 +36,7 @@
                 <pugchamp-current-game></pugchamp-current-game>
                 <pugchamp-substitute-requests></pugchamp-substitute-requests>
                 <pugchamp-draft {{#if hideCaptains}}hide-captains{{/if}}></pugchamp-draft>
-                <pugchamp-launchpad {{#unless separateCaptainPool}}no-captains{{/unless}}></pugchamp-launchpad>
+                <pugchamp-launchpad {{#unless separateCaptainPool}}no-captains{{/unless}} pre-ready-timeout="{{preReadyTimeout}}"></pugchamp-launchpad>
             </div>
             <pugchamp-chat></pugchamp-chat>
         </div>

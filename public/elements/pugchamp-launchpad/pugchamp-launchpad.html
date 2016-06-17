@@ -41,9 +41,15 @@
                 color: var(--accent-color);
             }
 
+            #preReady {
+                background: var(--box-background-color);
+                padding: 5px 20px;
+                margin: 5px 0;
+            }
+
             #ready {
                 background: var(--box-background-color);
-                padding: 5px 25px;
+                padding: 5px 20px;
                 margin: 5px 0;
             }
 
@@ -71,6 +77,20 @@
             #setNotReady {
                 background: var(--paper-red-500);
                 color: var(--dark-theme-text-color);
+            }
+
+            #startPreReady {
+                background: var(--paper-green-500);
+                color: var(--dark-theme-text-color);
+            }
+
+            #cancelPreReady {
+                background: var(--paper-red-500);
+                color: var(--dark-theme-text-color);
+            }
+
+            #preReadyTime {
+                --paper-progress-height: 10px;
             }
 
             #captains {
@@ -136,6 +156,15 @@
             }
         </style>
 
+        <paper-material id="preReady" hidden$="{{launchActive}}">
+            <p>
+                <paper-button hidden$="{{preReady}}" disabled="{{!isAvailable(availability)}}" id="startPreReady" on-tap="startPreReady">Pre-Ready</paper-button>
+                <paper-button hidden$="{{!preReady}}" id="cancelPreReady" on-tap="cancelPreReady">Cancel Pre-Ready</paper-button>
+            </p>
+            <p>
+                <paper-progress hidden$="{{!preReady}}" id="preReadyTime" class="transiting" min="0" value="{{difference(currentTime, preReadyStartTime)}}" max="{{difference(preReadyEndTime, preReadyStartTime)}}"></paper-progress>
+            </p>
+        </paper-material>
         <paper-material id="ready" hidden$="{{!launchActive}}">
             <h2>Launch In Progress</h2>
 
@@ -254,11 +283,16 @@
                 noCaptains: {
                     type: Boolean,
                     value: false
+                },
+                preReadyTimeout: {
+                    type: Number,
+                    value: 90000
                 }
             },
             ready: function() {
                 this.set('launchActive', false);
                 this.set('readyToPlay', false);
+                this.set('preReady', false);
                 if (!this.noCaptains) {
                     this.set('availability', {roles: {}, captain: false});
                 }
@@ -334,13 +368,24 @@
                 this.async(this.incrementReadyTimer, 1000);
             },
             updateReadyStatus: function(event) {
-                socket.emit('updateReadyStatus', event.target.dataset.status === 'ready');
+                if (event.target.dataset.status === 'ready') {
+                    socket.emit('updateReadyStatus', true);
+                    this.startPreReady();
+                }
+                else {
+                    socket.emit('updateReadyStatus', false);
+                    this.cancelPreReady();
+                }
             },
             onUserReadyStatusUpdated: function(ready) {
                 this.set('readyToPlay', ready);
             },
             startReady: function() {
                 this.set('launchActive', true);
+
+                if (this.preReady) {
+                    socket.emit('updateReadyStatus', true);
+                }
 
                 if (!this.user || (!this.isRestricted(this.restrictions, 'start') || !this.isRestricted(this.restrictions, 'captain'))) {
                     this.$.launchNotification.notify();
@@ -363,8 +408,20 @@
 
                 this.set('readyToPlay', false);
             },
+            startPreReady: function() {
+                this.set('preReady', true);
+                this.set('preReadyStartTime', this.timesync.now());
+                this.set('preReadyEndTime', this.timesync.now() + this.preReadyTimeout);
+            },
+            cancelPreReady: function() {
+                this.set('preReady', false);
+            },
             updateTimers: function() {
                 this.set('currentTime', this.timesync.now());
+
+                if (this.currentTime > this.preReadyEndTime) {
+                    this.cancelPreReady();
+                }
 
                 this.playLaunchAlert();
 
