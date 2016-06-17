@@ -95,6 +95,17 @@ function calculatePenaltyHistory(penalties, durations, resetInterval) {
         });
     }
 
+    while (level > 0 && moment().diff(eventDate, 'ms') >= resetInterval) {
+        eventDate.add(resetInterval, 'ms');
+        level -= 1;
+
+        history.push({
+            type: 'reset',
+            date: eventDate.toDate(),
+            level
+        });
+    }
+
     return history;
 }
 
