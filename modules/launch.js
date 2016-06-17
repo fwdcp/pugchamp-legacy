@@ -195,7 +195,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
             catch (err) {
                 self.postToLog({
-                    description: 'encountered error while updating status',
+                    description: 'encountered error while updating status of launch',
                     error: err
                 });
 

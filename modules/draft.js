@@ -277,7 +277,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         self.processDraftStatusUpdate();
 
         // NOTE: hacks with previous draft info - clear draft restrictions
-        yield self.updateUserRestrictions(..._.union(previousDraftPlayers, previousDraftPlayers));
+        yield self.updateUserRestrictions(..._.union(previousDraftCaptains, previousDraftPlayers));
 
         self.emit('draftStatusChanged', draftActive);
     });
@@ -336,13 +336,15 @@ module.exports = function(app, cache, chance, database, io, self) {
                 yield self.assignGameToServer(game);
             }
             catch (err) {
+                let gameID = helpers.getDocumentID(game);
+
                 self.postToLog({
-                    description: 'encountered error while trying to set up game',
+                    description: gameID ? `encountered error while trying to set up game \`<${BASE_URL}/game/${gameID}|${gameID}>\`` : 'encountered error while trying to set up drafted game',
                     error: err
                 });
 
                 self.sendMessage({
-                    action: 'failed to set up drafted game due to internal error'
+                    action: gameID ? `failed to set up game [${gameID}](/game/${gameID}) due to internal error` : 'failed to set up drafted game due to internal error'
                 });
 
                 yield self.cleanUpDraft();
@@ -928,11 +930,17 @@ module.exports = function(app, cache, chance, database, io, self) {
                 yield penalty.save();
 
                 yield self.updateUserRestrictions(captain);
-            }
 
-            self.sendMessage({
-                action: 'game draft aborted due to turn expiration'
-            });
+                self.sendMessage({
+                    user: helpers.getDocumentID(captain),
+                    action: 'aborted draft by turn expiration'
+                });
+            }
+            else {
+                self.sendMessage({
+                    action: 'game draft aborted due to turn expiration'
+                });
+            }
 
             yield self.cleanUpDraft();
         });

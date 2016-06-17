@@ -777,7 +777,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                     if (updatedGame.status !== 'launching' && updatedGame.status !== 'live') {
                         self.postToLog({
-                            description: `server \`${server}\` is currently assigned to game \`${helpers.getDocumentID(serverStatus.game)}\` which is ${updatedGame.status}`
+                            description: `server \`${server}\` is currently assigned to game \`<${BASE_URL}/game/${helpers.getDocumentID(serverStatus.game)}|${helpers.getDocumentID(serverStatus.game)}>\` which is ${updatedGame.status}`
                         });
                     }
                 }

@@ -212,7 +212,9 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            let gameUserInfo = helpers.getGameUserInfo(game, request.player);
+            let player = yield database.User.findById(helpers.getDocumentID(request.player)).exec();
+
+            let gameUserInfo = helpers.getGameUserInfo(game, player);
 
             if (!gameUserInfo || !gameUserInfo.player || gameUserInfo.player.replaced) {
                 self.removeSubstituteRequest(requestID);
@@ -220,13 +222,13 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
 
             let penalty = yield database.Penalty.findOne({
-                'user': helpers.getDocumentID(request.player),
+                'user': helpers.getDocumentID(player),
                 'type': 'general',
                 'game': helpers.getDocumentID(request.game)
             }).exec();
             if (!penalty) {
                 penalty = new database.Penalty({
-                    user: helpers.getDocumentID(request.player),
+                    user: helpers.getDocumentID(player),
                     type: 'general',
                     game: helpers.getDocumentID(request.game),
                     reason: 'being replaced out of a game',
@@ -234,7 +236,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     active: true
                 });
                 yield penalty.save();
-                yield self.updateUserRestrictions(request.player);
+                yield self.updateUserRestrictions(player);
             }
 
             if (request.candidates.size === 0) {
@@ -248,7 +250,6 @@ module.exports = function(app, cache, chance, database, io, self) {
                 selectedCandidate = _.head(candidates);
             }
             else if (SUBSTITUTE_SELECTION_METHOD === 'closest') {
-                let player = yield database.User.findById(helpers.getDocumentID(request.player)).exec();
                 /* eslint-disable lodash/prefer-lodash-method */
                 let candidatePlayers = yield database.User.find({
                     '_id': {
@@ -260,7 +261,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 selectedCandidate = helpers.getDocumentID(_.minBy(candidatePlayers, candidate => Math.abs(candidate.stats.rating.mean - player.stats.rating.mean)));
             }
             else if (SUBSTITUTE_SELECTION_METHOD === 'mutual') {
-                let currentPlayers = _(game).thru(helpers.getCurrentPlayers).map(user => helpers.getDocumentID(user)).without(helpers.getDocumentID(request.player)).value();
+                let currentPlayers = _(game).thru(helpers.getCurrentPlayers).map(user => helpers.getDocumentID(user)).without(helpers.getDocumentID(player)).value();
 
                 let currentPlayerGames = yield database.Game.count({
                     'teams.composition.players.user': {
@@ -297,16 +298,16 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
 
             try {
-                yield self.performSubstitution(game, request.player, selectedCandidate);
+                yield self.performSubstitution(game, player, selectedCandidate);
             }
             catch (err) {
                 self.postToLog({
-                    description: `error in making substitution for game \`${helpers.getDocumentID(game)}\``,
+                    description: `error in making substitution for game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``,
                     error: err
                 });
 
                 self.sendMessage({
-                    action: 'failed to complete substitution for game due to internal error'
+                    action: `failed to substitute out [${player.alias}](/player/${player.steamID}) from [game](/game/${helpers.getDocumentID(game)}) due to internal error`
                 });
             }
 
@@ -465,7 +466,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         if (info.status === 'setup') {
             if (game.status !== 'initializing' && game.status !== 'launching') {
                 self.postToLog({
-                    description: `game \`${helpers.getDocumentID(game)}\` was ${game.status} but is being reported as set up`
+                    description: `game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\` was ${game.status} but is being reported as set up`
                 });
 
                 return;
@@ -480,7 +481,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         else if (info.status === 'live') {
             if (game.status === 'aborted' || game.status === 'completed') {
                 self.postToLog({
-                    description: `game \`${helpers.getDocumentID(game)}\` was ${game.status} but is being reported as live`
+                    description: `game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\` was ${game.status} but is being reported as live`
                 });
 
                 return;
@@ -525,7 +526,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         else if (info.status === 'completed') {
             if (game.status === 'aborted') {
                 self.postToLog({
-                    description: `game \`${helpers.getDocumentID(game)}\` was ${game.status} but is being reported as completed`
+                    description: `game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\` was ${game.status} but is being reported as completed`
                 });
 
                 return;
@@ -585,7 +586,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
             catch (err) {
                 self.postToLog({
-                    description: `failed to update stats for game \`${helpers.getDocumentID(game)}\``,
+                    description: `failed to update stats for game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``,
                     error: err
                 });
             }
