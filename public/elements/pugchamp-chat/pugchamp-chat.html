@@ -100,6 +100,10 @@
                 line-height: 24px;
             }
 
+            .message .message-action p {
+                margin: 0;
+            }
+
             .message .message-body {
                 @apply(--paper-font-common-base);
                 overflow-wrap: break-word;
@@ -152,9 +156,9 @@
                                         </span>
                                     </template>
                                     <marked-element markdown="{{item.action}}">
-                                        <em class="message-action"></em>
+                                        <em class="message-action markdown-html"></em>
                                     </marked-element>
-                                    <br>
+                                    <br hidden$="{{!item.body}}">
                                     <span class="message-body">{{item.body}}</span>
                                 </div>
                                 <div>
