@@ -526,7 +526,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             let duration = moment.duration(game.duration, 'seconds').format('m:ss', {
                 trim: false
             });
-            let score = _(game.teams).map(team => ((HIDE_CAPTAINS || !team.captain) ? team.faction : team.captain.alias)).join(', ');
+            let score = _(game.teams).map(team => `${(HIDE_CAPTAINS || !team.captain) ? team.faction : team.captain.alias} ${team.score}`).join(', ');
 
             self.sendMessage({
                 action: `[game](/game/${helpers.getDocumentID(game)}) update: live for ${duration} with current score ${score}`
@@ -587,7 +587,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             let duration = moment.duration(game.duration, 'seconds').format('m:ss', {
                 trim: false
             });
-            let score = _(game.teams).map(team => ((HIDE_CAPTAINS || !team.captain) ? team.faction : team.captain.alias)).join(', ');
+            let score = _(game.teams).map(team => `${(HIDE_CAPTAINS || !team.captain) ? team.faction : team.captain.alias} ${team.score}`).join(', ');
 
             self.sendMessage({
                 action: `[game](/game/${helpers.getDocumentID(game)}) update: completed after ${duration} with final score ${score}`
