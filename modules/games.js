@@ -19,6 +19,7 @@ const helpers = require('../helpers');
 module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const HIDE_CAPTAINS = config.get('app.games.hideCaptains');
+    const MAPS = config.get('app.games.maps');
     const MONGODB_URL = config.get('server.mongodb');
     const POST_GAME_RESET_DELAY = ms(config.get('app.games.postGameResetDelay'));
     const RATING_BASE = config.get('app.users.ratingBase');
@@ -523,13 +524,14 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             yield self.processGameUpdate(game);
 
+            let map = MAPS[game.map].name;
             let duration = moment.duration(game.duration, 'seconds').format('m:ss', {
                 trim: false
             });
-            let score = _(game.teams).map(team => `${(HIDE_CAPTAINS || !team.captain) ? team.faction : team.captain.alias} ${team.score}`).join(', ');
+            let score = _(game.teams).map((team, index) => `${(HIDE_CAPTAINS || !team.captain) ? team.faction : team.captain.alias} ${game.score[index]}`).join(', ');
 
             self.sendMessage({
-                action: `[game](/game/${helpers.getDocumentID(game)}) update: live for ${duration} with current score ${score}`
+                action: `[game](/game/${helpers.getDocumentID(game)}) update: live for ${duration} on ${map} with current score ${score}`
             });
         }
         else if (info.status === 'completed') {
@@ -584,13 +586,14 @@ module.exports = function(app, cache, chance, database, io, self) {
             self.removeGameSubstituteRequests(game);
             setTimeout(self.shutdownGameServers, POST_GAME_RESET_DELAY, game);
 
+            let map = MAPS[game.map].name;
             let duration = moment.duration(game.duration, 'seconds').format('m:ss', {
                 trim: false
             });
-            let score = _(game.teams).map(team => `${(HIDE_CAPTAINS || !team.captain) ? team.faction : team.captain.alias} ${team.score}`).join(', ');
+            let score = _(game.teams).map((team, index) => `${(HIDE_CAPTAINS || !team.captain) ? team.faction : team.captain.alias} ${game.score[index]}`).join(', ');
 
             self.sendMessage({
-                action: `[game](/game/${helpers.getDocumentID(game)}) update: completed after ${duration} with final score ${score}`
+                action: `[game](/game/${helpers.getDocumentID(game)}) update: completed after ${duration} on ${map} with final score ${score}`
             });
 
             try {
