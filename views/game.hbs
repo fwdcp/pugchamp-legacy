@@ -151,6 +151,10 @@
                 {{/if}}
             </p>
 
+            {{#if (canWatchGame game.status game.server.watch)}}
+                <p><a href="{{game.server.watch}}"><paper-button raised class="link">Watch</paper-button></a></p>
+            {{/if}}
+
             <p>
                 {{#if game.stats.dominanceScore includeZero=true}}
                 <strong>Dominance Score</strong>: {{gameDominanceScore game}}

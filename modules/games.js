@@ -841,6 +841,9 @@ module.exports = function(app, cache, chance, database, io, self) {
             return `${game.stats.dominanceScore} (tied)`;
         }
     });
+    hbs.registerHelper('canWatchGame', function(status, watch) {
+        return watch && status === 'live';
+    });
 
     /**
      * @async
