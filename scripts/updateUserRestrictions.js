@@ -109,7 +109,7 @@ co(function*() {
         aspects: ['sub', 'start', 'captain', 'chat', 'support'],
         reasons: ['Your account is not [set up](/user/settings) properly.']
     };
-    const PENALTY_LEVEL_RESET_INTERVAL = config.get('app.users.penaltyLevelResetInterval');
+    const PENALTY_LEVEL_RESET_INTERVAL = ms(config.get('app.users.penaltyLevelResetInterval'));
     const UNAUTHORIZED_ADMIN_RESTRICTIONS = {
         aspects: ['sub', 'start', 'captain'],
         reasons: ['You are not authorized to play in this system.']

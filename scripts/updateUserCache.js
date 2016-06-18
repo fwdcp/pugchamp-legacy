@@ -113,7 +113,7 @@ co(function*() {
     const CAPTAIN_PENALTY_COOLDOWNS = _.map(config.get('app.users.penaltyCooldowns.captain'), duration => ms(duration));
     const GENERAL_PENALTY_COOLDOWNS = _.map(config.get('app.users.penaltyCooldowns.general'), duration => ms(duration));
     const HIDE_RATINGS = config.get('app.users.hideRatings');
-    const PENALTY_LEVEL_RESET_INTERVAL = config.get('app.users.penaltyLevelResetInterval');
+    const PENALTY_LEVEL_RESET_INTERVAL = ms(config.get('app.users.penaltyLevelResetInterval'));
     const RESTRICTION_DURATIONS = config.get('app.users.restrictionDurations');
 
     try {
