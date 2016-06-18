@@ -10,10 +10,10 @@
             "hideRatings": false,
             "initialRatings": [],
             "penaltyCooldowns": {
-                "captain": ["30m", "2h", "24h", "7d"],
-                "general": ["30m", "2h", "24h", "7d"]
+                "captain": ["15m", "1h", "2h", "24h", "7d"],
+                "general": ["15m", "1h", "2h", "24h", "7d"]
             },
-            "penaltyLevelResetInterval": "7d",
+            "penaltyLevelResetInterval": "24h",
             "ratingBase": 1500,
             "restrictionDurations": [{
                 "name": "1 hour",
