@@ -537,7 +537,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 let map = MAPS[game.map].name;
                 action += ` on ${map}`;
             }
-            if (game.score) {
+            if (_.size(game.score) > 0) {
                 let score = _(game.teams).map((team, index) => `${(HIDE_CAPTAINS || !team.captain) ? team.faction : team.captain.alias} ${game.score[index]}`).join(', ');
                 action += ` with current score ${score}`;
             }
@@ -609,7 +609,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 let map = MAPS[game.map].name;
                 action += ` on ${map}`;
             }
-            if (game.score) {
+            if (_.size(game.score) > 0) {
                 let score = _(game.teams).map((team, index) => `${(HIDE_CAPTAINS || !team.captain) ? team.faction : team.captain.alias} ${game.score[index]}`).join(', ');
                 action += ` with final score ${score}`;
             }
