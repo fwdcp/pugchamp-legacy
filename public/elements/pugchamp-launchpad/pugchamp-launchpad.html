@@ -270,7 +270,9 @@
             </template>
         </div>
 
+        <pugchamp-notification id="preReadyExpiredNotification" body="Your pre-ready has expired." tag="preReadyExpired"></pugchamp-notification>
         <pugchamp-notification id="launchNotification" body="A new game is launching!" tag="launchAttempt"></pugchamp-notification>
+        <pugchamp-sound id="preReadyExpiredSound" src="/assets/snd/launch/preready_expired.wav"></pugchamp-sound>
         <pugchamp-sound id="launchStartSound" src="/assets/snd/launch/start.wav"></pugchamp-sound>
         <pugchamp-sound id="launchAlertSound" src="/assets/snd/launch/alert.wav"></pugchamp-sound>
     </template>
@@ -420,6 +422,9 @@
                 this.set('currentTime', this.timesync.now());
 
                 if (this.currentTime > this.preReadyEndTime) {
+                    this.$.preReadyExpiredNotification.notify();
+                    this.$.preReadyExpiredSound.play();
+
                     this.cancelPreReady();
                 }
 
