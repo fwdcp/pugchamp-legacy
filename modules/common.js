@@ -37,6 +37,9 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         return math.round(number, decimals);
     });
+    hbs.registerHelper('concat', function(...strings) {
+        return _(strings).dropRight().join('');
+    });
 
     // NOTE: must be here in order to take effect for all pages
     app.use(function(req, res, next) {

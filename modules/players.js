@@ -96,7 +96,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         }).exec();
 
         if (user) {
-            res.render('player', yield self.getPlayerGamesPage(user));
+            res.render('fullPlayerGamesList', yield self.getPlayerGamesPage(user));
         }
         else {
             res.status(HttpStatus.NOT_FOUND).render('notFound');

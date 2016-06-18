@@ -180,7 +180,7 @@ co(function*() {
             }).sort('date').exec();
             /* eslint-enable lodash/prefer-lodash-method */
 
-            let gamesCache = .map(games, function(game) {
+            let gamesCache = _.map(games, function(game) {
                 let revisedGame = _.cloneDeep(game.toObject());
 
                 let gameUserInfo = helpers.getGameUserInfo(game, user);
@@ -200,7 +200,7 @@ co(function*() {
                 captainPenaltyHistory: _.reverse(calculatePenaltyHistory(captainPenalties, CAPTAIN_PENALTY_COOLDOWNS, PENALTY_LEVEL_RESET_INTERVAL))
             };
 
-            let playerGamePage = {
+            let playerGamesPage = {
                 user: user.toObject(),
                 games: _(gamesCache).filter(game => game.status !== 'initializing' && game.status !== 'aborted').invokeMap('toObject').value()
             };
@@ -216,7 +216,7 @@ co(function*() {
             }
 
             yield cache.setAsync(`playerPage-${userID}`, JSON.stringify(playerPage));
-            yield cache.setAsync(`playerGamePage-${userID}`, JSON.stringify(playerGamePage));
+            yield cache.setAsync(`playerGamesPage-${userID}`, JSON.stringify(playerGamesPage));
         }
 
         let players = _.orderBy(
