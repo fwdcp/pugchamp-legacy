@@ -7,29 +7,33 @@
 <dom-module id="pugchamp-advertisements">
     <template>
         <style is="custom-style">
-            #advertisements ::content .advertisement {
+            .advertisement {
                 background: var(--primary-color);
                 color: var(--primary-text-color);
                 margin: 5px 0;
                 padding: 10px;
             }
 
-            #advertisements ::content .advertisement a {
+            .advertisement a {
                 color: var(--accent-color);
-            }
-
-            #advertisements ::content .advertisement p {
-                margin: initial;
             }
         </style>
 
-        <div id="advertisements"><content select=".advertisement"></content></div>
-        <hr>
+        <template is="dom-repeat" items="{{advertisements}}">
+            <div class="advertisement">
+                <marked-element markdown="{{item}}">
+                    <paper-material class="restriction markdown-html"></paper-material>
+                </marked-element>
+            </div>
+        </template>
     </template>
 
     <script>
         Polymer({
-            is: 'pugchamp-advertisements'
+            is: 'pugchamp-advertisements',
+            properties: {
+                advertisements: Array
+            }
         });
     </script>
 </dom-module>

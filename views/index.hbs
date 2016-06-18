@@ -26,11 +26,7 @@
         <div class="horizontal layout wrap">
             <div id="content" class="flex">
                 {{#if advertisements}}
-                <pugchamp-advertisements>
-                    {{#each advertisements}}
-                    <div class="advertisement">{{{this}}}</div>
-                    {{/each}}
-                </pugchamp-advertisements>
+                <pugchamp-advertisements advertisements="{{toJSON advertisements}}"></pugchamp-advertisements>
                 {{/if}}
                 <pugchamp-restrictions></pugchamp-restrictions>
                 <pugchamp-current-game></pugchamp-current-game>
