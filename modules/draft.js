@@ -923,7 +923,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 let penalty = new database.Penalty({
                     user: helpers.getDocumentID(captain),
                     type: 'captain',
-                    reason: 'expiring draft',
+                    reason: 'aborting draft',
                     date: new Date(),
                     active: true
                 });

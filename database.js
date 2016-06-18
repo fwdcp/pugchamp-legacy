@@ -375,7 +375,7 @@ var penaltySchema = new mongoose.Schema({
     },
     reason: {
         type: String,
-        enum: ['expiring draft', 'being replaced out of a game', 'inferior team performance']
+        enum: ['aborting draft', 'being replaced out of a game', 'inferior team performance']
     },
     game: {
         type: mongoose.Schema.Types.ObjectId,
