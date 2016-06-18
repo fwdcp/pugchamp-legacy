@@ -65,7 +65,7 @@ function calculatePenaltyHistory(penalties, durations, resetInterval) {
 
             history.push({
                 type: 'reset',
-                date: eventDate.toDate(),
+                date: eventDate.clone().toDate(),
                 level
             });
         }
@@ -101,7 +101,7 @@ function calculatePenaltyHistory(penalties, durations, resetInterval) {
 
         history.push({
             type: 'reset',
-            date: eventDate.toDate(),
+            date: eventDate.clone().toDate(),
             level
         });
     }
