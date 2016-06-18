@@ -121,6 +121,11 @@
     {{/each}}
 
     {{#if currentUser.admin}}
+    <form is="iron-form" method="post" action="/admin/user/{{user.id}}">
+        <input type="hidden" name="type" value="updateRestrictions">
+        <paper-button raised onclick="submit(event)" class="action">Update Restrictions</paper-button>
+    </form>
+
     <h2>User Settings</h2>
 
     <form is="iron-form" method="post" action="/admin/user/{{user.id}}">

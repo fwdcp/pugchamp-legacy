@@ -212,6 +212,21 @@ module.exports = function(app, cache, chance, database, io, self) {
                 res.sendStatus(HttpStatus.BAD_REQUEST);
             }
         }
+        else if (req.body.type === 'updateRestrictions') {
+            try {
+                yield self.updateUserRestrictions(user);
+
+                res.sendStatus(HttpStatus.OK);
+            }
+            catch (err) {
+                self.postToLog({
+                    description: `failed to update restrictions for <${BASE_URL}/player/${user.steamID}|${user.alias}>`,
+                    error: err
+                });
+
+                res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        }
         else {
             res.sendStatus(HttpStatus.BAD_REQUEST);
         }
