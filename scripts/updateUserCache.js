@@ -196,7 +196,7 @@ co(function*() {
 
             let playerPage = {
                 user: user.toObject(),
-                games: _(gamesCache).takeWhile(game => moment().diff(game.date, 'days') < 1).filter(game => game.status !== 'initializing' && game.status !== 'aborted').invokeMap('toObject').value(),
+                games: _(gamesCache).takeWhile(game => moment().diff(game.date, 'days') < 1).filter(game => game.status !== 'initializing' && game.status !== 'aborted').value(),
                 restrictions: _(restrictions).invokeMap('toObject').orderBy(['active', 'expires'], ['desc', 'desc']).value(),
                 restrictionDurations: RESTRICTION_DURATIONS,
                 generalPenaltyHistory: _.reverse(calculatePenaltyHistory(generalPenalties, GENERAL_PENALTY_COOLDOWNS, PENALTY_LEVEL_RESET_INTERVAL)),
@@ -205,7 +205,7 @@ co(function*() {
 
             let playerGamesPage = {
                 user: user.toObject(),
-                games: _(gamesCache).filter(game => game.status !== 'initializing' && game.status !== 'aborted').invokeMap('toObject').value()
+                games: _(gamesCache).filter(game => game.status !== 'initializing' && game.status !== 'aborted').value()
             };
 
             if (!HIDE_RATINGS) {
