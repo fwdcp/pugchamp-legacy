@@ -68,6 +68,7 @@
             }]
         },
         "games": {
+            "dominancePenaltyThreshold": 2.5,
             "hideCaptains": false,
             "postGameResetDelay": "1m",
             "substituteRequestPeriod": "1m",

@@ -18,6 +18,7 @@ const helpers = require('../helpers');
 
 module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
+    const DOMINANCE_PENALTY_THRESHOLD = config.get('app.games.dominancePenaltyThreshold');
     const HIDE_CAPTAINS = config.get('app.games.hideCaptains');
     const MAPS = config.get('app.games.maps');
     const MONGODB_URL = config.get('server.mongodb');
@@ -260,7 +261,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 }).exec();
                 /* eslint-enable lodash/prefer-lodash-method */
 
-                selectedCandidate = helpers.getDocumentID(_.minBy(candidatePlayers, candidate => Math.abs(candidate.stats.rating.mean - player.stats.rating.mean)));
+                selectedCandidate = helpers.getDocumentID(_.minBy(candidatePlayers, candidate => math.abs(candidate.stats.rating.mean - player.stats.rating.mean)));
             }
             else if (SUBSTITUTE_SELECTION_METHOD === 'mutual') {
                 let currentPlayers = _(game).thru(helpers.getCurrentPlayers).map(user => helpers.getDocumentID(user)).without(helpers.getDocumentID(player)).value();
@@ -619,8 +620,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             try {
                 yield rateGame(game);
-
-                calculateQuality(game);
+                yield calculateQuality(game);
 
                 yield self.updatePlayerStats(...helpers.getGameUsers(game));
 
@@ -631,6 +631,31 @@ module.exports = function(app, cache, chance, database, io, self) {
                     description: `failed to update stats for game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``,
                     error: err
                 });
+            }
+
+            if (!_.isNil(DOMINANCE_PENALTY_THRESHOLD) && _.isNumber(game.stats.dominanceScore) && math.abs(game.stats.dominanceScore) > DOMINANCE_PENALTY_THRESHOLD) {
+                let captain;
+
+                if (game.stats.dominanceScore < 0) {
+                    captain = game.teams[0].captain;
+                }
+                else if (game.stats.dominanceScore > 0) {
+                    captain = game.teams[1].captain;
+                }
+
+                if (captain) {
+                    let penalty = new database.Penalty({
+                        user: helpers.getDocumentID(captain),
+                        type: 'captain',
+                        reason: 'inferior team performance',
+                        date: new Date(),
+                        active: true
+                    });
+                    yield penalty.save();
+
+                    yield self.updateUserCache(captain);
+                    yield self.updateUserRestrictions(captain);
+                }
             }
         }
         else if (info.status === 'logavailable') {
