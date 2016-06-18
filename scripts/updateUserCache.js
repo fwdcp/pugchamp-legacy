@@ -155,7 +155,7 @@ co(function*() {
                 status: {
                     $in: ['launching', 'live', 'completed']
                 }
-            }).sort('-date').select('date status teams.faction teams.captain score map duration').populate('teams.captain', 'alias steamID').exec();
+            }).sort('-date').select('date status teams.faction teams.captain teams.composition score map duration').populate('teams.captain', 'alias steamID').exec();
             /* eslint-enable lodash/prefer-lodash-method */
 
             /* eslint-disable lodash/prefer-lodash-method */
@@ -184,9 +184,12 @@ co(function*() {
                 let revisedGame = _.cloneDeep(game.toObject());
 
                 let gameUserInfo = helpers.getGameUserInfo(game, user);
-                let team = _.indexOf(game.teams, gameUserInfo.team);
 
-                revisedGame.reverseTeams = team !== 0;
+                if (gameUserInfo) {
+                    let team = _.indexOf(game.teams, gameUserInfo.team);
+
+                    revisedGame.reverseTeams = team !== 0;
+                }
 
                 return revisedGame;
             });
