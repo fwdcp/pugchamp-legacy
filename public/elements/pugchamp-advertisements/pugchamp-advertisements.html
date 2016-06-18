@@ -17,12 +17,20 @@
             .advertisement a {
                 color: var(--accent-color);
             }
+
+            .advertisement p:first-child {
+                margin-top: inherit;
+            }
+
+            .advertisement p:last-child {
+                margin-bottom: inherit;
+            }
         </style>
 
         <template is="dom-repeat" items="{{advertisements}}">
             <div class="advertisement">
                 <marked-element markdown="{{item}}">
-                    <paper-material class="restriction markdown-html"></paper-material>
+                    <span class="markdown-html"></span>
                 </marked-element>
             </div>
         </template>
