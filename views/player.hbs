@@ -122,14 +122,16 @@
     {{/each}}
 
     {{#if currentUser.admin}}
-    <form is="iron-form" method="post" action="/admin/user/{{user.id}}">
+    <h2>Admin</h2>
+
+    <form is="iron-form" method="post" action="/admin/user/{{user.id}}" id="update-restrictions">
         <input type="hidden" name="type" value="updateRestrictions">
         <paper-button raised onclick="submit(event)" class="action">Update Restrictions</paper-button>
     </form>
 
-    <h2>User Settings</h2>
+    <h3>User Settings</h3>
 
-    <form is="iron-form" method="post" action="/admin/user/{{user.id}}">
+    <form is="iron-form" method="post" action="/admin/user/{{user.id}}" id="change-settings">
         <input type="hidden" name="type" value="changeSettings">
         <p><paper-input type="text" label="Alias" name="alias" placeholder="thesupremecommander" auto-validate error-message="up to fifteen alphanumeric characters only" pattern="^[A-Za-z0-9_]{1,15}$" value="{{user.alias}}" required></paper-input></p>
 
@@ -145,11 +147,11 @@
         <paper-button raised onclick="submit(event)" class="action">Save</paper-button>
     </form>
 
-    <h2>Restrictions</h2>
+    <h3>Restrictions</h3>
 
     <pugchamp-admin-restriction-control user="{{toJSON user}}" restrictions="{{toJSON restrictions}}" restriction-durations="{{toJSON restrictionDurations}}"></pugchamp-admin-restriction-control>
 
-    <h2>Penalties</h2>
+    <h3>Penalties</h3>
 
     <pugchamp-admin-penalty-control general-penalty-history="{{toJSON generalPenaltyHistory}}" captain-penalty-history="{{toJSON captainPenaltyHistory}}"></pugchamp-admin-penalty-control>
     {{/if}}
@@ -159,6 +161,10 @@
             Polymer.dom(e).rootTarget.parentElement.submit();
         }
 
+        function reload() {
+            document.location.reload();
+        }
+
         {{#if currentUser.admin}}
         {{#unless hideDraftStats}}
         var showDraftStats = document.getElementById('show-draft-stats');
@@ -166,6 +172,11 @@
             showDraftStats.showDraftStats = {{#if user.stats.draft}}true{{else}}false{{/if}};
         });
         {{/unless}}
+
+        document.getElementById('update-restrictions').addEventListener('iron-form-error', reload);
+        document.getElementById('update-restrictions').addEventListener('iron-form-response', reload);
+        document.getElementById('change-settings').addEventListener('iron-form-error', reload);
+        document.getElementById('change-settings').addEventListener('iron-form-response', reload);
         {{/if}}
 
         {{#if user.stats.draft}}
