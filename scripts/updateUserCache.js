@@ -155,7 +155,7 @@ co(function*() {
                 status: {
                     $in: ['launching', 'live', 'completed']
                 }
-            }).sort('-date').populate('teams.captain').exec();
+            }).sort('-date').select('date status teams.faction teams.captain score map duration').populate('teams.captain', 'alias steamID').exec();
             /* eslint-enable lodash/prefer-lodash-method */
 
             /* eslint-disable lodash/prefer-lodash-method */
@@ -180,30 +180,29 @@ co(function*() {
             }).sort('date').exec();
             /* eslint-enable lodash/prefer-lodash-method */
 
+            let gamesCache = .map(games, function(game) {
+                let revisedGame = _.cloneDeep(game.toObject());
+
+                let gameUserInfo = helpers.getGameUserInfo(game, user);
+                let team = _.indexOf(game.teams, gameUserInfo.team);
+
+                revisedGame.reverseTeams = team !== 0;
+
+                return revisedGame;
+            });
+
             let playerPage = {
                 user: user.toObject(),
-                games: _.map(games, function(game) {
-                    let revisedGame = _.omit(game.toObject(), 'draft', 'server', 'links');
-
-                    if (userID === helpers.getDocumentID(game.teams[0].captain)) {
-                        revisedGame.reverseTeams = false;
-                    }
-                    else if (userID === helpers.getDocumentID(game.teams[1].captain)) {
-                        revisedGame.reverseTeams = true;
-                    }
-                    else {
-                        let gameUserInfo = helpers.getGameUserInfo(game, user);
-                        let team = _.indexOf(game.teams, gameUserInfo.team);
-
-                        revisedGame.reverseTeams = team !== 0;
-                    }
-
-                    return revisedGame;
-                }),
+                games: _(gamesCache).takeWhile(game => moment().diff(game.date, 'days') < 1).filter(game => game.status !== 'initializing' && game.status !== 'aborted').invokeMap('toObject').value(),
                 restrictions: _(restrictions).invokeMap('toObject').orderBy(['active', 'expires'], ['desc', 'desc']).value(),
                 restrictionDurations: RESTRICTION_DURATIONS,
                 generalPenaltyHistory: _.reverse(calculatePenaltyHistory(generalPenalties, GENERAL_PENALTY_COOLDOWNS, PENALTY_LEVEL_RESET_INTERVAL)),
                 captainPenaltyHistory: _.reverse(calculatePenaltyHistory(captainPenalties, CAPTAIN_PENALTY_COOLDOWNS, PENALTY_LEVEL_RESET_INTERVAL))
+            };
+
+            let playerGamePage = {
+                user: user.toObject(),
+                games: _(gamesCache).filter(game => game.status !== 'initializing' && game.status !== 'aborted').invokeMap('toObject').value()
             };
 
             if (!HIDE_RATINGS) {
@@ -217,6 +216,7 @@ co(function*() {
             }
 
             yield cache.setAsync(`playerPage-${userID}`, JSON.stringify(playerPage));
+            yield cache.setAsync(`playerGamePage-${userID}`, JSON.stringify(playerGamePage));
         }
 
         let players = _.orderBy(

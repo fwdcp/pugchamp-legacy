@@ -65,6 +65,20 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
+    self.getPlayerGamesPage = co.wrap(function* getPlayerGamesPage(player) {
+        let cacheResponse = yield cache.getAsync(`playerGamesPage-${helpers.getDocumentID(player)}`);
+
+        if (!cacheResponse) {
+            yield self.updateUserCache(player);
+            cacheResponse = yield cache.getAsync(`playerGamesPage-${helpers.getDocumentID(player)}`);
+        }
+
+        return JSON.parse(cacheResponse);
+    });
+
+    /**
+     * @async
+     */
     self.getPlayerPage = co.wrap(function* getPlayerPage(player) {
         let cacheResponse = yield cache.getAsync(`playerPage-${helpers.getDocumentID(player)}`);
 
@@ -75,6 +89,19 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         return JSON.parse(cacheResponse);
     });
+
+    app.get('/player/:steam/games', co.wrap(function*(req, res) {
+        let user = yield database.User.findOne({
+            'steamID': req.params.steam
+        }).exec();
+
+        if (user) {
+            res.render('player', yield self.getPlayerGamesPage(user));
+        }
+        else {
+            res.status(HttpStatus.NOT_FOUND).render('notFound');
+        }
+    }));
 
     app.get('/player/:steam', co.wrap(function*(req, res) {
         let user = yield database.User.findOne({

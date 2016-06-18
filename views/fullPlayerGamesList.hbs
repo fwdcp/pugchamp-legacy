@@ -1,0 +1,17 @@
+<!doctype html>
+
+<html>
+
+    {{#> head title=user.alias + " Games"}}
+    <link rel="import" href="/elements/pugchamp-game-summary/pugchamp-game-summary.html">
+    {{/head}}
+
+    {{#> body}}
+    <h1>Games with {{user.alias}}</h1>
+
+    {{#each games}}
+    <pugchamp-game-summary game="{{toJSON this}}" {{#if ../hideCaptains}}hide-captains{{/if}}></pugchamp-game-summary>
+    {{/each}}
+    {{/body}}
+
+</html>
