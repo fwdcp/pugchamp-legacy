@@ -421,7 +421,7 @@
             updateTimers: function() {
                 this.set('currentTime', this.timesync.now());
 
-                if (this.currentTime > this.preReadyEndTime) {
+                if (this.preReady && this.currentTime > this.preReadyEndTime) {
                     this.$.preReadyExpiredNotification.notify();
                     this.$.preReadyExpiredSound.play();
 
