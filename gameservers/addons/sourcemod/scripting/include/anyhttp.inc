@@ -56,16 +56,53 @@ enum AnyHttp_Extension {
 //typedef AnyHttp_Result = function void (bool success, const char[] contents);
 typedef AnyHttp_Result = function void (bool success, const char[] contents, int metadata);
 
+AnyHttp_Extension AnyHttp_CurrentExtension = AnyHttpUnknown;
+Handle AnyHttp_kvData = null;
 
 methodmap AnyHttpForm < Handle {
-	public AnyHttpForm() = AnyHttp_CreatePostForm;
+	public AnyHttpForm(const char[] url) {
+    	if (!AnyHttp_Initialize())
+    		return null;
 
-	public PutFile() = AnyHttp_PutFile;
-	public PutString() = AnyHttp_PutString;
-	public Send() = AnyHttp_SendPostForm;
+    	if (AnyHttp_CurrentExtension == UseCURL) {
+    		return view_as<AnyHttpForm>(AnyHttp_cURL_CreatePostForm(url));
+    	} else if (AnyHttp_CurrentExtension == UseSteamTools) {
+    		return view_as<AnyHttpForm>(AnyHttp_SteamTools_CreatePostForm(url));
+    	} else {
+    		ThrowError("Unknown extension");
+    		return null; // Avoid compiler warning
+    	}
+    }
+
+	public void PutFile(const char[] name, const char[] filepath) {
+    	if (this == null)
+    		ThrowError("Invalid handle");
+
+    	int id = KvizGetNum(AnyHttp_kvData, 0, "%i.fields:count", this) + 1;
+    	KvizSetString(AnyHttp_kvData, name, "%i.fields.%i.name", this, id);
+    	KvizSetString(AnyHttp_kvData, "file", "%i.fields.%i.type", this, id);
+    	KvizSetString(AnyHttp_kvData, filepath, "%i.fields.%i.value", this, id);
+    }
+	public void PutString(const char[] name, const char[] value) {
+    	if (this == null)
+    		ThrowError("Invalid handle");
+
+    	int id = KvizGetNum(AnyHttp_kvData, 0, "%i.fields:count", this) + 1;
+    	KvizSetString(AnyHttp_kvData, name, "%i.fields.%i.name", this, id);
+    	KvizSetString(AnyHttp_kvData, "string", "%i.fields.%i.type", this, id);
+    	KvizSetString(AnyHttp_kvData, value, "%i.fields.%i.value", this, id);
+    }
+	public bool Send(AnyHttp_Result callback) {
+    	if (AnyHttp_CurrentExtension == UseCURL) {
+    		return AnyHttp_cURL_SendPostForm(this, callback);
+    	} else if (AnyHttp_CurrentExtension == UseSteamTools) {
+    		return AnyHttp_SteamTools_SendPostForm(this, callback);
+    	} else {
+    		ThrowError("Unknown extension");
+    		return false; // Avoid compiler warning
+    	}
+    }
 };
-
-AnyHttp_Extension AnyHttp_CurrentExtension = AnyHttpUnknown;
 
 methodmap AnyHttpClass {
 	public bool Init() {
@@ -82,7 +119,7 @@ methodmap AnyHttpClass {
 	}
 
 	public AnyHttpForm CreatePost(const char[] url) {
-		return AnyHttp_CreatePostForm(url);
+		return new AnyHttpForm(url);
 	}
 
 	property AnyHttp_Extension Extension {
@@ -92,11 +129,8 @@ methodmap AnyHttpClass {
 };
 stock AnyHttpClass AnyHttp;
 
-Handle AnyHttp_kvData = null;
 AnyHttp_Result AnyHttp_callbacks[64];
 float AnyHttp_callbacks_time[sizeof(AnyHttp_callbacks)];
-
-AnyHttp_Result AnyHttp_callback_null = AnyHttp_DummyHandler; // null doesn't work with functags - so let's create our own.
 
 
 bool AnyHttp_isInitialized = false;
@@ -124,7 +158,7 @@ stock bool AnyHttp_Initialize() {
 	}
 
 	for (int i = 0; i < sizeof(AnyHttp_callbacks); i++) {
-		AnyHttp_callbacks[i] = AnyHttp_callback_null;
+		AnyHttp_callbacks[i] = AnyHttp_DummyHandler;
 	}
 
 	AnyHttp_isInitialized = true;
@@ -139,54 +173,6 @@ stock bool AnyHttp_Get(const char[] url, AnyHttp_Result:callback, int metadata =
 		return AnyHttp_cURL_Get(url, callback, metadata);
 	} else if (AnyHttp_CurrentExtension == UseSteamTools) {
 		return AnyHttp_SteamTools_Get(url, callback, metadata);
-	} else {
-		ThrowError("Unknown extension");
-		return false; // Avoid compiler warning
-	}
-}
-
-stock AnyHttpForm AnyHttp_CreatePostForm(const char[] url) {
-	if (!AnyHttp_Initialize())
-		return null;
-
-	if (AnyHttp_CurrentExtension == UseCURL) {
-		return view_as<AnyHttpForm>(AnyHttp_cURL_CreatePostForm(url));
-	} else if (AnyHttp_CurrentExtension == UseSteamTools) {
-		return view_as<AnyHttpForm>(AnyHttp_SteamTools_CreatePostForm(url));
-	} else {
-		ThrowError("Unknown extension");
-		return null; // Avoid compiler warning
-	}
-}
-
-stock void AnyHttp_PutString(AnyHttpForm handle, const char[] name, const char[] value) {
-	if (handle == null)
-		ThrowError("Invalid handle");
-
-	int id = KvizGetNum(AnyHttp_kvData, 0, "%i.fields:count", _:handle) + 1;
-	KvizSetString(AnyHttp_kvData, name, "%i.fields.%i.name", _:handle, id);
-	KvizSetString(AnyHttp_kvData, "string", "%i.fields.%i.type", _:handle, id);
-	KvizSetString(AnyHttp_kvData, value, "%i.fields.%i.value", _:handle, id);
-}
-
-stock void AnyHttp_PutFile(AnyHttpForm handle, const char[] name, const char[] filepath) {
-	if (handle == null)
-		ThrowError("Invalid handle");
-
-	int id = KvizGetNum(AnyHttp_kvData, 0, "%i.fields:count", _:handle) + 1;
-	KvizSetString(AnyHttp_kvData, name, "%i.fields.%i.name", _:handle, id);
-	KvizSetString(AnyHttp_kvData, "file", "%i.fields.%i.type", _:handle, id);
-	KvizSetString(AnyHttp_kvData, filepath, "%i.fields.%i.value", _:handle, id);
-}
-
-stock bool AnyHttp_SendPostForm(AnyHttpForm handle, AnyHttp_Result callback) {
-	if (handle == null)
-		ThrowError("Invalid handle");
-
-	if (AnyHttp_CurrentExtension == UseCURL) {
-		return AnyHttp_cURL_SendPostForm(handle, callback);
-	} else if (AnyHttp_CurrentExtension == UseSteamTools) {
-		return AnyHttp_SteamTools_SendPostForm(handle, callback);
 	} else {
 		ThrowError("Unknown extension");
 		return false; // Avoid compiler warning
@@ -220,7 +206,7 @@ stock void AnyHttp_CleanUp(Handle handle) {
 stock int AnyHttp_StoreCallback(AnyHttp_Result callback) {
 	int minimumID = 0;
 	for (int i = 0; i < sizeof(AnyHttp_callbacks); i++) {
-		if (AnyHttp_callbacks[i] == AnyHttp_callback_null) {
+		if (AnyHttp_callbacks[i] == AnyHttp_DummyHandler) {
 			AnyHttp_callbacks[i] = callback;
 			AnyHttp_callbacks_time[i] = GetTickedTime();
 			return i;
@@ -247,10 +233,10 @@ stock int AnyHttp_StoreCallback(AnyHttp_Result callback) {
 stock AnyHttp_Result AnyHttp_RetrieveCallback(int id) {
 	AnyHttp_Result callback = AnyHttp_callbacks[id];
 
-	if (callback == AnyHttp_callback_null)
+	if (callback == AnyHttp_DummyHandler)
 		ThrowError("AnyHttp: Could not find callback");
 
-	AnyHttp_callbacks[id] = AnyHttp_callback_null;
+	AnyHttp_callbacks[id] = AnyHttp_DummyHandler;
 	return callback;
 }
 
