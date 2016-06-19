@@ -104,54 +104,60 @@ public void OnMapStart() {
 }
 
 public void OnClientAuthorized(int client) {
-    char currentGameInfo[32];
-    gameInfo.GetString(currentGameInfo, sizeof(currentGameInfo));
+    if (!IsClientReplay(client) && !IsClientSourceTV(client)) {
+        char currentGameInfo[32];
+        gameInfo.GetString(currentGameInfo, sizeof(currentGameInfo));
 
-    if (!StrEqual(currentGameInfo, "UNAVAILABLE")) {
-        char steamID[32];
-        if (!GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID)) || allowedPlayers.FindString(steamID) == -1) {
-            KickClient(client, "you are not authorized to join this server");
+        if (!StrEqual(currentGameInfo, "UNAVAILABLE")) {
+            char steamID[32];
+            if (!GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID)) || allowedPlayers.FindString(steamID) == -1) {
+                KickClient(client, "you are not authorized to join this server");
+            }
         }
     }
 }
 
 public void OnClientPostAdminCheck(int client) {
-    char steamID[32];
-    if (!GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID))) {
+    if (!IsClientReplay(client) && !IsClientSourceTV(client)) {
+        char steamID[32];
+        if (!GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID))) {
+            char name[32];
+            GetClientName(client, name, sizeof(name));
+            CPrintToChatAll("{green}[PugChamp]{default} Unable to recognize {olive}%s{default}!", name, steamID);
+
+            ThrowError("Steam ID not retrieved");
+        }
+
         char name[32];
-        GetClientName(client, name, sizeof(name));
-        CPrintToChatAll("{green}[PugChamp]{default} Unable to recognize {olive}%s{default}!", name, steamID);
+        if (playerNames.GetString(steamID, name, sizeof(name))) {
+            SetClientName(client, name);
+        }
+        else {
+            GetClientName(client, name, sizeof(name));
+            CPrintToChatAll("{green}[PugChamp]{default} Unable to recognize {olive}%s{default} (Steam ID {olive}%s{default})!", name, steamID);
+        }
 
-        ThrowError("Steam ID not retrieved");
-    }
+        int team;
+        if (playerTeams.GetValue(steamID, team)) {
+            ChangeClientTeam(client, team);
+        }
 
-    char name[32];
-    if (playerNames.GetString(steamID, name, sizeof(name))) {
-        SetClientName(client, name);
-    }
-    else {
-        GetClientName(client, name, sizeof(name));
-        CPrintToChatAll("{green}[PugChamp]{default} Unable to recognize {olive}%s{default} (Steam ID {olive}%s{default})!", name, steamID);
-    }
+        TFClassType class;
+        if (playerClasses.GetValue(steamID, class)) {
+            TF2_SetPlayerClass(client, class, _, true);
+        }
 
-    int team;
-    if (playerTeams.GetValue(steamID, team)) {
-        ChangeClientTeam(client, team);
-    }
-
-    TFClassType class;
-    if (playerClasses.GetValue(steamID, class)) {
-        TF2_SetPlayerClass(client, class, _, true);
-    }
-
-    if (gameAssigned && gameLive) {
-        StartPlayerTimer(client);
+        if (gameAssigned && gameLive) {
+            StartPlayerTimer(client);
+        }
     }
 }
 
 public void OnClientDisconnect(int client) {
-    if (gameAssigned && gameLive) {
-        EndPlayerTimer(client);
+    if (!IsClientReplay(client) && !IsClientSourceTV(client)) {
+        if (gameAssigned && gameLive) {
+            EndPlayerTimer(client);
+        }
     }
 }
 
@@ -262,7 +268,7 @@ public void Event_GameStart(Event event, const char[] name, bool dontBroadcast) 
         gameStartTime = GetGameTime();
 
         for (int i = 1; i <= MaxClients; i++) {
-            if (IsClientConnected(i) && IsClientAuthorized(i)) {
+            if (IsClientConnected(i) && IsClientAuthorized(i) && !IsClientReplay(i) && !IsClientSourceTV(i)) {
                 StartPlayerTimer(i);
             }
         }
@@ -288,7 +294,7 @@ public void Event_GameOver(Event event, const char[] name, bool dontBroadcast) {
         gameCompleted = true;
 
         for (int i = 1; i <= MaxClients; i++) {
-            if (IsClientConnected(i) && IsClientAuthorized(i)) {
+            if (IsClientConnected(i) && IsClientAuthorized(i) && !IsClientReplay(i) && !IsClientSourceTV(i)) {
                 EndPlayerTimer(i);
             }
         }
@@ -359,7 +365,7 @@ public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
         }
 
         for (int i = 1; i <= MaxClients; i++) {
-            if (IsClientConnected(i) && IsClientAuthorized(i)) {
+            if (IsClientConnected(i) && IsClientAuthorized(i) && !IsClientReplay(i) && !IsClientSourceTV(i)) {
                 EndPlayerTimer(i);
             }
         }
@@ -382,7 +388,7 @@ public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
         }
 
         for (int i = 1; i <= MaxClients; i++) {
-            if (IsClientConnected(i) && IsClientAuthorized(i)) {
+            if (IsClientConnected(i) && IsClientAuthorized(i) && !IsClientReplay(i) && !IsClientSourceTV(i)) {
                 StartPlayerTimer(i);
             }
         }
@@ -394,16 +400,18 @@ public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
 public void Event_NameChange(Event event, const char[] name, bool dontBroadcast) {
     int client = GetClientOfUserId(event.GetInt("userid"));
 
-    char newName[32];
-    event.GetString("newname", newName, sizeof(newName));
+    if (!IsClientReplay(client) && !IsClientSourceTV(client)) {
+        char newName[32];
+        event.GetString("newname", newName, sizeof(newName));
 
-    char steamID[32];
-    GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID));
+        char steamID[32];
+        GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID));
 
-    char playerName[32];
-    if (playerNames.GetString(steamID, playerName, sizeof(playerName))) {
-        if (!StrEqual(newName, playerName)) {
-            SetClientName(client, playerName);
+        char playerName[32];
+        if (playerNames.GetString(steamID, playerName, sizeof(playerName))) {
+            if (!StrEqual(newName, playerName)) {
+                SetClientName(client, playerName);
+            }
         }
     }
 }
