@@ -23,7 +23,7 @@ public Plugin myinfo = {
 public void OnPluginStart() {
     AnyHttp.Require();
 
-    apiKey = CreateConVar("demostf_apikey", "", "API key used for demos.tf uploads", FCVAR_PROTECTED|FCVAR_DONTRECORD|FCVAR_PLUGIN);
+    apiKey = CreateConVar("demostf_apikey", "", "API key used for demos.tf uploads", FCVAR_PROTECTED|FCVAR_DONTRECORD);
 
     bluTeamName = FindConVar("mp_tournament_blueteamname");
     redTeamName = FindConVar("mp_tournament_redteamname");

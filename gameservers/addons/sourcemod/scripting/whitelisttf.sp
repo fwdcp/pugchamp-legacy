@@ -16,7 +16,7 @@ ConVar gameWhitelist;
 ConVar whitelistID;
 
 public void OnPluginStart() {
-    whitelistID = CreateConVar("whitelisttf_whitelist_id", "", "the ID of the whitelist to use", FCVAR_NOTIFY|FCVAR_DEMO|FCVAR_PLUGIN);
+    whitelistID = CreateConVar("whitelisttf_whitelist_id", "", "the ID of the whitelist to use", FCVAR_NOTIFY|FCVAR_DEMO);
     whitelistID.AddChangeHook(Hook_WhitelistChanged);
 
     gameWhitelist = FindConVar("mp_tournament_whitelist");

@@ -43,11 +43,11 @@ StringMap playerStartTimes;
 StringMap playerPlaytimes;
 
 public void OnPluginStart() {
-    gameInfo = CreateConVar("pugchamp_game_info", "", "the current game info", FCVAR_NOTIFY|FCVAR_PLUGIN);
+    gameInfo = CreateConVar("pugchamp_game_info", "", "the current game info", FCVAR_NOTIFY);
 
-    apiURL = CreateConVar("pugchamp_api_url", "", "the API URL to which game info is sent", FCVAR_PROTECTED|FCVAR_DONTRECORD|FCVAR_PLUGIN);
+    apiURL = CreateConVar("pugchamp_api_url", "", "the API URL to which game info is sent", FCVAR_PROTECTED|FCVAR_DONTRECORD);
 
-    serverDelegated = CreateConVar("pugchamp_server_delegated", "1", "whether the server is currently delegated to the PugChamp service", FCVAR_PLUGIN, true, 0.0, true, 1.0);
+    serverDelegated = CreateConVar("pugchamp_server_delegated", "1", "whether the server is currently delegated to the PugChamp service", _, true, 0.0, true, 1.0);
     serverDelegated.AddChangeHook(Hook_DelegationStatusChanged);
 
     RegServerCmd("pugchamp_game_reset", Command_GameReset, "resets a currently active game");
@@ -58,10 +58,10 @@ public void OnPluginStart() {
     gameCompleted = false;
     gameStartTime = -1.0;
 
-    gameID = CreateConVar("pugchamp_game_id", "", "the ID for the current game", FCVAR_PLUGIN);
+    gameID = CreateConVar("pugchamp_game_id", "", "the ID for the current game");
     gameID.AddChangeHook(Hook_GameIDChanged);
-    gameMap = CreateConVar("pugchamp_game_map", "", "the map for the current game", FCVAR_PLUGIN);
-    gameConfig = CreateConVar("pugchamp_game_config", "", "the config for the current game", FCVAR_PLUGIN);
+    gameMap = CreateConVar("pugchamp_game_map", "", "the map for the current game");
+    gameConfig = CreateConVar("pugchamp_game_config", "", "the config for the current game");
 
     RegServerCmd("pugchamp_game_player_add", Command_GamePlayerAdd, "adds a player to a game");
     RegServerCmd("pugchamp_game_player_remove", Command_GamePlayerRemove, "removes a player from a game");
