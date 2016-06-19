@@ -344,7 +344,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 });
 
                 self.sendMessage({
-                    action: gameID ? `failed to set up game [${gameID}](/game/${gameID}) due to internal error` : 'failed to set up drafted game due to internal error'
+                    action: gameID ? `failed to set up [game](/game/${gameID}) due to internal error` : 'failed to set up drafted game due to internal error'
                 });
 
                 yield self.cleanUpDraft();
