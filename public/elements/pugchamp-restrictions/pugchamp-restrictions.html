@@ -9,6 +9,25 @@
 <dom-module id="pugchamp-restrictions">
     <template>
         <style is="custom-style">
+            #aspects {
+                background: var(--box-background-color);
+                margin: 5px 0;
+            }
+
+            .aspect {
+                @apply(--paper-font-body2);
+                padding: 5px;
+                text-align: center;
+            }
+
+            .aspect .aspect-unrestricted {
+                color: var(--secondary-green-color);
+            }
+
+            .aspect .aspect-restricted {
+                color: var(--secondary-red-color);
+            }
+
             .restriction {
                 background: var(--secondary-red-color);
                 color: var(--dark-theme-text-color);
@@ -25,6 +44,43 @@
             }
         </style>
 
+        <paper-material id="aspects" class="horizontal layout" hidden$="{{!restrictions.aspects.length}}">
+            <div class="aspect flex">
+                <span class$="{{classForAspect(restrictions.aspects, 'start')}}">
+                    <iron-icon icon="check" hidden$="{{_includes(restrictions.aspects, 'start')}}"></iron-icon>
+                    <iron-icon icon="block" hidden$="{{!_includes(restrictions.aspects, 'start')}}"></iron-icon>
+                    Start
+                </span>
+            </div>
+            <div class="aspect flex">
+                <span class$="{{classForAspect(restrictions.aspects, 'sub')}}">
+                    <iron-icon icon="check" hidden$="{{_includes(restrictions.aspects, 'sub')}}"></iron-icon>
+                    <iron-icon icon="block" hidden$="{{!_includes(restrictions.aspects, 'sub')}}"></iron-icon>
+                    Sub
+                </span>
+            </div>
+            <div class="aspect flex">
+                <span class$="{{classForAspect(restrictions.aspects, 'captain')}}">
+                    <iron-icon icon="check" hidden$="{{_includes(restrictions.aspects, 'captain')}}"></iron-icon>
+                    <iron-icon icon="block" hidden$="{{!_includes(restrictions.aspects, 'captain')}}"></iron-icon>
+                    Captain
+                </span>
+            </div>
+            <div class="aspect flex">
+                <span class$="{{classForAspect(restrictions.aspects, 'chat')}}">
+                    <iron-icon icon="check" hidden$="{{_includes(restrictions.aspects, 'chat')}}"></iron-icon>
+                    <iron-icon icon="block" hidden$="{{!_includes(restrictions.aspects, 'chat')}}"></iron-icon>
+                    Chat
+                </span>
+            </div>
+            <div class="aspect flex">
+                <span class$="{{classForAspect(restrictions.aspects, 'support')}}">
+                    <iron-icon icon="check" hidden$="{{_includes(restrictions.aspects, 'support')}}"></iron-icon>
+                    <iron-icon icon="block" hidden$="{{!_includes(restrictions.aspects, 'support')}}"></iron-icon>
+                    Support
+                </span>
+            </div>
+        </paper-material>
         <template is="dom-repeat" items="{{restrictions.reasons}}">
             <marked-element markdown="{{item}}">
                 <paper-material class="restriction markdown-html"></paper-material>
@@ -37,7 +93,15 @@
     <script>
         Polymer({
             is: 'pugchamp-restrictions',
-            behaviors: [PugChampClientBehaviors.RestrictionsBehavior]
+            behaviors: [PugChampPolymerHelperBehaviors, PugChampClientBehaviors.RestrictionsBehavior],
+            classForAspect: function(restrictedAspects, aspect) {
+                if (_.includes(restrictedAspects, aspect)) {
+                    return 'aspect-restricted';
+                }
+                else {
+                    return 'aspect-unrestricted';
+                }
+            }
         });
     </script>
 </dom-module>
