@@ -5,7 +5,8 @@
     {{#> head}}
     <link rel="import" href="/elements/pugchamp-admin-request/pugchamp-admin-request.html">
     <link rel="import" href="/elements/pugchamp-advertisements/pugchamp-advertisements.html">
-    <link rel="import" href="/elements/pugchamp-chat/pugchamp-chat.html">
+    <link rel="import" href="/elements/pugchamp-chat/pugchamp-chat-sidebar.html">
+    <link rel="import" href="/elements/pugchamp-chat/pugchamp-chat-toggle.html">
     <link rel="import" href="/elements/pugchamp-client/pugchamp-client.html">
     <link rel="import" href="/elements/pugchamp-current-game/pugchamp-current-game.html">
     <link rel="import" href="/elements/pugchamp-draft/pugchamp-draft.html">
@@ -13,29 +14,18 @@
     <link rel="import" href="/elements/pugchamp-restrictions/pugchamp-restrictions.html">
     <link rel="import" href="/elements/pugchamp-substitute-requests/pugchamp-substitute-requests.html">
     <link rel="import" href="/elements/pugchamp-volume-control/pugchamp-volume-control.html">
-
-    <style is="custom-style">
-        #content {
-            min-width: 850px;
-        }
-    </style>
     {{/head}}
 
     {{#> body home=true}}
     <pugchamp-client>
-        <div class="horizontal layout wrap">
-            <div id="content" class="flex">
-                {{#if advertisements}}
-                <pugchamp-advertisements advertisements="{{toJSON advertisements}}"></pugchamp-advertisements>
-                {{/if}}
-                <pugchamp-restrictions></pugchamp-restrictions>
-                <pugchamp-current-game></pugchamp-current-game>
-                <pugchamp-substitute-requests></pugchamp-substitute-requests>
-                <pugchamp-draft {{#if hideCaptains}}hide-captains{{/if}}></pugchamp-draft>
-                <pugchamp-launchpad {{#unless separateCaptainPool}}no-captains{{/unless}} pre-ready-timeout="{{preReadyTimeout}}"></pugchamp-launchpad>
-            </div>
-            <pugchamp-chat></pugchamp-chat>
-        </div>
+        <pugchamp-chat-sidebar opened="\{{chat}}">
+            <pugchamp-advertisements advertisements="{{toJSON advertisements}}"></pugchamp-advertisements>
+            <pugchamp-restrictions></pugchamp-restrictions>
+            <pugchamp-current-game></pugchamp-current-game>
+            <pugchamp-substitute-requests></pugchamp-substitute-requests>
+            <pugchamp-draft {{#if hideCaptains}}hide-captains{{/if}}></pugchamp-draft>
+            <pugchamp-launchpad {{#unless separateCaptainPool}}no-captains{{/unless}} pre-ready-timeout="{{preReadyTimeout}}"></pugchamp-launchpad>
+        </pugchamp-chat-sidebar>
     </pugchamp-client>
     {{/body}}
 

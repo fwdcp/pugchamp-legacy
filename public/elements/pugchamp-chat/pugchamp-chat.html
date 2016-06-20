@@ -28,27 +28,6 @@
                 height: calc(100vh - 100px);
             }
 
-            @media (max-width: 1500px) {
-                :host {
-                    width: 100%;
-                }
-
-                #divider {
-                    display: inherit;
-                }
-            }
-
-            @media (min-width: 1500px) {
-                :host {
-                    margin-left: 16px;
-                    width: 300px;
-                }
-
-                #divider {
-                    display: none;
-                }
-            }
-
             #tabs {
                 margin: 5px 0;
                 --paper-tabs-selection-bar-color: var(--accent-color);
@@ -133,7 +112,6 @@
         </style>
 
         <div id="main">
-            <hr id="divider">
             <paper-tabs id="tabs" selected="{{page}}">
                 <paper-tab>Chat</paper-tab>
                 <paper-tab>Online Users</paper-tab>

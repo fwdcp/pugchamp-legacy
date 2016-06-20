@@ -1,0 +1,52 @@
+<link rel="import" href="/components/polymer/polymer.html">
+
+<link rel="import" href="/components/app-layout/app-drawer/app-drawer.html">
+
+<link rel="import" href="/elements/pugchamp-chat/pugchamp-chat.html">
+
+<dom-module id="pugchamp-chat-sidebar">
+    <template>
+        <style is="custom-style">
+            #chatDrawer {
+                --app-drawer-width: 300px;
+                --app-drawer-content-container: {
+                    background: transparent;
+                    text-align: initial;
+                    padding-right: 16px;
+                    top: 80px;
+                };
+            }
+
+            #main {
+                transition: 0.2s ease;
+            }
+
+            #main[chat-open] {
+                margin-right: 316px;
+            }
+
+            #main[chat-closed] {
+                margin-right: 0;
+            }
+        </style>
+
+        <div id="main" chat-open$="{{opened}}" chat-closed$="{{!opened}}">
+            <content></content>
+        </div>
+        <app-drawer align="right" opened="{{opened}}" persistent="{{opened}}" id="chatDrawer">
+            <pugchamp-chat></pugchamp-chat>
+        </app-drawer>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'pugchamp-chat-sidebar',
+            properties: {
+                opened: Boolean
+            },
+            ready: function() {
+                this.$.chatDrawer.open();
+            }
+        });
+    </script>
+</dom-module>

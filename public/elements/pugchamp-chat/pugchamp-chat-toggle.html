@@ -1,14 +1,15 @@
 <link rel="import" href="/components/polymer/polymer.html">
 
+<link rel="import" href="/components/iron-icons/communication-icons.html">
 <link rel="import" href="/components/paper-icon-button/paper-icon-button.html">
 
-<dom-module id="pugchamp-layout-toggle">
+<dom-module id="pugchamp-chat-toggle">
     <template>
-        <paper-icon-button on-tap="toggleMenu" icon="menu"></paper-icon-button>
+        <paper-icon-button on-tap="toggleMenu" icon="communication:chat-bubble"></paper-icon-button>
     </template>
     <script>
         Polymer({
-            is: 'pugchamp-layout-toggle',
+            is: 'pugchamp-chat-toggle',
             properties: {
                 idealWidth: {
                     type: Number,
