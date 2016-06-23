@@ -621,7 +621,7 @@
                     else if (Math.round((this.endTime - this.currentTime) / 1000) === 5) {
                         this.$.draftFiveSecondsSound.play();
                     }
-                    else if (this.currentTime > this.endTime) {
+                    else if (Math.round((this.endTime - this.currentTime) / 1000) === 0) {
                         this.$.draftTimeExpiredSound.play();
                     }
                 }
