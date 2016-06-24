@@ -294,12 +294,8 @@
 
         <pugchamp-notification id="turnNotification" body="It is your turn to choose in the draft!" tag="draftTurn"></pugchamp-notification>
         <pugchamp-sound id="draftYourPickSound" src="/assets/snd/draft/your_pick.mp3"></pugchamp-sound>
-        <pugchamp-sound id="draftTheirPickSound" src="/assets/snd/draft/their_pick.mp3"></pugchamp-sound>
-        <pugchamp-sound id="draftREDPickSound" src="/assets/snd/draft/red_pick.mp3"></pugchamp-sound>
-        <pugchamp-sound id="draftBLUPickSound" src="/assets/snd/draft/blu_pick.mp3"></pugchamp-sound>
         <pugchamp-sound id="draftTenSecondsSound" src="/assets/snd/draft/10_seconds.mp3"></pugchamp-sound>
         <pugchamp-sound id="draftFiveSecondsSound" src="/assets/snd/draft/5_seconds.mp3"></pugchamp-sound>
-        <pugchamp-sound id="draftTimeExpiredSound" src="/assets/snd/draft/time_expired.mp3"></pugchamp-sound>
     </template>
 
     <script>
@@ -340,28 +336,14 @@
                 this.set('endTime', status.turnEndTime);
 
                 if (this.active && !this.complete) {
-                    this.startDraftTurn();
+                    if (this.turns[this.currentTurn].method === 'captain' && this._isCurrentUser(this.user, this.teams[this.turns[this.currentTurn].team].captain.id)) {
+                        this.startDraftTurn();
+                    }
                 }
             },
             startDraftTurn: function() {
-                if (this.turns[this.currentTurn].method === 'captain') {
-                    var currentTeam = this.teams[this.turns[this.currentTurn].team];
-
-                    if (this._isCurrentUser(this.user, _.get(currentTeam, 'captain.id'))) {
-                        this.$.turnNotification.notify();
-                        this.$.draftYourPickSound.play();
-                    }
-                    else if (this.user && _.some(this.teams, team => this._isCurrentUser(this.user, _.get(team, 'captain.id')))) {
-                        this.$.draftTheirPickSound.play();
-                    }
-                    else {
-                        if (currentTeam.faction === 'RED') {
-                        }
-                        else if (currentTeam.faction === 'BLU') {
-                        }
-                    }
-                }
-
+                this.$.turnNotification.notify();
+                this.$.draftYourPickSound.play();
             },
             updateTimers: function() {
                 this.set('currentTime', this.timesync.now());
@@ -612,15 +594,12 @@
                 });
             },
             playExpireWarning: function() {
-                if (this.active && !this.complete && this.turns[this.currentTurn].method === 'captain') {
+                if (this.active && !this.complete && this.user && this.turns[this.currentTurn].method === 'captain' && this._isCurrentUser(this.user, this.teams[this.turns[this.currentTurn].team].captain.id)) {
                     if (Math.round((this.endTime - this.currentTime) / 1000) === 10) {
                         this.$.draftTenSecondsSound.play();
                     }
                     else if (Math.round((this.endTime - this.currentTime) / 1000) === 5) {
                         this.$.draftFiveSecondsSound.play();
-                    }
-                    else if (Math.round((this.endTime - this.currentTime) / 1000) === 0) {
-                        this.$.draftTimeExpiredSound.play();
                     }
                 }
             },
