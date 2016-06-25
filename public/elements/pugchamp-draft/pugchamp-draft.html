@@ -169,6 +169,8 @@
         </style>
 
         <template is="dom-if" if="{{active}}">
+            <h2>Game Draft</h2>
+
             <template is="dom-if" if="{{isCaptain(teams)}}">
                 <div class="draft-turns horizontal layout wrap">
                     <template is="dom-repeat" items="{{turns}}">
