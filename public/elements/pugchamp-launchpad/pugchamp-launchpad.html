@@ -157,8 +157,8 @@
 
         <paper-material id="preReady" hidden$="{{launchActive}}">
             <p>
-                <paper-button hidden$="{{preReady}}" disabled="{{!isAvailable(availability)}}" id="startPreReady" on-tap="startPreReady">Pre-Ready</paper-button>
-                <paper-button hidden$="{{!preReady}}" id="cancelPreReady" on-tap="cancelPreReady">Cancel Pre-Ready</paper-button>
+                <paper-button hidden$="{{preReady}}" disabled="{{!isAvailable(availability)}}" id="startPreReady" on-tap="startPreReady" raised>Pre-Ready</paper-button>
+                <paper-button hidden$="{{!preReady}}" id="cancelPreReady" on-tap="cancelPreReady" raised>Cancel Pre-Ready</paper-button>
             </p>
             <p>
                 <paper-progress hidden$="{{!preReady}}" id="preReadyTime" class="transiting" min="0" value="{{difference(currentTime, preReadyStartTime)}}" max="{{difference(preReadyEndTime, preReadyStartTime)}}"></paper-progress>
@@ -176,8 +176,8 @@
                 <span class="ready-status ready" hidden$="{{!readyToPlay}}"><iron-icon icon="check"></iron-icon> Ready</span>
             </p>
             <p>
-                <paper-button data-status="ready" hidden$="{{readyToPlay}}" disabled="{{!isAvailable(availability)}}" id="setReady" on-tap="updateReadyStatus">Set Ready</paper-button>
-                <paper-button data-status="notReady" hidden$="{{!readyToPlay}}" id="setNotReady" on-tap="updateReadyStatus">Set Not Ready</paper-button>
+                <paper-button data-status="ready" hidden$="{{readyToPlay}}" disabled="{{!isAvailable(availability)}}" id="setReady" on-tap="updateReadyStatus" raised>Set Ready</paper-button>
+                <paper-button data-status="notReady" hidden$="{{!readyToPlay}}" id="setNotReady" on-tap="updateReadyStatus" raised>Set Not Ready</paper-button>
             </p>
         </paper-material>
         <paper-material id="holds" class="horizontal layout">
