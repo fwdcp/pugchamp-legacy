@@ -6,8 +6,6 @@
 <link rel="import" href="/components/paper-toast/paper-toast.html">
 
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
-<link rel="import" href="/elements/pugchamp-notification/pugchamp-notification.html">
-<link rel="import" href="/elements/pugchamp-sound/pugchamp-sound.html">
 
 <dom-module id="pugchamp-client">
     <template>
@@ -54,8 +52,6 @@
 
         <iron-ajax id="token" url="/user/token" on-response="infoReceived"></iron-ajax>
 
-        <pugchamp-notification id="disconnectNotification" body="You have lost connection to the server." tag="disconnect"></pugchamp-notification>
-        <pugchamp-sound id="disconnectSound" src="/assets/snd/client/disconnected.wav"></pugchamp-sound>
         <paper-toast text="Connected to the server." id="connectAlert"></paper-toast>
         <paper-toast text="Disconnected from the server." id="disconnectAlert"></paper-toast>
         <paper-toast text="Failed to reconnect to the server." id="reconnectFailedAlert"></paper-toast>
@@ -95,8 +91,6 @@
                 this.authenticated = false;
 
                 this.$.disconnectAlert.show();
-                this.$.disconnectNotification.notify();
-                this.$.disconnectSound.play();
 
                 this.toggleDisconnectDisplay();
             },
