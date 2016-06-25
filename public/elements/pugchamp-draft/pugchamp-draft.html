@@ -21,7 +21,7 @@
 <dom-module id="pugchamp-draft">
     <template>
         <style is="custom-style" include="iron-flex">
-            #draftTurns {
+            .draft-turns {
                 margin-top: 5px;
             }
 
@@ -46,7 +46,7 @@
                 background: var(--paper-green-500);
             }
 
-            #teams {
+            .teams {
                 margin-bottom: 5px;
             }
 
@@ -81,7 +81,7 @@
                 background: var(--team-blu-color);
             }
 
-            #maps {
+            .maps {
                 margin-left: -5px;
                 margin-top: 5px;
             }
@@ -89,6 +89,7 @@
             .map {
                 background: var(--box-background-color);
                 margin-left: 5px;
+                max-height: 150px;
                 text-align: center;
             }
 
@@ -126,169 +127,216 @@
                 color: var(--light-theme-text-color);
             }
 
-            #playerPool {
+            .player-pool {
                 margin-left: -5px;
             }
 
-            #playerPool .role-column {
+            .player-pool .role-column {
                 margin-left: 5px;
                 margin-top: 5px;
                 min-width: 200px;
             }
 
-            #playerPool .role {
+            .player-pool .role {
                 background: var(--box-background-color);
             }
 
-            #playerPool .role iron-icon[item-icon] {
+            .player-pool .role iron-icon[item-icon] {
                 height: 40px;
                 width: 40px;
             }
 
-            #playerPool .player {
+            .player-pool .player {
                 background: var(--box-background-color);
                 min-height: inherit;
                 height: 32px;
             }
 
-            #playerPool .player paper-button {
+            .player-pool .player paper-button {
                 font-size: 13px;
                 line-height: 13px;
             }
 
-            #playerPool .player.highlight {
+            .player-pool .player.highlight {
                 background: var(--dark-theme-background-color);
                 font-weight: 700;
             }
 
-            #playerPool .player a {
+            .player-pool .player a {
                 color: inherit;
                 text-decoration: none;
             }
         </style>
 
-        <div hidden$="{{!active}}">
-            <div id="draftTurns" class="horizontal layout wrap">
-                <template is="dom-repeat" items="{{turns}}">
-                    <paper-material data-status$="{{turnComparison(index, currentTurn)}}" class="draft-turn flex">
-                        <strong>{{fullTurnTypeDescription(item.type)}}</strong>
-                        <br>
-                        {{fullTurnMethodDescription(item.method)}}
-                        <br>
-                        {{fullTurnTeamName(item.team, teams)}}
-                        <br>
-                        {{fullTurnChoiceInfo(item)}}
-                        <paper-progress hidden$="{{!_equals(index, currentTurn)}}" class="turn-time" class="transiting" min="0" value="{{difference(currentTime, startTime)}}" max="{{difference(endTime, startTime)}}"></paper-progress>
-                    </paper-material>
-                </template>
-            </div>
-            <div id="factions" class="horizontal layout">
-                <paper-button class="draft-choice" data-faction$="BLU" hidden$="{{!factionChoiceAllowed(user, currentTurn)}}" disabled="{{!factionChoiceAllowed(user, currentTurn)}}" on-tap="selectFaction" raised>Select BLU</paper-button>
-                <paper-button class="draft-choice" data-faction$="RED" hidden$="{{!factionChoiceAllowed(user, currentTurn)}}" disabled="{{!factionChoiceAllowed(user, currentTurn)}}" on-tap="selectFaction" raised>Select RED</paper-button>
-            </div>
-            <div id="teams">
-                <template is="dom-repeat" items="{{teams}}">
-                    <div class$="team {{teamFactionClass(item.faction)}} horizontal layout">
-                        <template is="dom-if" if="{{!hideCaptains}}">
-                            <paper-item class="user flex-2">
-                                <paper-item-body two-line>
-                                    <div>
-                                        <template is="dom-if" if="{{item.captain}}">
-                                            <a href="/player/{{item.captain.steamID}}" target="_blank">{{item.captain.alias}}</a>
-                                        </template>
-                                    </div>
-                                    <div secondary><iron-icon icon="pugchamp-role:captain"></iron-icon> Captain</div>
-                                </paper-item-body>
-                                <template is="dom-if" if="{{item.captain}}">
-                                    <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item.captain}}"></pugchamp-player-stats></paper-tooltip>
-                                </template>
-                            </paper-item>
-                        </template>
-                        <template is="dom-repeat" items="{{_padArray(item.players, teamSize)}}">
-                            <paper-item class="user flex">
-                                <template is="dom-if" if="{{item}}">
-                                    <paper-item-body two-line>
-                                        <div><a href="/player/{{item.user.steamID}}" target="_blank">{{item.user.alias}}</a></div>
-                                        <div secondary><iron-icon icon="pugchamp-role:{{item.role}}"></iron-icon> {{_getProperty(roles, item.role, 'name')}}</div>
-                                    </paper-item-body>
-                                    <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item.user}}"></pugchamp-player-stats></paper-tooltip>
-                                </template>
-                            </paper-item>
-                        </template>
-                    </div>
-                </template>
-            </div>
-            <div id="maps" class="horizontal layout wrap">
-                <template is="dom-repeat" items="{{_convertObjectToRepeatable(maps)}}">
-                    <paper-material class="map flex">
-                        <div data-status$="{{mapStatus(item.key, pickedMap, remainingMaps)}}" class="map-overlay"></div>
-                        <img class="map-background" src$="/assets/img/maps/{{item.value.image}}">
-                        <div class="map-info">
-                            {{item.value.name}}
+        <template is="dom-if" if="{{active}}">
+            <template is="dom-if" if="{{isCaptain(teams)}}">
+                <div class="draft-turns horizontal layout wrap">
+                    <template is="dom-repeat" items="{{turns}}">
+                        <paper-material data-status$="{{turnComparison(index, currentTurn)}}" class="draft-turn flex">
+                            <strong>{{fullTurnTypeDescription(item.type)}}</strong>
                             <br>
-                            <paper-button class="draft-choice" data-map$="{{item.key}}" hidden$="{{!mapChoiceAllowed(user, currentTurn, item.key, remainingMaps)}}" disabled="{{!mapChoiceAllowed(user, currentTurn, item.key, remainingMaps)}}" on-tap="selectMap" raised>{{currentMapChoiceType(currentTurn)}}</paper-button>
-                        </div>
-                    </paper-material>
-                </template>
-            </div>
-            <div id="playerPool" class="horizontal layout wrap">
-                <template is="dom-repeat" items="{{_convertObjectToRepeatable(roles)}}" as="role">
-                    <div class="flex role-column">
-                        <div class="vertical layout">
-                            <paper-icon-item class="role">
-                                <iron-icon icon="pugchamp-role:{{role.key}}" item-icon></iron-icon>
-                                <div class="role-name flex">
-                                    <h3>{{role.value.name}}</h3>
-                                </div>
-                                <span hidden$="{{_includes(allowedRoles, role.key)}}">
-                                    <iron-icon icon="lock"></iron-icon>
-                                    <paper-tooltip>Picks Disabled</paper-tooltip>
-                                </span>
-                                <span hidden$="{{!_includes(overrideRoles, role.key)}}">
-                                    <iron-icon icon="unfold-more"></iron-icon>
-                                    <paper-tooltip>Overrides Enabled</paper-tooltip>
-                                </span>
-                                <span hidden$="{{!isRoleRestricted(restrictedPicks, role.key)}}">
-                                    <iron-icon icon="warning"></iron-icon>
-                                    <paper-tooltip>Players Restricted</paper-tooltip>
-                                </span>
-                                <span hidden$="{{hasAvailablePlayers(players, role.key, overrideRoles, allPlayers, unavailablePlayers)}}">
-                                    <iron-icon icon="hourglass-empty"></iron-icon>
-                                    <paper-tooltip>None Available</paper-tooltip>
-                                </span>
-                                <paper-button class="draft-choice" data-role$="{{role.key}}" hidden$="{{!roleChoiceAllowed(user, currentTurn, role.key, allowedRoles)}}" disabled="{{!roleChoiceAllowed(user, currentTurn, role.key, allowedRoles)}}" on-tap="chooseRole" raised>Play</paper-button>
-                            </paper-icon-item>
-                            <template is="dom-if" if="{{!_includes(overrideRoles, role.key)}}">
-                                <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
-                                    <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" disabled="{{_includes(unavailablePlayers, item.id)}}" on-mouseenter="onPlayer" on-mouseleave="offPlayer">
-                                        <div class="flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></div>
-                                        <span hidden$="{{!isPlayerRestricted(restrictedPicks, item.id, role.key, currentTurn)}}">
-                                            <iron-icon icon="warning"></iron-icon>
-                                            <paper-tooltip>Player Restricted, {{restrictedPicksRemaining(currentTurn)}} Restricted Picks Remaining</paper-tooltip>
-                                        </span>
-                                        <paper-button class="draft-choice" data-role$="{{role.key}}" data-player$="{{item.id}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers, restrictedPicks)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers, restrictedPicks)}}"
-                                        on-tap="pickPlayer" raised>Select</paper-button>
-                                        <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item}}"></pugchamp-player-stats></paper-tooltip>
-                                    </paper-icon-item>
-                                </template>
+                            {{fullTurnMethodDescription(item.method)}}
+                            <br>
+                            {{fullTurnTeamName(item.team, teams)}}
+                            <br>
+                            {{fullTurnChoiceInfo(item)}}
+                            <paper-progress hidden$="{{!_equals(index, currentTurn)}}" class="turn-time" class="transiting" min="0" value="{{difference(currentTime, startTime)}}" max="{{difference(endTime, startTime)}}"></paper-progress>
+                        </paper-material>
+                    </template>
+                </div>
+                <div class="factions horizontal layout">
+                    <paper-button class="draft-choice" data-faction$="BLU" hidden$="{{!factionChoiceAllowed(user, currentTurn)}}" disabled="{{!factionChoiceAllowed(user, currentTurn)}}" on-tap="selectFaction" raised>Select BLU</paper-button>
+                    <paper-button class="draft-choice" data-faction$="RED" hidden$="{{!factionChoiceAllowed(user, currentTurn)}}" disabled="{{!factionChoiceAllowed(user, currentTurn)}}" on-tap="selectFaction" raised>Select RED</paper-button>
+                </div>
+                <div class="teams">
+                    <template is="dom-repeat" items="{{teams}}">
+                        <div class$="team {{teamFactionClass(item.faction)}} horizontal layout">
+                            <template is="dom-if" if="{{!hideCaptains}}">
+                                <paper-item class="user flex-2">
+                                    <paper-item-body two-line>
+                                        <div>
+                                            <template is="dom-if" if="{{item.captain}}">
+                                                <a href="/player/{{item.captain.steamID}}" target="_blank">{{item.captain.alias}}</a>
+                                            </template>
+                                        </div>
+                                        <div secondary><iron-icon icon="pugchamp-role:captain"></iron-icon> Captain</div>
+                                    </paper-item-body>
+                                    <template is="dom-if" if="{{item.captain}}">
+                                        <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item.captain}}"></pugchamp-player-stats></paper-tooltip>
+                                    </template>
+                                </paper-item>
                             </template>
-                            <template is="dom-if" if="{{_includes(overrideRoles, role.key)}}">
-                                <template is="dom-repeat" items="{{allPlayers}}">
-                                    <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" disabled="{{_includes(unavailablePlayers, item.id)}}" on-mouseenter="onPlayer" on-mouseleave="offPlayer">
-                                        <div class="flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></div>
-                                        <paper-button class="draft-choice override" data-role$="{{role.key}}" data-player$="{{item.id}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers, restrictedPicks)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers, restrictedPicks)}}"
-                                        on-tap="pickPlayerOverride" raised>Override</paper-button>
-                                        <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item}}"></pugchamp-player-stats></paper-tooltip>
-                                    </paper-icon-item>
-                                </template>
+                            <template is="dom-repeat" items="{{_padArray(item.players, teamSize)}}">
+                                <paper-item class="user flex">
+                                    <template is="dom-if" if="{{item}}">
+                                        <paper-item-body two-line>
+                                            <div><a href="/player/{{item.user.steamID}}" target="_blank">{{item.user.alias}}</a></div>
+                                            <div secondary><iron-icon icon="pugchamp-role:{{item.role}}"></iron-icon> {{_getProperty(roles, item.role, 'name')}}</div>
+                                        </paper-item-body>
+                                        <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item.user}}"></pugchamp-player-stats></paper-tooltip>
+                                    </template>
+                                </paper-item>
                             </template>
                         </div>
-                    </div>
-                </template>
-            </div>
-        </div>
+                    </template>
+                </div>
+                <div class="maps horizontal layout wrap">
+                    <template is="dom-repeat" items="{{_convertObjectToRepeatable(maps)}}">
+                        <paper-material class="map flex">
+                            <div data-status$="{{mapStatus(item.key, pickedMap, remainingMaps)}}" class="map-overlay"></div>
+                            <img class="map-background" src$="/assets/img/maps/{{item.value.image}}">
+                            <div class="map-info">
+                                {{item.value.name}}
+                                <br>
+                                <paper-button class="draft-choice" data-map$="{{item.key}}" hidden$="{{!mapChoiceAllowed(user, currentTurn, item.key, remainingMaps)}}" disabled="{{!mapChoiceAllowed(user, currentTurn, item.key, remainingMaps)}}" on-tap="selectMap" raised>{{currentMapChoiceType(currentTurn)}}</paper-button>
+                            </div>
+                        </paper-material>
+                    </template>
+                </div>
+                <div class="player-pool horizontal layout wrap">
+                    <template is="dom-repeat" items="{{_convertObjectToRepeatable(roles)}}" as="role">
+                        <div class="flex role-column">
+                            <div class="vertical layout">
+                                <paper-icon-item class="role">
+                                    <iron-icon icon="pugchamp-role:{{role.key}}" item-icon></iron-icon>
+                                    <div class="role-name flex">
+                                        <h3>{{role.value.name}}</h3>
+                                    </div>
+                                    <span hidden$="{{_includes(allowedRoles, role.key)}}">
+                                        <iron-icon icon="lock"></iron-icon>
+                                        <paper-tooltip>Picks Disabled</paper-tooltip>
+                                    </span>
+                                    <span hidden$="{{!_includes(overrideRoles, role.key)}}">
+                                        <iron-icon icon="unfold-more"></iron-icon>
+                                        <paper-tooltip>Overrides Enabled</paper-tooltip>
+                                    </span>
+                                    <span hidden$="{{!isRoleRestricted(restrictedPicks, role.key)}}">
+                                        <iron-icon icon="warning"></iron-icon>
+                                        <paper-tooltip>Players Restricted</paper-tooltip>
+                                    </span>
+                                    <span hidden$="{{hasAvailablePlayers(players, role.key, overrideRoles, allPlayers, unavailablePlayers)}}">
+                                        <iron-icon icon="hourglass-empty"></iron-icon>
+                                        <paper-tooltip>None Available</paper-tooltip>
+                                    </span>
+                                    <paper-button class="draft-choice" data-role$="{{role.key}}" hidden$="{{!roleChoiceAllowed(user, currentTurn, role.key, allowedRoles)}}" disabled="{{!roleChoiceAllowed(user, currentTurn, role.key, allowedRoles)}}" on-tap="chooseRole" raised>Play</paper-button>
+                                </paper-icon-item>
+                                <template is="dom-if" if="{{!_includes(overrideRoles, role.key)}}">
+                                    <template is="dom-repeat" items="{{_getProperty(players, role.key)}}">
+                                        <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" disabled="{{_includes(unavailablePlayers, item.id)}}" on-mouseenter="onPlayer" on-mouseleave="offPlayer">
+                                            <div class="flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></div>
+                                            <span hidden$="{{!isPlayerRestricted(restrictedPicks, item.id, role.key, currentTurn)}}">
+                                                <iron-icon icon="warning"></iron-icon>
+                                                <paper-tooltip>Player Restricted, {{restrictedPicksRemaining(currentTurn)}} Restricted Picks Remaining</paper-tooltip>
+                                            </span>
+                                            <paper-button class="draft-choice" data-role$="{{role.key}}" data-player$="{{item.id}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers, restrictedPicks)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers, restrictedPicks)}}"
+                                            on-tap="pickPlayer" raised>Select</paper-button>
+                                            <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item}}"></pugchamp-player-stats></paper-tooltip>
+                                        </paper-icon-item>
+                                    </template>
+                                </template>
+                                <template is="dom-if" if="{{_includes(overrideRoles, role.key)}}">
+                                    <template is="dom-repeat" items="{{allPlayers}}">
+                                        <paper-icon-item class$="player {{isHighlighted(item.id, highlightedPlayer)}}" disabled="{{_includes(unavailablePlayers, item.id)}}" on-mouseenter="onPlayer" on-mouseleave="offPlayer">
+                                            <div class="flex"><a href="/player/{{item.steamID}}" target="_blank">{{item.alias}}</a></div>
+                                            <paper-button class="draft-choice override" data-role$="{{role.key}}" data-player$="{{item.id}}" hidden$="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers, restrictedPicks)}}" disabled="{{!playerChoiceAllowed(user, currentTurn, role.key, allowedRoles, item.id, unavailablePlayers, restrictedPicks)}}"
+                                            on-tap="pickPlayerOverride" raised>Override</paper-button>
+                                            <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item}}"></pugchamp-player-stats></paper-tooltip>
+                                        </paper-icon-item>
+                                    </template>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+            <template is="dom-if" if="{{!isCaptain(teams)}}">
+                <div class="teams">
+                    <template is="dom-repeat" items="{{teams}}">
+                        <div class$="team {{teamFactionClass(item.faction)}} horizontal layout">
+                            <template is="dom-if" if="{{!hideCaptains}}">
+                                <paper-item class="user flex-2">
+                                    <paper-item-body two-line>
+                                        <div>
+                                            <template is="dom-if" if="{{item.captain}}">
+                                                <a href="/player/{{item.captain.steamID}}" target="_blank">{{item.captain.alias}}</a>
+                                            </template>
+                                        </div>
+                                        <div secondary><iron-icon icon="pugchamp-role:captain"></iron-icon> Captain</div>
+                                    </paper-item-body>
+                                    <template is="dom-if" if="{{item.captain}}">
+                                        <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item.captain}}"></pugchamp-player-stats></paper-tooltip>
+                                    </template>
+                                </paper-item>
+                            </template>
+                            <template is="dom-repeat" items="{{_padArray(item.players, teamSize)}}">
+                                <paper-item class="user flex">
+                                    <template is="dom-if" if="{{item}}">
+                                        <paper-item-body two-line>
+                                            <div><a href="/player/{{item.user.steamID}}" target="_blank">{{item.user.alias}}</a></div>
+                                            <div secondary><iron-icon icon="pugchamp-role:{{item.role}}"></iron-icon> {{_getProperty(roles, item.role, 'name')}}</div>
+                                        </paper-item-body>
+                                        <paper-tooltip position="bottom"><pugchamp-player-stats roles="{{roles}}" player="{{item.user}}"></pugchamp-player-stats></paper-tooltip>
+                                    </template>
+                                </paper-item>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+                <div class="maps horizontal layout wrap">
+                    <template is="dom-repeat" items="{{mapChoices(maps, turns, currentTurn)}}">
+                        <paper-material class="map flex">
+                            <div data-status$="{{item.status}}" class="map-overlay"></div>
+                            <img class="map-background" src$="/assets/img/maps/{{_getProperty(maps, item.map, 'image')}}">
+                            <div class="map-info">
+                                {{_getProperty(maps, item.map, 'name')}}
+                            </div>
+                        </paper-material>
+                    </template>
+                </div>
+            </template>
 
-        <hr hidden$="{{!active}}">
+            <hr>
+        </template>
     </template>
 
     <script>
@@ -629,6 +677,30 @@
             },
             restrictedPicksRemaining: function(turn) {
                 return this.teams[this.turns[turn].team].restrictedPicks;
+            },
+            isCaptain: function(teams) {
+                return _.some(teams, team => this._isCurrentUser(this.user, _.get(team, 'captain.id')));
+            },
+            mapChoices: function(map, turns, currentTurn) {
+                return _(turns).take(currentTurn).filter(turn => (turn.type === 'mapBan' || turn.type === 'mapPick')).map(function(turn) {
+                    if (turn.type === 'mapBan') {
+                        return {
+                            status: 'banned',
+                            map: turn.map
+                        };
+                    }
+                    else if (turn.type === 'mapPick') {
+                        return {
+                            status: 'picked',
+                            map: turn.map
+                        };
+                    }
+                    else {
+                        return {
+                            map: turn.map
+                        };
+                    }
+                }).value();
             },
             difference: function(a, b) {
                 return a - b;
