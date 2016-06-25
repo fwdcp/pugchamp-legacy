@@ -37,9 +37,7 @@ function formatPlayerListing(player, includeRating) {
             ratingMean: math.round(player.stats.rating.mean),
             ratingDeviation: math.round(player.stats.rating.deviation),
             ratingLowerBound: math.round(player.stats.rating.low),
-            ratingUpperBound: math.round(player.stats.rating.high),
-            captainScore: player.stats.captainScore && _.isNumber(player.stats.captainScore.center) ? math.round(player.stats.captainScore.center, 3) : null,
-            playerScore: player.stats.playerScore && _.isNumber(player.stats.playerScore.center) ? math.round(player.stats.playerScore.center, 3) : null
+            ratingUpperBound: math.round(player.stats.rating.high)
         };
     }
     else {
@@ -228,11 +226,7 @@ co(function*() {
             /* eslint-enable lodash/prefer-lodash-method */
             [function(player) {
                 return player.stats.rating.mean;
-            }, function(player) {
-                return player.stats.playerScore ? player.stats.playerScore.center : null;
-            }, function(player) {
-                return player.stats.captainScore ? player.stats.captainScore.center : null;
-            }], ['desc', 'desc', 'desc']);
+            }], ['desc']);
 
         yield cache.setAsync('allPlayerList', JSON.stringify(_.map(players, user => formatPlayerListing(user, !HIDE_RATINGS))));
         yield cache.setAsync('activePlayerList', JSON.stringify(_(players).filter(user => isActivePlayer(user)).map(user => formatPlayerListing(user, !HIDE_RATINGS)).value()));

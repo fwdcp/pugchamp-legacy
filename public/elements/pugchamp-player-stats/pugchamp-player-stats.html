@@ -17,9 +17,6 @@
         <div hidden$="{{!player.stats.rating}}">
             <em>Rating</em>: {{player.stats.rating.mean}}&plusmn;{{player.stats.rating.deviation}} ({{player.stats.rating.low}}&ndash;{{player.stats.rating.high}})
         </div>
-        <div hidden$="{{!scoreExists(player.stats.playerScore)}}">
-            <em>Player Score</em>: {{player.stats.playerScore.center}}
-        </div>
         <div hidden$="{{!canRenderChart(player.stats.roles)}}">
             <google-chart id="roles" type="pie"></google-chart>
         </div>
@@ -41,9 +38,6 @@
             },
             ready: function() {
                 this._chartsRendered = false;
-            },
-            scoreExists: function(range) {
-                return range && range.center !== null;
             },
             canRenderChart: function(stats) {
                 return _.sumBy(stats, 'count') > 0;

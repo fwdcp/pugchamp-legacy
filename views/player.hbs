@@ -60,40 +60,6 @@
 
     {{#unless hideRatings}}
     <p><strong>Player Rating:</strong> {{user.stats.rating.mean}}&plusmn;{{user.stats.rating.deviation}} ({{user.stats.rating.low}}&ndash;{{user.stats.rating.high}})</p>
-
-    <p>
-        <strong>Player Score:</strong>
-
-        {{#if user.stats.playerScore}}
-        {{#if user.stats.playerScore.center}}
-        {{user.stats.playerScore.center}}
-        {{else}}
-        N/A
-        {{/if}}
-        {{else}}
-        N/A
-        {{/if}}
-    </p>
-
-    <p><strong>Player Record:</strong> {{user.stats.playerRecord.win}}-{{user.stats.playerRecord.loss}}-{{user.stats.playerRecord.tie}}</p>
-
-    {{#unless hideCaptains}}
-    <p>
-        <strong>Captain Score:</strong>
-
-        {{#if user.stats.captainScore}}
-        {{#if user.stats.captainScore.center}}
-        {{user.stats.captainScore.center}}
-        {{else}}
-        N/A
-        {{/if}}
-        {{else}}
-        N/A
-        {{/if}}
-
-        <p><strong>Captain Record:</strong> {{user.stats.captainRecord.win}}-{{user.stats.captainRecord.loss}}-{{user.stats.captainRecord.tie}}</p>
-    </p>
-    {{/unless}}
     {{/unless}}
 
     <p><strong>Replacement Stats:</strong> {{user.stats.replaced.into}} in, {{{user.stats.replaced.out}}} out</p>
