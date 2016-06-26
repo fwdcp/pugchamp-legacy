@@ -397,6 +397,8 @@ module.exports = function(app, cache, chance, database, io, self) {
             return;
         }
 
+        game = yield database.Game.findById(helpers.getDocumentID(game));
+
         let oldPlayerID = helpers.getDocumentID(oldPlayer);
         let newPlayerID = helpers.getDocumentID(newPlayer);
 
