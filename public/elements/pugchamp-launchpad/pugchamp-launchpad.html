@@ -13,7 +13,7 @@
 <link rel="import" href="/components/paper-tooltip/paper-tooltip.html">
 
 <script src="/components/lodash/lodash.js"></script>
-<link rel="import" href="/elements/pugchamp-sound/pugchamp-sound.html">
+
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-time-sync-behavior.html">
@@ -269,10 +269,6 @@
             </template>
         </div>
 
-        <pugchamp-notification id="preReadyExpiredNotification" body="Your pre-ready has expired." tag="preReadyExpired"></pugchamp-notification>
-        <pugchamp-sound id="preReadyExpiredSound" src="/assets/snd/launch/preready_expired.wav"></pugchamp-sound>
-        <pugchamp-sound id="launchStartSound" src="/assets/snd/launch/start.wav"></pugchamp-sound>
-        <pugchamp-sound id="launchAlertSound" src="/assets/snd/launch/alert.wav"></pugchamp-sound>
         <pugchamp-notification id="launchNotification" body="A new game is launching!" tag="launchAttempt"></pugchamp-notification>
     </template>
 
@@ -420,19 +416,10 @@
                 this.set('currentTime', this.timesync.now());
 
                 if (this.preReady && this.currentTime > this.preReadyEndTime) {
-                    this.$.preReadyExpiredNotification.notify();
-                    this.$.preReadyExpiredSound.play();
                     this.cancelPreReady();
                 }
-                this.playLaunchAlert();
+
                 this.async(this.updateTimers, 1000);
-            },
-            playLaunchAlert: function() {
-                if (this.launchActive && Math.round((this.$.readyTime.max - this.$.readyTime.value) / 1000) === 10) {
-                    if ((!this.isRestricted(this.restrictions, 'start') || !this.isRestricted(this.restrictions, 'captain')) && (!this.readyToPlay || !this.isAvailable(this.availability))) {
-                        this.$.launchAlertSound.play();
-                    }
-                }
             },
             playerAliasList: function(players) {
                 return players.map(function(player) {

@@ -2,8 +2,7 @@
 
 <link rel="import" href="/components/paper-material/paper-material.html">
 <link rel="import" href="/components/paper-styles/color.html">
-<link rel="import" href="/elements/pugchamp-notification/pugchamp-notification.html">
-<link rel="import" href="/elements/pugchamp-sound/pugchamp-sound.html">
+
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-restrictions-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-time-sync-behavior.html">
@@ -67,8 +66,6 @@
         </div>
 
         <hr hidden$="{{!requests.length}}">
-        <pugchamp-notification id="substituteNotification" body="A substitute has been requested!" tag="substituteRequest"></pugchamp-notification>
-        <pugchamp-sound id="substituteRequestedSound" src="/assets/snd/subreqs/requested.wav"></pugchamp-sound>
     </template>
 
     <script>
@@ -83,9 +80,6 @@
                 this.updateTimers();
             },
             onSubstituteRequestsUpdated: function(info) {
-              if (this.requests.length < info.requests.length) {
-                this.notifyRequest();
-              }
                 this.set('requests', info.requests);
             },
             updateTimers: function() {
@@ -101,12 +95,6 @@
             },
             retractSubstituteRequest: function(event) {
                 socket.emit('retractSubstituteRequest', event.target.dataset.request);
-            },
-            notifyRequest: function() {
-              if (!this.isRestricted(this.restrictions, 'sub')) {
-                this.$.substituteNotification.notify();
-                this.$.substituteRequestedSound.play();
-              }
             },
             canRetractRequest: function(user, captainID) {
                 return this._isAdmin(user) || this._isCurrentUser(user, captainID);
