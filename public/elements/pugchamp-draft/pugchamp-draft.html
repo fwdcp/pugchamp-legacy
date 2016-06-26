@@ -697,6 +697,10 @@
                         image: 'unknown.png'
                     };
 
+                    if (turn.map) {
+                        map = maps[turn.map];
+                    }
+
                     return {
                         status: status,
                         map: map
