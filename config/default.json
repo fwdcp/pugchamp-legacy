@@ -75,7 +75,7 @@
             "substituteSelectionMethod": "closest"
         },
         "launch": {
-            "preReadyTimeout": "90s",
+            "preReadyTimeout": "150s",
             "readyPeriod": "60s"
         },
         "draft": {
