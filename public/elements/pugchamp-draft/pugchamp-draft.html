@@ -7,6 +7,8 @@
 <link rel="import" href="/components/paper-styles/color.html">
 <link rel="import" href="/components/paper-styles/typography.html">
 <link rel="import" href="/components/paper-tooltip/paper-tooltip.html">
+<link rel="import" href="/elements/pugchamp-notification/pugchamp-notification.html">
+<link rel="import" href="/elements/pugchamp-sound/pugchamp-sound.html">
 
 <script src="/components/lodash/lodash.js"></script>
 
@@ -291,6 +293,10 @@
                         </div>
                     </template>
                 </div>
+                <pugchamp-notification id="turnNotification" body="It is your turn to choose in the draft!" tag="draftTurn"></pugchamp-notification>
+                <pugchamp-sound id="draftYourPickSound" src="/assets/snd/draft/your_pick.mp3"></pugchamp-sound>
+                <pugchamp-sound id="draftTenSecondsSound" src="/assets/snd/draft/10_seconds.mp3"></pugchamp-sound>
+                <pugchamp-sound id="draftFiveSecondsSound" src="/assets/snd/draft/5_seconds.mp3"></pugchamp-sound>
             </template>
             <template is="dom-if" if="{{!isCaptain(teams)}}">
                 <div class="teams">
@@ -378,10 +384,20 @@
                 this.set('currentTurn', status.currentDraftTurn);
                 this.set('startTime', status.turnStartTime);
                 this.set('endTime', status.turnEndTime);
+
+                if (this.active && !this.complete) {
+                       if (this.turns[this.currentTurn].method === 'captain' && this._isCurrentUser(this.user, this.teams[this.turns[this.currentTurn].team].captain.id)) {
+                           this.startDraftTurn();
+                       }
+                   }
+               },
+              startDraftTurn: function() {
+                   this.$.turnNotification.notify();
+                   this.$.draftYourPickSound.play();
             },
             updateTimers: function() {
                 this.set('currentTime', this.timesync.now());
-
+                this.playExpireWarning();
                 this.async(this.updateTimers, 1000);
             },
             turnComparison: function(turn, current) {
@@ -624,6 +640,16 @@
                     player: event.target.dataset.player,
                     override: true
                 });
+            },
+            playExpireWarning: function() {
+                if (this.active && !this.complete && this.user && this.turns[this.currentTurn].method === 'captain' && this._isCurrentUser(this.user, this.teams[this.turns[this.currentTurn].team].captain.id)) {
+                   if (Math.round((this.endTime - this.currentTime) / 1000) === 10) {
+                       this.$.draftTenSecondsSound.play();
+                    }
+                    else if (Math.round((this.endTime - this.currentTime) / 1000) === 5) {
+                        this.$.draftFiveSecondsSound.play();
+                    }
+                }
             },
             isHighlighted: function(player, highlighted) {
                 if (player === highlighted) {
