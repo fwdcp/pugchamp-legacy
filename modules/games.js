@@ -525,6 +525,26 @@ module.exports = function(app, cache, chance, database, io, self) {
             yield game.save();
 
             yield self.processGameUpdate(game);
+
+            let action = `[game](/game/${helpers.getDocumentID(game)}) update: live`;
+            if (!_.isNil(game.duration)) {
+                let duration = moment.duration(game.duration, 'seconds').format('m:ss', {
+                    trim: false
+                });
+                action += ` for ${duration}`;
+            }
+            if (game.map) {
+                let map = MAPS[game.map].name;
+                action += ` on ${map}`;
+            }
+            if (_.size(game.score) > 0) {
+                let score = _(game.teams).map((team, index) => `${(HIDE_CAPTAINS || !team.captain) ? team.faction : team.captain.alias} ${game.score[index]}`).join(', ');
+                action += ` with current score ${score}`;
+            }
+
+            self.sendMessage({
+                action
+            });
         }
         else if (info.status === 'completed') {
             if (game.status === 'aborted') {
@@ -577,6 +597,26 @@ module.exports = function(app, cache, chance, database, io, self) {
             yield self.processGameUpdate(game);
             self.removeGameSubstituteRequests(game);
             setTimeout(self.shutdownGameServers, POST_GAME_RESET_DELAY, game);
+
+            let action = `[game](/game/${helpers.getDocumentID(game)}) update: completed`;
+            if (!_.isNil(game.duration)) {
+                let duration = moment.duration(game.duration, 'seconds').format('m:ss', {
+                    trim: false
+                });
+                action += ` after ${duration}`;
+            }
+            if (game.map) {
+                let map = MAPS[game.map].name;
+                action += ` on ${map}`;
+            }
+            if (_.size(game.score) > 0) {
+                let score = _(game.teams).map((team, index) => `${(HIDE_CAPTAINS || !team.captain) ? team.faction : team.captain.alias} ${game.score[index]}`).join(', ');
+                action += ` with final score ${score}`;
+            }
+
+            self.sendMessage({
+                action
+            });
 
             try {
                 yield rateGame(game);
