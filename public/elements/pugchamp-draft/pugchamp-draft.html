@@ -113,8 +113,6 @@
             }
 
             .map .map-background {
-                max-height: 200px;
-                object-fit: cover;
                 width: 100%;
             }
 
@@ -329,9 +327,9 @@
                     <template is="dom-repeat" items="{{mapChoices(maps, turns, currentTurn)}}">
                         <paper-material class="map flex">
                             <div data-status$="{{item.status}}" class="map-overlay"></div>
-                            <img class="map-background" src$="/assets/img/maps/{{_getProperty(maps, item.map, 'image')}}">
+                            <img class="map-background" src$="/assets/img/maps/{{item.map.image}}">
                             <div class="map-info">
-                                {{_getProperty(maps, item.map, 'name')}}
+                                {{item.map.name}}
                             </div>
                         </paper-material>
                     </template>
@@ -684,25 +682,25 @@
             isCaptain: function(teams) {
                 return _.some(teams, team => this._isCurrentUser(this.user, _.get(team, 'captain.id')));
             },
-            mapChoices: function(map, turns, currentTurn) {
-                return _(turns).take(currentTurn).filter(turn => (turn.type === 'mapBan' || turn.type === 'mapPick')).map(function(turn) {
+            mapChoices: function(maps, turns, currentTurn) {
+                return _(turns).filter(turn => (turn.type === 'mapBan' || turn.type === 'mapPick')).map(function(turn) {
+                    let status = 'unknown';
+
                     if (turn.type === 'mapBan') {
-                        return {
-                            status: 'banned',
-                            map: turn.map
-                        };
+                        status = 'banned';
                     }
                     else if (turn.type === 'mapPick') {
-                        return {
-                            status: 'picked',
-                            map: turn.map
-                        };
+                        status = 'picked';
                     }
-                    else {
-                        return {
-                            map: turn.map
-                        };
-                    }
+
+                    let map = {
+                        image: 'unknown.png'
+                    };
+
+                    return {
+                        status: status,
+                        map: map
+                    };
                 }).value();
             },
             difference: function(a, b) {
