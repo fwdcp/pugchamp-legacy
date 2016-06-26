@@ -790,6 +790,17 @@ module.exports = function(app, cache, chance, database, io, self) {
             trim: false
         });
     });
+    hbs.registerHelper('gameDominanceScore', function(game) {
+        if (game.stats.dominanceScore > 0) {
+            return `${game.stats.dominanceScore} (${(HIDE_CAPTAINS || !game.teams[0].captain) ? game.teams[0].faction : game.teams[0].captain.alias})`;
+        }
+        else if (game.stats.dominanceScore < 0) {
+            return `${-1 * game.stats.dominanceScore} (${(HIDE_CAPTAINS || !game.teams[1].captain) ? game.teams[1].faction : game.teams[1].captain.alias})`;
+        }
+        else {
+            return `${game.stats.dominanceScore} (tied)`;
+        }
+    });
     hbs.registerHelper('canWatchGame', function(status, watch) {
         return watch && status === 'live';
     });
