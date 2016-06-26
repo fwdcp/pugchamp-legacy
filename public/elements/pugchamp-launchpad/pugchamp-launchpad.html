@@ -390,7 +390,6 @@
 
                 if (!this.user || (!this.isRestricted(this.restrictions, 'start') || !this.isRestricted(this.restrictions, 'captain'))) {
                     this.$.launchNotification.notify();
-                    this.$.launchStartSound.play();
                 }
             },
             resetReady: function() {
