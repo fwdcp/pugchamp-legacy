@@ -21,7 +21,7 @@ co(function*() {
         }
         else {
             /* eslint-disable lodash/prefer-lodash-method */
-            users = yield database.User.find({}, 'stats').exec();
+            users = yield database.User.find({}, 'alias stats').exec();
             /* eslint-enable lodash/prefer-lodash-method */
         }
 
