@@ -16,7 +16,7 @@ co(function*() {
                 '_id': {
                     $in: argv._
                 }
-            }, 'stats').exec();
+            }, 'alias stats').exec();
             /* eslint-enable lodash/prefer-lodash-method */
         }
         else {
