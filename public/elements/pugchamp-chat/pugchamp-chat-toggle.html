@@ -11,20 +11,11 @@
         Polymer({
             is: 'pugchamp-chat-toggle',
             properties: {
-                idealWidth: {
-                    type: Number,
-                    value: 1800
-                },
                 wideLayout: {
                     type: Boolean,
                     value: false,
                     notify: true
                 }
-            },
-            ready: function() {
-                this.adjustMenu();
-
-                window.addEventListener('resize', this.adjustMenu.bind(this));
             },
             openMenu: function() {
                 this.set('wideLayout', true);
@@ -34,9 +25,6 @@
             },
             toggleMenu: function() {
                 this.set('wideLayout', !this.wideLayout);
-            },
-            adjustMenu: function() {
-                this.set('wideLayout', document.documentElement.clientWidth >= this.idealWidth);
             }
         });
     </script>
