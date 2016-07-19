@@ -1,12 +1,13 @@
 <link rel="import" href="/components/polymer/polymer.html">
 
-<dom-module id="pugchamp-notification">
+<dom-module id="pugchamp-web-notification">
     <script>
         Polymer({
-            is: 'pugchamp-notification',
+            is: 'pugchamp-web-notification',
             properties: {
                 title: {
-                    type: String
+                    type: String,
+                    value: 'PugChamp'
                 },
                 direction: {
                     type: String,
@@ -45,22 +46,13 @@
                 }
             },
             ready: function() {
-                if (this.title === '') {
-                    if (window.PugChampSettings) {
-                        this.title = window.PugChampSettings.siteName;
-                    }
-                    else {
-                        this.title = 'PugChamp';
-                    }
-                }
-
                 if (window.Notification && Notification.permission === 'default') {
                     Notification.requestPermission();
                 }
             },
             notify: function() {
                 if (window.Notification && Notification.permission === 'granted') {
-                    this.notification = new Notification(this.title || 'PugChamp', {
+                    this.notification = new Notification(this.title, {
                         dir: this.direction,
                         lang: this.language,
                         body: this.body,
