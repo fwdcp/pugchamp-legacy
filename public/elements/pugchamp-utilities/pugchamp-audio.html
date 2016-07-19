@@ -1,0 +1,61 @@
+<link rel="import" href="/components/polymer/polymer.html">
+
+<dom-module id="pugchamp-audio">
+    <template>
+        <audio id="audio" autoplay$="{{autoplay}}" controls$="{{controls}}" loop$="{{loop}}" muted$="{{muted}}" preload$="{{preload}}" src$="{{src}}" volume$="{{volume}}"></audio>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'pugchamp-audio',
+            properties: {
+                autoplay: {
+                    type: Boolean,
+                    value: false
+                },
+                controls: {
+                    type: Boolean,
+                    value: false
+                },
+                currentTime: {
+                    type: Number,
+                    value: 0
+                },
+                loop: {
+                    type: Boolean,
+                    value: false,
+                },
+                muted: {
+                    type: Boolean,
+                    value: false
+                },
+                preload: {
+                    type: String,
+                    value: 'auto'
+                },
+                src: String,
+                volume: {
+                    type: Number,
+                    value: 1
+                }
+            },
+            play: function() {
+                this.$.audio.play();
+            },
+            pause: function() {
+                this.$.audio.pause();
+            },
+            replay: function() {
+                this.$.audio.pause();
+                this.$.audio.currentTime = 0;
+                this.$.audio.play();
+            },
+            get currentTime() {
+                return this.$.audio.currentTime;
+            },
+            set currentTime(val) {
+                this.$.audio.currentTime = val;
+            }
+        });
+    </script>
+</dom-module>
