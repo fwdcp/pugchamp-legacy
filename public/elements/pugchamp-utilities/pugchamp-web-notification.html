@@ -5,45 +5,19 @@
         Polymer({
             is: 'pugchamp-web-notification',
             properties: {
-                title: {
-                    type: String,
-                    value: 'PugChamp'
-                },
-                direction: {
-                    type: String,
-                    value: 'auto'
-                },
-                language: {
-                    type: String,
-                    value: 'en'
-                },
+                title: String,
+                direction: String,
+                language: String,
                 body: String,
-                icon: {
-                    type: String,
-                    value: '/assets/img/notification-icon.png'
-                },
+                tag: String,
+                icon: String,
                 data: Object,
-                sound: {
-                    type: String,
-                    value: '/snd/beep.wav'
-                },
+                sound: String,
                 vibrate: Array,
-                renotify: {
-                    type: Boolean,
-                    value: false
-                },
-                silent: {
-                    type: Boolean,
-                    value: false
-                },
-                noscreen: {
-                    type: Boolean,
-                    value: false
-                },
-                sticky: {
-                    type: Boolean,
-                    value: false
-                }
+                renotify: Boolean,
+                silent: Boolean,
+                noscreen: Boolean,
+                sticky: Boolean,
             },
             ready: function() {
                 if (window.Notification && Notification.permission === 'default') {
