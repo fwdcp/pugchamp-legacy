@@ -1,0 +1,88 @@
+<link rel="import" href="/components/polymer/polymer.html">
+
+<link rel="import" href="/components/app-storage/app-localstorage/app-localstorage-document.html">
+
+<link rel="import" href="/elements/pugchamp-utilities/pugchamp-audio.html">
+<link rel="import" href="/elements/pugchamp-utilities/pugchamp-web-notification.html">
+
+<script src="/components/lodash/lodash.js"></script>
+
+<dom-module id="pugchamp-notification">
+    <template>
+        <pugchamp-audio id="audio" src="/assets/snd/{{configuration.sound}}" volume="{{configuration.volume}}"></pugchamp-audio>
+        <pugchamp-web-notification id="notification" title="{{title}}" body="{{description}}" tag="{{key}}" icon="/assets/img/notification-icon.png"></pugchamp-web-notification>
+
+        <app-localstorage-document id="notificationList" key="pugchamp-notifications" on-data-changed="_notificationListChanged"></app-localstorage-document>
+        <app-localstorage-document key="pugchamp-notification:{{key}}" data="{{configuration}}"></app-localstorage-document>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'pugchamp-notification',
+            properties: {
+                configuration: {
+                    type: Object,
+                    observer: '_configurationChanged'
+                },
+                defaultActive: {
+                    type: Boolean,
+                    value: false
+                },
+                defaultSound: {
+                    type: String,
+                    value: 'void.wav'
+                },
+                defaultVolume: {
+                    type: Number,
+                    value: 1
+                },
+                description: String,
+                key: String,
+                name: String
+            },
+            ready() {
+                this._ensureInNotificationList();
+
+                this._setupConfigurationDefaults();
+
+                this.title = window.PugChampSettings.siteName;
+            },
+            notify() {
+                if (this.configuration.active) {
+                    this.$.audio.replay();
+                    this.$.notification.notify();
+                }
+            },
+            _setupConfigurationDefaults() {
+                if (!this.configuration || this.configuration.source === 'default') {
+                    this.set('configuration', {
+                        name: this.name,
+                        source: 'default',
+                        active: this.defaultActive,
+                        sound: this.defaultSound,
+                        volume: this.defaultVolume
+                    });
+                }
+            },
+            _ensureInNotificationList() {
+                if (!this.$.notificationList.data) {
+                    this.$.notificationList.set('data', []);
+                }
+
+                if (!_.includes(this.$.notificationList.data, this.key)) {
+                    this.$.notificationList.push('data', this.key);
+                }
+            },
+            _configurationChanged(newValue, oldValue) {
+                if (_.isEqual(newValue, oldValue)) {
+                    return;
+                }
+
+                this._setupConfigurationDefaults();
+            },
+            _notificationListChanged(event) {
+                this._ensureInNotificationList();
+            }
+        });
+    </script>
+</dom-module>
