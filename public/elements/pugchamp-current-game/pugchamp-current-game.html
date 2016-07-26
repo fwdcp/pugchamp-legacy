@@ -15,7 +15,6 @@
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-user-behavior.html">
 <link rel="import" href="/elements/pugchamp-notification/pugchamp-notification.html">
-<link rel="import" href="/elements/pugchamp-sound/pugchamp-sound.html">
 <link rel="import" href="/elements/pugchamp-utilities/pugchamp-polymer-helpers.html">
 
 <dom-module id="pugchamp-current-game">
@@ -130,8 +129,7 @@
 
         <hr hidden$="{{!info}}">
 
-        <pugchamp-notification id="gameDetailsNotification" body="Game info is now available." tag="gameDetails"></pugchamp-notification>
-        <pugchamp-sound id="gameDetailsSound" src="/assets/snd/start.wav"></pugchamp-sound>
+        <pugchamp-notification id="gameDetailsNotification" name="Game Details" description="Game info is now available." key="game-details" default-active default-sound="success.wav"></pugchamp-notification>
     </template>
     <script>
         Polymer({
@@ -151,7 +149,6 @@
             onCurrentGameUpdated: function(info) {
                 if (!_.isNil(_.get(info, 'server')) && !_.isEqual(_.get(info, 'server'), _.get(this.info, 'server'))) {
                     this.$.gameDetailsNotification.notify();
-                    this.$.gameDetailsSound.play();
                 }
 
                 this.set('info', info);
