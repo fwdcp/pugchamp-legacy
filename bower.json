@@ -27,7 +27,8 @@
     "app-elements": "PolymerElements/app-elements#^0.9.0",
     "platinum-elements": "PolymerElements/platinum-elements#^2.0.0",
     "neon-elements": "PolymerElements/neon-elements#^1.0.0",
-    "gold-elements": "PolymerElements/gold-elements#^1.0.1"
+    "gold-elements": "PolymerElements/gold-elements#^1.0.1",
+    "app-storage": "garcus/app-storage#^0.9.4"
   },
   "resolutions": {
     "whenever.js": "master"
