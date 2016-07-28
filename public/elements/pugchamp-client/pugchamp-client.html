@@ -3,9 +3,9 @@
 <link rel="import" href="/components/iron-ajax/iron-ajax.html">
 <link rel="import" href="/components/paper-material/paper-material.html">
 <link rel="import" href="/components/paper-styles/color.html">
-<link rel="import" href="/components/paper-toast/paper-toast.html">
 
 <link rel="import" href="/elements/pugchamp-client/pugchamp-client-base-behavior.html">
+<link rel="import" href="/elements/pugchamp-notification/pugchamp-notification.html">
 
 <dom-module id="pugchamp-client">
     <template>
@@ -52,11 +52,11 @@
 
         <iron-ajax id="token" url="/user/token" on-response="infoReceived"></iron-ajax>
 
-        <paper-toast text="Connected to the server." id="connectAlert"></paper-toast>
-        <paper-toast text="Disconnected from the server." id="disconnectAlert"></paper-toast>
-        <paper-toast text="Failed to reconnect to the server." id="reconnectFailedAlert"></paper-toast>
-        <paper-toast text="Logged in with the server." id="authenticatedAlert"></paper-toast>
-        <paper-toast text="Failed to log in with the server." id="authenticationFailedAlert"></paper-toast>
+        <pugchamp-notification id="connectNotification" name="Connection Established" description="Connected to the server." key="connection" default-sound="startup_1.wav"></pugchamp-notification>
+        <pugchamp-notification id="disconnectNotification" name="Connection Lost" description="Disconnected from the server." key="disconnection" default-sound="exit_1.wav"></pugchamp-notification>
+        <pugchamp-notification id="reconnectFailedNotification" name="Reconnection Failed" description="Failed to reconnect to the server." key="reconnect-failed" default-sound="error_1.wav"></pugchamp-notification>
+        <pugchamp-notification id="authenticatedNotification" name="Logged In" description="Logged in with the server." key="authenticated" default-sound="mail.wav"></pugchamp-notification>
+        <pugchamp-notification id="authenticationFailedNotification" name="Log In Failed" description="Failed to log in with the server." key="authentication-failed" default-sound="offline.wav"></pugchamp-notification>
     </template>
 
     <script>
@@ -81,7 +81,7 @@
                 });
             },
             onConnect: function() {
-                this.$.connectAlert.show();
+                this.$.connectNotification.notify();
 
                 this.toggleDisconnectDisplay();
 
@@ -90,19 +90,19 @@
             onDisconnect: function() {
                 this.authenticated = false;
 
-                this.$.disconnectAlert.show();
+                this.$.disconnectNotification.notify();
 
                 this.toggleDisconnectDisplay();
             },
             onReconnectFailed: function() {
-                this.$.reconnectFailedAlert.show();
+                this.$.reconnectFailedNotification.notify();
 
                 this.toggleDisconnectDisplay();
             },
             onUnauthorized: function(error) {
                 this.authenticated = false;
 
-                this.$.authenticationFailedAlert.show();
+                this.$.authenticationFailedNotification.notify();
 
                 if (error.data && error.data.type === 'UnauthorizedError' && error.data.code === 'invalid_token') {
                     this.$.token.generateRequest();
@@ -111,7 +111,7 @@
             onAuthenticated: function() {
                 this.authenticated = true;
 
-                this.$.authenticatedAlert.show();
+                this.$.authenticatedNotification.notify();
             },
             infoReceived: function(event) {
                 this.token = event.detail.response.token;
