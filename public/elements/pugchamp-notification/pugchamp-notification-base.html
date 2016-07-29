@@ -1,0 +1,36 @@
+<link rel="import" href="/components/polymer/polymer.html">
+
+<link rel="import" href="/elements/pugchamp-utilities/pugchamp-audio.html">
+<link rel="import" href="/elements/pugchamp-utilities/pugchamp-web-notification.html">
+
+<dom-module id="pugchamp-notification-base">
+    <template>
+        <pugchamp-audio id="audio" src="/assets/snd/{{sound}}" volume="{{volume}}"></pugchamp-audio>
+        <pugchamp-web-notification id="notification" title="{{title}}" body="{{description}}" tag="{{tag}}" icon="/assets/img/notification-icon.png"></pugchamp-web-notification>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'pugchamp-notification-base',
+            properties: {
+                description: String,
+                sound: {
+                    type: String,
+                    value: 'void.wav'
+                },
+                tag: String,
+                volume: {
+                    type: Number,
+                    value: 1
+                }
+            },
+            ready() {
+                this.title = window.PugChampSettings.siteName;
+            },
+            notify() {
+                this.$.audio.replay();
+                this.$.notification.notify();
+            }
+        });
+    </script>
+</dom-module>
