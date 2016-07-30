@@ -1,19 +1,16 @@
 <link rel="import" href="/components/polymer/polymer.html">
 
-<link rel="import" href="/components/app-storage/app-localstorage/app-localstorage-document.html">
+<link rel="import" href="/components/app-pouchdb/app-pouchdb-document.html">
 
-<link rel="import" href="/elements/pugchamp-utilities/pugchamp-audio.html">
-<link rel="import" href="/elements/pugchamp-utilities/pugchamp-web-notification.html">
+<link rel="import" href="/elements/pugchamp-notification/pugchamp-notification-base.html">
 
 <script src="/components/lodash/lodash.js"></script>
 
 <dom-module id="pugchamp-notification">
     <template>
-        <pugchamp-audio id="audio" src="/assets/snd/{{configuration.sound}}" volume="{{configuration.volume}}"></pugchamp-audio>
-        <pugchamp-web-notification id="notification" title="{{title}}" body="{{description}}" tag="{{key}}" icon="/assets/img/notification-icon.png"></pugchamp-web-notification>
+        <pugchamp-notification-base id="base" description="{{description}}" sound="{{configuration.sound}}" tag="{{tag}}" volume="{{configuration.volume}}"></pugchamp-notification-base>
 
-        <app-localstorage-document id="notificationList" key="pugchamp-notifications" on-data-changed="_notificationListChanged"></app-localstorage-document>
-        <app-localstorage-document key="pugchamp-notification:{{key}}" data="{{configuration}}"></app-localstorage-document>
+        <app-pouchdb-document id="notificationConfiguration" db-name="notifications" doc-id="{{tag}}" data="{{configuration}}"></app-pouchdb-document>
     </template>
 
     <script>
@@ -37,51 +34,53 @@
                     value: 1
                 },
                 description: String,
-                key: String,
-                name: String
+                name: String,
+                tag: String
             },
             ready() {
-                this._ensureInNotificationList();
-
-                this._setupConfigurationDefaults();
+                this._updateConfiguration();
 
                 this.title = window.PugChampSettings.siteName;
             },
             notify() {
                 if (this.configuration.active) {
-                    this.$.audio.replay();
-                    this.$.notification.notify();
+                    this.$.base.notify();
                 }
             },
-            _setupConfigurationDefaults() {
-                if (!this.configuration || this.configuration.source === 'default') {
-                    this.set('configuration', {
-                        name: this.name,
-                        source: 'default',
-                        active: this.defaultActive,
-                        sound: this.defaultSound,
-                        volume: this.defaultVolume
-                    });
-                }
-            },
-            _ensureInNotificationList() {
-                if (!this.$.notificationList.data) {
-                    this.$.notificationList.set('data', []);
-                }
+            _updateConfiguration() {
+                this.debounce('updateConfiguration', function() {
+                    let config = _.clone(this.configuration) || {};
 
-                if (!_.includes(this.$.notificationList.data, this.key)) {
-                    this.$.notificationList.push('data', this.key);
-                }
+                    if (_.get(this.configuration, 'source', 'default') === 'default') {
+                        _.assign(config, {
+                            source: 'default',
+                            active: this.defaultActive,
+                            sound: this.defaultSound,
+                            volume: this.defaultVolume,
+                            mute: false
+                        });
+                    }
+
+                    _.assign(config, {
+                        name: this.name,
+                        description: this.description
+                    });
+
+                    this.$.notificationConfiguration.set('data', config);
+                }, 100);
             },
             _configurationChanged(newValue, oldValue) {
-                if (_.isEqual(newValue, oldValue)) {
+                if (_.isEqualWith(newValue, oldValue, function(objValue, othValue, key) {
+                    if (key === '_rev') {
+                        return true;
+                    }
+
+                    return;
+                })) {
                     return;
                 }
 
-                this._setupConfigurationDefaults();
-            },
-            _notificationListChanged(event) {
-                this._ensureInNotificationList();
+                this._updateConfiguration();
             }
         });
     </script>
