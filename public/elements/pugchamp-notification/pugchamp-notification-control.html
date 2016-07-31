@@ -1,0 +1,286 @@
+<link rel="import" href="/components/polymer/polymer.html">
+
+<link rel="import" href="/components/app-pouchdb/app-pouchdb-document.html">
+<link rel="import" href="/components/app-pouchdb/app-pouchdb-query.html">
+<link rel="import" href="/components/iron-icons/av-icons.html">
+<link rel="import" href="/components/iron-icons/notification-icons.html">
+<link rel="import" href="/components/paper-dialog/paper-dialog.html">
+<link rel="import" href="/components/paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="/components/paper-slider/paper-slider.html">
+<link rel="import" href="/components/paper-tooltip/paper-tooltip.html">
+
+<link rel="import" href="/elements/pugchamp-notification/pugchamp-notification-base.html">
+
+<script src="/components/lodash/lodash.js"></script>
+
+<dom-module id="pugchamp-notification-control">
+    <template>
+        <dom-module id="pugchamp-notification-control-item">
+            <template>
+                <style is="custom-style" include="iron-flex">
+                    #row {
+                        margin: 0 14px;
+                    }
+
+                    #name {
+                        width: 200px;
+                    }
+                </style>
+
+                <div class="layout horizontal center" id="row">
+                    <p id="name">{{info.name}}</p>
+                    <paper-icon-button icon="undo" on-tap="revert" disabled="{{!_isCustom(info)}}">
+                        <paper-tooltip>Reset to Default</paper-tooltip>
+                    </paper-icon-button>
+                    <paper-toggle-button id="active" on-change="changeActive" checked="{{info.active}}">
+                        <paper-tooltip>Notification Active</paper-tooltip>
+                    </paper-toggle-button>
+                    <paper-dropdown-menu label="Sound" hidden$="{{!info.active}}">
+                        <paper-menu id="sound" class="dropdown-content" attr-for-selected="data-file" selected="{{info.sound}}" on-change="changeSound">
+                            <template is="dom-repeat" items="{{sounds}}">
+                                <paper-item data-file$="{{item.file}}">{{item.name}}</paper-item>
+                            </template>
+                        </paper-menu>
+                    </paper-dropdown-menu>
+                    <paper-icon-button icon="{{_iconForVolume(info)}}" on-tap="changeMute" hidden$="{{!info.active}}">
+                        <paper-tooltip>Mute</paper-tooltip>
+                    </paper-icon-button>
+                    <paper-slider id="volume" min="0" max="1" step="0.01" value="{{info.volume}}" on-change="changeVolume" disabled="{{_isMute(info)}}" hidden$="{{!info.active}}"></paper-slider>
+                    <paper-icon-button icon="av:play-arrow" on-tap="testNotification" hidden$="{{!info.active}}">
+                        <paper-tooltip>Test Notification</paper-tooltip>
+                    </paper-icon-button>
+                </div>
+
+                <app-pouchdb-document id="notificationConfiguration" db-name="notifications" doc-id="{{tag}}" data="{{configuration}}"></app-pouchdb-document>
+                <pugchamp-notification-base id="test" description="{{info.description}}" sound="{{info.sound}}" tag="{{tag}}" volume="{{info.volume}}"></pugchamp-notification-base>
+            </template>
+
+            <script>
+                Polymer({
+                    is: 'pugchamp-notification-control-item',
+                    properties: {
+                        configuration: {
+                            type: Object,
+                            observer: '_configurationChanged'
+                        },
+                        sounds: Array,
+                        tag: String
+                    },
+                    changeActive() {
+                        let config = _.clone(this.info);
+
+                        _.assign(config, {
+                            source: 'custom',
+                            active: this.$.active.checked
+                        });
+
+                        this.$.notificationConfiguration.set('data', config);
+                    },
+                    changeSound() {
+                        let config = _.clone(this.info);
+
+                        _.assign(config, {
+                            source: 'custom',
+                            sound: this.$.sound.selected
+                        });
+
+                        this.$.notificationConfiguration.set('data', config);
+                    },
+                    changeMute() {
+                        let config = _.clone(this.info);
+
+                        if (config.mute) {
+                            _.assign(config, {
+                                source: 'custom',
+                                volume: config.oldVolume,
+                                mute: false
+                            });
+                        }
+                        else {
+                            _.assign(config, {
+                                source: 'custom',
+                                volume: 0,
+                                mute: true,
+                                oldVolume: config.volume
+                            });
+                        }
+
+                        this.$.notificationConfiguration.set('data', config);
+                    },
+                    changeVolume() {
+                        let config = _.clone(this.info);
+
+                        _.assign(config, {
+                            source: 'custom',
+                            volume: this.$.volume.value
+                        });
+
+                        this.$.notificationConfiguration.set('data', config);
+                    },
+                    revert() {
+                        let config = _.clone(this.info);
+
+                        _.assign(config, {
+                            source: 'default'
+                        });
+
+                        this.$.notificationConfiguration.set('data', config);
+                    },
+                    testNotification() {
+                        this.$.test.notify();
+                    },
+                    _isCustom(info) {
+                        return _.get(info, 'source', 'default') !== 'default';
+                    },
+                    _iconForVolume(info) {
+                        if (info.mute) {
+                            return 'av:volume-off';
+                        }
+
+                        let adjustedVolume = _.clamp(info.volume, 0, 1);
+
+                        if (adjustedVolume === 0) {
+                            return 'av:volume-mute';
+                        }
+                        else if (adjustedVolume <= 0.5) {
+                            return 'av:volume-down';
+                        }
+                        else if (adjustedVolume > 0.5) {
+                            return 'av:volume-up';
+                        }
+                    },
+                    _isMute(info) {
+                        return info.mute;
+                    },
+                    _configurationChanged(newValue, oldValue) {
+                        this.set('info', _.clone(newValue));
+                    }
+                });
+            </script>
+        </dom-module>
+
+        <style is="custom-style">
+            #main {
+                max-height: 50vh;
+                overflow-y: auto;
+                position: fixed;
+                right: 0;
+                top: 64px;
+            }
+        </style>
+
+        <paper-icon-button on-tap="openDialog" icon="notification:more"></paper-icon-button>
+
+        <paper-dialog id="main">
+            <template is="dom-repeat" items="{{notifications}}">
+                <pugchamp-notification-control-item tag="{{item._id}}" sounds="{{sounds}}"></pugchamp-notification-control-item>
+            </template>
+        </paper-dialog>
+
+        <app-pouchdb-query id="notificationsList" db-name="notifications" selector="_id $exists true" fields='["_id"]' sort='["_id"]' data="{{notifications}}"></app-pouchdb-query>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'pugchamp-notification-control',
+            properties: {
+                sounds: {
+                    type: Array,
+                    value: [{
+                        name: 'Click',
+                        file: 'click.wav'
+                    }, {
+                        name: 'Error 1',
+                        file: 'error_1.wav'
+                    }, {
+                        name: 'Error 2',
+                        file: 'error_2.wav'
+                    }, {
+                        name: 'Exit 1',
+                        file: 'exit_1.wav'
+                    }, {
+                        name: 'Exit 2',
+                        file: 'exit_2.wav'
+                    }, {
+                        name: 'Knock',
+                        file: 'knock.wav'
+                    }, {
+                        name: 'Mail',
+                        file: 'mail.wav'
+                    }, {
+                        name: 'Maximize 1',
+                        file: 'maximize_1.wav'
+                    }, {
+                        name: 'Maximize 2',
+                        file: 'maximize_2.wav'
+                    }, {
+                        name: 'Notify',
+                        file: 'notify.wav'
+                    }, {
+                        name: 'Offline',
+                        file: 'offline.wav'
+                    }, {
+                        name: 'Popup',
+                        file: 'popup.wav'
+                    }, {
+                        name: 'Question',
+                        file: 'question.wav'
+                    }, {
+                        name: 'Question Background',
+                        file: 'question_background.wav'
+                    }, {
+                        name: 'Restore Down',
+                        file: 'restore_down.wav'
+                    }, {
+                        name: 'Restore Up',
+                        file: 'restore_up.wav'
+                    }, {
+                        name: 'Send',
+                        file: 'send.wav'
+                    }, {
+                        name: 'Shade Down',
+                        file: 'shade_down.wav'
+                    }, {
+                        name: 'Shade Up',
+                        file: 'shade_up.wav'
+                    }, {
+                        name: 'Startup 1',
+                        file: 'startup_1.wav'
+                    }, {
+                        name: 'Startup 2',
+                        file: 'startup_2.wav'
+                    }, {
+                        name: 'Startup 3',
+                        file: 'startup_3.wav'
+                    }, {
+                        name: 'Startup 4',
+                        file: 'startup_4.wav'
+                    }, {
+                        name: 'Status',
+                        file: 'status.wav'
+                    }, {
+                        name: 'Success',
+                        file: 'success.wav'
+                    }, {
+                        name: 'Void',
+                        file: 'void.wav'
+                    }]
+                }
+            },
+            attached() {
+                this.listen(window, 'WebComponentsReady', '_webComponentsReady');
+            },
+            detached() {
+                this.unlisten(window, 'WebComponentsReady', '_webComponentsReady');
+            },
+            openDialog() {
+                this.$.main.toggle();
+            },
+            _webComponentsReady() {
+                this.async(function() {
+                    this.$.notificationsList.refresh();
+                }, 1000);
+            }
+        });
+    </script>
+</dom-module>
