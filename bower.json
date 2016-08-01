@@ -28,9 +28,10 @@
     "platinum-elements": "PolymerElements/platinum-elements#^2.0.0",
     "neon-elements": "PolymerElements/neon-elements#^1.0.0",
     "gold-elements": "PolymerElements/gold-elements#^1.0.1",
-    "app-storage": "garcus/app-storage#^0.9.4"
+    "pouchdb-find": "nolanlawson/pouchdb-find#^0.10.3"
   },
   "resolutions": {
-    "whenever.js": "master"
+    "whenever.js": "master",
+    "pouchdb-find": "^0.10.3"
   }
 }
