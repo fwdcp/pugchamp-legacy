@@ -83,7 +83,7 @@
             },
             onSubstituteRequestsUpdated: function(info) {
                 if (info.requests.length > this.requests.length) {
-                    if (!this.user || !this.isRestricted(this.restrictions, 'sub'))) {
+                    if (!this.user || !this.isRestricted(this.restrictions, 'sub')) {
                         this.$.substituteRequestNotification.notify();
                     }
                 }
