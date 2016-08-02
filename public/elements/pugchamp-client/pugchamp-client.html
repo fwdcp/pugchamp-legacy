@@ -52,11 +52,11 @@
 
         <iron-ajax id="token" url="/user/token" on-response="infoReceived"></iron-ajax>
 
-        <pugchamp-notification id="connectNotification" name="Connection Established" description="Connected to the server." key="connection" default-sound="startup_1.wav"></pugchamp-notification>
-        <pugchamp-notification id="disconnectNotification" name="Connection Lost" description="Disconnected from the server." key="disconnection" default-sound="exit_1.wav"></pugchamp-notification>
-        <pugchamp-notification id="reconnectFailedNotification" name="Reconnection Failed" description="Failed to reconnect to the server." key="reconnect-failed" default-sound="error_1.wav"></pugchamp-notification>
-        <pugchamp-notification id="authenticatedNotification" name="Logged In" description="Logged in with the server." key="authenticated" default-sound="mail.wav"></pugchamp-notification>
-        <pugchamp-notification id="authenticationFailedNotification" name="Log In Failed" description="Failed to log in with the server." key="authentication-failed" default-sound="offline.wav"></pugchamp-notification>
+        <pugchamp-notification id="connectNotification" name="Connection Established" description="Connected to the server." tag="connection" default-sound="startup_1.wav"></pugchamp-notification>
+        <pugchamp-notification id="disconnectNotification" name="Connection Lost" description="Disconnected from the server." tag="disconnection" default-sound="exit_1.wav"></pugchamp-notification>
+        <pugchamp-notification id="reconnectFailedNotification" name="Reconnection Failed" description="Failed to reconnect to the server." tag="reconnect-failed" default-sound="error_1.wav"></pugchamp-notification>
+        <pugchamp-notification id="authenticatedNotification" name="Authenticated" description="Authenticated with the server." tag="authenticated" default-sound="mail.wav"></pugchamp-notification>
+        <pugchamp-notification id="authenticationFailedNotification" name="Authentication Failed" description="Failed to authenticate with the server." tag="authentication-failed" default-sound="offline.wav"></pugchamp-notification>
     </template>
 
     <script>

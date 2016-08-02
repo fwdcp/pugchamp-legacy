@@ -338,6 +338,8 @@
 
             <hr>
         </template>
+
+        <pugchamp-notification id="draftTurnNotification" name="Draft Turn" description="It is your turn to pick in the draft!" tag="draft-turn" default-sound="notify.wav"></pugchamp-notification>
     </template>
 
     <script>
@@ -376,6 +378,10 @@
                 this.set('currentTurn', status.currentDraftTurn);
                 this.set('startTime', status.turnStartTime);
                 this.set('endTime', status.turnEndTime);
+
+                if (this.turns[turn].method === 'captain' && this._isCurrentUser(this.user, this.teams[this.turns[turn].team].captain.id)) {
+                    this.$.draftTurnNotification.notify();
+                }
             },
             updateTimers: function() {
                 this.set('currentTime', this.timesync.now());

@@ -66,6 +66,8 @@
         </div>
 
         <hr hidden$="{{!requests.length}}">
+
+        <pugchamp-notification id="substituteRequestNotification" name="New Substitute Request" description="A substitute has been requested!" tag="substitute-request" default-active default-sound="question.wav"></pugchamp-notification>
     </template>
 
     <script>
@@ -80,6 +82,12 @@
                 this.updateTimers();
             },
             onSubstituteRequestsUpdated: function(info) {
+                if (info.requests.length > this.requests.length) {
+                    if (!this.user || !this.isRestricted(this.restrictions, 'sub'))) {
+                        this.$.substituteRequestNotification.notify();
+                    }
+                }
+
                 this.set('requests', info.requests);
             },
             updateTimers: function() {
