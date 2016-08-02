@@ -1,8 +1,10 @@
 <link rel="import" href="/components/polymer/polymer.html">
 
+<link rel="import" href="/components/lodash/lodash.js">
+
 <dom-module id="pugchamp-audio">
     <template>
-        <audio id="audio" autoplay$="{{autoplay}}" controls$="{{controls}}" loop$="{{loop}}" muted$="{{muted}}" preload$="{{preload}}" src$="{{src}}" volume$="{{volume}}"></audio>
+        <audio id="audio" autoplay="{{autoplay}}" controls="{{controls}}" loop="{{loop}}" muted="{{muted}}" preload="{{preload}}" src="{{src}}" volume="{{_constrainVolume(volume)}}"></audio>
     </template>
 
     <script>
@@ -39,13 +41,13 @@
                     value: 1
                 }
             },
-            play: function() {
+            play() {
                 this.$.audio.play();
             },
-            pause: function() {
+            pause() {
                 this.$.audio.pause();
             },
-            replay: function() {
+            replay() {
                 this.$.audio.pause();
                 this.$.audio.currentTime = 0;
                 this.$.audio.play();
@@ -55,6 +57,13 @@
             },
             set currentTime(val) {
                 this.$.audio.currentTime = val;
+            },
+            _constrainVolume(volume) {
+                if (!_.isFinite(_.toNumber(volume))) {
+                    return 1;
+                }
+
+                return _.clamp(volume, 0, 1);
             }
         });
     </script>

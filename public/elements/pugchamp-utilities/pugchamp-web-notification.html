@@ -19,12 +19,12 @@
                 noscreen: Boolean,
                 sticky: Boolean,
             },
-            ready: function() {
+            ready() {
                 if (window.Notification && Notification.permission === 'default') {
                     Notification.requestPermission();
                 }
             },
-            notify: function() {
+            notify() {
                 if (window.Notification && Notification.permission === 'granted') {
                     this.notification = new Notification(this.title, {
                         dir: this.direction,
@@ -50,7 +50,7 @@
                     }.bind(this);
                 }
             },
-            close: function() {
+            close() {
                 if (this.notification) {
                     this.notification.close();
                 }
