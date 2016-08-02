@@ -994,11 +994,28 @@ module.exports = function(app, cache, chance, database, io, self) {
                         }))).value();
 
                         if (_.size(availablePlayers) <= _.sum(numPlayersNeeded)) {
-                            return _.flatMap(numPlayersNeeded, (needed, teamIndex) => (needed > 0 ? _.map(availablePlayers, player => ({
-                                role,
-                                player,
-                                team: teamIndex
-                            })) : []));
+                            return _.flatMap(numPlayersNeeded, function(needed, teamIndex) {
+                                if (needed <= 0) {
+                                    return [];
+                                }
+
+                                // NOTE: need to check if captain can fill last remaining spot
+                                if (needed === 1) {
+                                    if (_.includes(rolePlayers, draftTeams[teamIndex].captain)) {
+                                        if (!_.includes(draftTeams[teamIndex].players, draftTeams[teamIndex].captain)) {
+                                            if (_(DRAFT_ORDER).drop(turn).some(possibleTurn => ((possibleTurn.type === 'captainRolePick' || possibleTurn.type === 'playerOrCaptainRolePick') && possibleTurn.team === teamIndex))) {
+                                                return [];
+                                            }
+                                        }
+                                    }
+                                }
+
+                                return _.map(availablePlayers, player => ({
+                                    role,
+                                    player,
+                                    team: teamIndex
+                                }));
+                            });
                         }
                         else {
                             return [];
