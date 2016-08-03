@@ -13,152 +13,152 @@
 
 <script src="/components/lodash/lodash.js"></script>
 
+<dom-module id="pugchamp-notification-control-item">
+    <template>
+        <style is="custom-style" include="iron-flex">
+            #row {
+                margin: 0 14px;
+            }
+
+            #name {
+                width: 200px;
+            }
+        </style>
+
+        <div class="layout horizontal center" id="row">
+            <p id="name">{{info.name}}</p>
+            <paper-icon-button icon="undo" on-tap="revert" disabled="{{!_isCustom(info)}}">
+                <paper-tooltip>Reset to Default</paper-tooltip>
+            </paper-icon-button>
+            <paper-toggle-button id="active" on-change="changeActive" checked="{{info.active}}">
+                <paper-tooltip>Notification Active</paper-tooltip>
+            </paper-toggle-button>
+            <paper-dropdown-menu label="Sound" hidden$="{{!info.active}}">
+                <paper-menu id="sound" class="dropdown-content" attr-for-selected="data-file" selected="{{info.sound}}" on-change="changeSound">
+                    <template is="dom-repeat" items="{{sounds}}">
+                        <paper-item data-file$="{{item.file}}">{{item.name}}</paper-item>
+                    </template>
+                </paper-menu>
+            </paper-dropdown-menu>
+            <paper-icon-button icon="{{_iconForVolume(info)}}" on-tap="changeMute" hidden$="{{!info.active}}">
+                <paper-tooltip>Mute</paper-tooltip>
+            </paper-icon-button>
+            <paper-slider id="volume" min="0" max="1" step="0.01" value="{{info.volume}}" on-change="changeVolume" disabled="{{_isMute(info)}}" hidden$="{{!info.active}}"></paper-slider>
+            <paper-icon-button icon="av:play-arrow" on-tap="testNotification" hidden$="{{!info.active}}">
+                <paper-tooltip>Test Notification</paper-tooltip>
+            </paper-icon-button>
+        </div>
+
+        <app-pouchdb-document id="notificationConfiguration" db-name="notifications" doc-id="{{tag}}" data="{{configuration}}"></app-pouchdb-document>
+        <pugchamp-notification-base id="test" description="{{info.description}}" sound="{{info.sound}}" tag="{{tag}}" volume="{{info.volume}}"></pugchamp-notification-base>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'pugchamp-notification-control-item',
+            properties: {
+                configuration: {
+                    type: Object,
+                    observer: '_configurationChanged'
+                },
+                sounds: Array,
+                tag: String
+            },
+            changeActive() {
+                let config = _.clone(this.info);
+
+                _.assign(config, {
+                    source: 'custom',
+                    active: this.$.active.checked
+                });
+
+                this.$.notificationConfiguration.set('data', config);
+            },
+            changeSound() {
+                let config = _.clone(this.info);
+
+                _.assign(config, {
+                    source: 'custom',
+                    sound: this.$.sound.selected
+                });
+
+                this.$.notificationConfiguration.set('data', config);
+            },
+            changeMute() {
+                let config = _.clone(this.info);
+
+                if (config.mute) {
+                    _.assign(config, {
+                        source: 'custom',
+                        volume: config.oldVolume,
+                        mute: false
+                    });
+                }
+                else {
+                    _.assign(config, {
+                        source: 'custom',
+                        volume: 0,
+                        mute: true,
+                        oldVolume: config.volume
+                    });
+                }
+
+                this.$.notificationConfiguration.set('data', config);
+            },
+            changeVolume() {
+                let config = _.clone(this.info);
+
+                _.assign(config, {
+                    source: 'custom',
+                    volume: this.$.volume.value
+                });
+
+                this.$.notificationConfiguration.set('data', config);
+            },
+            revert() {
+                let config = _.clone(this.info);
+
+                _.assign(config, {
+                    source: 'default'
+                });
+
+                this.$.notificationConfiguration.set('data', config);
+            },
+            testNotification() {
+                this.$.test.notify();
+            },
+            _isCustom(info) {
+                return _.get(info, 'source', 'default') !== 'default';
+            },
+            _iconForVolume(info) {
+                if (info.mute) {
+                    return 'av:volume-off';
+                }
+
+                let adjustedVolume = _.clamp(info.volume, 0, 1);
+
+                if (adjustedVolume === 0) {
+                    return 'av:volume-mute';
+                }
+                else if (adjustedVolume <= 0.5) {
+                    return 'av:volume-down';
+                }
+                else if (adjustedVolume > 0.5) {
+                    return 'av:volume-up';
+                }
+            },
+            _isMute(info) {
+                return info.mute;
+            },
+            _configurationChanged(newValue, oldValue) {
+                this.set('info', _.clone(newValue));
+            }
+        });
+    </script>
+</dom-module>
+
 <dom-module id="pugchamp-notification-control">
     <template>
-        <dom-module id="pugchamp-notification-control-item">
-            <template>
-                <style is="custom-style" include="iron-flex">
-                    #row {
-                        margin: 0 14px;
-                    }
-
-                    #name {
-                        width: 200px;
-                    }
-                </style>
-
-                <div class="layout horizontal center" id="row">
-                    <p id="name">{{info.name}}</p>
-                    <paper-icon-button icon="undo" on-tap="revert" disabled="{{!_isCustom(info)}}">
-                        <paper-tooltip>Reset to Default</paper-tooltip>
-                    </paper-icon-button>
-                    <paper-toggle-button id="active" on-change="changeActive" checked="{{info.active}}">
-                        <paper-tooltip>Notification Active</paper-tooltip>
-                    </paper-toggle-button>
-                    <paper-dropdown-menu label="Sound" hidden$="{{!info.active}}">
-                        <paper-menu id="sound" class="dropdown-content" attr-for-selected="data-file" selected="{{info.sound}}" on-change="changeSound">
-                            <template is="dom-repeat" items="{{sounds}}">
-                                <paper-item data-file$="{{item.file}}">{{item.name}}</paper-item>
-                            </template>
-                        </paper-menu>
-                    </paper-dropdown-menu>
-                    <paper-icon-button icon="{{_iconForVolume(info)}}" on-tap="changeMute" hidden$="{{!info.active}}">
-                        <paper-tooltip>Mute</paper-tooltip>
-                    </paper-icon-button>
-                    <paper-slider id="volume" min="0" max="1" step="0.01" value="{{info.volume}}" on-change="changeVolume" disabled="{{_isMute(info)}}" hidden$="{{!info.active}}"></paper-slider>
-                    <paper-icon-button icon="av:play-arrow" on-tap="testNotification" hidden$="{{!info.active}}">
-                        <paper-tooltip>Test Notification</paper-tooltip>
-                    </paper-icon-button>
-                </div>
-
-                <app-pouchdb-document id="notificationConfiguration" db-name="notifications" doc-id="{{tag}}" data="{{configuration}}"></app-pouchdb-document>
-                <pugchamp-notification-base id="test" description="{{info.description}}" sound="{{info.sound}}" tag="{{tag}}" volume="{{info.volume}}"></pugchamp-notification-base>
-            </template>
-
-            <script>
-                Polymer({
-                    is: 'pugchamp-notification-control-item',
-                    properties: {
-                        configuration: {
-                            type: Object,
-                            observer: '_configurationChanged'
-                        },
-                        sounds: Array,
-                        tag: String
-                    },
-                    changeActive() {
-                        let config = _.clone(this.info);
-
-                        _.assign(config, {
-                            source: 'custom',
-                            active: this.$.active.checked
-                        });
-
-                        this.$.notificationConfiguration.set('data', config);
-                    },
-                    changeSound() {
-                        let config = _.clone(this.info);
-
-                        _.assign(config, {
-                            source: 'custom',
-                            sound: this.$.sound.selected
-                        });
-
-                        this.$.notificationConfiguration.set('data', config);
-                    },
-                    changeMute() {
-                        let config = _.clone(this.info);
-
-                        if (config.mute) {
-                            _.assign(config, {
-                                source: 'custom',
-                                volume: config.oldVolume,
-                                mute: false
-                            });
-                        }
-                        else {
-                            _.assign(config, {
-                                source: 'custom',
-                                volume: 0,
-                                mute: true,
-                                oldVolume: config.volume
-                            });
-                        }
-
-                        this.$.notificationConfiguration.set('data', config);
-                    },
-                    changeVolume() {
-                        let config = _.clone(this.info);
-
-                        _.assign(config, {
-                            source: 'custom',
-                            volume: this.$.volume.value
-                        });
-
-                        this.$.notificationConfiguration.set('data', config);
-                    },
-                    revert() {
-                        let config = _.clone(this.info);
-
-                        _.assign(config, {
-                            source: 'default'
-                        });
-
-                        this.$.notificationConfiguration.set('data', config);
-                    },
-                    testNotification() {
-                        this.$.test.notify();
-                    },
-                    _isCustom(info) {
-                        return _.get(info, 'source', 'default') !== 'default';
-                    },
-                    _iconForVolume(info) {
-                        if (info.mute) {
-                            return 'av:volume-off';
-                        }
-
-                        let adjustedVolume = _.clamp(info.volume, 0, 1);
-
-                        if (adjustedVolume === 0) {
-                            return 'av:volume-mute';
-                        }
-                        else if (adjustedVolume <= 0.5) {
-                            return 'av:volume-down';
-                        }
-                        else if (adjustedVolume > 0.5) {
-                            return 'av:volume-up';
-                        }
-                    },
-                    _isMute(info) {
-                        return info.mute;
-                    },
-                    _configurationChanged(newValue, oldValue) {
-                        this.set('info', _.clone(newValue));
-                    }
-                });
-            </script>
-        </dom-module>
-
         <style is="custom-style">
             #main {
                 max-height: 50vh;
