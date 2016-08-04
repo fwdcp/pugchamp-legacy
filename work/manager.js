@@ -7,8 +7,8 @@ const moment = require('moment');
 
 const helpers = require('../helpers');
 
-const COMMAND_QUEUE_NAME = config.get('server.amqp.commandQueue');
-const RESPONSE_EXCHANGE_NAME = config.get('server.amqp.responseExchange');
+const COMMAND_QUEUE = config.get('server.amqp.commandQueue');
+const RESPONSE_EXCHANGE = config.get('server.amqp.responseExchange');
 const QUEUE_CONNECT = config.get('server.amqp.connect');
 
 class PugChampWorkManager {
@@ -23,13 +23,13 @@ class PugChampWorkManager {
             let connection = yield amqp.connect(QUEUE_CONNECT);
             this.channel = yield connection.createChannel();
 
-            yield this.channel.assertQueue(COMMAND_QUEUE_NAME);
+            yield this.channel.assertQueue(COMMAND_QUEUE);
 
-            yield this.channel.assertExchange(RESPONSE_EXCHANGE_NAME, 'fanout');
+            yield this.channel.assertExchange(RESPONSE_EXCHANGE, 'fanout');
             let responseQueue = yield this.channel.assertQueue('', {
                 exclusive: true
             });
-            yield this.channel.bindQueue(responseQueue.queue, RESPONSE_EXCHANGE_NAME, '');
+            yield this.channel.bindQueue(responseQueue.queue, RESPONSE_EXCHANGE, '');
 
             yield this.channel.consume(responseQueue.queue, this.processResponse.bind(this));
         }
@@ -75,7 +75,7 @@ class PugChampWorkManager {
             let nextTask = _.head(this.queue);
 
             for (let component of nextTask.components) {
-                yield this.channel.sendToQueue(COMMAND_QUEUE_NAME, helpers.convertJSONToBuffer(component), {
+                yield this.channel.sendToQueue(COMMAND_QUEUE, helpers.convertJSONToBuffer(component), {
                     persistent: true
                 });
             }
