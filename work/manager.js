@@ -5,17 +5,11 @@ const co = require('co');
 const config = require('config');
 const moment = require('moment');
 
+const helpers = require('../helpers');
+
 const COMMAND_QUEUE_NAME = config.get('server.amqp.commandQueue');
 const RESPONSE_EXCHANGE_NAME = config.get('server.amqp.responseExchange');
 const QUEUE_CONNECT = config.get('server.amqp.connect');
-
-function convertJSONToBuffer(object) {
-    return Buffer.from(JSON.stringify(object));
-}
-
-function convertBufferToJSON(buffer) {
-    return JSON.parse(buffer.toString());
-}
 
 class PugChampWorkManager {
     constructor() {
@@ -81,7 +75,7 @@ class PugChampWorkManager {
             let nextTask = _.head(this.queue);
 
             for (let component of nextTask.components) {
-                yield this.channel.sendToQueue(COMMAND_QUEUE_NAME, convertJSONToBuffer(component), {
+                yield this.channel.sendToQueue(COMMAND_QUEUE_NAME, helpers.convertJSONToBuffer(component), {
                     persistent: true
                 });
             }
