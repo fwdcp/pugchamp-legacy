@@ -1,6 +1,7 @@
 const _ = require('lodash');
 const amqp = require('amqplib');
 const asyncClass = require('async-class');
+const co = require('co');
 const config = require('config');
 const moment = require('moment');
 
@@ -12,7 +13,7 @@ const RESPONSE_EXCHANGE = config.get('server.amqp.responseExchange');
 const QUEUE_CONNECT = config.get('server.amqp.connect');
 const WORKER_MAX_TASKS = config.get('server.amqp.workerMaxTasks');
 
-class PugChampWorker {
+const PugChampWorker = asyncClass.wrap(class {
     constructor() {
         this.channel = null;
     }
@@ -60,6 +61,9 @@ class PugChampWorker {
 
         yield this.channel.publish(RESPONSE_EXCHANGE, '', helpers.convertJSONToBuffer(response));
     }
-}
+});
 
-module.exports = asyncClass.wrap(PugChampWorker);
+co(function*() {
+    var worker = new PugChampWorker();
+    yield worker.initialize();
+});
