@@ -42,11 +42,13 @@ class PugChampWorkManager {
     }
 
     *
-    queueTask(taskDefinition) {
+    queueTask(components, maxRuntime, maxWait) {
         return new Promise(co.wrap(function*(resolve, reject) {
             let newTask = {
-                time: moment().valueOf(),
-                components: taskDefinition,
+                submitted: moment().valueOf(),
+                components,
+                maxRuntime,
+                maxWait,
                 onSuccess: resolve,
                 onFailure: reject
             };
@@ -56,18 +58,46 @@ class PugChampWorkManager {
             if (_.size(this.queue) === 1) {
                 yield this.dispatchNextTask();
             }
+
+            if (newTask.maxWait) {
+                setTimeout(_.bind(function() {
+                    this.onFailure(new Error('task waited too long'));
+
+                    if (this.runtimeTimeout) {
+                        clearTimeout(this.runtimeTimeout);
+                    }
+
+                    if (this.waitTimeout) {
+                        clearTimeout(this.waitTimeout);
+                    }
+                }, newTask), newTask.maxWait);
+            }
         }));
     }
 
     *
     dispatchNextTask() {
         if (_.size(this.queue) > 0) {
-            let task = _.head(this.queue);
+            let nextTask = _.head(this.queue);
 
-            for (let component of task.components) {
+            for (let component of nextTask.components) {
                 yield this.channel.sendToQueue(COMMAND_QUEUE_NAME, convertJSONToBuffer(component), {
                     persistent: true
                 });
+            }
+
+            if (nextTask.maxRuntime) {
+                setTimeout(_.bind(function() {
+                    this.onFailure(new Error('task timed out'));
+
+                    if (this.runtimeTimeout) {
+                        clearTimeout(this.runtimeTimeout);
+                    }
+
+                    if (this.waitTimeout) {
+                        clearTimeout(this.waitTimeout);
+                    }
+                }, nextTask), nextTask.maxRuntime);
             }
         }
     }
