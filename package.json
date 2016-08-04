@@ -5,6 +5,7 @@
   "repository": "fwdcp/pugchamp",
   "dependencies": {
     "amqplib": "^0.4.2",
+    "async-class": "^0.4.1",
     "bluebird": "^3.4.1",
     "body-parser": "^1.15.2",
     "botkit": "^0.2.2",
