@@ -20,10 +20,10 @@ const socketIO = require('socket.io');
 const util = require('util');
 const MongoStore = require('connect-mongo')(session);
 
-var PugChamp = function() {
+var PugChampServer = function() {
     EventEmitter.call(this);
 };
-util.inherits(PugChamp, EventEmitter);
+util.inherits(PugChampServer, EventEmitter);
 
 var app = express();
 var cache = require('./cache');
@@ -31,7 +31,7 @@ var chance = new Chance(crypto.randomBytes(4).readInt32LE());
 var database = require('./database');
 var server = http.Server(app);
 var io = socketIO(server);
-var self = new PugChamp();
+var self = new PugChampServer();
 
 app.set('view engine', 'hbs');
 
