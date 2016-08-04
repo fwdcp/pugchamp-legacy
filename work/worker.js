@@ -49,6 +49,10 @@ const PugChampWorker = asyncClass.wrap(class {
         }, task);
 
         try {
+            if (!_.has(workFunctions, task.type)) {
+                throw new Error('unknown task type given');
+            }
+
             let result = yield workFunctions[task.type](task, this);
 
             response.success = true;
