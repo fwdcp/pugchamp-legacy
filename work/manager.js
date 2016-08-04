@@ -49,8 +49,8 @@ class PugChampWorkManager {
                 components,
                 maxRuntime,
                 maxWait,
-                onSuccess: resolve,
-                onFailure: reject
+                reportSuccess: resolve,
+                reportFailure: reject
             };
 
             this.queue.push(newTask);
@@ -61,7 +61,7 @@ class PugChampWorkManager {
 
             if (newTask.maxWait) {
                 setTimeout(_.bind(function() {
-                    this.onFailure(new Error('task waited too long'));
+                    this.reportFailure(new Error('task waited too long'));
 
                     if (this.runtimeTimeout) {
                         clearTimeout(this.runtimeTimeout);
@@ -88,7 +88,7 @@ class PugChampWorkManager {
 
             if (nextTask.maxRuntime) {
                 setTimeout(_.bind(function() {
-                    this.onFailure(new Error('task timed out'));
+                    this.reportFailure(new Error('task timed out'));
 
                     if (this.runtimeTimeout) {
                         clearTimeout(this.runtimeTimeout);
