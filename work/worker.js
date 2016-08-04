@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const amqp = require('amqplib');
 const asyncClass = require('async-class');
 const config = require('config');
@@ -42,14 +43,22 @@ class PugChampWorker {
 
     *
     runTask(task) {
-        try {
-            yield workFunctions[task.type](task, this);
+        let response = _.assign({
+            start: moment().valueOf()
+        }, task);
 
-            // TODO: notify that task is complete
+        try {
+            let result = yield workFunctions[task.type](task, this);
+
+            response.success = true;
+            response.result = result;
         }
         catch (err) {
-            // TODO: notify that task failed
+            response.success = false;
+            response.error = err.message;
         }
+
+        yield this.channel.publish(RESPONSE_EXCHANGE_NAME, '', helpers.convertJSONToBuffer(response));
     }
 }
 
