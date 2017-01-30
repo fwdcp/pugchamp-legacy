@@ -23,7 +23,6 @@
 
     {{#> body}}
     <h1>Recent Games</h1>
-    <p><a class="button" href="/games/all"><paper-button raised>View All Games</paper-button></a></p>
 
     {{#each games}}
     <pugchamp-game-summary game="{{toJSON this}}" {{#if ../hideCaptains}}hide-captains{{/if}}></pugchamp-game-summary>

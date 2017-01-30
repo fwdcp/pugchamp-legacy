@@ -94,13 +94,24 @@ co(function*() {
         }
 
         /* eslint-disable lodash/prefer-lodash-method */
-        let gamesCache = yield database.Game.find({}).sort('-date').select('date status teams.faction teams.captain score map duration').populate('teams.captain', 'alias steamID').exec();
+        let gamesCache = yield database.Game.find({
+            $or: [{
+                status: {
+                    $in: ['initializing', 'launching', 'live']
+                }
+            }, {
+                status: {
+                    $in: ['aborted', 'completed']
+                },
+                date: {
+                    $gte: moment().subtract(1, 'days').toDate()
+                }
+            }]
+        }).sort('-date').select('date status teams.faction teams.captain score map duration').populate('teams.captain', 'alias steamID').exec();
         /* eslint-enable lodash/prefer-lodash-method */
 
-        yield cache.setAsync('allGameList', JSON.stringify(_.invokeMap(gamesCache, 'toObject')));
-        yield cache.setAsync('allVisibleGameList', JSON.stringify(_(gamesCache).filter(game => game.status !== 'initializing' && game.status !== 'aborted').invokeMap('toObject').value()));
-        yield cache.setAsync('recentGameList', JSON.stringify(_(gamesCache).takeWhile(game => moment().diff(game.date, 'days') < 1).invokeMap('toObject').value()));
-        yield cache.setAsync('recentVisibleGameList', JSON.stringify(_(gamesCache).takeWhile(game => moment().diff(game.date, 'days') < 1).filter(game => game.status !== 'initializing' && game.status !== 'aborted').invokeMap('toObject').value()));
+        yield cache.setAsync('recentGameList', JSON.stringify(_.invokeMap(gamesCache, 'toObject')));
+        yield cache.setAsync('recentVisibleGameList', JSON.stringify(_(gamesCache).filter(game => game.status !== 'initializing' && game.status !== 'aborted').invokeMap('toObject').value()));
 
         process.exit(0);
     }

@@ -86,25 +86,15 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    function getGameList(old, invisible) {
+    function getGameList(invisible) {
         return co(function*() {
             let keyName;
 
-            if (old) {
-                if (invisible) {
-                    keyName = 'allGameList';
-                }
-                else {
-                    keyName = 'allVisibleGameList';
-                }
+            if (invisible) {
+                keyName = 'recentGameList';
             }
             else {
-                if (invisible) {
-                    keyName = 'recentGameList';
-                }
-                else {
-                    keyName = 'recentVisibleGameList';
-                }
+                keyName = 'recentVisibleGameList';
             }
 
             if (!(yield cache.existsAsync(keyName))) {
@@ -886,15 +876,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
     }));
 
-    app.get('/games/all', co.wrap(function*(req, res) {
-        res.render('fullGamesList', {
-            games: yield getGameList(true, self.isUserAdmin(req.user))
-        });
-    }));
-
     app.get('/games', co.wrap(function*(req, res) {
         res.render('recentGamesList', {
-            games: yield getGameList(false, self.isUserAdmin(req.user))
+            games: yield getGameList(self.isUserAdmin(req.user))
         });
     }));
 

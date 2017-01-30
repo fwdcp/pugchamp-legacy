@@ -143,18 +143,30 @@ co(function*() {
 
             /* eslint-disable lodash/prefer-lodash-method */
             let games = yield database.Game.find({
-                $or: [{
-                    'teams.captain': userID
-                }, {
-                    'teams.composition.players': {
-                        $elemMatch: {
-                            user: userID
+                $and: [{
+                    $or: [{
+                        'teams.captain': userID
+                    }, {
+                        'teams.composition.players': {
+                            $elemMatch: {
+                                user: userID
+                            }
                         }
-                    }
-                }],
-                status: {
-                    $in: ['launching', 'live', 'completed']
-                }
+                    }]
+                }, {
+                    $or: [{
+                        status: {
+                            $in: ['launching', 'live']
+                        }
+                    }, {
+                        status: {
+                            $in: ['completed']
+                        },
+                        date: {
+                            $gte: moment().subtract(1, 'days').toDate()
+                        }
+                    }]
+                }]
             }).sort('-date').select('date status teams.faction teams.captain teams.composition score map duration').populate('teams.captain', 'alias steamID').exec();
             /* eslint-enable lodash/prefer-lodash-method */
 
@@ -196,16 +208,11 @@ co(function*() {
 
             let playerPage = {
                 user: user.toObject(),
-                games: _(gamesCache).takeWhile(game => moment().diff(game.date, 'days') < 1).filter(game => game.status !== 'initializing' && game.status !== 'aborted').value(),
+                games: gamesCache,
                 restrictions: _(restrictions).invokeMap('toObject').orderBy(['active', 'expires'], ['desc', 'desc']).value(),
                 restrictionDurations: RESTRICTION_DURATIONS,
                 generalPenaltyHistory: _.reverse(calculatePenaltyHistory(generalPenalties, GENERAL_PENALTY_COOLDOWNS, PENALTY_LEVEL_RESET_INTERVAL)),
                 captainPenaltyHistory: _.reverse(calculatePenaltyHistory(captainPenalties, CAPTAIN_PENALTY_COOLDOWNS, PENALTY_LEVEL_RESET_INTERVAL))
-            };
-
-            let playerGamesPage = {
-                user: user.toObject(),
-                games: _(gamesCache).filter(game => game.status !== 'initializing' && game.status !== 'aborted').value()
             };
 
             if (!HIDE_RATINGS) {
@@ -219,20 +226,9 @@ co(function*() {
             }
 
             yield cache.setAsync(`playerPage-${userID}`, JSON.stringify(playerPage));
-            yield cache.setAsync(`playerGamesPage-${userID}`, JSON.stringify(playerGamesPage));
         }
 
-        let players = _.orderBy(
-            /* eslint-disable lodash/prefer-lodash-method */
-            yield database.User.find({}).exec(),
-            /* eslint-enable lodash/prefer-lodash-method */
-            [function(player) {
-                return player.stats.rating.mean;
-            }, function(player) {
-                return player.stats.playerScore ? player.stats.playerScore.center : null;
-            }, function(player) {
-                return player.stats.captainScore ? player.stats.captainScore.center : null;
-            }], ['desc', 'desc', 'desc']);
+        let players = yield database.User.find({}).sort('alias').exec();
 
         yield cache.setAsync('allPlayerList', JSON.stringify(_.map(players, user => formatPlayerListing(user, !HIDE_RATINGS))));
         yield cache.setAsync('activePlayerList', JSON.stringify(_(players).filter(user => isActivePlayer(user)).map(user => formatPlayerListing(user, !HIDE_RATINGS)).value()));

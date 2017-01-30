@@ -115,7 +115,6 @@
     {{/unless}}
 
     <h2>Recent Games</h2>
-    <p><a class="button" href="/player/{{user.steamID}}/games"><paper-button class="action" raised>View All Games</paper-button></a></p>
 
     {{#each games}}
         <pugchamp-game-summary game="{{toJSON this}}" {{#if ../hideCaptains}}hide-captains{{/if}}></pugchamp-game-summary>
