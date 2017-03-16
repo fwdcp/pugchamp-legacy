@@ -108,5 +108,8 @@
       "template-curly-spacing": "error",
       "yoda": "error"
     }
+  },
+  "yargs": {
+    "parse-numbers": false
   }
 }
