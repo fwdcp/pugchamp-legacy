@@ -22,7 +22,7 @@
     <form id="user-settings" method="post">
         {{#unless currentUser.alias}}
         <p>
-            <paper-input type="text" label="Alias" name="alias" placeholder="thesupremecommander" auto-validate error-message="up to fifteen alphanumeric characters only" pattern="^[A-Za-z0-9_]{1,17}$" required></paper-input>
+            <paper-input type="text" label="Alias" name="alias" placeholder="thesupremecommander" auto-validate error-message="up to seventeen alphanumeric characters only" pattern="^[A-Za-z0-9_]{1,17}$" required></paper-input>
         </p>
         {{else}}
         <p>
