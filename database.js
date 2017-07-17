@@ -26,7 +26,7 @@ mongoose.connection.on('error', function(err) {
 var userSchema = new mongoose.Schema({
     alias: {
         type: String,
-        match: /^[A-Za-z0-9_]{1,15}$/
+        match: /^[A-Za-z0-9_]{1,17}$/
     },
     steamID: String,
     authorized: {

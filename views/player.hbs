@@ -99,7 +99,7 @@
 
     <form is="iron-form" method="post" action="/admin/user/{{user.id}}" id="change-settings">
         <input type="hidden" name="type" value="changeSettings">
-        <p><paper-input type="text" label="Alias" name="alias" placeholder="thesupremecommander" auto-validate error-message="up to fifteen alphanumeric characters only" pattern="^[A-Za-z0-9_]{1,15}$" value="{{user.alias}}" required></paper-input></p>
+        <p><paper-input type="text" label="Alias" name="alias" placeholder="thesupremecommander" auto-validate error-message="up to seventeen alphanumeric characters only" pattern="^[A-Za-z0-9_]{1,17}$" value="{{user.alias}}" required></paper-input></p>
 
         {{#unless hideDraftStats}}
         <template is="dom-bind" id="show-draft-stats">
