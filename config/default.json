@@ -93,6 +93,7 @@
             "simpleRetryIntervals": ["5s", "10s", "15s"]
         },
         "chat": {
+            "messageCacheLimit": 20,
             "rateLimit": "1s",
             "showConnectionMessages": false
         }

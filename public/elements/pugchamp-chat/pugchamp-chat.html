@@ -193,12 +193,21 @@
                 this._listenToEvent('messageReceived', 'onMessageReceived');
                 this._listenToEvent('userPurged', 'onUserPurged');
                 this._listenToEvent('onlineUserListUpdated', 'onOnlineUserListUpdated');
+                this._listenToEvent('cachedChatMessagesAvailable', 'onCachedChatMessagesAvailable');
             },
             onOnlineUserListUpdated: function(list) {
                 this.set('onlineList', list);
             },
+            onCachedChatMessagesAvailable: function(messages) {
+				this.push('messages', ...messages);
+
+                this.async(function() {
+                    this.$.messages.scrollTop = this.$.messages.scrollHeight - this.$.messages.clientHeight;
+                }, 100);
+			},
             onMessageReceived: function(message) {
-                var atBottom = this.$.messages.scrollHeight - this.$.messages.scrollTop === this.$.messages.clientHeight;
+                // fixes chat not autoscrolling correctly - atBottom previously would never be true even when scrolled to the bottom
+                var atBottom = this.$.messages.scrollHeight - this.$.messages.scrollTop - this.$.messages.clientHeight < 30;
 
                 message.time = new Date();
 
