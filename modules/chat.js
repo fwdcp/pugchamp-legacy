@@ -116,7 +116,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         // store message to cache
         message.time = new Date();
 
-        let cachedChatMessages = yield cache.existsAsync('cachedChatMessages')) ? JSON.parse(yield cache.getAsync('cachedChatMessages')) : [];
+        let cachedChatMessages = yield cache.existsAsync('cachedChatMessages') ? JSON.parse(yield cache.getAsync('cachedChatMessages')) : [];
         while (cachedChatMessages.length >= MESSAGE_CACHE_LIMIT) {
             cachedChatMessages.shift();
         }
