@@ -11,6 +11,7 @@ const helpers = require('../helpers');
 module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
     const CHAT_LOG_CHANNEL = config.has('server.slack.channels.chatLog') ? config.get('server.slack.channels.chatLog') : '#chat-log';
+    const MESSAGE_CACHE_LIMIT = config.get('app.chat.messageCacheLimit');
     const RATE_LIMIT = ms(config.get('app.chat.rateLimit'));
     const SHOW_CONNECTION_MESSAGES = config.get('app.chat.showConnectionMessages');
 
@@ -47,6 +48,16 @@ module.exports = function(app, cache, chance, database, io, self) {
     self.processOnlineListUpdate = _.debounce(co.wrap(function* processOnlineListUpdate() {
         yield updateOnlineUserList();
     }));
+
+    /**
+     * @async
+     */
+    self.displayCachedChatMessages = co.wrap(function* displayCachedChatMessages(socket) {
+        if (yield cache.existsAsync('cachedChatMessages')) {
+            const cachedChatMessages = JSON.parse(yield cache.getAsync('cachedChatMessages'));
+            socket.emit('cachedChatMessagesAvailable', cachedChatMessages);
+        }
+    }
 
     /**
      * @async
@@ -101,6 +112,16 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
 
         io.sockets.emit('messageReceived', message);
+
+        // store message to cache
+        message.time = new Date();
+
+        let cachedChatMessages = yield cache.existsAsync('cachedChatMessages') ? JSON.parse(yield cache.getAsync('cachedChatMessages')) : [];
+        while (cachedChatMessages.length >= MESSAGE_CACHE_LIMIT) {
+            cachedChatMessages.shift();
+        }
+        cachedChatMessages.push(message);
+        yield cache.setAsync('cachedChatMessages', JSON.stringify(cachedChatMessages));
     });
 
     self.on('userConnected', co.wrap(function*(userID) {
@@ -205,6 +226,8 @@ module.exports = function(app, cache, chance, database, io, self) {
         socket.removeAllListeners('sendChatMessage');
         socket.on('sendChatMessage', onUserSendChatMessage);
         socket.on('purgeUser', onUserPurgeUser);
+
+        self.displayCachedChatMessages(socket);
     });
 
     self.processOnlineListUpdate();
