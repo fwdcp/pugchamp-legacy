@@ -79,9 +79,30 @@ module.exports = function(app, cache, chance, database, io, self) {
                     if (!existingUser || helpers.getDocumentID(existingUser) === helpers.getDocumentID(user)) {
                         self.postToAdminLog(req.user, `changed the alias of \`<${BASE_URL}/player/${user.steamID}|${req.body.alias}>\` from \`${user.alias}\``);
 
+                        let newAlias = req.body.alias;
+                        let oldAlias = user.alias;
+                        let admin = req.user.alias;
+                        let date = new Date();
+
+                        let nameChange = new database.NameChange({
+                            user: helpers.getDocumentID(user),
+                            newAlias,
+                            oldAlias,
+                            admin,
+                            date
+                        });
+
                         user.alias = req.body.alias;
 
                         majorChange = true;
+                        try {
+                            yield nameChange.save();
+
+                        }
+                        catch (err) {
+                          throw new Error('something went horribly wrong', err);
+
+                        }
                     }
                 }
             }
@@ -106,7 +127,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             try {
                 yield user.save();
-
+              //  yield nameChange.save();
                 yield self.updateUserCache(user);
                 yield self.updateUserRestrictions(user);
 

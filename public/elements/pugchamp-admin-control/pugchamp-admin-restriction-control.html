@@ -61,7 +61,13 @@
 
             <paper-button raised class="action" onclick="submit(event)">Create</paper-button>
         </form>
-
+        <h3> Name Change History </h3>
+        <paper-datatable data="{{namechanges}}">
+          <paper-datatable-column header="Date" property="date" type="Date" sortable></paper-datatable-column>
+            <paper-datatable-column header="To" property="newAlias"></paper-datatable-column>
+            <paper-datatable-column header="From" property="oldAlias"></paper-datatable-column>
+            <paper-datatable-column header="Admin" property="admin"></paper-datatable-column>
+        </paper-datatable>
         <h3>History</h3>
 
         <paper-datatable data="{{restrictions}}">
@@ -114,7 +120,8 @@
             properties: {
                 restrictionDurations: Array,
                 restrictions: Array,
-                user: Object
+                user: Object,
+                namechanges: Array
             },
             reload: function() {
                 document.location.reload();

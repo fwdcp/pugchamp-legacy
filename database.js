@@ -387,12 +387,32 @@ var penaltySchema = new mongoose.Schema({
         default: true
     }
 });
-
+var nameChangeSchema = new mongoose.Schema({
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    newAlias: {
+      type: String
+    },
+    oldAlias: {
+      type: String
+    },
+    admin: {
+        type: String
+    },
+    date: Date
+});
+nameChangeSchema.set('toObject', {
+    getters: true,
+    versionKey: false
+});
 module.exports = {
     User: mongoose.model('User', userSchema),
     Game: mongoose.model('Game', gameSchema),
     Rating: mongoose.model('Rating', ratingSchema),
     Restriction: mongoose.model('Restriction', restrictionSchema),
+    NameChange: mongoose.model('NameChange', nameChangeSchema),
     Penalty: mongoose.model('Penalty', penaltySchema),
     mongoose
 };

@@ -190,6 +190,11 @@ co(function*() {
                 'type': 'captain',
                 'active': true
             }).sort('date').exec();
+
+            /* eslint-enable lodash/prefer-lodash-method */
+            let nameChanges = yield database.NameChange.find({
+                'user': userID
+            }).exec();
             /* eslint-enable lodash/prefer-lodash-method */
 
             let gamesCache = _.map(games, function(game) {
@@ -211,6 +216,7 @@ co(function*() {
                 games: gamesCache,
                 restrictions: _(restrictions).invokeMap('toObject').orderBy(['active', 'expires'], ['desc', 'desc']).value(),
                 restrictionDurations: RESTRICTION_DURATIONS,
+                namechanges: _(nameChanges).invokeMap('toObject').orderBy(['date'], ['desc']).value(),
                 generalPenaltyHistory: _.reverse(calculatePenaltyHistory(generalPenalties, GENERAL_PENALTY_COOLDOWNS, PENALTY_LEVEL_RESET_INTERVAL)),
                 captainPenaltyHistory: _.reverse(calculatePenaltyHistory(captainPenalties, CAPTAIN_PENALTY_COOLDOWNS, PENALTY_LEVEL_RESET_INTERVAL))
             };
