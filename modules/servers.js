@@ -10,18 +10,16 @@ const Gamedig = require('gamedig');
 const HttpStatus = require('http-status-codes');
 const ms = require('ms');
 const RateLimiter = require('limiter').RateLimiter;
-const RCON = require('srcds-rcon');
+const Rcon = require('modern-rcon');
 
 const helpers = require('../helpers');
 
 module.exports = function(app, cache, chance, database, io, self) {
     const BASE_URL = config.get('server.baseURL');
-    const COMMAND_TIMEOUT = ms(config.get('app.servers.commandTimeout'));
-    const CONNECT_TIMEOUT = ms(config.get('app.servers.connectTimeout'));
     const GAME_SERVER_POOL = config.get('app.servers.pool');
-    const MAP_CHANGE_TIMEOUT = ms(config.get('app.servers.mapChangeTimeout'));
     const MAPS = config.get('app.games.maps');
     const MAXIMUM_SERVER_COMMAND_LENGTH = 511;
+    const RCON_TIMEOUT = ms(config.get('app.servers.rconTimeout'));
     const RECHECK_INTERVAL = ms(config.get('app.servers.recheckInterval'));
     const RECONNECT_INTERVAL = ms(config.get('app.servers.reconnectInterval'));
     const RETRY_ATTEMPTS = _.map(config.get('app.servers.retryAttempts'), delay => ms(delay));
@@ -54,9 +52,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         return co(function*() {
             let serverInfo = GAME_SERVER_POOL[server];
 
-            let rcon = RCON(serverInfo.rcon);
+            let rcon = new Rcon(serverInfo.rcon.host, serverInfo.rcon.port, serverInfo.rcon.password, RCON_TIMEOUT);
 
-            yield Promise.race([rcon.connect(), helpers.promiseDelay(CONNECT_TIMEOUT, new Error('connection attempt timed out'), true)]);
+            yield rcon.connect();
 
             return rcon;
         });
@@ -65,7 +63,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    function sendCommandsToServer(rcon, commands, timeout = COMMAND_TIMEOUT) {
+    function sendCommandsToServer(rcon, commands) {
         return co(function*() {
             let condensedCommands = [];
 
@@ -86,7 +84,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             let results = [];
 
             for (let condensedCommand of condensedCommands) {
-                let result = yield rcon.command(condensedCommand, timeout);
+                let result = yield rcon.send(condensedCommand);
 
                 results.push(result);
             }
@@ -266,7 +264,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     /**
      * @async
      */
-    self.sendRCONCommands = co.wrap(function* sendRCONCommands(server, commands, timeout = COMMAND_TIMEOUT, retry = true) {
+    self.sendRCONCommands = co.wrap(function* sendRCONCommands(server, commands, retry = true) {
         let success = false;
 
         let result;
@@ -282,7 +280,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             let rcon = rconConnections.get(server);
 
             debug(`sending ${commands} to ${server}`);
-            result = yield sendCommandsToServer(rcon, commands, timeout);
+            result = yield sendCommandsToServer(rcon, commands);
 
             debug(`received result of commands from ${server}`);
 
@@ -297,7 +295,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                     yield helpers.promiseDelay(delay);
 
                     try {
-                        result = yield self.sendRCONCommands(server, commands, timeout, false);
+                        result = yield self.sendRCONCommands(server, commands, false);
 
                         success = true;
                         break;
@@ -560,7 +558,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             try {
                 debug(`launching server ${game.server} for game ${game.id}`);
-                yield self.sendRCONCommands(game.server, ['pugchamp_game_start'], MAP_CHANGE_TIMEOUT);
+                yield self.sendRCONCommands(game.server, ['pugchamp_game_start']);
             }
             finally {
                 yield self.updateServerStatus(game.server);

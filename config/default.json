@@ -84,9 +84,8 @@
             "turnTimeLimit": "60s"
         },
         "servers": {
-            "commandTimeout": "10s",
-            "connectTimeout": "10s",
             "mapChangeTimeout": "30s",
+            "rconTimeout": "15s",
             "recheckInterval": "5m",
             "reconnectInterval": "5s",
             "retryAttempts": ["15s", "30s", "45s"],

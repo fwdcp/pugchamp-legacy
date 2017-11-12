@@ -225,7 +225,8 @@
                         "port": 27015
                     },
                     "rcon": {
-                        "address": "localhost:27015",
+                        "host": "localhost",
+                        "port": 27015,
                         "password": "test"
                     },
                     "salt": "da server",
