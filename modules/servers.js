@@ -49,7 +49,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         rconConnections.set(server, rcon);
     }
 
-    async function connectToRCON(server) {
+    async function connectToRCON(rcon) {
         await rcon.connect();
     }
 
@@ -89,10 +89,10 @@ module.exports = function(app, cache, chance, database, io, self) {
         let limiter = rconConnectionLimits.get(server);
 
         if (limiter.tryRemoveTokens(1)) {
+            let rcon = rconConnections.get(server);
+
             try {
                 debug(`attempting to disconnect existing connection to ${server}`);
-
-                let rcon = rconConnections.get(server);
 
                 await disconnectFromRCON(rcon);
             }
@@ -101,9 +101,8 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
 
             try {
-
                 debug(`connecting to ${server}`);
-                await connectToRCON(server);
+                await connectToRCON(rcon);
             }
             catch (err) {
                 debug(`connection to ${server} failed: ${err.stack}`);
@@ -232,13 +231,6 @@ module.exports = function(app, cache, chance, database, io, self) {
         let result;
 
         try {
-            if (!rconConnections.has(server)) {
-                debug(`not currently connected to ${server}`);
-                establishRCONConnection(server);
-
-                throw new Error('not currently connected to RCON');
-            }
-
             let rcon = rconConnections.get(server);
 
             debug(`sending ${commands} to ${server}`);
