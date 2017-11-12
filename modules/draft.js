@@ -1044,7 +1044,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             await commitDraftChoice(choice);
         }
         catch (err) {
-            console.err(err.stack);
+            console.error(err.stack);
         }
     }
 

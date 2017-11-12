@@ -352,7 +352,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         }
         catch (err) {
-            console.err(err.stack);
+            console.error(err.stack);
         }
     }
 

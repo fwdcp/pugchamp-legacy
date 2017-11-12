@@ -641,7 +641,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             self.requestSubstitute(game, info.player);
         }
         catch (err) {
-            console.err(err.stack);
+            console.error(err.stack);
         }
     }
 
@@ -652,7 +652,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             await updateSubstituteApplication(info.request, userID, info.status);
         }
         catch (err) {
-            console.err(err.stack);
+            console.error(err.stack);
         }
     }
 
@@ -711,7 +711,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         }
         catch (err) {
-            console.err(err.stack);
+            console.error(err.stack);
         }
     }
 
