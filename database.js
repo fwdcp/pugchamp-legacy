@@ -17,7 +17,9 @@ const USER_GROUPS = config.has('app.users.groups') ? config.get('app.users.group
 
 mongoose.Promise = bluebird;
 
-mongoose.connect(config.get('server.mongodb'));
+mongoose.connect(config.get('server.mongodb'), {
+    useMongoClient: true
+});
 
 mongoose.connection.on('error', function(err) {
     debug(`Mongoose encountered error: ${err.stack || err}`);
@@ -393,10 +395,10 @@ var nameChangeSchema = new mongoose.Schema({
         ref: 'User'
     },
     newAlias: {
-      type: String
+        type: String
     },
     oldAlias: {
-      type: String
+        type: String
     },
     admin: {
         type: String
