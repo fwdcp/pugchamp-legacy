@@ -722,4 +722,14 @@ module.exports = function(app, cache, chance, database, io, self) {
             }));
         }, RECHECK_INTERVAL);
     })();
+
+    process.on('uncaughtException', function(err) {
+        if (err instanceof Rcon.RconError) {
+            // log and ignore
+            console.err(err.stack);
+            return;
+        }
+
+        throw err;
+    });
 };
