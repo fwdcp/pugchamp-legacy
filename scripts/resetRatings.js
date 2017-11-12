@@ -2,17 +2,16 @@
 'use strict';
 
 const argv = require('yargs').boolean('a').argv;
-const co = require('co');
 
 var database = require('../database');
 
-co(function*() {
+(async function() {
     try {
         let users;
 
         if (!argv.a) {
             /* eslint-disable lodash/prefer-lodash-method */
-            users = yield database.User.find({
+            users = await database.User.find({
                 '_id': {
                     $in: argv._
                 }
@@ -21,7 +20,7 @@ co(function*() {
         }
         else {
             /* eslint-disable lodash/prefer-lodash-method */
-            users = yield database.User.find({}, 'stats').exec();
+            users = await database.User.find({}, 'stats').exec();
             /* eslint-enable lodash/prefer-lodash-method */
         }
 
@@ -45,8 +44,8 @@ co(function*() {
                 }
             });
 
-            yield newRating.save();
-            yield user.save();
+            await newRating.save();
+            await user.save();
         }
 
         process.exit(0);
@@ -55,4 +54,4 @@ co(function*() {
         console.log(err.stack);
         process.exit(1);
     }
-});
+})();

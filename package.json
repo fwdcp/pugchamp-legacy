@@ -8,7 +8,6 @@
     "body-parser": "^1.15.1",
     "botkit": "^0.2.1",
     "chance": "^1.0.3",
-    "co": "^4.6.0",
     "config": "^1.21.0",
     "connect-mongo": "^1.2.0",
     "debug": "^2.2.0",
@@ -54,7 +53,7 @@
       "plugin:lodash/recommended"
     ],
     "parserOptions": {
-      "ecmaVersion": 6
+      "ecmaVersion": 8
     },
     "plugins": [
       "html",
@@ -100,7 +99,7 @@
       "operator-assignment": "error",
       "prefer-spread": "error",
       "prefer-template": "error",
-      "require-yield": "error",
+      "require-await": "error",
       "quotes": [
         "error",
         "single"

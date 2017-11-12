@@ -2,7 +2,6 @@
 
 const _ = require('lodash');
 const bodyParser = require('body-parser');
-const co = require('co');
 const config = require('config');
 const express = require('express');
 const HttpStatus = require('http-status-codes');
@@ -28,11 +27,8 @@ module.exports = function(app, cache, chance, database, io, self) {
         return _.includes(adminUserIDs, userID);
     };
 
-    /**
-     * @async
-     */
-    self.postToAdminLog = co.wrap(function* postToAdminLog(user, action) {
-        user = yield self.getCachedUser(user);
+    self.postToAdminLog = async function postToAdminLog(user, action) {
+        user = await self.getCachedUser(user);
 
         let message = {
             channel: ADMIN_LOG_CHANNEL,
@@ -44,8 +40,8 @@ module.exports = function(app, cache, chance, database, io, self) {
             }]
         };
 
-        yield self.postToSlack(message);
-    });
+        await self.postToSlack(message);
+    };
 
     var router = express.Router();
 
@@ -61,8 +57,8 @@ module.exports = function(app, cache, chance, database, io, self) {
 
     router.post('/user/:id', bodyParser.urlencoded({
         extended: false
-    }), co.wrap(function*(req, res) {
-        let user = yield database.User.findById(req.params.id);
+    }), async function(req, res) {
+        let user = await database.User.findById(req.params.id);
 
         if (!user) {
             res.sendStatus(HttpStatus.NOT_FOUND);
@@ -74,7 +70,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             if (req.body.alias !== user.alias) {
                 if (/^[A-Za-z0-9_]{1,20}$/.test(req.body.alias)) {
-                    let existingUser = yield self.getUserByAlias(req.body.alias);
+                    let existingUser = await self.getUserByAlias(req.body.alias);
 
                     if (!existingUser || helpers.getDocumentID(existingUser) === helpers.getDocumentID(user)) {
                         self.postToAdminLog(req.user, `changed the alias of \`<${BASE_URL}/player/${user.steamID}|${req.body.alias}>\` from \`${user.alias}\``);
@@ -96,11 +92,11 @@ module.exports = function(app, cache, chance, database, io, self) {
 
                         majorChange = true;
                         try {
-                            yield nameChange.save();
+                            await nameChange.save();
 
                         }
                         catch (err) {
-                          throw new Error('something went horribly wrong', err);
+                            throw new Error('something went horribly wrong', err);
 
                         }
                     }
@@ -126,13 +122,13 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
 
             try {
-                yield user.save();
-              //  yield nameChange.save();
-                yield self.updateUserCache(user);
-                yield self.updateUserRestrictions(user);
+                await user.save();
+                //  await nameChange.save();
+                await self.updateUserCache(user);
+                await self.updateUserRestrictions(user);
 
                 if (majorChange) {
-                    yield self.updateUserGames(req.user);
+                    await self.updateUserGames(req.user);
                 }
 
                 res.sendStatus(HttpStatus.OK);
@@ -182,9 +178,9 @@ module.exports = function(app, cache, chance, database, io, self) {
             self.postToAdminLog(req.user, `restricted \`<${BASE_URL}/player/${user.steamID}|${user.alias}>\`${formattedAspects}${formattedExpiration}${formattedReason}`);
 
             try {
-                yield restriction.save();
-                yield self.updateUserRestrictions(user);
-                yield self.updateUserCache(user);
+                await restriction.save();
+                await self.updateUserRestrictions(user);
+                await self.updateUserCache(user);
 
                 res.sendStatus(HttpStatus.OK);
             }
@@ -198,7 +194,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         }
         else if (req.body.type === 'revokeRestriction') {
-            let restriction = yield database.Restriction.findById(req.body.restriction);
+            let restriction = await database.Restriction.findById(req.body.restriction);
 
             if (!restriction) {
                 res.sendStatus(HttpStatus.NOT_FOUND);
@@ -214,9 +210,9 @@ module.exports = function(app, cache, chance, database, io, self) {
                 restriction.active = false;
 
                 try {
-                    yield restriction.save();
-                    yield self.updateUserRestrictions(user);
-                    yield self.updateUserCache(user);
+                    await restriction.save();
+                    await self.updateUserRestrictions(user);
+                    await self.updateUserCache(user);
 
                     res.sendStatus(HttpStatus.OK);
                 }
@@ -235,7 +231,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
         else if (req.body.type === 'updateRestrictions') {
             try {
-                yield self.updateUserRestrictions(user);
+                await self.updateUserRestrictions(user);
 
                 res.sendStatus(HttpStatus.OK);
             }
@@ -251,12 +247,12 @@ module.exports = function(app, cache, chance, database, io, self) {
         else {
             res.sendStatus(HttpStatus.BAD_REQUEST);
         }
-    }));
+    });
 
     router.post('/game/:id', bodyParser.urlencoded({
         extended: false
-    }), co.wrap(function*(req, res) {
-        let game = yield database.Game.findById(req.params.id);
+    }), async function(req, res) {
+        let game = await database.Game.findById(req.params.id);
 
         if (!game) {
             res.sendStatus(HttpStatus.NOT_FOUND);
@@ -269,7 +265,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 return;
             }
 
-            let player = yield self.getCachedUser(req.body.player);
+            let player = await self.getCachedUser(req.body.player);
 
             if (!player) {
                 res.sendStatus(HttpStatus.NOT_FOUND);
@@ -298,7 +294,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             self.postToAdminLog(req.user, `updated players for server \`${game.server}\` for game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``);
 
             try {
-                yield self.updateServerPlayers(game);
+                await self.updateServerPlayers(game);
 
                 res.sendStatus(HttpStatus.OK);
             }
@@ -320,7 +316,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             self.postToAdminLog(req.user, `reinitialized server \`${game.server}\` for game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``);
 
             try {
-                yield self.initializeServer(game);
+                await self.initializeServer(game);
 
                 res.sendStatus(HttpStatus.OK);
             }
@@ -342,7 +338,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             self.postToAdminLog(req.user, `reassigned game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\` to new server`);
 
             try {
-                yield self.assignGameToServer(game);
+                await self.assignGameToServer(game);
 
                 res.sendStatus(HttpStatus.OK);
             }
@@ -364,7 +360,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             self.postToAdminLog(req.user, `aborted game \`<${BASE_URL}/game/${helpers.getDocumentID(game)}|${helpers.getDocumentID(game)}>\``);
 
             try {
-                yield self.abortGame(game);
+                await self.abortGame(game);
 
                 res.sendStatus(HttpStatus.OK);
             }
@@ -380,26 +376,26 @@ module.exports = function(app, cache, chance, database, io, self) {
         else {
             res.sendStatus(HttpStatus.BAD_REQUEST);
         }
-    }));
+    });
 
     router.post('/servers', bodyParser.urlencoded({
         extended: false
-    }), co.wrap(function*(req, res) {
+    }), async function(req, res) {
         if (req.body.type === 'updateStatuses') {
             self.postToAdminLog(req.user, 'updated server statuses');
 
-            yield self.updateServerStatuses();
+            await self.updateServerStatuses();
 
             res.sendStatus(HttpStatus.OK);
         }
         else {
             res.sendStatus(HttpStatus.BAD_REQUEST);
         }
-    }));
+    });
 
     router.post('/server/:id', bodyParser.urlencoded({
         extended: false
-    }), co.wrap(function*(req, res) {
+    }), async function(req, res) {
         if (!_.has(GAME_SERVER_POOL, req.params.id)) {
             res.sendStatus(HttpStatus.NOT_FOUND);
             return;
@@ -416,7 +412,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             self.postToAdminLog(req.user, `executed \`${req.body.command}\` on server \`${req.params.id}\``);
 
             try {
-                let result = yield self.sendRCONCommands(req.params.id, _.split(req.body.command, ';'));
+                let result = await self.sendRCONCommands(req.params.id, _.split(req.body.command, ';'));
 
                 res.json(result);
             }
@@ -429,23 +425,20 @@ module.exports = function(app, cache, chance, database, io, self) {
                 res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
-            yield self.updateServerStatus(req.params.id);
+            await self.updateServerStatus(req.params.id);
         }
         else {
             res.sendStatus(HttpStatus.BAD_REQUEST);
         }
-    }));
+    });
 
     app.use('/admin', router);
 
-    /**
-     * @async
-     */
-    self.requestAdmin = co.wrap(function* requestAdmin(user, message) {
-        user = yield self.getCachedUser(user);
+    self.requestAdmin = async function requestAdmin(user, message) {
+        user = await self.getCachedUser(user);
         let trimmedMessage = _.trim(message);
 
-        yield self.postToSlack({
+        await self.postToSlack({
             channel: ADMIN_REQUEST_CHANNEL,
             attachments: [{
                 fallback: trimmedMessage ? `${user.alias} requested help: ${trimmedMessage}` : `${user.alias} requested help`,
@@ -455,17 +448,17 @@ module.exports = function(app, cache, chance, database, io, self) {
                 text: trimmedMessage
             }]
         });
-    });
+    };
 
-    function onRequestAdmin(message) {
+    async function onRequestAdmin(message) {
         let userID = this.decoded_token.user;
 
-        co(function*() {
-            let userRestrictions = yield self.getUserRestrictions(userID);
+        try {
+            let userRestrictions = await self.getUserRestrictions(userID);
 
             if (!_.includes(userRestrictions, 'support')) {
                 try {
-                    yield self.requestAdmin(userID, message);
+                    await self.requestAdmin(userID, message);
                 }
                 catch (err) {
                     self.sendMessageToUser(userID, {
@@ -473,7 +466,10 @@ module.exports = function(app, cache, chance, database, io, self) {
                     });
                 }
             }
-        });
+        }
+        catch (err) {
+            console.err(err.stack);
+        }
     }
 
     io.sockets.on('authenticated', function(socket) {
@@ -481,9 +477,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         socket.on('requestAdmin', onRequestAdmin);
     });
 
-    co(function*() {
+    (async function() {
         /* eslint-disable lodash/prefer-lodash-method */
-        let admins = yield database.User.find({
+        let admins = await database.User.find({
             'steamID': {
                 $in: ADMINS
             }
@@ -491,5 +487,5 @@ module.exports = function(app, cache, chance, database, io, self) {
         /* eslint-enable lodash/prefer-lodash-method */
 
         adminUserIDs = _.map(admins, user => helpers.getDocumentID(user));
-    });
+    })();
 };

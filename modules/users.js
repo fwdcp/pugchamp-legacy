@@ -2,7 +2,6 @@
 
 const _ = require('lodash');
 const bodyParser = require('body-parser');
-const co = require('co');
 const config = require('config');
 const jwt = require('jsonwebtoken');
 const HttpStatus = require('http-status-codes');
@@ -25,38 +24,29 @@ module.exports = function(app, cache, chance, database, io, self) {
 
     var userSockets = new Map();
 
-    /**
-     * @async
-     */
-    self.updateUserCache = co.wrap(function* updateUserCache(...users) {
-        yield helpers.runAppScript('updateUserCache', _.map(users, user => helpers.getDocumentID(user)));
-    });
+    self.updateUserCache = async function updateUserCache(...users) {
+        await helpers.runAppScript('updateUserCache', _.map(users, user => helpers.getDocumentID(user)));
+    };
 
-    /**
-     * @async
-     */
-    self.getCachedUser = co.wrap(function* getCachedUser(user) {
+    self.getCachedUser = async function getCachedUser(user) {
         let userID = helpers.getDocumentID(user);
 
-        if (!(yield cache.existsAsync(`user-${userID}`))) {
-            yield self.updateUserCache(user);
+        if (!(await cache.existsAsync(`user-${userID}`))) {
+            await self.updateUserCache(user);
         }
 
-        return JSON.parse(yield cache.getAsync(`user-${userID}`));
-    });
+        return JSON.parse(await cache.getAsync(`user-${userID}`));
+    };
 
-    /**
-     * @async
-     */
-    self.getCachedUsers = co.wrap(function* getCachedUsers(users) {
+    self.getCachedUsers = async function getCachedUsers(users) {
         if (_.size(users) > 0) {
-            let cachedUsers = yield cache.mgetAsync(..._.map(users, user => `user-${helpers.getDocumentID(user)}`));
+            let cachedUsers = await cache.mgetAsync(..._.map(users, user => `user-${helpers.getDocumentID(user)}`));
 
             let missingUsers = _.filter(users, (user, index) => !cachedUsers[index]);
             if (_.size(missingUsers) > 0) {
-                yield self.updateUserCache(...missingUsers);
+                await self.updateUserCache(...missingUsers);
 
-                cachedUsers = yield cache.mgetAsync(..._.map(users, user => `user-${helpers.getDocumentID(user)}`));
+                cachedUsers = await cache.mgetAsync(..._.map(users, user => `user-${helpers.getDocumentID(user)}`));
             }
 
             return _.map(cachedUsers, cachedUser => JSON.parse(cachedUser));
@@ -64,13 +54,10 @@ module.exports = function(app, cache, chance, database, io, self) {
         else {
             return [];
         }
-    });
+    };
 
-    /**
-     * @async
-     */
-    self.getUserByAlias = co.wrap(function* getUserByAlias(alias) {
-        let user = yield database.User.findOne({
+    self.getUserByAlias = async function getUserByAlias(alias) {
+        let user = await database.User.findOne({
             $text: {
                 $search: `"${alias}"`,
                 $language: 'none',
@@ -88,7 +75,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         }).exec();
 
         return user;
-    });
+    };
 
     self.getOnlineUsers = function getOnlineUsers() {
         return _.toArray(userSockets.keys());
@@ -108,49 +95,40 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
     };
 
-    /**
-     * @async
-     */
-    self.updateUserRestrictions = co.wrap(function* updateUserRestrictions(...users) {
-        yield helpers.runAppScript('updateUserRestrictions', _.map(users, user => helpers.getDocumentID(user)));
+    self.updateUserRestrictions = async function updateUserRestrictions(...users) {
+        await helpers.runAppScript('updateUserRestrictions', _.map(users, user => helpers.getDocumentID(user)));
 
         for (let user of users) {
-            let userRestrictions = yield self.getUserRestrictions(user);
+            let userRestrictions = await self.getUserRestrictions(user);
 
             self.emit('userRestrictionsUpdated', helpers.getDocumentID(user), userRestrictions);
         }
-    });
+    };
 
-    /**
-     * @async
-     */
-    self.getUserRestrictions = co.wrap(function* getUserRestrictions(user) {
+    self.getUserRestrictions = async function getUserRestrictions(user) {
         let userID = helpers.getDocumentID(user);
 
         if (userID) {
-            if (!(yield cache.existsAsync(`userRestrictions-${userID}`))) {
-                yield self.updateUserRestrictions(user);
+            if (!(await cache.existsAsync(`userRestrictions-${userID}`))) {
+                await self.updateUserRestrictions(user);
             }
 
-            return JSON.parse(yield cache.getAsync(`userRestrictions-${userID}`));
+            return JSON.parse(await cache.getAsync(`userRestrictions-${userID}`));
         }
         else {
             return UNAUTHENTICATED_RESTRICTIONS;
         }
-    });
+    };
 
-    /**
-     * @async
-     */
-    self.getUsersRestrictions = co.wrap(function* getUsersRestrictions(users) {
+    self.getUsersRestrictions = async function getUsersRestrictions(users) {
         if (_.size(users) > 0) {
-            let usersRestrictions = yield cache.mgetAsync(..._.map(users, user => `userRestrictions-${helpers.getDocumentID(user)}`));
+            let usersRestrictions = await cache.mgetAsync(..._.map(users, user => `userRestrictions-${helpers.getDocumentID(user)}`));
 
             let missingUsers = _.filter(users, (user, index) => !usersRestrictions[index]);
             if (_.size(missingUsers) > 0) {
-                yield self.updateUserRestrictions(...missingUsers);
+                await self.updateUserRestrictions(...missingUsers);
 
-                usersRestrictions = yield cache.mgetAsync(..._.map(users, user => `userRestrictions-${helpers.getDocumentID(user)}`));
+                usersRestrictions = await cache.mgetAsync(..._.map(users, user => `userRestrictions-${helpers.getDocumentID(user)}`));
             }
 
             return _.zipObject(_.map(users, user => helpers.getDocumentID(user)), _.map(usersRestrictions, restrictions => restrictions ? JSON.parse(restrictions) : UNAUTHENTICATED_RESTRICTIONS));
@@ -158,19 +136,14 @@ module.exports = function(app, cache, chance, database, io, self) {
         else {
             return [];
         }
-    });
+    };
 
     self.on('userRestrictionsUpdated', function(userID, userRestrictions) {
         self.emitToUser(userID, 'restrictionsUpdated', userRestrictions);
     });
 
-    /**
-     * @async
-     */
-    function updateUserGroups(...users) {
-        return co(function*() {
-            yield helpers.runAppScript('updateUserGroups', _.map(users, user => helpers.getDocumentID(user)));
-        });
+    async function updateUserGroups(...users) {
+        await helpers.runAppScript('updateUserGroups', _.map(users, user => helpers.getDocumentID(user)));
     }
 
     passport.use(new OpenIDStrategy({
@@ -189,11 +162,11 @@ module.exports = function(app, cache, chance, database, io, self) {
             });
         },
         stateless: true
-    }, co.wrap(function*(identifier, done) {
+    }, async function(identifier, done) {
         let id = identifier.replace('http://steamcommunity.com/openid/id/', '');
 
         try {
-            let user = yield database.User.findOne({
+            let user = await database.User.findOne({
                 'steamID': id
             });
 
@@ -205,7 +178,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 for (let initialRating of INITIAL_RATINGS) {
                     if (initialRating.api) {
                         try {
-                            let response = yield rp({
+                            let response = await rp({
                                 resolveWithFullResponse: true,
                                 simple: false,
                                 qs: {
@@ -236,9 +209,9 @@ module.exports = function(app, cache, chance, database, io, self) {
                     }
                 }
 
-                yield user.save();
+                await user.save();
 
-                yield self.updatePlayerStats(user);
+                await self.updatePlayerStats(user);
             }
 
             done(null, user);
@@ -246,7 +219,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         catch (err) {
             done(err);
         }
-    })));
+    }));
     passport.serializeUser(function(user, done) {
         done(null, helpers.getDocumentID(user));
     });
@@ -282,9 +255,9 @@ module.exports = function(app, cache, chance, database, io, self) {
     io.sockets.on('connection', socketioJwt.authorize({
         required: false,
         secret: config.get('server.tokenSecret'),
-        additional_auth: co.wrap(function*(token, successCallback, errorCallback) {
+        additional_auth: async function(token, successCallback, errorCallback) {
             try {
-                let user = yield database.User.findById(token.user).exec();
+                let user = await database.User.findById(token.user).exec();
 
                 if (!user) {
                     errorCallback('user does not exist', 'invalid_user');
@@ -296,7 +269,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             catch (err) {
                 errorCallback(err);
             }
-        })
+        }
     }));
 
     io.sockets.on('connection', function(socket) {
@@ -320,29 +293,29 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
     }
 
-    io.sockets.on('authenticated', co.wrap(function*(socket) {
+    io.sockets.on('authenticated', async function(socket) {
         let userID = socket.decoded_token.user;
 
-        let user = yield self.getCachedUser(userID);
+        let user = await self.getCachedUser(userID);
         socket.emit('userInfoUpdated', user);
 
         if (!userSockets.has(userID)) {
             userSockets.set(userID, new Set([socket.id]));
 
-            yield self.updateUserRestrictions(userID);
-            yield updateUserGroups(userID);
+            await self.updateUserRestrictions(userID);
+            await updateUserGroups(userID);
 
             self.emit('userConnected', userID);
         }
         else {
             userSockets.get(userID).add(socket.id);
 
-            socket.emit('restrictionsUpdated', yield self.getUserRestrictions(userID));
+            socket.emit('restrictionsUpdated', await self.getUserRestrictions(userID));
         }
 
         socket.removeAllListeners('disconnect');
         socket.on('disconnect', onUserDisconnect);
-    }));
+    });
 
     app.get('/user/settings', function(req, res) {
         if (req.user) {
@@ -362,15 +335,15 @@ module.exports = function(app, cache, chance, database, io, self) {
     });
     app.post('/user/settings', bodyParser.urlencoded({
         extended: false
-    }), co.wrap(function*(req, res) {
+    }), async function(req, res) {
         if (req.user) {
             let errors = [];
 
             let majorChange = false;
 
             if (req.body.alias && !req.user.alias) {
-                if (/^[A-Za-z0-9_]{1,20}$/.test(req.body.alias)) {
-                    let existingUser = yield self.getUserByAlias(req.body.alias);
+                if (/^[A-Za-z0-9_]{1,15}$/.test(req.body.alias)) {
+                    let existingUser = await self.getUserByAlias(req.body.alias);
 
                     if (!existingUser || helpers.getDocumentID(existingUser) === helpers.getDocumentID(req.user)) {
                         req.user.alias = req.body.alias;
@@ -398,13 +371,13 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
 
             try {
-                yield req.user.save();
+                await req.user.save();
 
-                yield self.updateUserCache(req.user);
+                await self.updateUserCache(req.user);
 
                 if (majorChange) {
-                    yield self.updateUserRestrictions(req.user);
-                    yield self.updateUserGames(req.user);
+                    await self.updateUserRestrictions(req.user);
+                    await self.updateUserGames(req.user);
                 }
             }
             catch (err) {
@@ -423,5 +396,5 @@ module.exports = function(app, cache, chance, database, io, self) {
         else {
             res.redirect('/user/login');
         }
-    }));
+    });
 };

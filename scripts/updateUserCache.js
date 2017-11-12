@@ -3,7 +3,6 @@
 
 const _ = require('lodash');
 const argv = require('yargs').boolean('a').argv;
-const co = require('co');
 const config = require('config');
 const debug = require('debug')('pugchamp:scripts:updateUserCache');
 const math = require('mathjs');
@@ -109,7 +108,7 @@ function calculatePenaltyHistory(penalties, durations, resetInterval) {
     return history;
 }
 
-co(function*() {
+(async function() {
     const CAPTAIN_PENALTY_COOLDOWNS = _.map(config.get('app.users.penaltyCooldowns.captain'), duration => ms(duration));
     const GENERAL_PENALTY_COOLDOWNS = _.map(config.get('app.users.penaltyCooldowns.general'), duration => ms(duration));
     const HIDE_RATINGS = config.get('app.users.hideRatings');
@@ -121,7 +120,7 @@ co(function*() {
 
         if (!argv.a) {
             /* eslint-disable lodash/prefer-lodash-method */
-            users = yield database.User.find({
+            users = await database.User.find({
                 '_id': {
                     $in: argv._
                 }
@@ -130,7 +129,7 @@ co(function*() {
         }
         else {
             /* eslint-disable lodash/prefer-lodash-method */
-            users = yield database.User.find({}).exec();
+            users = await database.User.find({}).exec();
             /* eslint-enable lodash/prefer-lodash-method */
         }
 
@@ -139,10 +138,10 @@ co(function*() {
         for (let user of users) {
             let userID = helpers.getDocumentID(user);
 
-            yield cache.setAsync(`user-${userID}`, JSON.stringify(user.toObject()));
+            await cache.setAsync(`user-${userID}`, JSON.stringify(user.toObject()));
 
             /* eslint-disable lodash/prefer-lodash-method */
-            let games = yield database.Game.find({
+            let games = await database.Game.find({
                 $and: [{
                     $or: [{
                         'teams.captain': userID
@@ -171,13 +170,13 @@ co(function*() {
             /* eslint-enable lodash/prefer-lodash-method */
 
             /* eslint-disable lodash/prefer-lodash-method */
-            let restrictions = yield database.Restriction.find({
+            let restrictions = await database.Restriction.find({
                 'user': userID
             }).exec();
             /* eslint-enable lodash/prefer-lodash-method */
 
             /* eslint-disable lodash/prefer-lodash-method */
-            let generalPenalties = yield database.Penalty.find({
+            let generalPenalties = await database.Penalty.find({
                 'user': userID,
                 'type': 'general',
                 'active': true
@@ -185,14 +184,14 @@ co(function*() {
             /* eslint-enable lodash/prefer-lodash-method */
 
             /* eslint-disable lodash/prefer-lodash-method */
-            let captainPenalties = yield database.Penalty.find({
+            let captainPenalties = await database.Penalty.find({
                 'user': userID,
                 'type': 'captain',
                 'active': true
             }).sort('date').exec();
 
             /* eslint-enable lodash/prefer-lodash-method */
-            let nameChanges = yield database.NameChange.find({
+            let nameChanges = await database.NameChange.find({
                 'user': userID
             }).exec();
             /* eslint-enable lodash/prefer-lodash-method */
@@ -223,7 +222,7 @@ co(function*() {
 
             if (!HIDE_RATINGS) {
                 /* eslint-disable lodash/prefer-lodash-method */
-                let ratings = yield database.Rating.find({
+                let ratings = await database.Rating.find({
                     'user': userID
                 }).exec();
                 /* eslint-enable lodash/prefer-lodash-method */
@@ -231,13 +230,13 @@ co(function*() {
                 playerPage.ratings = _(ratings).invokeMap('toObject').sortBy('date').value();
             }
 
-            yield cache.setAsync(`playerPage-${userID}`, JSON.stringify(playerPage));
+            await cache.setAsync(`playerPage-${userID}`, JSON.stringify(playerPage));
         }
 
-        let players = yield database.User.find({}).sort('alias').exec();
+        let players = await database.User.find({}).sort('alias').exec();
 
-        yield cache.setAsync('allPlayerList', JSON.stringify(_.map(players, user => formatPlayerListing(user, !HIDE_RATINGS))));
-        yield cache.setAsync('activePlayerList', JSON.stringify(_(players).filter(user => isActivePlayer(user)).map(user => formatPlayerListing(user, !HIDE_RATINGS)).value()));
+        await cache.setAsync('allPlayerList', JSON.stringify(_.map(players, user => formatPlayerListing(user, !HIDE_RATINGS))));
+        await cache.setAsync('activePlayerList', JSON.stringify(_(players).filter(user => isActivePlayer(user)).map(user => formatPlayerListing(user, !HIDE_RATINGS)).value()));
 
         process.exit(0);
     }
@@ -245,4 +244,4 @@ co(function*() {
         console.log(err.stack);
         process.exit(1);
     }
-});
+})();

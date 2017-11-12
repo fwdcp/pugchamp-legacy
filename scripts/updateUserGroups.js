@@ -3,7 +3,6 @@
 
 const _ = require('lodash');
 const argv = require('yargs').boolean('a').argv;
-const co = require('co');
 const config = require('config');
 const debug = require('debug')('pugchamp:scripts:updateUserGroups');
 const HttpStatus = require('http-status-codes');
@@ -13,7 +12,7 @@ const helpers = require('../helpers');
 
 var database = require('../database');
 
-co(function*() {
+(async function() {
     const USER_GROUPS = config.has('app.users.groups') ? config.get('app.users.groups') : {};
 
     try {
@@ -21,7 +20,7 @@ co(function*() {
 
         if (!argv.a) {
             /* eslint-disable lodash/prefer-lodash-method */
-            users = yield database.User.find({
+            users = await database.User.find({
                 '_id': {
                     $in: argv._
                 }
@@ -30,7 +29,7 @@ co(function*() {
         }
         else {
             /* eslint-disable lodash/prefer-lodash-method */
-            users = yield database.User.find({}, 'steamID groups').exec();
+            users = await database.User.find({}, 'steamID groups').exec();
             /* eslint-enable lodash/prefer-lodash-method */
         }
 
@@ -58,7 +57,7 @@ co(function*() {
                 }
 
                 try {
-                    let response = yield rp({
+                    let response = await rp({
                         resolveWithFullResponse: true,
                         simple: false,
                         qs: {
@@ -89,11 +88,11 @@ co(function*() {
                 cacheUpdatesRequired.push(userID);
             }
 
-            yield user.save();
+            await user.save();
         }
 
         if (_.size(cacheUpdatesRequired) > 0) {
-            yield helpers.runAppScript('updateUserCache', _.uniq(cacheUpdatesRequired));
+            await helpers.runAppScript('updateUserCache', _.uniq(cacheUpdatesRequired));
         }
 
         process.exit(0);
@@ -102,4 +101,4 @@ co(function*() {
         console.log(err.stack);
         process.exit(1);
     }
-});
+})();

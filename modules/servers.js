@@ -2,7 +2,6 @@
 
 const _ = require('lodash');
 const bodyParser = require('body-parser');
-const co = require('co');
 const config = require('config');
 const crypto = require('crypto');
 const debug = require('debug')('pugchamp:servers');
@@ -29,9 +28,6 @@ module.exports = function(app, cache, chance, database, io, self) {
     var rconConnections = new Map();
     var rconConnectionLimits = new Map();
 
-    /**
-     * @async
-     */
     function queryServer(server) {
         return new Promise(function(resolve, reject) {
             Gamedig.query(server, function(state) {
@@ -45,112 +41,89 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
-    /**
-     * @async
-     */
-    function connectToRCON(server) {
-        return co(function*() {
-            let serverInfo = GAME_SERVER_POOL[server];
+    async function connectToRCON(server) {
+        let serverInfo = GAME_SERVER_POOL[server];
 
-            let rcon = new Rcon(serverInfo.rcon.host, serverInfo.rcon.port, serverInfo.rcon.password, RCON_TIMEOUT);
+        let rcon = new Rcon(serverInfo.rcon.host, serverInfo.rcon.port, serverInfo.rcon.password, RCON_TIMEOUT);
 
-            yield rcon.connect();
+        await rcon.connect();
 
-            return rcon;
-        });
+        return rcon;
     }
 
-    /**
-     * @async
-     */
-    function sendCommandsToServer(rcon, commands) {
-        return co(function*() {
-            let condensedCommands = [];
+    async function sendCommandsToServer(rcon, commands) {
+        let condensedCommands = [];
 
-            let partialCondensedCommand = '';
-            for (let command of commands) {
-                if (_.size(partialCondensedCommand) + _.size(command) > MAXIMUM_SERVER_COMMAND_LENGTH) {
-                    condensedCommands.push(partialCondensedCommand);
-                    partialCondensedCommand = command;
-                }
-                else {
-                    partialCondensedCommand = `${partialCondensedCommand};${command}`;
-                }
-            }
-            if (_.size(partialCondensedCommand) > 0) {
-                condensedCommands.push(_.trim(partialCondensedCommand, ';'));
-            }
-
-            let results = [];
-
-            for (let condensedCommand of condensedCommands) {
-                let result = yield rcon.send(condensedCommand);
-
-                results.push(result);
-            }
-
-            return _.join(results, '\n');
-        });
-    }
-
-    /**
-     * @async
-     */
-    function disconnectFromRCON(rcon) {
-        return co(function*() {
-            yield rcon.disconnect();
-        });
-    }
-
-    /**
-     * @async
-     */
-    function establishRCONConnection(server) {
-        return co(function*() {
-            let limiter = rconConnectionLimits.get(server);
-
-            if (limiter.tryRemoveTokens(1)) {
-                try {
-                    if (rconConnections.has(server)) {
-                        debug(`found existing connection to ${server}, disconnecting`);
-
-                        let rcon = rconConnections.get(server);
-
-                        yield disconnectFromRCON(rcon);
-
-                        rconConnections.delete(server);
-                    }
-
-                    debug(`connecting to ${server}`);
-                    let rcon = yield connectToRCON(server);
-
-                    debug(`connection to ${server} succeeded`);
-                    rconConnections.set(server, rcon);
-                }
-                catch (err) {
-                    debug(`connection to ${server} failed: ${err.stack}`);
-
-                    debug(`retrying connection to ${server} in ${RECONNECT_INTERVAL}ms`);
-                    setTimeout(establishRCONConnection, RECONNECT_INTERVAL, server);
-
-                    throw new Error('failed to connect to RCON');
-                }
+        let partialCondensedCommand = '';
+        for (let command of commands) {
+            if (_.size(partialCondensedCommand) + _.size(command) > MAXIMUM_SERVER_COMMAND_LENGTH) {
+                condensedCommands.push(partialCondensedCommand);
+                partialCondensedCommand = command;
             }
             else {
-                debug(`hit rate limit for connecting to ${server}`);
-                throw new Error('RCON connection attempts on cooldown');
+                partialCondensedCommand = `${partialCondensedCommand};${command}`;
             }
-        });
+        }
+        if (_.size(partialCondensedCommand) > 0) {
+            condensedCommands.push(_.trim(partialCondensedCommand, ';'));
+        }
+
+        let results = [];
+
+        for (let condensedCommand of condensedCommands) {
+            let result = await rcon.send(condensedCommand);
+
+            results.push(result);
+        }
+
+        return _.join(results, '\n');
     }
 
-    /**
-     * @async
-     */
-    self.updateServerStatus = co.wrap(function* updateServerStatus(server) {
+    async function disconnectFromRCON(rcon) {
+        await rcon.disconnect();
+    }
+
+    async function establishRCONConnection(server) {
+        let limiter = rconConnectionLimits.get(server);
+
+        if (limiter.tryRemoveTokens(1)) {
+            try {
+                if (rconConnections.has(server)) {
+                    debug(`found existing connection to ${server}, disconnecting`);
+
+                    let rcon = rconConnections.get(server);
+
+                    await disconnectFromRCON(rcon);
+
+                    rconConnections.delete(server);
+                }
+
+                debug(`connecting to ${server}`);
+                let rcon = await connectToRCON(server);
+
+                debug(`connection to ${server} succeeded`);
+                rconConnections.set(server, rcon);
+            }
+            catch (err) {
+                debug(`connection to ${server} failed: ${err.stack}`);
+
+                debug(`retrying connection to ${server} in ${RECONNECT_INTERVAL}ms`);
+                setTimeout(establishRCONConnection, RECONNECT_INTERVAL, server);
+
+                throw new Error('failed to connect to RCON');
+            }
+        }
+        else {
+            debug(`hit rate limit for connecting to ${server}`);
+            throw new Error('RCON connection attempts on cooldown');
+        }
+    }
+
+    self.updateServerStatus = async function updateServerStatus(server) {
         let serverStatus;
 
         try {
-            let serverInfo = yield queryServer(_.merge({
+            let serverInfo = await queryServer(_.merge({
                 type: 'tf2'
             }, GAME_SERVER_POOL[server].query));
 
@@ -169,7 +142,7 @@ module.exports = function(app, cache, chance, database, io, self) {
                 }
                 else {
                     try {
-                        let game = yield database.Game.findById(gameStatus);
+                        let game = await database.Game.findById(gameStatus);
 
                         if (game) {
                             serverStatus = {
@@ -203,53 +176,44 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
 
         debug(`status for ${server} is now ${serverStatus.status}`);
-        yield cache.setAsync(`serverStatus-${server}`, JSON.stringify(serverStatus));
+        await cache.setAsync(`serverStatus-${server}`, JSON.stringify(serverStatus));
 
         self.emit('serversUpdated');
-    });
+    };
 
-    self.updateServerStatuses = co.wrap(function* updateServerStatuses() {
-        yield _.map(_.keys(GAME_SERVER_POOL), server => self.updateServerStatus(server));
-    });
+    self.updateServerStatuses = async function updateServerStatuses() {
+        await Promise.all(_.map(_.keys(GAME_SERVER_POOL), server => self.updateServerStatus(server)));
+    };
 
-    /**
-     * @async
-     */
-    self.getServerStatus = co.wrap(function* getServerStatus(server) {
-        if (!(yield cache.existsAsync(`serverStatus-${server}`))) {
-            yield self.updateServerStatus(server);
+    self.getServerStatus = async function getServerStatus(server) {
+        if (!(await cache.existsAsync(`serverStatus-${server}`))) {
+            await self.updateServerStatus(server);
         }
 
-        return JSON.parse(yield cache.getAsync(`serverStatus-${server}`));
-    });
+        return JSON.parse(await cache.getAsync(`serverStatus-${server}`));
+    };
 
-    /**
-     * @async
-     */
-    self.getServerStatuses = co.wrap(function* getServerStatuses() {
-        return _.zipObject(_.keys(GAME_SERVER_POOL), yield _.map(_.keys(GAME_SERVER_POOL), server => self.getServerStatus(server)));
-    });
+    self.getServerStatuses = async function getServerStatuses() {
+        return _.zipObject(_.keys(GAME_SERVER_POOL), await Promise.all(_.map(_.keys(GAME_SERVER_POOL), server => self.getServerStatus(server))));
+    };
 
-    /**
-     * @async
-     */
-    self.findAvailableServer = co.wrap(function* findAvailableServer() {
+    self.findAvailableServer = async function findAvailableServer() {
         // update all server statuses
-        yield self.updateServerStatuses();
+        await self.updateServerStatuses();
 
         // free up assigned unneeded servers first
-        yield _.map(yield self.getServerStatuses(), co.wrap(function*(serverStatus, server) {
+        await Promise.all(_.map(await self.getServerStatuses(), async function(serverStatus, server) {
             if (serverStatus.status === 'assigned' && (!serverStatus.game || serverStatus.game.status === 'aborted' || serverStatus.game.status === 'completed')) {
                 // force immediate reset
-                yield self.shutdownGameServers(serverStatus.game);
+                await self.shutdownGameServers(serverStatus.game);
             }
 
             // update again just to be sure
-            yield self.updateServerStatus(server);
+            await self.updateServerStatus(server);
         }));
 
         // get server statuses and find servers that are free
-        let serverStatuses = yield self.getServerStatuses();
+        let serverStatuses = await self.getServerStatuses();
         let freeServers = _.filter(_.keys(serverStatuses), server => serverStatuses[server].status === 'free');
 
         // if servers are confirmed free, use them
@@ -259,12 +223,9 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         // no servers actually available
         return null;
-    });
+    };
 
-    /**
-     * @async
-     */
-    self.sendRCONCommands = co.wrap(function* sendRCONCommands(server, commands, retry = true) {
+    self.sendRCONCommands = async function sendRCONCommands(server, commands, retry = true) {
         let success = false;
 
         let result;
@@ -280,7 +241,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             let rcon = rconConnections.get(server);
 
             debug(`sending ${commands} to ${server}`);
-            result = yield sendCommandsToServer(rcon, commands);
+            result = await sendCommandsToServer(rcon, commands);
 
             debug(`received result of commands from ${server}`);
 
@@ -292,10 +253,10 @@ module.exports = function(app, cache, chance, database, io, self) {
             if (retry) {
                 for (let delay of SIMPLE_RETRY_INTERVALS) {
                     debug(`waiting for ${delay}ms before retrying`);
-                    yield helpers.promiseDelay(delay);
+                    await helpers.promiseDelay(delay);
 
                     try {
-                        result = yield self.sendRCONCommands(server, commands, false);
+                        result = await self.sendRCONCommands(server, commands, false);
 
                         success = true;
                         break;
@@ -315,19 +276,16 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
 
         return result;
-    });
+    };
 
-    /**
-     * @async
-     */
-    self.resetServer = co.wrap(function* resetServer(server, retry = true) {
+    self.resetServer = async function resetServer(server, retry = true) {
         let success = false;
 
         try {
-            yield self.sendRCONCommands(server, ['pugchamp_game_reset']);
-            yield self.updateServerStatus(server);
+            await self.sendRCONCommands(server, ['pugchamp_game_reset']);
+            await self.updateServerStatus(server);
 
-            let serverStatus = yield self.getServerStatus(server);
+            let serverStatus = await self.getServerStatus(server);
 
             if (serverStatus.status !== 'free' && serverStatus.status !== 'unavailable') {
                 throw new Error('server reset failed');
@@ -341,10 +299,10 @@ module.exports = function(app, cache, chance, database, io, self) {
             if (retry) {
                 for (let delay of RETRY_ATTEMPTS) {
                     debug(`waiting for ${delay}ms before retrying`);
-                    yield helpers.promiseDelay(delay);
+                    await helpers.promiseDelay(delay);
 
                     try {
-                        yield self.resetServer(server, false);
+                        await self.resetServer(server, false);
 
                         success = true;
                         break;
@@ -360,25 +318,22 @@ module.exports = function(app, cache, chance, database, io, self) {
         if (!success) {
             throw new Error('failed to reset server');
         }
-    });
+    };
 
-    /**
-     * @async
-     */
-    self.shutdownGameServers = co.wrap(function* shutdownGameServers(game, retry = true) {
+    self.shutdownGameServers = async function shutdownGameServers(game, retry = true) {
         debug(`shutting down servers for game ${game.id}`);
-        let serverStatuses = yield self.getServerStatuses();
+        let serverStatuses = await self.getServerStatuses();
 
-        yield _.map(serverStatuses, co.wrap(function*(serverStatus, server) {
+        await Promise.all(_.map(serverStatuses, async function(serverStatus, server) {
             if (serverStatus.status === 'unreachable' || serverStatus.status === 'unknown') {
                 if (retry) {
                     for (let delay of SIMPLE_RETRY_INTERVALS) {
                         debug(`waiting for ${delay}ms before retrying`);
-                        yield helpers.promiseDelay(delay);
+                        await helpers.promiseDelay(delay);
 
                         try {
-                            yield self.updateServerStatus(server);
-                            serverStatus = yield self.getServerStatus(server);
+                            await self.updateServerStatus(server);
+                            serverStatus = await self.getServerStatus(server);
 
                             if (serverStatus.status === 'unreachable' || serverStatus.status === 'unknown') {
                                 throw new Error('server status still unknown');
@@ -395,31 +350,28 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             if (serverStatus.status === 'assigned' && helpers.getDocumentID(serverStatus.game) === helpers.getDocumentID(game)) {
                 // update server just to make sure
-                yield self.updateServerStatus(server);
-                serverStatus = yield self.getServerStatus(server);
+                await self.updateServerStatus(server);
+                serverStatus = await self.getServerStatus(server);
 
                 if (serverStatus.status === 'assigned' && helpers.getDocumentID(serverStatus.game) === helpers.getDocumentID(game)) {
-                    yield self.resetServer(server);
+                    await self.resetServer(server);
                 }
             }
         }));
-    });
+    };
 
-    /**
-     * @async
-     */
-    self.updateServerPlayers = co.wrap(function* updateServerPlayers(game, retry = true) {
+    self.updateServerPlayers = async function updateServerPlayers(game, retry = true) {
         let success = false;
 
         try {
-            let serverStatus = yield self.getServerStatus(game.server);
+            let serverStatus = await self.getServerStatus(game.server);
 
             if (serverStatus.status !== 'assigned' || helpers.getDocumentID(serverStatus.game) !== helpers.getDocumentID(game)) {
                 debug(`server ${game.server} is not assigned to game ${game.id}`);
                 throw new Error('server not assigned to game');
             }
 
-            let gameUsers = yield self.getCachedUsers(helpers.getGameUsers(game));
+            let gameUsers = await self.getCachedUsers(helpers.getGameUsers(game));
             let commands = _.map(gameUsers, function(user) {
                 let gameUserInfo = helpers.getGameUserInfo(game, user);
 
@@ -486,7 +438,7 @@ module.exports = function(app, cache, chance, database, io, self) {
             });
 
             debug(`sending commands to update players on server ${game.server} for game ${game.id}`);
-            yield self.sendRCONCommands(game.server, commands);
+            await self.sendRCONCommands(game.server, commands);
 
             success = true;
         }
@@ -496,10 +448,10 @@ module.exports = function(app, cache, chance, database, io, self) {
             if (retry) {
                 for (let delay of RETRY_ATTEMPTS) {
                     debug(`waiting for ${delay}ms before retrying`);
-                    yield helpers.promiseDelay(delay);
+                    await helpers.promiseDelay(delay);
 
                     try {
-                        yield self.updateServerPlayers(game, false);
+                        await self.updateServerPlayers(game, false);
 
                         success = true;
                         break;
@@ -515,12 +467,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         if (!success) {
             throw new Error('failed to update server players');
         }
-    });
+    };
 
-    /**
-     * @async
-     */
-    self.initializeServer = co.wrap(function* initializeServer(game, retry = true) {
+    self.initializeServer = async function initializeServer(game, retry = true) {
         if (!game.server) {
             throw new Error('no server is currently assigned to this game');
         }
@@ -532,13 +481,13 @@ module.exports = function(app, cache, chance, database, io, self) {
 
             debug(`resetting status of game ${game.id} to initializing`);
             game.status = 'initializing';
-            yield game.save();
+            await game.save();
 
             debug(`updating game ${game.id}`);
-            yield self.processGameUpdate(game);
+            await self.processGameUpdate(game);
 
             debug(`resetting servers currently assigned to game ${game.id}`);
-            yield self.shutdownGameServers(game);
+            await self.shutdownGameServers(game);
 
             let serverInfo = GAME_SERVER_POOL[game.server];
             let hash = crypto.createHash('sha256');
@@ -548,28 +497,28 @@ module.exports = function(app, cache, chance, database, io, self) {
             let mapInfo = MAPS[game.map];
 
             debug(`resetting server ${game.server} for game ${game.id}`);
-            yield self.resetServer(game.server, false);
+            await self.resetServer(game.server, false);
 
             debug(`performing initial setup for server ${game.server} for game ${game.id}`);
-            yield self.sendRCONCommands(game.server, [`pugchamp_api_url "${BASE_URL}/api/servers/${key}"`, `pugchamp_game_id "${helpers.getDocumentID(game)}"`, `pugchamp_game_map "${mapInfo.file}"`, `pugchamp_game_config "${mapInfo.config}"`]);
+            await self.sendRCONCommands(game.server, [`pugchamp_api_url "${BASE_URL}/api/servers/${key}"`, `pugchamp_game_id "${helpers.getDocumentID(game)}"`, `pugchamp_game_map "${mapInfo.file}"`, `pugchamp_game_config "${mapInfo.config}"`]);
 
-            yield self.updateServerStatus(game.server);
-            yield self.updateServerPlayers(game, false);
+            await self.updateServerStatus(game.server);
+            await self.updateServerPlayers(game, false);
 
             try {
                 debug(`launching server ${game.server} for game ${game.id}`);
-                yield self.sendRCONCommands(game.server, ['pugchamp_game_start']);
+                await self.sendRCONCommands(game.server, ['pugchamp_game_start']);
             }
             finally {
-                yield self.updateServerStatus(game.server);
-                let serverStatus = yield self.getServerStatus(game.server);
+                await self.updateServerStatus(game.server);
+                let serverStatus = await self.getServerStatus(game.server);
 
                 if (serverStatus.status !== 'assigned' || helpers.getDocumentID(serverStatus.game) !== helpers.getDocumentID(game) || serverStatus.game.status === 'initializing') {
                     debug(`game server ${game.server} not launched for game ${game.id}, waiting and retrying`);
 
-                    yield helpers.promiseDelay(MAP_CHANGE_TIMEOUT);
+                    await helpers.promiseDelay(MAP_CHANGE_TIMEOUT);
 
-                    serverStatus = yield self.getServerStatus(game.server);
+                    serverStatus = await self.getServerStatus(game.server);
 
                     if (serverStatus.status !== 'assigned' || helpers.getDocumentID(serverStatus.game) !== helpers.getDocumentID(game) || serverStatus.game.status === 'initializing') {
                         debug(`game server ${game.server} not launched for game ${game.id}`);
@@ -586,10 +535,10 @@ module.exports = function(app, cache, chance, database, io, self) {
             if (retry) {
                 for (let delay of RETRY_ATTEMPTS) {
                     debug(`waiting for ${delay}ms before retrying`);
-                    yield helpers.promiseDelay(delay);
+                    await helpers.promiseDelay(delay);
 
                     try {
-                        yield self.initializeServer(game, false);
+                        await self.initializeServer(game, false);
 
                         success = true;
                         break;
@@ -605,12 +554,9 @@ module.exports = function(app, cache, chance, database, io, self) {
         if (!success) {
             throw new Error('failed to initialize server');
         }
-    });
+    };
 
-    /**
-     * @async
-     */
-    self.assignGameToServer = co.wrap(function* assignGameToServer(game, requestedServer, retry = true) {
+    self.assignGameToServer = async function assignGameToServer(game, requestedServer, retry = true) {
         let success = false;
 
         try {
@@ -619,15 +565,15 @@ module.exports = function(app, cache, chance, database, io, self) {
             debug(`resetting status of game ${game.id} to initializing`);
             game.status = 'initializing';
             game.server = null;
-            yield game.save();
+            await game.save();
 
             debug(`updating game ${game.id}`);
-            yield self.processGameUpdate(game);
+            await self.processGameUpdate(game);
 
             if (!requestedServer) {
                 debug(`randomly assigning game ${game.id} to available server`);
 
-                let server = yield self.findAvailableServer();
+                let server = await self.findAvailableServer();
 
                 if (!server) {
                     debug('failed to find available server');
@@ -641,12 +587,12 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
 
             debug(`assigning game ${game.id} to server ${game.server}`);
-            yield game.save();
+            await game.save();
 
             debug(`updating game ${game.id}`);
-            yield self.processGameUpdate(game);
+            await self.processGameUpdate(game);
 
-            yield self.initializeServer(game, false);
+            await self.initializeServer(game, false);
 
             success = true;
         }
@@ -656,10 +602,10 @@ module.exports = function(app, cache, chance, database, io, self) {
             if (retry) {
                 for (let delay of RETRY_ATTEMPTS) {
                     debug(`waiting for ${delay}ms before retrying`);
-                    yield helpers.promiseDelay(delay);
+                    await helpers.promiseDelay(delay);
 
                     try {
-                        yield self.assignGameToServer(game, requestedServer, false);
+                        await self.assignGameToServer(game, requestedServer, false);
 
                         success = true;
                         break;
@@ -675,10 +621,10 @@ module.exports = function(app, cache, chance, database, io, self) {
         if (!success) {
             throw new Error('failed to assign game to server');
         }
-    });
+    };
 
-    app.get('/servers', co.wrap(function*(req, res) {
-        let servers = yield self.getServerStatuses();
+    app.get('/servers', async function(req, res) {
+        let servers = await self.getServerStatuses();
 
         res.render('servers', {
             servers: _.mapValues(servers, (status, name) => ({
@@ -686,17 +632,17 @@ module.exports = function(app, cache, chance, database, io, self) {
                 status
             }))
         });
-    }));
+    });
 
     app.post('/api/servers/:key', bodyParser.urlencoded({
         extended: true
-    }), co.wrap(function*(req, res) {
+    }), async function(req, res) {
         if (!req.body.game) {
             res.sendStatus(HttpStatus.BAD_REQUEST);
             return;
         }
 
-        let game = yield database.Game.findById(req.body.game);
+        let game = await database.Game.findById(req.body.game);
 
         if (!game) {
             res.sendStatus(HttpStatus.NOT_FOUND);
@@ -715,7 +661,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         }
 
         try {
-            yield self.handleGameServerUpdate(req.body);
+            await self.handleGameServerUpdate(req.body);
 
             res.sendStatus(HttpStatus.OK);
         }
@@ -725,10 +671,10 @@ module.exports = function(app, cache, chance, database, io, self) {
             let success = false;
 
             for (let delay of RETRY_ATTEMPTS) {
-                yield helpers.promiseDelay(delay);
+                await helpers.promiseDelay(delay);
 
                 try {
-                    yield self.handleGameServerUpdate(req.body);
+                    await self.handleGameServerUpdate(req.body);
 
                     success = true;
                     break;
@@ -749,29 +695,29 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         }
 
-        yield self.updateServerStatus(game.server);
-    }));
+        await self.updateServerStatus(game.server);
+    });
 
-    co(function*() {
-        yield self.updateServerStatuses();
+    (async function() {
+        await self.updateServerStatuses();
 
         for (let server of _.keys(GAME_SERVER_POOL)) {
             rconConnectionLimits.set(server, new RateLimiter(1, RECONNECT_INTERVAL));
             establishRCONConnection(server);
         }
 
-        setInterval(co.wrap(function*() {
-            yield self.updateServerStatuses();
-            let serverStatuses = yield self.getServerStatuses();
+        setInterval(async function() {
+            await self.updateServerStatuses();
+            let serverStatuses = await self.getServerStatuses();
 
-            yield _.map(serverStatuses, co.wrap(function*(serverStatus, server) {
+            await Promise.all(_.map(serverStatuses, async function(serverStatus, server) {
                 if (serverStatus.status === 'unreachable' || serverStatus.status === 'unknown' || serverStatus.status === 'unavailable') {
                     self.postToLog({
                         description: `server \`${server}\` is currently ${serverStatus.status}`
                     });
                 }
                 else if (serverStatus.status === 'assigned') {
-                    let updatedGame = yield database.Game.findById(helpers.getDocumentID(serverStatus.game));
+                    let updatedGame = await database.Game.findById(helpers.getDocumentID(serverStatus.game));
 
                     if (updatedGame.status !== 'launching' && updatedGame.status !== 'live') {
                         self.postToLog({
@@ -780,6 +726,6 @@ module.exports = function(app, cache, chance, database, io, self) {
                     }
                 }
             }));
-        }), RECHECK_INTERVAL);
-    });
+        }, RECHECK_INTERVAL);
+    })();
 };

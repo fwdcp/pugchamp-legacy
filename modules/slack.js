@@ -2,7 +2,6 @@
 
 const _ = require('lodash');
 const Botkit = require('botkit');
-const co = require('co');
 const config = require('config');
 const Q = require('q');
 
@@ -19,17 +18,11 @@ module.exports = function(app, cache, chance, database, io, self) {
             }
         });
 
-        /**
-         * @async
-         */
-        self.postToSlack = co.wrap(function* postToSlack(message) {
-            yield Q.ninvoke(bot, 'sendWebhook', _.defaultsDeep(message, SLACK_MESSAGE_DEFAULTS));
-        });
+        self.postToSlack = async function postToSlack(message) {
+            await Q.ninvoke(bot, 'sendWebhook', _.defaultsDeep(message, SLACK_MESSAGE_DEFAULTS));
+        };
 
-        /**
-         * @async
-         */
-        self.postToLog = co.wrap(function* postToLog(info) {
+        self.postToLog = async function postToLog(info) {
             let message = {
                 channel: APP_LOG_CHANNEL,
                 attachments: []
@@ -49,17 +42,17 @@ module.exports = function(app, cache, chance, database, io, self) {
                 });
             }
 
-            yield self.postToSlack(message);
-        });
+            await self.postToSlack(message);
+        };
 
-        co(function*() {
-            yield self.postToLog({
+        (async function() {
+            await self.postToLog({
                 description: 'server booting up'
             });
-        });
+        })();
     }
     else {
-        self.postToSlack = co.wrap(_.noop);
-        self.postToLog = co.wrap(_.noop);
+        self.postToSlack = _.noop;
+        self.postToLog = _.noop;
     }
 };

@@ -3,7 +3,6 @@
 
 const _ = require('lodash');
 const argv = require('yargs').boolean('a').argv;
-const co = require('co');
 const config = require('config');
 const debug = require('debug')('pugchamp:scripts:updateUserRestrictions');
 const HttpStatus = require('http-status-codes');
@@ -20,42 +19,40 @@ const USER_AUTHORIZATION_DEFAULT = config.get('app.users.authorizationDefault');
 var cache = require('../cache');
 var database = require('../database');
 
-function checkUserAuthorization(user) {
-    return co(function*() {
-        for (let authorization of USER_AUTHORIZATIONS) {
-            if (authorization.user === user.steamID) {
-                return authorization.authorized;
-            }
+async function checkUserAuthorization(user) {
+    for (let authorization of USER_AUTHORIZATIONS) {
+        if (authorization.user === user.steamID) {
+            return authorization.authorized;
         }
+    }
 
-        for (let authorizationAPI of USER_AUTHORIZATION_APIS) {
-            try {
-                let response = yield rp({
-                    resolveWithFullResponse: true,
-                    simple: false,
-                    qs: {
-                        user: user.steamID
-                    },
-                    uri: authorizationAPI
-                });
+    for (let authorizationAPI of USER_AUTHORIZATION_APIS) {
+        try {
+            let response = await rp({
+                resolveWithFullResponse: true,
+                simple: false,
+                qs: {
+                    user: user.steamID
+                },
+                uri: authorizationAPI
+            });
 
-                if (response.statusCode === HttpStatus.OK) {
-                    return true;
-                }
-                else if (response.statusCode === HttpStatus.FORBIDDEN) {
-                    return false;
-                }
-                else {
-                    continue;
-                }
+            if (response.statusCode === HttpStatus.OK) {
+                return true;
             }
-            catch (err) {
+            else if (response.statusCode === HttpStatus.FORBIDDEN) {
+                return false;
+            }
+            else {
                 continue;
             }
         }
+        catch (err) {
+            continue;
+        }
+    }
 
-        return USER_AUTHORIZATION_DEFAULT;
-    });
+    return USER_AUTHORIZATION_DEFAULT;
 }
 
 function calculateActivePenalty(penalties, durations, resetInterval) {
@@ -89,7 +86,7 @@ function calculateActivePenalty(penalties, durations, resetInterval) {
     });
 }
 
-co(function*() {
+(async function() {
     const CAPTAIN_GAME_REQUIREMENT = config.get('app.users.captainGameRequirement');
     const CAPTAIN_PENALTY_COOLDOWNS = _.map(config.get('app.users.penaltyCooldowns.captain'), duration => ms(duration));
     const CURRENT_DRAFT_RESTRICTIONS = {
@@ -124,7 +121,7 @@ co(function*() {
 
         if (!argv.a) {
             /* eslint-disable lodash/prefer-lodash-method */
-            users = yield database.User.find({
+            users = await database.User.find({
                 '_id': {
                     $in: argv._
                 }
@@ -133,7 +130,7 @@ co(function*() {
         }
         else {
             /* eslint-disable lodash/prefer-lodash-method */
-            users = yield database.User.find({}).exec();
+            users = await database.User.find({}).exec();
             /* eslint-enable lodash/prefer-lodash-method */
         }
 
@@ -151,11 +148,11 @@ co(function*() {
                 restrictions.push(NOT_READY_RESTRICTIONS);
             }
 
-            let authorized = yield checkUserAuthorization(user);
+            let authorized = await checkUserAuthorization(user);
             if (user.authorized !== authorized) {
                 user.authorized = authorized;
 
-                yield user.save();
+                await user.save();
 
                 cacheUpdatesRequired.push(userID);
             }
@@ -168,7 +165,7 @@ co(function*() {
                 }
             }
 
-            let currentGame = yield database.Game.findOne({
+            let currentGame = await database.Game.findOne({
                 $or: [{
                     'teams.captain': userID
                 }, {
@@ -182,8 +179,8 @@ co(function*() {
                 restrictions.push(CURRENT_GAME_RESTRICTIONS);
             }
 
-            if (yield cache.existsAsync('draftUsers')) {
-                let draftUsers = JSON.parse(yield cache.getAsync('draftUsers'));
+            if (await cache.existsAsync('draftUsers')) {
+                let draftUsers = JSON.parse(await cache.getAsync('draftUsers'));
                 if (_.includes(draftUsers, userID)) {
                     restrictions.push(CURRENT_DRAFT_RESTRICTIONS);
                 }
@@ -194,7 +191,7 @@ co(function*() {
             }
 
             /* eslint-disable lodash/prefer-lodash-method */
-            let activeRestrictions = yield database.Restriction.find({
+            let activeRestrictions = await database.Restriction.find({
                 'user': userID,
                 'active': true
             });
@@ -229,14 +226,14 @@ co(function*() {
                 else {
                     restriction.active = false;
 
-                    yield restriction.save();
+                    await restriction.save();
 
                     cacheUpdatesRequired.push(userID);
                 }
             }
 
             /* eslint-disable lodash/prefer-lodash-method */
-            let generalPenalties = yield database.Penalty.find({
+            let generalPenalties = await database.Penalty.find({
                 'user': userID,
                 'type': 'general',
                 'active': true
@@ -257,7 +254,7 @@ co(function*() {
             }
 
             /* eslint-disable lodash/prefer-lodash-method */
-            let captainPenalties = yield database.Penalty.find({
+            let captainPenalties = await database.Penalty.find({
                 'user': userID,
                 'type': 'captain',
                 'active': true
@@ -288,15 +285,15 @@ co(function*() {
             });
 
             if (expirationDate) {
-                yield cache.setAsync(`userRestrictions-${userID}`, JSON.stringify(combinedRestrictions), 'PX', moment(expirationDate).diff());
+                await cache.setAsync(`userRestrictions-${userID}`, JSON.stringify(combinedRestrictions), 'PX', moment(expirationDate).diff());
             }
             else {
-                yield cache.setAsync(`userRestrictions-${userID}`, JSON.stringify(combinedRestrictions));
+                await cache.setAsync(`userRestrictions-${userID}`, JSON.stringify(combinedRestrictions));
             }
         }
 
         if (_.size(cacheUpdatesRequired) > 0) {
-            yield helpers.runAppScript('updateUserCache', _.uniq(cacheUpdatesRequired));
+            await helpers.runAppScript('updateUserCache', _.uniq(cacheUpdatesRequired));
         }
 
         process.exit(0);
@@ -305,4 +302,4 @@ co(function*() {
         console.log(err.stack);
         process.exit(1);
     }
-});
+})();

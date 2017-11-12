@@ -3,7 +3,6 @@
 
 const _ = require('lodash');
 const argv = require('yargs').boolean('a').argv;
-const co = require('co');
 const config = require('config');
 const debug = require('debug')('pugchamp:scripts:updateGameCache');
 const moment = require('moment');
@@ -13,7 +12,7 @@ const helpers = require('../helpers');
 var cache = require('../cache');
 var database = require('../database');
 
-co(function*() {
+(async function() {
     const HIDE_RATINGS = config.get('app.users.hideRatings');
     const ROLES = config.get('app.games.roles');
 
@@ -22,7 +21,7 @@ co(function*() {
 
         if (!argv.a) {
             /* eslint-disable lodash/prefer-lodash-method */
-            games = yield database.Game.find({
+            games = await database.Game.find({
                 '_id': {
                     $in: argv._
                 }
@@ -31,7 +30,7 @@ co(function*() {
         }
         else {
             /* eslint-disable lodash/prefer-lodash-method */
-            games = yield database.Game.find({}).exec();
+            games = await database.Game.find({}).exec();
             /* eslint-enable lodash/prefer-lodash-method */
         }
 
@@ -46,7 +45,7 @@ co(function*() {
 
             let gameUsers = _(
                 /* eslint-disable lodash/prefer-lodash-method */
-                yield database.User.find({
+                await database.User.find({
                     '_id': {
                         $in: _.map(helpers.getGameUsers(game), user => helpers.getDocumentID(user))
                     }
@@ -55,7 +54,7 @@ co(function*() {
             ).invokeMap('toObject').keyBy(user => helpers.getDocumentID(user)).value();
 
             /* eslint-disable lodash/prefer-lodash-method */
-            let ratings = HIDE_RATINGS ? {} : _.keyBy(yield database.Rating.find({
+            let ratings = HIDE_RATINGS ? {} : _.keyBy(await database.Rating.find({
                 game: gameID
             }).exec(), rating => helpers.getDocumentID(rating.user));
             /* eslint-enable lodash/prefer-lodash-method */
@@ -90,11 +89,11 @@ co(function*() {
                 });
             });
 
-            yield cache.setAsync(`gamePage-${gameID}`, JSON.stringify(gamePage));
+            await cache.setAsync(`gamePage-${gameID}`, JSON.stringify(gamePage));
         }
 
         /* eslint-disable lodash/prefer-lodash-method */
-        let gamesCache = yield database.Game.find({
+        let gamesCache = await database.Game.find({
             $or: [{
                 status: {
                     $in: ['initializing', 'launching', 'live']
@@ -110,8 +109,8 @@ co(function*() {
         }).sort('-date').select('date status teams.faction teams.captain score map duration').populate('teams.captain', 'alias steamID').exec();
         /* eslint-enable lodash/prefer-lodash-method */
 
-        yield cache.setAsync('recentGameList', JSON.stringify(_.invokeMap(gamesCache, 'toObject')));
-        yield cache.setAsync('recentVisibleGameList', JSON.stringify(_(gamesCache).filter(game => game.status !== 'initializing' && game.status !== 'aborted').invokeMap('toObject').value()));
+        await cache.setAsync('recentGameList', JSON.stringify(_.invokeMap(gamesCache, 'toObject')));
+        await cache.setAsync('recentVisibleGameList', JSON.stringify(_(gamesCache).filter(game => game.status !== 'initializing' && game.status !== 'aborted').invokeMap('toObject').value()));
 
         process.exit(0);
     }
@@ -119,4 +118,4 @@ co(function*() {
         console.log(err.stack);
         process.exit(1);
     }
-});
+})();

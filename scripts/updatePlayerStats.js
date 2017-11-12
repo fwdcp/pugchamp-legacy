@@ -3,7 +3,6 @@
 
 const _ = require('lodash');
 const argv = require('yargs').boolean('a').argv;
-const co = require('co');
 const config = require('config');
 const debug = require('debug')('pugchamp:scripts:updatePlayerStats');
 const distributions = require('distributions');
@@ -52,7 +51,7 @@ function calculatePredictionInterval(samples) {
     }
 }
 
-co(function*() {
+(async function() {
     const DRAFT_ORDER = config.get('app.draft.order');
     const ROLES = config.get('app.games.roles');
 
@@ -61,7 +60,7 @@ co(function*() {
 
         if (!argv.a) {
             /* eslint-disable lodash/prefer-lodash-method */
-            users = yield database.User.find({
+            users = await database.User.find({
                 '_id': {
                     $in: argv._
                 }
@@ -70,7 +69,7 @@ co(function*() {
         }
         else {
             /* eslint-disable lodash/prefer-lodash-method */
-            users = yield database.User.find({}, 'stats').exec();
+            users = await database.User.find({}, 'stats').exec();
             /* eslint-enable lodash/prefer-lodash-method */
         }
 
@@ -81,7 +80,7 @@ co(function*() {
 
             {
                 /* eslint-disable lodash/prefer-lodash-method */
-                let captainGames = yield database.Game.find({
+                let captainGames = await database.Game.find({
                     'teams.captain': userID,
                     'status': 'completed',
                     'score': {
@@ -121,7 +120,7 @@ co(function*() {
 
             {
                 /* eslint-disable lodash/prefer-lodash-method */
-                let captainGames = yield database.Game.find({
+                let captainGames = await database.Game.find({
                     'teams.captain': userID,
                     'status': 'completed',
                     'score': {
@@ -154,7 +153,7 @@ co(function*() {
 
             {
                 /* eslint-disable lodash/prefer-lodash-method */
-                let playerGames = yield database.Game.find({
+                let playerGames = await database.Game.find({
                     'teams.composition.players.user': userID,
                     'status': 'completed',
                     'score': {
@@ -194,7 +193,7 @@ co(function*() {
 
             {
                 /* eslint-disable lodash/prefer-lodash-method */
-                let playerGames = yield database.Game.find({
+                let playerGames = await database.Game.find({
                     'teams.composition.players.user': userID,
                     'status': 'completed',
                     'score': {
@@ -228,7 +227,7 @@ co(function*() {
             {
                 let draftStats = [];
 
-                let captainGameCount = yield database.Game.count({
+                let captainGameCount = await database.Game.count({
                     'teams.captain': userID
                 }).count().exec();
                 draftStats.push({
@@ -244,7 +243,7 @@ co(function*() {
                 }
 
                 /* eslint-disable lodash/prefer-lodash-method */
-                let draftedGames = yield database.Game.find({
+                let draftedGames = await database.Game.find({
                     'draft.choices': {
                         $elemMatch: {
                             'type': 'playerPick',
@@ -281,7 +280,7 @@ co(function*() {
                 });
 
                 /* eslint-disable lodash/prefer-lodash-method */
-                let undraftedCount = yield database.Game.find({
+                let undraftedCount = await database.Game.find({
                     $nor: [{
                         'draft.choices': {
                             $elemMatch: {
@@ -306,7 +305,7 @@ co(function*() {
             }
 
             {
-                let rating = yield database.Rating.findOne({
+                let rating = await database.Rating.findOne({
                     user: userID
                 }).sort('-date').exec();
 
@@ -318,7 +317,7 @@ co(function*() {
 
             {
 
-                user.stats.roles = yield _(ROLES).keys().map(
+                user.stats.roles = await Promise.all(_(ROLES).keys().map(
                     /* eslint-disable lodash/prefer-lodash-method */
                     role => database.Game.find({
                         'teams.composition': {
@@ -332,20 +331,20 @@ co(function*() {
                         count
                     }))
                     /* eslint-enable lodash/prefer-lodash-method */
-                ).value();
+                ).value());
             }
 
             {
-                user.stats.total.captain = yield database.Game.count({
+                user.stats.total.captain = await database.Game.count({
                     'teams.captain': userID
                 }).count().exec();
-                user.stats.total.player = yield database.Game.count({
+                user.stats.total.player = await database.Game.count({
                     'teams.composition.players.user': userID
                 }).count().exec();
             }
 
             {
-                user.stats.replaced.into = yield database.Game.count({
+                user.stats.replaced.into = await database.Game.count({
                     $nor: [{
                         'draft.choices': {
                             $elemMatch: {
@@ -360,7 +359,7 @@ co(function*() {
                     }],
                     'teams.composition.players.user': userID
                 }).count().exec();
-                user.stats.replaced.out = yield database.Game.count({
+                user.stats.replaced.out = await database.Game.count({
                     'teams.composition.players': {
                         $elemMatch: {
                             'user': userID,
@@ -370,10 +369,10 @@ co(function*() {
                 }).count().exec();
             }
 
-            yield user.save();
+            await user.save();
         }
 
-        yield helpers.runAppScript('updateUserCache', argv._);
+        await helpers.runAppScript('updateUserCache', argv._);
 
         process.exit(0);
     }
@@ -381,4 +380,4 @@ co(function*() {
         console.log(err.stack);
         process.exit(1);
     }
-});
+})();

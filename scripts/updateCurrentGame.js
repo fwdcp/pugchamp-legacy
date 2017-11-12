@@ -3,7 +3,6 @@
 
 const _ = require('lodash');
 const argv = require('yargs').boolean('a').argv;
-const co = require('co');
 const config = require('config');
 const debug = require('debug')('pugchamp:scripts:updateCurrentGame');
 
@@ -12,7 +11,7 @@ const helpers = require('../helpers');
 var cache = require('../cache');
 var database = require('../database');
 
-co(function*() {
+(async function() {
     const GAME_SERVER_POOL = config.get('app.servers.pool');
     const ROLES = config.get('app.games.roles');
 
@@ -21,7 +20,7 @@ co(function*() {
 
         if (!argv.a) {
             /* eslint-disable lodash/prefer-lodash-method */
-            users = yield database.User.find({
+            users = await database.User.find({
                 '_id': {
                     $in: argv._
                 }
@@ -30,7 +29,7 @@ co(function*() {
         }
         else {
             /* eslint-disable lodash/prefer-lodash-method */
-            users = yield database.User.find({}).exec();
+            users = await database.User.find({}).exec();
             /* eslint-enable lodash/prefer-lodash-method */
         }
 
@@ -39,7 +38,7 @@ co(function*() {
         for (let user of users) {
             let userID = helpers.getDocumentID(user);
 
-            let game = yield database.Game.findOne({
+            let game = await database.Game.findOne({
                 $or: [{
                     'teams.captain': userID
                 }, {
@@ -74,20 +73,20 @@ co(function*() {
 
                 currentGameInfo.captain = helpers.getDocumentID(gameUserInfo.team.captain) === userID;
                 if (currentGameInfo.captain) {
-                    currentGameInfo.activeTeamPlayers = yield _(gameUserInfo.team.composition).map(role => _(role.players).reject('replaced').map(player => ({
+                    currentGameInfo.activeTeamPlayers = await Promise.all(_(gameUserInfo.team.composition).map(role => _(role.players).reject('replaced').map(player => ({
                         user: player.user,
                         role: ROLES[role.role]
                     })).value()).flattenDeep().map(function(player) {
                         player.user = player.user;
 
                         return player;
-                    }).value();
+                    }).value());
                 }
 
-                yield cache.setAsync(`currentGame-${userID}`, JSON.stringify(currentGameInfo));
+                await cache.setAsync(`currentGame-${userID}`, JSON.stringify(currentGameInfo));
             }
             else {
-                yield cache.delAsync(`currentGame-${userID}`);
+                await cache.delAsync(`currentGame-${userID}`);
             }
         }
 
@@ -97,4 +96,4 @@ co(function*() {
         console.log(err.stack);
         process.exit(1);
     }
-});
+})();
