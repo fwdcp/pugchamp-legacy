@@ -41,14 +41,16 @@ module.exports = function(app, cache, chance, database, io, self) {
         });
     }
 
-    async function connectToRCON(server) {
+    function setupRCON(server) {
         let serverInfo = GAME_SERVER_POOL[server];
 
         let rcon = new Rcon(serverInfo.rcon.host, serverInfo.rcon.port, serverInfo.rcon.password, RCON_TIMEOUT);
 
-        await rcon.connect();
+        rconConnections.set(server, rcon);
+    }
 
-        return rcon;
+    async function connectToRCON(server) {
+        await rcon.connect();
     }
 
     async function sendCommandsToServer(rcon, commands) {
@@ -88,21 +90,20 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         if (limiter.tryRemoveTokens(1)) {
             try {
-                if (rconConnections.has(server)) {
-                    debug(`found existing connection to ${server}, disconnecting`);
+                debug(`attempting to disconnect existing connection to ${server}`);
 
-                    let rcon = rconConnections.get(server);
+                let rcon = rconConnections.get(server);
 
-                    await disconnectFromRCON(rcon);
+                await disconnectFromRCON(rcon);
+            }
+            catch (err) {
+                // ignore
+            }
 
-                    rconConnections.delete(server);
-                }
+            try {
 
                 debug(`connecting to ${server}`);
-                let rcon = await connectToRCON(server);
-
-                debug(`connection to ${server} succeeded`);
-                rconConnections.set(server, rcon);
+                await connectToRCON(server);
             }
             catch (err) {
                 debug(`connection to ${server} failed: ${err.stack}`);
@@ -703,6 +704,7 @@ module.exports = function(app, cache, chance, database, io, self) {
 
         for (let server of _.keys(GAME_SERVER_POOL)) {
             rconConnectionLimits.set(server, new RateLimiter(1, RECONNECT_INTERVAL));
+            setupRCON(server);
             establishRCONConnection(server);
         }
 
