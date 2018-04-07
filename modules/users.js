@@ -147,7 +147,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     }
 
     passport.use(new OpenIDStrategy({
-        providerURL: 'http://steamcommunity.com/openid',
+        providerURL: 'https://steamcommunity.com/openid',
         returnURL(req) {
             return url.format({
                 protocol: req.protocol,
@@ -163,7 +163,7 @@ module.exports = function(app, cache, chance, database, io, self) {
         },
         stateless: true
     }, async function(identifier, done) {
-        let id = identifier.replace('http://steamcommunity.com/openid/id/', '');
+        let id = identifier.replace('https://steamcommunity.com/openid/id/', '');
 
         try {
             let user = await database.User.findOne({
