@@ -51,7 +51,14 @@ module.exports = function(app, cache, chance, database, io, self) {
     }
 
     async function connectToRCON(rcon) {
-        await rcon.connect();
+      await rcon.connect().catch(function(err) {
+        if (err.message === 'Instance is already authed') {
+          return;
+        }
+        {
+          throw err;
+        }
+      });
     }
 
     async function sendCommandsToServer(rcon, commands) {
@@ -83,7 +90,13 @@ module.exports = function(app, cache, chance, database, io, self) {
     }
 
     async function disconnectFromRCON(rcon) {
-        await rcon.disconnect();
+        await rcon.disconnect().catch(function(err) {
+          if (err.message === 'Instance is not authed') {
+            return;
+          } else {
+            throw err;
+          }
+        });
     }
 
     async function establishRCONConnection(server) {

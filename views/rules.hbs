@@ -1,0 +1,80 @@
+<!doctype html>
+
+<html>
+
+    {{#> head title="Rules"}}
+    <link rel="import" href="/components/iron-form/iron-form.html">
+    <link rel="import" href="/components/paper-button/paper-button.html">
+    <link rel="import" href="/components/paper-checkbox/paper-checkbox.html">
+    <link rel="import" href="/components/paper-input/paper-input.html">
+
+    <style is="custom-style">
+        #save {
+            background: var(--primary-color);
+            color: var(--dark-theme-text-color);
+        }
+    </style>
+    {{/head}}
+
+   {{#> body}}
+    <h2>Rules</h2>
+
+        <h3>Rules</h3>
+
+        <p><strong>Violations of any of the following rules may result in applicable restrictions. Admins are given discretion in enforcing these rules as they see fit for the benefit of the site and its community.</strong></p>
+
+        <h4>Courtesy</h4>
+        <ul>
+            <li>Be respectful to your fellow players and users.</li>
+            <li>Do not attempt to impersonate other users or otherwise obscure your identity.</li>
+            <li>Do not play under an alternate account. <em>Alternate accounts are expressly forbidden and will be permanently removed, and the owner's main account may also be restricted as a consequence.</em></li>
+            <li>Do not spam, advertise in, or otherwise negatively affect chat.</li>
+        </ul>
+
+        <h4>Drafts</h4>
+        <ul>
+            <li>Do not add up if you are unable to immediately play a full-length game.</li>
+            <li>Do not volunteer to captain if you will not be able to pick a competitive team. <em>Captains may need to play an atypical role in order to accomplish this.</em></li>
+            <li>Do not add up to roles you are uncomfortable playing.</li>
+        </ul>
+
+        <h4>Gameplay</h4>
+        <ul>
+            <li>Play to the best of your ability. <em>Do not play with the intent to ruin a PUG.</em></li>
+            <li>Once you have received server info for the game, promptly connect to the voice and game server.</li>
+            <li>Play for the full length of the game, and do not leave early.</li>
+            <li>Do not play roles you were not drafted to play. <em>In particular, do not switch roles with other players on your team.</em></li>
+            <li>Do not excessively offclass. <em>Limited offclassing is appropriate by flank roles (scouts and/or roamer) during final point offense/defense.</em></li>
+            <li>Do not attempt to obtain and/or utilize unfair advantages against other players. <em>Cheating is a serious violation of competitive integrity and cannot be tolerated &mdash; players with a history of cheating may be barred from play, and suspected cheaters may be indefinitely suspended until further review.</em></li>
+        </ul>
+
+        <h4>Captains</h4>
+        <ul>
+            <li>Do not replace players unless they are being disruptive. <em>Valid reasons for replacement include (but are not limited to): lack of communication, purposeful trolling, not showing up to the game, and leaving the game prematurely. Invalid reasons include (but are not limited to): lack of chemistry, unsatisfactory skill level, and high latency.</em></li>
+            <li>If you are added up on medic and there is one remaining medic left, do not pick the last medic and force the other captain to med.</li>
+            <li>Do not unwillingly override someone to medic.</li>
+        </ul>
+
+
+        <h4>Penalties</h4>
+        <p>Certain behaviors will result in penalties being automatically applied to a user, including (but not limited to) the following:</p>
+        <ul>
+            <li>being removed from a game</li>
+            <li>aborting a draft</li>
+        </ul>
+
+        <p>Penalties will result in automatic cooldowns for the user, with multiple successive penalties resulting in a higher penalty level and longer cooldowns:</p>
+        <ol>
+            <li>15 minutes</li>
+            <li>1 hour</li>
+            <li>2 hours</li>
+            <li>24 hours</li>
+            <li>7 days</li>
+        </ol>
+
+        <p>Penalty levels are gradually removed after periods of clean play when not on cooldown.<p>
+
+        <p>The penalty and cooldown system is fully automated. As such, any received penalties and associated cooldowns and penalty levels cannot be modified or removed by admins.</p>
+     {{/body}}
+
+</html>

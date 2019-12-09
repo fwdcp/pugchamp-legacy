@@ -1,7 +1,6 @@
 'use strict';
 
 const _ = require('lodash');
-const bluebird = require('bluebird');
 const config = require('config');
 const debug = require('debug')('pugchamp:util:database');
 const math = require('mathjs');
@@ -15,11 +14,8 @@ const MAPS = config.get('app.games.maps');
 const SERVER_POOL = config.get('app.servers.pool');
 const USER_GROUPS = config.has('app.users.groups') ? config.get('app.users.groups') : {};
 
-mongoose.Promise = bluebird;
 
-mongoose.connect(config.get('server.mongodb'), {
-    useMongoClient: true
-});
+mongoose.connect(config.get('server.mongodb'));
 
 mongoose.connection.on('error', function(err) {
     debug(`Mongoose encountered error: ${err.stack || err}`);
