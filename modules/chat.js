@@ -12,6 +12,7 @@ module.exports = function(app, cache, chance, database, io, self) {
     const CHAT_LOG_CHANNEL = config.has('server.slack.channels.chatLog') ? config.get('server.slack.channels.chatLog') : '#chat-log';
     const RATE_LIMIT = ms(config.get('app.chat.rateLimit'));
     const SHOW_CONNECTION_MESSAGES = config.get('app.chat.showConnectionMessages');
+    const DISCORD_LOG_CHANNEL = config.has('server.discord.channels.chatLog') ? config.get('server.discord.channels.chatLog') : '#chat-log';
 
     async function updateOnlineUserList() {
         let users = await self.getCachedUsers(self.getOnlineUsers());
@@ -56,6 +57,12 @@ module.exports = function(app, cache, chance, database, io, self) {
             channel: CHAT_LOG_CHANNEL,
             attachments: [attachment]
         });
+        await self.postToDiscord({
+            channel: DISCORD_LOG_CHANNEL,
+            attachments: [attachment]
+        });
+            
+
     }
 
     self.sendMessageToUser = async function sendMessageToUser(user, message) {

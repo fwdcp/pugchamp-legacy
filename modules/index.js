@@ -13,4 +13,5 @@ module.exports = function(app, cache, chance, database, io, self) {
     require('./players')(app, cache, chance, database, io, self);
     require('./admin')(app, cache, chance, database, io, self);
     require('./rules')(app, cache, chance, database, io, self);
+    require('./discordbot')(app, cache, chance, database, io, self);
 };

@@ -18,7 +18,9 @@ module.exports = function(app, cache, chance, database, io, self) {
     const GAME_SERVER_POOL = config.get('app.servers.pool');
     const HIDE_DRAFT_STATS = config.get('app.users.hideDraftStats');
     const RESTRICTION_DURATIONS = config.get('app.users.restrictionDurations');
-
+    const DISCORD_LOG_CHANNEL = config.has('server.discord.channels.adminLog') ? config.get('server.discord.channels.adminLog') : '#admin-log'
+    const DISCORD_REQUEST_CHANNEL = config.has('server.discord.channels.adminRequest') ? config.get('server.discord.channels.adminRequest') : '#admin-request';
+    
     var adminUserIDs = [];
 
     self.isUserAdmin = function isUserAdmin(user) {
@@ -39,7 +41,18 @@ module.exports = function(app, cache, chance, database, io, self) {
                 text: action
             }]
         };
+       
+        let discordmessage = {
+            channel: DISCORD_LOG_CHANNEL,
+            attachments: [{
+                     fallback: `${user.alias} ${action}`,
+                        author_name: user.alias,
+                          author_link: `${BASE_URL}/player/${user.steamID}`,
+                         text: action
+                      }]
+            };
 
+        await self.postToDiscord(discordmessage);
         await self.postToSlack(message);
     };
 
@@ -441,6 +454,16 @@ module.exports = function(app, cache, chance, database, io, self) {
         await self.postToSlack({
             channel: ADMIN_REQUEST_CHANNEL,
             attachments: [{
+                fallback: trimmedMessage ? `${user.alias} requested help: ${trimmedMessage}` : `${user.alias} requested help`,
+                color: 'warning',
+                author_name: user.alias,
+                author_link: `${BASE_URL}/player/${user.steamID}`,
+                text: trimmedMessage
+            }]
+        });
+        await self.postToDiscord({
+            channel: DISCORD_REQUEST_CHANNEL,
+                attachments: [{
                 fallback: trimmedMessage ? `${user.alias} requested help: ${trimmedMessage}` : `${user.alias} requested help`,
                 color: 'warning',
                 author_name: user.alias,
